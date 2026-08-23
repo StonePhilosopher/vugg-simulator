@@ -1723,7 +1723,9 @@ function fortressStep(action, payload) {
       const prism = Math.max(0, Math.min(1, Number(payload?.prism) || 0));
       const term = Math.max(0, Math.min(1, Number(payload?.term) || 0));
       const filter = Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null;
-      const dusted = applyFilmDusting(fortressSim.crystals, mineral, term, prism, fortressSim.step, filter);
+      const dusted = applyFilmDusting(
+        fortressSim.crystals, mineral, term, prism, fortressSim.step, filter, fortressSim,
+      );
       actionDesc = `Foreign film — ${mineral} coated ${dusted} crystal${dusted === 1 ? '' : 's'} (prism ${prism.toFixed(2)}, term ${term.toFixed(2)})`;
       break;
     }

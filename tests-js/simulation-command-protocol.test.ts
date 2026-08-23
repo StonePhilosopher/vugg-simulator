@@ -223,6 +223,140 @@ describe('immutable simulation command/checkpoint protocol', () => {
     const ledgerBaseline = simulationStateFingerprint(dissolutionLedger);
     dissolutionLedger.sim.crystals.at(-1).zones[0]._budget_inventory_per_um.Sr += 1e-6;
     expect(simulationStateFingerprint(dissolutionLedger)).not.toBe(ledgerBaseline);
+
+    const enclosure = fresh();
+    enclosure.sim.crystals.push({
+      crystal_id: 1001,
+      mineral: 'pyrite',
+      active: false,
+      dissolved: false,
+      _buried: false,
+      position: 'on calcite #1000',
+      enclosed_by: 1000,
+      enclosed_crystals: [],
+      enclosed_at_step: [],
+      coats_front: true,
+      _film: { mineral: 'pyrite', phi_term: 0.08, phi_prism: 0, step: 4 },
+      enclosure_receipt: { schema: 'enclosure-receipt-v1', step: 4 },
+      liberation_receipt: null,
+      zones: [{ step: 1, thickness_um: 1 }],
+    });
+    enclosure.sim._enclosureReceipts.push({
+      schema: 'enclosure-receipt-v1',
+      event: 'enclosed',
+      step: 4,
+      host_crystal_id: 1000,
+      guest_crystal_id: 1001,
+    });
+    let enclosureBaseline = simulationStateFingerprint(enclosure);
+    for (const mutate of [
+      () => { enclosure.sim.crystals.at(-1)._buried = true; },
+      () => { enclosure.sim.crystals.at(-1).position = 'vug wall'; },
+      () => { enclosure.sim.crystals.at(-1).enclosed_by = 999; },
+      () => { enclosure.sim.crystals.at(-1).enclosed_crystals.push(7); },
+      () => { enclosure.sim.crystals.at(-1).enclosed_at_step.push(4); },
+      () => { enclosure.sim.crystals.at(-1).coats_front = false; },
+      () => { enclosure.sim.crystals.at(-1)._film.phi_term = 0.04; },
+      () => { enclosure.sim.crystals.at(-1).enclosure_receipt.step = 5; },
+      () => { enclosure.sim.crystals.at(-1).liberation_receipt = { schema: 'liberation-receipt-v1', step: 6 }; },
+      () => { enclosure.sim._enclosureReceipts[0].step = 5; },
+    ]) {
+      mutate();
+      const next = simulationStateFingerprint(enclosure);
+      expect(next).not.toBe(enclosureBaseline);
+      enclosureBaseline = next;
+    }
+
+    const transition = fresh();
+    transition.sim.crystals.push({
+      crystal_id: 1002,
+      mineral: 'pararealgar',
+      active: true,
+      dissolved: false,
+      paramorph_origin: 'realgar',
+      paramorph_step: 70,
+      light_exposure_steps: 60,
+      light_exposure_route: 'excavated',
+      dry_exposure_steps: 0,
+      phase_transition_history: [{
+        schema: 'light-induced-transformation-v1',
+        step: 70,
+        from: 'realgar',
+        to: 'pararealgar',
+        driver: 'visible-light-isomerization',
+        exposure_route: 'excavated',
+        exposure_steps: 60,
+        threshold_steps: 60,
+      }],
+      dehydration_history: [],
+      zones: [{ step: 1, thickness_um: 1 }],
+    });
+    let transitionBaseline = simulationStateFingerprint(transition);
+    for (const mutate of [
+      () => { transition.sim.crystals.at(-1).phase_transition_history[0].step = 71; },
+      () => { transition.sim.crystals.at(-1).dehydration_history.push({ step: 72 }); },
+      () => { transition.sim.crystals.at(-1).paramorph_origin = 'orpiment'; },
+      () => { transition.sim.crystals.at(-1).paramorph_step = 71; },
+      () => { transition.sim.crystals.at(-1).light_exposure_steps = 61; },
+      () => { transition.sim.crystals.at(-1).light_exposure_route = 'surface'; },
+      () => { transition.sim.crystals.at(-1).dry_exposure_steps = 1; },
+    ]) {
+      mutate();
+      const next = simulationStateFingerprint(transition);
+      expect(next).not.toBe(transitionBaseline);
+      transitionBaseline = next;
+    }
+
+    const morphology = fresh();
+    morphology.sim.crystals.push({
+      crystal_id: 1003,
+      mineral: 'pyrite',
+      active: true,
+      dissolved: false,
+      _morphology: {
+        status: 'unavailable-nonfinite-post-step',
+        unavailable_reason: 'nonfinite-post-step-sigma',
+        sigma_basis: 'post-step-unavailable',
+        post_step_sigma: null,
+        regime: null,
+        form: null,
+        surf_sigma: null,
+      },
+      zones: [{ step: 1, thickness_um: 1 }],
+    });
+    const unavailableBaseline = simulationStateFingerprint(morphology);
+    morphology.sim.crystals.at(-1)._morphology = {
+      status: 'classified',
+      unavailable_reason: null,
+      sigma_basis: 'post-step',
+      post_step_sigma: 1.2,
+      regime: 'spiral_smooth',
+      form: 'cubic',
+      surf_sigma: 1.2,
+    };
+    const smoothFingerprint = simulationStateFingerprint(morphology);
+    expect(smoothFingerprint).not.toBe(unavailableBaseline);
+    morphology.sim.crystals.at(-1)._morphology.regime = 'dendritic';
+    morphology.sim.crystals.at(-1)._morphology.surf_sigma = 5;
+    expect(simulationStateFingerprint(morphology)).not.toBe(smoothFingerprint);
+  });
+
+  it('preserves future-determining live morphology through checkpoint replay and continuation', () => {
+    const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('mvt', 42));
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(40));
+    const pyrite = runtime.sim.crystals.find((crystal: any) =>
+      crystal.mineral === 'pyrite' && crystal._morphology?.status === 'classified');
+    expect(pyrite).toBeTruthy();
+    const checkpoint = JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime)));
+    const restored = restoreSimulationCommandRuntime(checkpoint);
+    const restoredPyrite = restored.sim.crystals.find((crystal: any) =>
+      crystal.crystal_id === pyrite.crystal_id);
+    expect(restoredPyrite?._morphology).toEqual(pyrite._morphology);
+    expect(simulationStateFingerprint(restored)).toBe(simulationStateFingerprint(runtime));
+
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(2));
+    applySimulationCommand(restored, makeSimulationAdvanceCommand(2));
+    expect(simulationStateFingerprint(restored)).toBe(simulationStateFingerprint(runtime));
   });
 
   it('persists crash-safely and recovers the prior generation when primary is corrupt', () => {

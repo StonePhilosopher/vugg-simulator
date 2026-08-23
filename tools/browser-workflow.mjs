@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
@@ -12,7 +12,11 @@ import { fileURLToPath } from 'node:url';
 import { fileBundleAssetDigest, fileBundleAssetFiles } from './file-bundle-assets.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SIM_VERSION = 272;
+const versionMatch = /const SIM_VERSION = (\d+);/.exec(
+  readFileSync(path.join(ROOT, 'js', '15-version.ts'), 'utf8'),
+);
+if (!versionMatch) throw new Error('browser workflow could not read current SIM_VERSION');
+const SIM_VERSION = Number(versionMatch[1]);
 const FILE_BUNDLE_ASSET_COUNT = fileBundleAssetFiles(ROOT).length;
 const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;
@@ -172,6 +176,31 @@ function assertOwnedDevToolsVersion(version, receipt) {
   );
 }
 
+async function findOwnedBrowserRootPid(port, { netstatRunner = execFileAsync } = {}) {
+  if (!Number.isSafeInteger(Number(port)) || Number(port) <= 0) {
+    throw new Error('authenticated DevTools port is invalid');
+  }
+  const { stdout } = await netstatRunner('netstat.exe', ['-ano', '-p', 'tcp'], {
+    windowsHide: true,
+    timeout: 10_000,
+  });
+  const pids = new Set();
+  for (const line of String(stdout).split(/\r?\n/)) {
+    const fields = line.trim().split(/\s+/);
+    if (fields.length < 5 || fields[0].toUpperCase() !== 'TCP') continue;
+    const local = fields[1];
+    const state = fields[3]?.toUpperCase();
+    const pid = Number(fields[4]);
+    if (state === 'LISTENING'
+        && (local === `127.0.0.1:${port}` || local === `[::1]:${port}`)
+        && Number.isSafeInteger(pid) && pid > 0) pids.add(pid);
+  }
+  if (pids.size !== 1) {
+    throw new Error(`authenticated DevTools port ${port} had ${pids.size} listening process owners`);
+  }
+  return [...pids][0];
+}
+
 async function waitForDevToolsReceipt(profileDir, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const receiptPath = path.join(profileDir, 'DevToolsActivePort');
   const deadline = Date.now() + timeoutMs;
@@ -205,60 +234,205 @@ async function waitForDevToolsReceipt(profileDir, child, timeoutMs = DEFAULT_TIM
   throw new Error(`Timed out waiting for ${receiptPath} (${launcherState}): ${lastError?.message || 'missing'}`);
 }
 
-async function findOwnedProfileProcesses(profileDir, { platform = process.platform } = {}) {
-  if (platform !== 'win32') return [];
-  const command = [
-    '$needle = $env:VUGG_PROFILE_NEEDLE',
-    'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($needle) } | ForEach-Object { "$($_.ProcessId)|$($_.ParentProcessId)" }',
-  ].join('; ');
-  const { stdout } = await execFileAsync('powershell.exe', [
-    '-NoProfile', '-NonInteractive', '-Command', command,
+async function windowsProcessTree({ execFileRunner = execFileAsync, ownerPort = null } = {}) {
+  const source = String.raw`
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Runtime.InteropServices;
+public static class VuggProcessTree {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+  private struct PROCESSENTRY32 {
+    public uint dwSize; public uint cntUsage; public uint th32ProcessID;
+    public IntPtr th32DefaultHeapID; public uint th32ModuleID; public uint cntThreads;
+    public uint th32ParentProcessID; public int pcPriClassBase; public uint dwFlags;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szExeFile;
+  }
+  [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint processId);
+  [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)] private static extern bool Process32First(IntPtr snapshot, ref PROCESSENTRY32 entry);
+  [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)] private static extern bool Process32Next(IntPtr snapshot, ref PROCESSENTRY32 entry);
+  [StructLayout(LayoutKind.Sequential)] private struct FILETIME { public uint low; public uint high; }
+  [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenProcess(uint access, bool inherit, uint processId);
+  [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetProcessTimes(IntPtr process, out FILETIME creation, out FILETIME exit, out FILETIME kernel, out FILETIME user);
+  [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
+  private enum TCP_TABLE_CLASS { TCP_TABLE_OWNER_PID_LISTENER = 3 }
+  [StructLayout(LayoutKind.Sequential)] private struct MIB_TCPROW_OWNER_PID {
+    public uint state, localAddr, localPort, remoteAddr, remotePort, owningPid;
+  }
+  [DllImport("iphlpapi.dll", SetLastError = true)] private static extern uint GetExtendedTcpTable(
+    IntPtr table, ref int size, bool order, int addressFamily, TCP_TABLE_CLASS tableClass, uint reserved);
+  private static uint OwnerForPort(int port) {
+    int size = 0;
+    GetExtendedTcpTable(IntPtr.Zero, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER, 0);
+    IntPtr table = Marshal.AllocHGlobal(size);
+    try {
+      if (GetExtendedTcpTable(table, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER, 0) != 0) return 0;
+      int count = Marshal.ReadInt32(table);
+      IntPtr row = IntPtr.Add(table, 4);
+      int rowSize = Marshal.SizeOf(typeof(MIB_TCPROW_OWNER_PID));
+      for (int i = 0; i < count; i++, row = IntPtr.Add(row, rowSize)) {
+        var entry = (MIB_TCPROW_OWNER_PID)Marshal.PtrToStructure(row, typeof(MIB_TCPROW_OWNER_PID));
+        int localPort = (int)(((entry.localPort & 0xFF) << 8) | ((entry.localPort & 0xFF00) >> 8));
+        if (entry.state == 2 && localPort == port) return entry.owningPid;
+      }
+      return 0;
+    } finally { Marshal.FreeHGlobal(table); }
+  }
+  public static string[] Rows() {
+    var rows = new List<string>();
+    IntPtr snapshot = CreateToolhelp32Snapshot(2, 0);
+    if (snapshot == new IntPtr(-1)) return rows.ToArray();
+    var entry = new PROCESSENTRY32(); entry.dwSize = (uint)Marshal.SizeOf(entry);
+    if (Process32First(snapshot, ref entry)) do {
+      ulong creationTicks = 0;
+      IntPtr process = OpenProcess(0x1000, false, entry.th32ProcessID);
+      if (process != IntPtr.Zero) {
+        FILETIME creation, exit, kernel, user;
+        if (GetProcessTimes(process, out creation, out exit, out kernel, out user)) {
+          creationTicks = ((ulong)creation.high << 32) | creation.low;
+        }
+        CloseHandle(process);
+      }
+      rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + entry.szExeFile);
+      entry.dwSize = (uint)Marshal.SizeOf(entry);
+    } while (Process32Next(snapshot, ref entry));
+    CloseHandle(snapshot); return rows.ToArray();
+  }
+  public static string[] RowsAndOwner(int port) {
+    var rows = new List<string>(); rows.Add("OWNER|" + OwnerForPort(port));
+    rows.AddRange(Rows()); return rows.ToArray();
+  }
+}`;
+  const { stdout } = await execFileRunner('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-Command',
+    ownerPort == null
+      ? 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::Rows()'
+      : 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)',
   ], {
-    env: { ...process.env, VUGG_PROFILE_NEEDLE: profileDir },
+    env: {
+      ...process.env,
+      VUGG_TOOLHELP_SOURCE: source,
+      ...(ownerPort == null ? {} : { VUGG_DEVTOOLS_PORT: String(ownerPort) }),
+    },
     windowsHide: true,
     timeout: 10_000,
   });
-  return String(stdout).split(/\r?\n/).map(line => {
-    const [pid, parentPid] = line.trim().split('|').map(Number);
+  const lines = String(stdout).split(/\r?\n/);
+  const ownerLine = lines.find(line => line.startsWith('OWNER|'));
+  const rows = lines.map(line => {
+    const [pidRaw, parentRaw, startTicks = '', ...pathParts] = line.trim().split('|');
+    const pid = Number(pidRaw);
+    const parentPid = Number(parentRaw);
+    const executablePath = pathParts.join('|');
     return Number.isSafeInteger(pid) && pid > 0 && Number.isSafeInteger(parentPid)
-      ? { pid, parentPid }
+      && /^\d+$/.test(startTicks)
+      ? { pid, parentPid, start_ticks: startTicks, executable_path: executablePath }
       : null;
   }).filter(Boolean);
+  if (ownerPort == null) return rows;
+  return { rootPid: Number(ownerLine?.split('|')[1] || 0), rows };
 }
 
-async function terminateOwnedProfileProcesses(profileDir, {
+async function captureOwnedBrowserProcessReceipts(rootPid, {
   platform = process.platform,
-  processFinder = findOwnedProfileProcesses,
+  processTreeProvider = windowsProcessTree,
+} = {}) {
+  if (platform !== 'win32') return [];
+  if (!Number.isSafeInteger(Number(rootPid)) || Number(rootPid) <= 0) {
+    throw new Error('owned browser root PID is unavailable');
+  }
+  const tree = await processTreeProvider();
+  const byParent = new Map();
+  for (const row of tree) {
+    const children = byParent.get(row.parentPid) || [];
+    children.push(row.pid);
+    byParent.set(row.parentPid, children);
+  }
+  const pids = [];
+  const pending = [Number(rootPid)];
+  while (pending.length) {
+    const pid = pending.pop();
+    if (pids.includes(pid)) continue;
+    pids.push(pid);
+    pending.push(...(byParent.get(pid) || []));
+  }
+  const selected = new Set(pids);
+  const receipts = tree.filter(row => selected.has(row.pid) && row.start_ticks !== '0')
+    .map(({ pid, start_ticks, executable_path }) => ({ pid, start_ticks, executable_path }));
+  if (!receipts.length) {
+    throw new Error(`authenticated browser process receipt was empty (root ${rootPid}; root row ${JSON.stringify(tree.find(row => row.pid === Number(rootPid)) || null)}; candidates ${pids.join(',')}; snapshot rows ${tree.length})`);
+  }
+  if (!receipts.some(receipt => receipt.pid === Number(rootPid))) {
+    throw new Error('owned browser root exited before its process-tree receipt was captured');
+  }
+  return receipts;
+}
+
+async function captureOwnedBrowserProcessReceiptsForPort(port, {
+  timeoutMs = 5_000,
+  ownedSnapshotProvider = requestedPort => windowsProcessTree({ ownerPort: requestedPort }),
+} = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    try {
+      const snapshot = await ownedSnapshotProvider(port);
+      const rootPid = Number(snapshot?.rootPid);
+      const tree = snapshot?.rows || [];
+      if (!Number.isSafeInteger(rootPid) || rootPid <= 0) {
+        throw new Error(`authenticated DevTools port ${port} had no listening process owner`);
+      }
+      if (!tree.some(row => row.pid === rootPid)) {
+        lastError = new Error(`DevTools owner ${rootPid} exited before process snapshot`);
+      } else {
+        const receipts = await captureOwnedBrowserProcessReceipts(rootPid, {
+          processTreeProvider: async () => tree,
+        });
+        return { rootPid, receipts };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    await delay(25);
+  }
+  throw new Error(`could not capture stable authenticated DevTools process owner: ${lastError?.message || 'unknown failure'}`);
+}
+
+async function terminateOwnedProcessReceipts(receipts, {
+  platform = process.platform,
+  processTreeProvider = windowsProcessTree,
   processSpawner = spawnOwned,
   waitMs = 5_000,
 } = {}) {
   if (platform !== 'win32') return;
-  const processes = await processFinder(profileDir, { platform });
-  if (!processes.length) return;
-  const ownedPids = new Set(processes.map(entry => entry.pid));
-  const roots = processes.filter(entry => !ownedPids.has(entry.parentPid));
-  const taskkillFailures = [];
-  for (const root of roots) {
-    const killer = processSpawner('taskkill.exe', ['/PID', String(root.pid), '/T', '/F'], {
+  const expected = new Map((receipts || []).map(receipt => [Number(receipt.pid), receipt]));
+  const current = await processTreeProvider();
+  const exactMatches = current.filter(receipt => {
+    const prior = expected.get(receipt.pid);
+    return prior
+      && receipt.start_ticks === prior.start_ticks
+      && receipt.executable_path === prior.executable_path;
+  });
+  for (const receipt of exactMatches) {
+    const killer = processSpawner('taskkill.exe', ['/PID', String(receipt.pid), '/T', '/F'], {
       stdio: 'ignore',
       windowsHide: true,
     });
     if (!(await waitForOwnedExit(killer, waitMs))) {
-      taskkillFailures.push(new Error(`taskkill did not finish for profile-owned browser tree ${root.pid}`));
       killer.kill('SIGKILL');
       await waitForOwnedExit(killer, Math.min(waitMs, 2_000));
-    } else {
-      const failure = ownedProcessFailure(killer);
-      if (failure) taskkillFailures.push(failure);
     }
   }
   await delay(100);
-  const remaining = await processFinder(profileDir, { platform });
+  const remaining = (await processTreeProvider())
+    .filter(receipt => {
+      const prior = expected.get(receipt.pid);
+      return prior
+        && receipt.start_ticks === prior.start_ticks
+        && receipt.executable_path === prior.executable_path;
+    });
   if (remaining.length) {
-    throw new AggregateError([
-      ...taskkillFailures,
-      new Error(`profile-owned browser processes survived cleanup: ${remaining.map(entry => entry.pid).join(', ')}`),
-    ], `Could not terminate every browser process for owned profile ${profileDir}`);
+    throw new Error(`authenticated browser processes survived cleanup: ${remaining.map(entry => entry.pid).join(', ')}`);
   }
 }
 
@@ -338,6 +512,17 @@ async function runCleanupActions(actions) {
   }
 }
 
+function formatErrorTree(error, indent = '') {
+  const message = error?.stack || error?.message || String(error);
+  const lines = [`${indent}${message}`];
+  if (error instanceof AggregateError) {
+    for (const child of error.errors || []) lines.push(formatErrorTree(child, `${indent}  `));
+  } else if (error?.cause) {
+    lines.push(formatErrorTree(error.cause, `${indent}  caused by: `));
+  }
+  return lines.join('\n');
+}
+
 function drainOwnedPipe(pipe, diagnostics, key) {
   if (!pipe) return;
   pipe.on('data', chunk => {
@@ -358,6 +543,7 @@ class CdpClient {
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = new Map();
+    this.sessionListeners = new Map();
   }
 
   async open() {
@@ -417,12 +603,25 @@ class CdpClient {
     for (const listener of this.listeners.get(message.method) || []) {
       try { listener(message.params || {}); } catch { /* diagnostic listener */ }
     }
+    if (message.sessionId) {
+      const key = `${message.sessionId}:${message.method}`;
+      for (const listener of this.sessionListeners.get(key) || []) {
+        try { listener(message.params || {}); } catch { /* diagnostic listener */ }
+      }
+    }
   }
 
   on(method, listener) {
     const listeners = this.listeners.get(method) || [];
     listeners.push(listener);
     this.listeners.set(method, listeners);
+  }
+
+  onSession(sessionId, method, listener) {
+    const key = `${sessionId}:${method}`;
+    const listeners = this.sessionListeners.get(key) || [];
+    listeners.push(listener);
+    this.sessionListeners.set(key, listeners);
   }
 
   send(method, params = {}, sessionId = null) {
@@ -454,58 +653,14 @@ class CdpSession {
   constructor(client, sessionId) {
     this.client = client;
     this.sessionId = sessionId;
-    this.nextId = 1;
-    this.pending = new Map();
-    this.listeners = new Map();
-    client.on('Target.receivedMessageFromTarget', event => {
-      if (event.sessionId !== this.sessionId) return;
-      this.#receive(JSON.parse(event.message));
-    });
-  }
-
-  #receive(message) {
-    if (message.id != null) {
-      const pending = this.pending.get(message.id);
-      if (!pending) return;
-      this.pending.delete(message.id);
-      clearTimeout(pending.timer);
-      if (message.error) pending.reject(new Error(message.error.message));
-      else pending.resolve(message.result || {});
-      return;
-    }
-    if (!message.method) return;
-    for (const listener of this.listeners.get(message.method) || []) {
-      try { listener(message.params || {}); } catch { /* diagnostic listener */ }
-    }
   }
 
   on(method, listener) {
-    const listeners = this.listeners.get(method) || [];
-    listeners.push(listener);
-    this.listeners.set(method, listeners);
+    this.client.onSession(this.sessionId, method, listener);
   }
 
   send(method, params = {}) {
-    const id = this.nextId++;
-    const response = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error(`CDP session request timed out: ${method}`));
-      }, DEFAULT_TIMEOUT_MS);
-      this.pending.set(id, { resolve, reject, timer });
-    });
-    if (DEBUG_CDP) process.stderr.write(`[cdp] nested send ${method}\n`);
-    void this.client.send('Target.sendMessageToTarget', {
-      sessionId: this.sessionId,
-      message: JSON.stringify({ id, method, params }),
-    }).catch(error => {
-      const pending = this.pending.get(id);
-      if (!pending) return;
-      this.pending.delete(id);
-      clearTimeout(pending.timer);
-      pending.reject(error);
-    });
-    return response;
+    return this.client.send(method, params, this.sessionId);
   }
 }
 
@@ -1207,6 +1362,9 @@ async function main() {
   let server = null;
   let browser = null;
   let client = null;
+  let pageClient = null;
+  let browserRootPid = null;
+  let browserProcessReceipts = [];
   const diagnostics = {
     schema: 1,
     sim_version: SIM_VERSION,
@@ -1245,6 +1403,10 @@ async function main() {
       '--disable-background-networking',
       '--disable-component-update',
       '--disable-sync',
+      // The Windows desktop runner denies sandboxed child-process access
+      // before CDP can initialize. This profile loads only the authenticated
+      // loopback server, with background networking disabled.
+      '--no-sandbox',
       '--mute-audio',
       'about:blank',
     ], {
@@ -1262,15 +1424,50 @@ async function main() {
       },
     });
     assertOwnedDevToolsVersion(version, devTools);
+    let ownedBrowser;
+    try {
+      ownedBrowser = await captureOwnedBrowserProcessReceiptsForPort(devTools.port);
+    } catch (error) {
+      throw new Error(`${error.message}; launcher exit=${browser.exitCode}, signal=${browser.signalCode}; browser stderr=${diagnostics.browser_stderr || '(empty)'}`, { cause: error });
+    }
+    browserRootPid = ownedBrowser.rootPid;
+    browserProcessReceipts = ownedBrowser.receipts;
     diagnostics.browser_product = version.Browser;
     diagnostics.protocol_version = version['Protocol-Version'];
     client = new CdpClient(version.webSocketDebuggerUrl);
     await client.open();
-    const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' });
-    const { sessionId } = await client.send('Target.attachToTarget', { targetId });
-    const session = new CdpSession(client, sessionId);
+    const targets = await fetchWithDeadline(`http://127.0.0.1:${devTools.port}/json/list`, {
+      options: { cache: 'no-store' },
+      consume: async response => {
+        if (!response.ok) throw new Error(`DevTools target list returned HTTP ${response.status}`);
+        return response.json();
+      },
+    });
+    const pageTarget = targets.find(target => target?.type === 'page' && target?.url === 'about:blank');
+    if (!pageTarget?.webSocketDebuggerUrl) {
+      throw new Error('owned browser did not publish its initial page target endpoint');
+    }
+    let pageInitializationError = null;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      pageClient = new CdpClient(pageTarget.webSocketDebuggerUrl);
+      await pageClient.open();
+      try {
+        await pageClient.send('Page.enable');
+        pageInitializationError = null;
+        break;
+      } catch (error) {
+        pageInitializationError = error;
+        pageClient.close();
+        if (attempt < 2) await delay(100);
+      }
+    }
+    if (pageInitializationError) {
+      throw new Error(`owned page target did not initialize after two bounded attempts: ${pageInitializationError.message}`, {
+        cause: pageInitializationError,
+      });
+    }
+    const session = pageClient;
     await Promise.all([
-      session.send('Page.enable'),
       session.send('Runtime.enable'),
       session.send('Log.enable'),
       session.send('Network.enable'),
@@ -1341,15 +1538,37 @@ async function main() {
       checks,
     }, null, 2)}\n`);
   } finally {
+    let receiptCaptureFailure = null;
     if (client) {
+      try {
+        const latestReceipts = await captureOwnedBrowserProcessReceipts(browserRootPid);
+        const byIdentity = new Map(browserProcessReceipts.map(receipt => [
+          `${receipt.pid}|${receipt.start_ticks}|${receipt.executable_path}`,
+          receipt,
+        ]));
+        for (const receipt of latestReceipts) {
+          byIdentity.set(`${receipt.pid}|${receipt.start_ticks}|${receipt.executable_path}`, receipt);
+        }
+        browserProcessReceipts = [...byIdentity.values()];
+      } catch (error) {
+        // The browser connection may already be unhealthy because the primary
+        // workflow failed. A previously captured, CDP-authenticated process
+        // fleet remains valid cleanup authority; fail only when no such
+        // ownership receipt was ever established.
+        if (!browserProcessReceipts.length) receiptCaptureFailure = error;
+      }
       const gracefulClose = client.send('Browser.close').catch(() => null);
       await Promise.race([gracefulClose, delay(2_000)]);
       await waitForOwnedExit(browser, 5_000);
     }
     await runCleanupActions([
+      ['authenticated browser process receipt', async () => {
+        if (receiptCaptureFailure) throw receiptCaptureFailure;
+      }],
+      ['page CDP client', async () => pageClient?.close()],
       ['CDP client', async () => client?.close()],
       ['browser process', async () => terminateOwned(browser, { tree: true })],
-      ['profile-owned browser processes', async () => terminateOwnedProfileProcesses(profileDir)],
+      ['authenticated browser descendants', async () => terminateOwnedProcessReceipts(browserProcessReceipts)],
       ['local server process', async () => terminateOwned(server)],
       ['temporary browser profile', async () => {
         await rm(profileDir, { recursive: true, force: true, maxRetries: 4, retryDelay: 150 });
@@ -1360,21 +1579,26 @@ async function main() {
 
 export {
   assertOwnedDevToolsVersion,
+  captureOwnedBrowserProcessReceipts,
+  captureOwnedBrowserProcessReceiptsForPort,
   CdpClient,
   fetchWithDeadline,
+  formatErrorTree,
+  findOwnedBrowserRootPid,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
   terminateOwned,
-  terminateOwnedProfileProcesses,
+  terminateOwnedProcessReceipts,
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
+  windowsProcessTree,
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => {
-    console.error(error?.stack || error);
+    console.error(formatErrorTree(error));
     process.exitCode = 1;
   });
 }

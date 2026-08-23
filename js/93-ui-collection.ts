@@ -117,11 +117,20 @@ function buildCrystalRecord(crystal, meta) {
     is_phantom: !!z.is_phantom,
     // Calcite-morphology arc Phase 1: per-zone growth-regime tags ride
     // into the collection so a stepped calcite remembers its terraces.
-    // Conditional spread keeps non-calcite records lean.
-    ...(z.morph_regime ? {
-      morph_regime: z.morph_regime,
-      morph_form: z.morph_form || '',
-      morph_surf_sigma: +(z.morph_surf_sigma || 0).toFixed(2),
+    // Classified and explicitly unavailable testimony both survive a
+    // collection round-trip; absence is never silently converted to smooth.
+    ...(z.morphology_status ? {
+      morphology_status: z.morphology_status,
+      morph_unavailable_reason: z.morph_unavailable_reason || null,
+      morph_sigma_basis: z.morph_sigma_basis || '',
+      morph_post_step_sigma: typeof z.morph_post_step_sigma === 'number'
+        && Number.isFinite(z.morph_post_step_sigma)
+        ? +z.morph_post_step_sigma.toFixed(6) : null,
+      morph_regime: z.morph_regime || null,
+      morph_form: z.morph_form || null,
+      morph_surf_sigma: typeof z.morph_surf_sigma === 'number'
+        && Number.isFinite(z.morph_surf_sigma)
+        ? +z.morph_surf_sigma.toFixed(6) : null,
     } : {}),
   }));
 

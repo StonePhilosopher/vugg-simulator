@@ -176,12 +176,12 @@ function _nuc_todorokite(sim) {
   let sigma = localityActive ? 0 : sim.conditions.supersaturation_todorokite();
   if (!localityActive && sigma <= MINERAL_GATES_todorokite.sigma_crit) return;
   if (sim._atNucleationCap('todorokite')) return;
-  let precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
+  let precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c, sim));
   if (!precursor) return; // no scientifically licensed bare-wall fallback
   let local: any = null;
   if (localityActive) {
     const eligible = sim.crystals
-      .filter(c => isTodorokiteBirnessitePrecursor(c))
+      .filter(c => isTodorokiteBirnessitePrecursor(c, sim))
       .map(c => ({
         precursor: c,
         local: sim._localNucleationEvaluationAtAnchor(
@@ -201,6 +201,7 @@ function _nuc_todorokite(sim) {
     precursor, local?.fluid || sim.conditions.fluid,
     Number.isFinite(local?.temperatureC) ? local.temperatureC : sim.conditions.temperature,
     sim.step,
+    sim,
   );
   if (!transition) return;
   const f = local?.fluid || sim.conditions.fluid;

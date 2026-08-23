@@ -2,11 +2,33 @@ import { describe, expect, it } from 'vitest';
 
 declare const findPseudomorphRoute: (parent: string, child: string) => any;
 declare const cdrReplacementEvidence: (host: any, route: any, child: string) => any;
+declare const unclaimedCdrReplacementHost: (crystals: any[], child: string) => any;
 
 describe('CDR outline inheritance requires accepted matching parent loss', () => {
   const route = () => findPseudomorphRoute('azurite', 'malachite');
   const host = (zones: any[]) => ({
     mineral: 'azurite', crystal_id: 17, zones,
+  });
+
+  it('selects an unclaimed lost parent even when a free child already exists', () => {
+    const parent = {
+      crystal_id: 9,
+      mineral: 'pyrite',
+      active: false,
+      dissolved: false,
+      zones: [{ step: 17, thickness_um: -4, dissolutionMode: 'oxidative' }],
+    };
+    const freeGoethite = { crystal_id: 10, mineral: 'goethite', zones: [] };
+    expect(unclaimedCdrReplacementHost([parent, freeGoethite], 'goethite')).toBe(parent);
+    const claimed = {
+      crystal_id: 11,
+      mineral: 'goethite',
+      cdr_replacement_evidence: {
+        schema: 'cdr-replacement-evidence-v1',
+        parent_crystal_id: 9,
+      },
+    };
+    expect(unclaimedCdrReplacementHost([parent, freeGoethite, claimed], 'goethite')).toBeNull();
   });
 
   it('rejects proximity, a dissolved flag, and positive growth without parent loss', () => {

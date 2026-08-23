@@ -301,6 +301,26 @@ function cdrReplacementEvidence(host: any, route: PseudomorphRoute, child: strin
   });
 }
 
+// Return the first parent that has earned a replacement child but has not yet
+// been represented by one. This deliberately ignores the parent's `active`
+// and `dissolved` flags: a size-capped crystal is still a physical solid, and
+// accepted negative layers are the authority for actual material loss. A
+// free-growing crystal of the same child mineral elsewhere in the vug also
+// must not suppress a distinct pseudomorph body on this parent.
+function unclaimedCdrReplacementHost(crystals: any[], child: string): any | null {
+  const list = Array.isArray(crystals) ? crystals : [];
+  const claimedParents = new Set(list
+    .filter((crystal: any) => crystal?.mineral === child
+      && crystal?.cdr_replacement_evidence?.schema === 'cdr-replacement-evidence-v1')
+    .map((crystal: any) => crystal.cdr_replacement_evidence.parent_crystal_id));
+  for (const host of list) {
+    const route = findPseudomorphRoute(String(host?.mineral || ''), child);
+    if (!route || claimedParents.has(host?.crystal_id)) continue;
+    if (cdrReplacementEvidence(host, route, child)) return host;
+  }
+  return null;
+}
+
 // Executable heterogeneous-nucleation routes. This is deliberately narrower
 // than the literature/paragenesis table above: a documented association does
 // not affect gameplay until a nucleation function can actually select that
@@ -342,24 +362,27 @@ function engineExecutableSubstrateDiscount(
 // eligibility rule here, beside the executable substrate registry, so the
 // nucleator, production counterfactual, and Creative hover diagnosis all use
 // the same predicate instead of independently approximating "precursor".
-function isTodorokiteBirnessitePrecursor(host: any): boolean {
+function isTodorokiteBirnessitePrecursor(host: any, sim?: any): boolean {
   return !!host
     && host.mineral === 'birnessite'
     && !!host.active
     && !host.dissolved
-    && host.enclosed_by == null
+    && !currentEnclosureAuthority(sim, host)
     && Number(host.total_growth_um) > 0
     && typeof remainingBookedInventory === 'function'
     && remainingBookedInventory(host, 'Mn') > 0;
 }
 
-function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
+function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string, sim?: any) {
   if (!host) return { executable: false, label: 'missing host' };
   const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
   if (!routes || !routes.has(host.mineral)) {
     return { executable: false, label: 'unregistered host', discount: 1.0 };
   }
   const discount = engineExecutableSubstrateDiscount(host.mineral, nucleatingMineral);
+  if (currentEnclosureAuthority(sim, host)) {
+    return { executable: false, label: 'authenticated physical inclusion', discount };
+  }
 
   // Replacement engines intentionally nucleate on the exposed reaction
   // surface left by a dissolving precursor. These predicates mirror the
@@ -372,9 +395,9 @@ function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
   } else if (nucleatingMineral === 'chrysocolla' && host.mineral === 'azurite') {
     executable = !!host.active || !!host.dissolved;
   } else if (nucleatingMineral === 'todorokite' && host.mineral === 'birnessite') {
-    executable = isTodorokiteBirnessitePrecursor(host);
+    executable = isTodorokiteBirnessitePrecursor(host, sim);
   } else {
-    executable = !!host.active && !host.dissolved && host.enclosed_by == null;
+    executable = !!host.active && !host.dissolved;
   }
   const label = host.dissolved
     ? 'dissolved replacement surface'
@@ -382,10 +405,10 @@ function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
   return { executable, label, discount };
 }
 
-function executableSubstrateCandidates(nucleatingMineral: string, crystals: any[]) {
+function executableSubstrateCandidates(nucleatingMineral: string, crystals: any[], sim?: any) {
   const candidates: Array<{ host: any; discount: number; label: string }> = [];
   for (const host of (crystals || [])) {
-    const route = engineExecutableSubstrateRoute(host, nucleatingMineral);
+    const route = engineExecutableSubstrateRoute(host, nucleatingMineral, sim);
     if (!route.executable) continue;
     candidates.push({ host, discount: route.discount, label: route.label });
   }
@@ -410,13 +433,14 @@ function pickSubstrateForMineral(
   mineral: string,
   crystals: any[],
   rng: any,
+  sim?: any,
 ): { host: any; discount: number } | null {
   // Eligible hosts: any non-dissolved, non-enclosed crystal whose
   // mineral is a key in SUBSTRATE_NUCLEATION_DISCOUNT and offers a
   // discount for the nucleating mineral.
   const candidates: Array<{ host: any; discount: number; weight: number }> = [];
   for (const c of crystals) {
-    if (c.dissolved || c.enclosed_by != null) continue;
+    if (c.dissolved || currentEnclosureAuthority(sim, c)) continue;
     const hostEntry = SUBSTRATE_NUCLEATION_DISCOUNT[c.mineral];
     if (!hostEntry) continue;
     const discount = hostEntry[mineral];

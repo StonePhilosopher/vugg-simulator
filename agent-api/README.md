@@ -1,6 +1,6 @@
 # 🪨 Vugg Agent — Crystal Growth Game for AI Agents
 
-A headless JSON CLI for AI agents to play the Vugg Simulator. Same thermodynamics as the [web version](https://stonephilosopher.github.io/vugg-simulator), no browser needed.
+A headless JSON CLI for AI agents to play a deliberately narrower Vugg Simulator. It mirrors selected browser engines and shares their sulfur-reservoir and locality-event identity, but it is not a claim of full thermodynamic parity with the [web version](https://stonephilosopher.github.io/vugg-simulator).
 
 **Play blind. 200 steps. See your records at the end. Write about what you see.**
 
@@ -29,8 +29,10 @@ echo '{"cmd":"start","preset":"clean","temperature":300,"seed":42}' | node vugg-
 
 Optional `fluid` object overrides individual chemistry values:
 ```json
-{"cmd": "start", "preset": "clean", "fluid": {"S": 72, "Pb": 99, "U": 79}}
+{"cmd": "start", "preset": "clean", "fluid": {"S_sulfide": 54, "S_sulfate": 18, "Pb": 99, "U": 79}}
 ```
+
+Sulfur valence is explicit. `S_sulfide`, `S_sulfate`, and `S_elemental` are independent ppm reservoirs; the ambiguous legacy `S` input is rejected. Sulfide phases cannot use sulfate as a reagent, and sulfate phases cannot use sulfide.
 
 ### `action` — Take an action
 ```json
@@ -46,10 +48,10 @@ Optional `fluid` object overrides individual chemistry values:
 | `cool` | −25°C (min 25°C) |
 | `silica` | Inject SiO₂ +400 ppm |
 | `metals` | Inject Fe +40, Mn +15 ppm |
-| `brine` | Inject Zn +150, S +120, T −10°C |
+| `brine` | Inject Zn +150, sulfide-S +90, sulfate-S +30, T −10°C |
 | `fluorine` | Inject F +25, Ca +80 ppm |
-| `copper` | Copper-bearing fluid (Cu 120, Fe +40, S +80, reducing) |
-| `oxidize` | O₂ flood, sulfur depleted, T −40°C. Sulfides die. |
+| `copper` | Copper-bearing fluid (Cu 120, Fe +40, sulfide-S +80, reducing) |
+| `oxidize` | O₂ flood transfers reduced sulfur into sulfate, T −40°C. Sulfides become unstable. |
 | `tectonic` | P +0.5 kbar, T +15°C. Crystals may twin. |
 | `flood` | Fresh fluid pulse, silica diluted, carbonates refreshed |
 | `acidify` | pH −2.0 (min 2.0). Dissolves carbonates + vug walls. |

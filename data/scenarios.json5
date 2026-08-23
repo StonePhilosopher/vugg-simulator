@@ -243,7 +243,7 @@
         "Anchor: Tri-State Pb-Zn mining district. Brines per Roedder 1976, Ohle 1959, Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity, 150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over aragonite). Tri-State is diagnostically silver-POOR: the district produced lead and zinc only, and low-Ag galena is an MVT fingerprint — Ag-in-galena rides Sb/Bi substitution, a high-temperature vein phenomenon absent from a ~150°C basinal brine (Leach et al. 2010 USGS MVT deposit model: Ag 'generally absent in most deposits').",
         "Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature — an UNCITED confabulation, removed v195, see next note), Ba (barite documented locally), Sr (basinal-brine tracer + minor celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from JS-side intent into Python init.",
         "Silver de-confabulation (v195, boss catch 2026-06-12): the Apr-2026 gap-fill claim 'Tri-State galena is documented argentiferous; Ag was historically a meaningful smelter byproduct' cited no source because none exists — none of this scenario's references (Roedder/Ohle/Hagni/Stoffell) report district Ag, and the district record is Pb+Zn only. The claim was a v139-adamite-family fabrication that survived two rebake reviews because per-pin verdicts inherited it as ground truth. Broth Ag 5 → 0; the baseline's acanthite + native_silver were artifacts riding it (expects_species never promised a silver mineral). Greenockite STAYS — Cd-in-sphalerite is genuinely documented at Tri-State (Schwartz 2000).",
-        "Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and the event sequence (fluid_mixing step 20, fluid_pulse step 60, tectonic_shock step 80) preserved untouched — gap-fill only.",
+        "SIM 273 locality-boundary correction: the former shared Cave-in-Rock-style fluid_mixing recipe is retired. Step 20 is now a Tri-State-owned, cited basinal-brine endmember with explicit sulfide and sulfate reservoirs; fluid_pulse step 60 and tectonic_shock step 80 remain separate boundaries.",
         "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Picher Field, Tri-State Mining District, mindat locality 12395; boss picked the iconic sub-locality deliberately 'so the data is more consistent'; 44 valid incl. sub-localities): Albite (var. Anorthoclase), Allophane, Anglesite, Aragonite, Arsenopyrite, Aurichalcite, Baryte, 'Calamine', Calcite, Caledonite, Cerussite, Chalcopyrite, Chrysocolla, Copiapite, Covellite, Cuprite, Diadochite, Dolomite, Enargite, Epsomite, Fluorapatite, Galena, Gedrite, Goslarite (var. Cuprogoslarite), Greenockite, GYPSUM (var. SELENITE), Hemimorphite, Hydroniumjarosite, Hydrozincite, Kaolinite, Ktenasite, Linarite, Luzonite, Malachite, Marcasite, Melanterite, Native Sulphur, 'Petroleum' (var. Bitumen), Plumbojarosite, Pyrite, Pyromorphite, Pyrophyllite, Quartz, Smithsonite, Sphalerite, Szomolnokite, Vivianite. WHAT THE LIST VOTES ON (vs seed-42 v236 sim output): (a) GYPSUM var. SELENITE IS VALID HERE — the S2 selenite migration's mvt tenant is record-LICENSED (the exact opposite of elmwood; the per-locality instrument earning its keep); (b) sim species NOT on the list — census flags: FLUORITE (11.9 mm + in expects_species! Picher Field lists none; the anchor spans the whole Tri-State so a Joplin-side sub-locality may still license it — BOSS ADJUDICATION needed before any kill), CELESTINE (39.7 µm, freshly Ba-flipped in S2 — unlisted here), RHODOCHROSITE (5.7 mm, unlisted), SIDERITE (3.7 mm, unlisted — SAME flag as elmwood: the Fe/Mn carbonates may be over-firing in MVT broths), hawleyite (CdS cubic polymorph unlisted; greenockite is), anhydrite (6.3 µm dust; gypsum listed instead); (c) DOUBLE-LICENSED: greenockite (Schwartz 2000 in the v195 note AND the Picher list) — the de-confabulation instrument and the literature agree; (d) the list's big supergene tail (smithsonite/hemimorphite/cerussite/anglesite/malachite/aurichalcite/hydrozincite/native sulphur/the jarosites) is largely post-mining oxidation — the scenario models the hypogene ore stage and ends before the gossan, so their absence from the sim is CORRECT, not a gap; they become relevant only if a Picher supergene-epilogue stage is ever authored."
       ],
       "initial": {
@@ -264,7 +264,7 @@
           "Mg": 65,  // realistic Tri-State Mg/Ca ratio
           // Drift-fix: JS scenario_mvt has carried Pb=40 in init since round 2 but
           // Python had it at default 0. Mirroring JS intent (combined with
-          // event_fluid_mixing's +=25, post-event Pb=65 in both runtimes — enables
+          // mvt_fluid_mixing's +25, post-event Pb=65 — enables
           // galena from initial fluid, not only from event spike).
           "Pb": 40,
           // Audit gap-fills (Apr 2026):
@@ -284,7 +284,8 @@
           // native_silver ×4) into the canonical seed-42 record. Boss catch.
           "Ag": 0,
           // Ba=20: Tri-State has barite as a local late-stage gangue. Brine Ba
-          // moderate (sulfate-buffered when S delivered by event_fluid_mixing —
+          // moderate (sulfate-buffered when S is delivered explicitly by the
+          // locality-owned step-20 mixing boundary —
           // barite then nucleates).
           "Ba": 20,
           // Sr=15: classic basinal-brine tracer (Hanor 1994); Tri-State has
@@ -351,7 +352,7 @@
         }
       },
       "events": [
-        { "step": 20, "type": "fluid_mixing", "name": "Fluid Mixing", "description": "Brine meets groundwater" },
+        { "step": 20, "type": "mvt_fluid_mixing", "name": "Tri-State Ore-Fluid Mixing", "description": "A reducing Zn-Pb basinal brine mixes with a smaller sulfate-bearing groundwater component; the distinct sulfide and sulfate inventories permit the documented ore sulfides and early barite without treating total sulfur as one interchangeable reagent", "fluid_transform": { "add": { "Zn": 150, "Ca": 100, "F": 40, "Pb": 25, "Fe": 30 }, "flow_rate": 4 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfide": 90, "sulfate": 30 } }, "temperature_delta_C": -20, "material_authority": "Roedder 1976; Anderson & Macqueen 1982; Stoffell et al. 2008 — Tri-State reducing Pb-Zn basinal brine with a subordinate sulfate-bearing gangue stage; sulfur split is an explicit SIM-scale paragenetic endmember, not a measured fluid-inclusion ratio" },
         { "step": 60, "type": "fluid_pulse", "name": "Second Pulse", "description": "A second NaCl-CaCl2 basinal-brine mixing event", "fluid_transform": { "multiply": { "SiO2": 1.2, "Fe": 1.4, "Mn": 1.2 }, "pH_delta": -0.2, "flow_rate": 5 }, "material_authority": "Roedder 1976; Stoffell et al. 2008 — Tri-State basinal-brine inclusion chemistry" },
         { "step": 80, "type": "tectonic_shock", "name": "Tectonic", "description": "Minor seismic event" }
       ],
@@ -398,14 +399,14 @@
       "expects_species": ["sphalerite", "fluorite", "barite", "calcite"],
       "deterministic_species": [
         { "mineral": "celestine", "reason": "Documented at Elmwood, including Ba-bearing celestine, and compatible with the scenario's sulfate-brine stage." },
-        { "mineral": "chalcedony", "reason": "The audited Elmwood inventory includes quartz and silica; microcrystalline silica is allowed as subordinate late gangue rather than a headline promise." },
-        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor hot-brine Ca-sulfate accessory in all three evidence seeds. It is classified as modeled accessory chemistry, not advertised as an Elmwood specimen occurrence." }
+        { "mineral": "chalcedony", "reason": "The audited Elmwood inventory includes quartz and silica; microcrystalline silica is allowed as subordinate late gangue rather than a headline promise." }
       ],
       "aspirational_species": [
         { "mineral": "galena", "reason": "Galena is documented at Elmwood-Gordonsville, but the valence-correct SIM 268 brine does not deliver a reproducible Pb-sulfide window in the three-seed evidence panel." },
         { "mineral": "pyrite", "reason": "Pyrite is documented in the Elmwood regional inventory, but it is not produced by the present valence-correct sulfur trajectory." }
       ],
       "excluded_species": {
+        "anhydrite": "Not documented in the audited Elmwood-Gordonsville inventory, and the valence-separated Elmwood brine produces none in the three-seed commissioning panel. A former modeled-accessory classification improperly substituted chemical plausibility for locality evidence.",
         "siderite": "Not documented in the audited Elmwood-Gordonsville inventory; the stepped-calcite variety model cannot be allowed to manufacture an Fe-carbonate locality claim.",
         "strontianite": "The audited Elmwood-Gordonsville inventory documents strontium-bearing barite and barium-bearing celestine, but not discrete strontianite; Sr must remain in the documented sulfate family here."
       },
@@ -424,6 +425,11 @@
           "claim_id": "celestine-individual-size",
           "statement": "The individual-crystal authority is 46 cm and is kept separate from fibrous or nodular aggregate extent.",
           "sources": ["Handbook of Mineralogy — celestine crystals to 45 cm", "Royal Ontario Museum celestine reference specimen — 46 cm crystal width"]
+        },
+        {
+          "claim_id": "elmwood-masked-layer-hypothesis",
+          "statement": "The clay/iron-film, stall, and renewed-barite sequence is a disclosed simulator hypothesis for testing cyclic masked growth. It is not presented as a documented Elmwood specimen texture; the locality sources support the barite-bearing paragenesis and episodic mixing, while the layer mechanism is general mineral-ontogeny authority.",
+          "sources": ["Misra & Lu 1992 — Central Tennessee district paragenesis, not an Elmwood coating-texture report", "Hanor 2000, Reviews in Mineralogy and Geochemistry 40 — sulfate-barite fluid mixing, not an Elmwood coating-texture report", "Grigor'ev 1965, Ontogeny of Minerals; Sunagawa 2005, Crystals: Growth, Morphology, and Perfection — general cyclic encrustation and growth-front authority"]
         }
       ],
       "duration_steps": 200,
@@ -432,7 +438,7 @@
         "Paragenesis (Misra & Lu 1992; district consensus): replacement dolomite -> honey-amber sphalerite (main ore) -> purple fluorite + barite (galena minor in Central TN, unlike Tri-State) -> GIANT GOLDEN CALCITE LAST, scalenohedral, stepped faces + phantoms, often perched on sphalerite; bitumen/oil inclusions give the golden body color (the district carries live hydrocarbons).",
         "Mg:Ca ~0.2 — a dolostone-buffered MgCl2-bearing brine (the host IS dolostone; Gratz & Misra report Mg-rich inclusions). Above the 0.15 elongation threshold (GCA 2015 / Phase 4): the form axis makes the late calcite SCALENOHEDRAL at low T, which is exactly what Elmwood grows. Mn kept at 4 (below the manganocalcite branch's >5 gate) with Fe 8 — Elmwood calcite is golden dogtooth, not botryoidal manganocalcite.",
         "The movements are the showcase: a naica-shape cooling trend (120 -> 55°C, the waning system) + a fluid.CO3 PULSE TRAIN in the late half (five gaussian brine-expulsion pulses, the MVT seismic-pumping mechanism — Sibson-style fault-valve episodicity). Each pulse pushes calcite sigma up through the stepped band and relaxes back: the oscillation IS the step-bunching driver (research doc §2 — the steps are the chemistry curve made solid).",
-        "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshot, 2026-07-25 — the region's full mineral list incl. sub-localities, 11 valid): Baryte (+ var. Strontium-bearing Baryte), Calcite, Celestine (+ var. Barium-bearing Celestine), Dolomite, Fluorite, Galena, Marcasite, 'Petroleum var. Bitumen', Pyrite, Quartz, 'Silica', Sphalerite, Vaterite. This is the TERMINAL-VERIFICATION list for this scenario (the specimen-record test): (a) NO gypsum-family mineral — corroborates the boss's selenite ruling ('selenite disappearing is good'), the S2-selenite migration's elmwood death is record-licensed; (b) SIDERITE is NOT on the list but the elmwood-snowball variety guard currently requires it — census flag for a future pass (same de-confabulation family as aragonite v228?); (c) unfired-but-documented at elmwood: marcasite, pyrite, quartz, vaterite, bitumen (the golden-calcite color note already cites the hydrocarbons) — candidates if the scenario ever deepens; (d) Sr-bearing baryte variety on the list supports the S1 sulfate story; Ba-bearing celestine supports the S2 blanket. Boss action noted in the bridge: capture the same mindat list for the other mine scenarios."
+        "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshot, 2026-07-25 — the region's full mineral list incl. sub-localities, 11 valid): Baryte (+ var. Strontium-bearing Baryte), Calcite, Celestine (+ var. Barium-bearing Celestine), Dolomite, Fluorite, Galena, Marcasite, 'Petroleum var. Bitumen', Pyrite, Quartz, 'Silica', Sphalerite, Vaterite. This is the TERMINAL-VERIFICATION list for this scenario: (a) no gypsum-family mineral; (b) siderite is explicitly excluded because the audited inventory does not license it; (c) documented but presently aspirational or unfired phases include marcasite, pyrite, quartz, vaterite and bitumen; (d) Sr-bearing baryte supports the sulfate story and Ba-bearing celestine supports the late blanket. The clay/iron masked-layer sequence is separately and explicitly disclosed as a simulator hypothesis, not inferred from this species list."
       ],
       "initial": {
         "temperature_C": 120.0,
@@ -481,12 +487,12 @@
         }
       },
       "events": [
-        { "step": 15, "type": "fluid_mixing", "name": "Brine Meets Sulfur", "description": "Metal brine meets sulfur-bearing groundwater in the breccia — the honey-sphalerite era begins" },
-        { "step": 28, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 1", "description": "A barium-rich brine pulse lifts barite above its growth threshold; the first generation of blades strikes out from the honey sphalerite" },
-        { "step": 40, "type": "film_coat", "name": "Clay Coat", "description": "Fine clay settles on the barite blades, masking their faces — the next barium pulse must grow through it", "film": { "mineral": "clay", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
-        { "step": 50, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 2", "description": "A fresh barium pulse overtakes the clay film; barite grows a second generation THROUGH it, sealing the coat as an internal snowball horizon" },
-        { "step": 60, "type": "film_coat", "name": "Iron-Oxide Coat", "description": "Iron oxides tint the blade fronts a rusty film — the second masking coat", "film": { "mineral": "iron oxide", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
-        { "step": 68, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 3", "description": "The third barium pulse breaks through the iron-oxide film — a second snowball horizon buried in the blade" },
+        { "step": 15, "type": "elmwood_fluid_mixing", "name": "Elmwood Ore-Brine Mixing", "description": "A Zn-rich Central Tennessee brine enters the collapse breccia; reduced sulfur drives the honey-sphalerite stage while a smaller sulfate inventory remains available for the later barite-celestine succession", "fluid_transform": { "add": { "Zn": 110, "Ca": 70, "F": 22, "Pb": 7, "Fe": 12 }, "flow_rate": 3.5 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfide": 95, "sulfate": 25 } }, "temperature_delta_C": -12, "material_authority": "Gratz & Misra 1987; Misra & Lu 1992 — Elmwood NaCl-CaCl2-MgCl2 ore brine and sphalerite-before-fluorite/barite/calcite paragenesis; sulfur split is an explicit SIM-scale paragenetic endmember, not a measured fluid-inclusion ratio" },
+        { "step": 28, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 1", "description": "A barium-rich sulfate-water pulse lifts barite above its growth threshold; the first generation of blades strikes out from the honey sphalerite", "sulfate_floor_ppm": 106, "material_authority": "Misra & Lu 1992; Hanor 2000, RiMG 40:193 — Elmwood barite records mixing between the Ba-bearing ore brine and an oxidized sulfate-bearing water; 106 ppm sulfate-S is a disclosed SIM-scale pulse floor, not a measured inclusion concentration" },
+        { "step": 40, "type": "elmwood_interpulse_film", "name": "Hypothesized Clay-Coated Hiatus", "description": "MODEL HYPOTHESIS: as the barium feeder wanes, fine clay settles on the stalled barite blades; this exact Elmwood coating texture is not documented, and the next barium pulse tests a general masked-growth mechanism", "barium_target_ppm": 4, "material_authority": "Misra & Lu 1992 and Hanor 2000, RiMG 40:193 support Elmwood barite paragenesis and episodic sulfate-fluid mixing but do not document clay or iron-oxide coatings on Elmwood barite; Grigor'ev 1965 and Sunagawa 2005 provide only the general mineral-ontogeny basis for this disclosed simulator hypothesis; 4 ppm Ba is a SIM-scale target, not a measured inclusion concentration", "film": { "mineral": "clay", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
+        { "step": 50, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 2", "description": "A fresh barium-sulfate pulse overtakes the clay film; barite grows through it, preserving a hypothesized internal masked-growth horizon (a disclosed model experiment, not a documented Elmwood specimen texture)", "sulfate_floor_ppm": 106, "material_authority": "Misra & Lu 1992; Hanor 2000, RiMG 40:193 — Elmwood barite records mixing between the Ba-bearing ore brine and an oxidized sulfate-bearing water; 106 ppm sulfate-S is a disclosed SIM-scale pulse floor, not a measured inclusion concentration" },
+        { "step": 60, "type": "elmwood_interpulse_film", "name": "Hypothesized Iron-Oxide-Coated Hiatus", "description": "MODEL HYPOTHESIS: the barium feeder wanes while iron oxides tint the stalled blade fronts; this exact Elmwood coating texture is not documented and is the second general masked-growth control", "barium_target_ppm": 4, "material_authority": "Misra & Lu 1992 and Hanor 2000, RiMG 40:193 support Elmwood barite paragenesis and episodic sulfate-fluid mixing but do not document clay or iron-oxide coatings on Elmwood barite; Grigor'ev 1965 and Sunagawa 2005 provide only the general mineral-ontogeny basis for this disclosed simulator hypothesis; 4 ppm Ba is a SIM-scale target, not a measured inclusion concentration", "film": { "mineral": "iron oxide", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
+        { "step": 68, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 3", "description": "The third barium-sulfate pulse breaks through the iron-oxide film, preserving a second hypothesized masked-growth horizon in the blade", "sulfate_floor_ppm": 106, "material_authority": "Misra & Lu 1992; Hanor 2000, RiMG 40:193 — Elmwood barite records mixing between the Ba-bearing ore brine and an oxidized sulfate-bearing water; 106 ppm sulfate-S is a disclosed SIM-scale pulse floor, not a measured inclusion concentration" },
         { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault slips — a differential-stress pulse fractures the breccia run" },
         // S2 celestine tranche (SIM 236): the slip drives Sr-charged diagenetic pore water
         // (host-carbonate recrystallization + dolomitization expel Sr — Hanor 2000, RiMG 40)
@@ -494,7 +500,7 @@
         // celestine blanket (the white "glue" of real Elmwood specimens) grows in the late
         // window. Narrow + named per the boss ruling: this event exists ONLY here.
         { "step": 72, "type": "elmwood_diagenetic_sr", "name": "Diagenetic Strontium", "description": "Sr-charged pore water from the recrystallizing host carbonates floods the cooling vug — the celestine stage opens; a white fibrous blanket begins to bind the druse" },
-        { "step": 78, "type": "film_coat", "name": "Final Clay Rind", "description": "A last clay film coats the outermost blades — the snowball's dusty rind, left uncleared as the barium wanes", "film": { "mineral": "clay", "term": 0.45, "prism": 0.45, "minerals": ["barite"] } }
+        { "step": 78, "type": "elmwood_interpulse_film", "name": "Hypothesized Final Clay Rind", "description": "MODEL HYPOTHESIS: the barium feeder wanes for the last time and a clay film remains on the outermost stalled blades; this exact Elmwood coating texture is not documented", "barium_target_ppm": 4, "material_authority": "Misra & Lu 1992 and Hanor 2000, RiMG 40:193 support Elmwood barite paragenesis and episodic sulfate-fluid mixing but do not document clay or iron-oxide coatings on Elmwood barite; Grigor'ev 1965 and Sunagawa 2005 provide only the general mineral-ontogeny basis for this disclosed simulator hypothesis; 4 ppm Ba is a SIM-scale target, not a measured inclusion concentration", "film": { "mineral": "clay", "term": 0.45, "prism": 0.45, "minerals": ["barite"] } }
       ],
       "movements": [
         {
@@ -569,7 +575,6 @@
         { "mineral": "rhodochrosite", "reason": "A plausible Mn-bearing carbonate accessory in a reactivated North Pennine-style vein, subordinate to calcite." },
         { "mineral": "siderite", "reason": "A documented-style Fe-carbonate gangue accessory in northern English fluorite-base-metal veins." },
         { "mineral": "acanthite", "reason": "A minor low-temperature Ag2S accessory permitted by the modeled Ag-bearing reactivation fluid." },
-        { "mineral": "pyrite", "reason": "A common accessory sulfide in the modeled fault-vein paragenesis." },
         { "mineral": "greenockite", "reason": "A minor CdS sink associated with sphalerite-bearing basinal brines; reproducibly delivered across all three evidence seeds but not a defining vein signature." },
         { "mineral": "celestine", "reason": "A subordinate Sr-sulfate response to the sulfate-bearing brine, competing with barite." },
         { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor Ca-sulfate phase in the hot sulfate-bearing first generation across all three evidence seeds; it is an accessory model result, not a headline North Pennine occurrence claim." }
@@ -578,7 +583,8 @@
         { "mineral": "native_silver", "reason": "Rare free silver occurs in the broader Northern Pennine Orefield, but it is not a defining Weardale fluorite-vein phase; the modeled Ag-bearing reactivation fluid produces it in only part of the seed panel." }
       ],
       "aspirational_species": [
-        { "mineral": "chalcedony", "reason": "Late microcrystalline silica remains plausible after cool-fluid reactivation, but no discrete chalcedony appears in the three SIM 272 commissioned seeds." }
+        { "mineral": "pyrite", "reason": "Pyrite is a common accessory in the broader North Pennine fault-vein paragenesis, but the locality-authored valence-separated fluid produces none in the three commissioned seeds. It remains licensed without being advertised as a deterministic outcome." },
+        { "mineral": "chalcedony", "reason": "Late microcrystalline silica remains plausible after cool-fluid reactivation, but no discrete chalcedony appears in the three SIM 273 commissioned seeds." }
       ],
       "duration_steps": 160,
       // FLUID-SPOTS Phase 2d DEMONSTRATOR — the seeded feeders deposition-cluster
@@ -651,7 +657,7 @@
         }
       },
       "events": [
-        { "step": 20,  "type": "fluid_mixing",            "name": "Ascending Brine",   "description": "Stage-1 brine meets groundwater — fluorite + galena + barite at the open feeders" },
+        { "step": 20,  "type": "reactivated_vein_fluid_mixing", "name": "North Pennine Stage-1 Brine", "description": "An authored F-Ca-Pb-Zn feeder brine mixes at the open fracture; reduced and oxidized sulfur are separate modeled endmembers for sulfide ore and sulfate gangue", "fluid_transform": { "add": { "Zn": 150, "Ca": 100, "F": 40, "Pb": 25, "Fe": 15 }, "flow_rate": 4 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfide": 75, "sulfate": 45 } }, "temperature_delta_C": -20, "material_authority": "Dunham 1990; Bouch et al. 2006; Bons, Elburg & Gomez-Rivas 2012 — North Pennine multi-stage F-Ba-Pb-Zn vein-fluid mixing; deliberately modeled archetype with disclosed SIM-scale sulfur endmembers" },
         { "step": 60,  "type": "fluid_pulse",             "name": "Second Pulse",       "description": "A second F-Ca-carbonate feeder pulse sustains stage-1 growth", "fluid_transform": { "add": { "F": 20, "Ca": 50, "CO3": 30, "Ba": 10 }, "flow_rate": 5 }, "material_authority": "Dunham 1990; Bons, Elburg & Gomez-Rivas 2012 — North Pennine crack-seal mineralizing brine" },
         { "step": 78,  "type": "reactivated_vein_seal",   "name": "Feeder Sealed",      "description": "Cement chokes the fracture — the vug goes quiet", "spots": "seal" },
         { "step": 118, "type": "reactivated_vein_breach", "name": "Acidic Reopening Wash", "description": "Tectonic uplift breaches the feeder. A 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue transfers Godinho et al.'s {100} rate; the ΔG≤−7 far-field gate is a mineral-level transfer from Cama et al.'s {111}, pH 2 experiment, not its rate. Fixed-pH closed return differs from Godinho's renewed NaClO4 bath and carries unquantified systematic uncertainty.", "spots": "breach",
@@ -1109,7 +1115,20 @@
       "deterministic_species": [
         { "mineral": "aragonite", "reason": "A plausible high-Mg shallow-brine CaCO3 polymorph during the sabkha flood/evaporation cycles." },
         { "mineral": "calcite", "reason": "A common carbonate competitor in sabkha pore fluids and the limestone substrate." },
-        { "mineral": "celestine", "reason": "A minor Sr-sulfate evaporite accessory permitted by the concentrated marine-derived brine." }
+        { "mineral": "celestine", "reason": "A minor Sr-sulfate evaporite accessory permitted by the concentrated marine-derived brine." },
+        { "mineral": "HMC", "reason": "Disordered high-Mg calcite is the expected metastable cement/precursor during measured-domain marine-brine intervals before repeated dissolution-precipitation cycles order part of the Ca-Mg carbonate inventory as dolomite." }
+      ],
+      "claim_citations": [
+        {
+          "claim_id": "sabkha-hmc-layered-precursor",
+          "statement": "High-Mg calcite is admitted only where the measured parent-fluid partition domain resolves a 4-30 mol% Mg shell; every accepted shell records its actual Ca-Mg formula and nonideal solid-solution assessment.",
+          "sources": ["Mucci & Morse 1983, Geochimica et Cosmochimica Acta 47:217-233", "Mucci 1987, Geochimica et Cosmochimica Acta 51:1977-1984", "Bischoff, Mackenzie & Bishop 1987, Geochimica et Cosmochimica Acta 51:1413-1423"]
+        },
+        {
+          "claim_id": "sabkha-cyclic-dolomite-ordering",
+          "statement": "Repeated dissolution-precipitation cycling can remove kinetic defects and permit low-temperature ordered dolomite growth; the scenario records HMC and dolomite as distinct layered products rather than silently treating one as the other.",
+          "sources": ["Kim, Sun et al. 2023, Science 382:915-920, doi:10.1126/science.adi3690"]
+        }
       ],
       "duration_steps": 260,
       "notes": [
@@ -1582,7 +1601,7 @@
         { "mineral": "marcasite", "reason": "District-documented Fe sulfide; retained as an accessory at the hypogene-to-weathering transition.", "first_step_min": 65 },
         { "mineral": "acanthite", "reason": "District-documented Ag2S phase produced when the early argentite parent crosses its low-temperature inversion.", "first_step_min": 65 },
         { "mineral": "goethite", "reason": "District-documented iron oxyhydroxide in the oxidized and post-mining assemblages.", "first_step_min": 65 },
-        { "mineral": "cuprite", "reason": "District-documented supergene copper oxide and an authored mantle on native copper.", "first_step_min": 65 },
+        { "mineral": "cuprite", "reason": "District-documented supergene copper oxide, admitted independently when the oxidized fluid crosses its own gate; this scenario does not claim a mass-balanced cuprite mantle on native copper.", "first_step_min": 65 },
         { "mineral": "hematite", "reason": "District-documented iron oxide accessory in the weathered system.", "first_step_min": 65 },
         { "mineral": "opal", "reason": "District-documented hydrated silica product during the supergene silica redistribution.", "first_step_min": 65 },
         { "mineral": "atacamite", "reason": "The district-wide inventory documents atacamite; it is retained as an arid chloride accessory rather than confused with the Copper Queen-only paratacamite list.", "first_step_min": 65 },
@@ -1746,7 +1765,7 @@
         { "step": 65,  "type": "bisbee_uplift_weathering",   "name": "Uplift + Weathering", "description": "Meteoric acid strips primary ore" },
         { "step": 95,  "type": "bisbee_enrichment_blanket",  "name": "Enrichment Blanket",  "description": "Chalcocite replaces chalcopyrite" },
         { "step": 120, "type": "bisbee_reducing_pulse",      "name": "Reducing Pulse",      "description": "Native copper fracture fillings" },
-        { "step": 145, "type": "bisbee_oxidation_zone",      "name": "Oxidation Zone",      "description": "Cuprite mantles native copper" },
+        { "step": 145, "type": "bisbee_oxidation_zone",      "name": "Oxidation Zone",      "description": "Oxidative Cu retreat; independently gated cuprite" },
         { "step": 180, "type": "bisbee_azurite_peak",        "name": "Azurite Peak",        "description": "High-pCO2 monsoon — Bisbee Blue" },
         { "step": 225, "type": "bisbee_co2_drop",            "name": "pCO2 Drop",           "description": "Azurite -> malachite conversion" },
         { "step": 265, "type": "bisbee_silica_seep",         "name": "Silica Seep",         "description": "Chrysocolla crusts + pseudomorphs" },

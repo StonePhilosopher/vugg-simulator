@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 272**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 277**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -60,6 +60,62 @@ and the exact-execution evidence receipt.
   promise.
 - Idle mode now reports fresh zero-volume nuclei and inactive capped/buried
   solids without treating dissolved crystals as booked pie-chart volume.
+- Enclosure now requires the host to deposit a real positive layer in the
+  exact step that records the swallow, with net material gain after any
+  same-step etch. A large dormant crystal can no longer turn a newly slowing
+  or dissolving neighbor into an inclusion by size and proximity alone.
+  Competing hosts are resolved substrate-first rather than by array order, and
+  every accepted enclosure now reaches authenticated strips and claim cards.
+  Geometric-selection “burial” is explicitly a growth-front shadow, not an
+  impermeable chemical seal: shadowed solids still accept ordinary and
+  evidence-bounded physical fluid attack, and the shadow state is part of the
+  replay fingerprint because it controls future positive growth.
+  A physical inclusion now withholds transformation, heterogeneous substrate,
+  film deposition, and physical etching only when host topology, the guest
+  receipt, and a strictly chronological enclosure/liberation stream agree;
+  bare or stale display flags remain chemically accessible.
+  An enclosing host may still transform in place without exposing its guest,
+  but only through an append-only, replay-bound lineage receipt: CaSO4
+  replacements prove their phase boundary, saturation, water transfer, and
+  Ca/sulfate closure; birnessite-to-todorokite proves its zone-level Mn/Mg
+  allocation; cooling paramorphs and light isomerization prove their measured
+  trigger. A renamed mineral label alone cannot act as a chemical seal.
+  Exact substrate identity can authorize a sub-millimetre overgrowth while the
+  0.5 mm minimum remains fail-closed for uncertain lateral footprint overlap.
+  The seed-42 Bisbee path consequently records five oxidative native-copper
+  shell losses before a growing chrysocolla rooted on that copper encloses the
+  surviving core at step 154.
+- Morphology testimony now covers every accepted positive layer in the
+  registered mineral families. A finite post-step interface depleted below
+  saturation is retained and labeled as terminal-depleted rather than being
+  mistaken for the growth-admission condition; non-finite sampling produces
+  an explicit unavailable receipt. Invalid derived morphology is likewise
+  unavailable, and a shell completely erased in its growth step is retained
+  as history without inventing a surviving crystal interface. The corrected MVT pyrite record is a
+  smooth-to-finely-striated stack, with no manufactured macrostep rind.
+- Chalcanthite's exceptional low-salinity/high-pH water-solubility decay now
+  shares the same physical enclosure authority as the general chemistry paths. Authored size caps,
+  growth-front burial, and stale inactive display flags remain pore-fluid
+  accessible; only reciprocal, receipted, chronological enclosure topology
+  can withhold the mass-balanced Cu and sulfate return. The decay gate and its
+  narration now read that crystal's exact wall-cell fluid (ring and bulk are
+  explicit fallbacks), matching the local reservoir that receives the return.
+- Enclosure/liberation lifecycle receipts are replay-authenticated and exported
+  with host/guest identity, route, distance/reach, same-step host material,
+  guest core/loss/remaining closure, and any growth-front film reversal.
+  Partial host retreat can liberate a guest before total host destruction.
+  Guest and host sizes are derived from accepted non-phantom solid rather than
+  display totals. Front films retain ordered dust/enclosure source operations,
+  so liberation removes only its own effective (possibly cap-limited)
+  contribution and preserves later dust or other guests. Zero/phantom-only
+  guests, phantom or net-zero host layers, and array-order host preemption are
+  rejected by focused controls.
+- Removed the unsupported Bisbee cuprite-mantle/nested-shell narration. Native
+  copper oxidation is booked as Cu loss; cuprite and later carbonates remain
+  independently gated phases unless a future researched transformation books
+  a linked product. Corrected the false claim that the Statue of Liberty's
+  patina is malachite to the XRD-supported cuprite + basic copper
+  sulfate/chloride assemblage.
 - The exact-browser/execution science receipt must be freshly rebaked after
   the source tree is quiescent. A matching SIM number alone is never treated
   as proof that old evidence executed these bytes.
@@ -107,6 +163,55 @@ and the exact-execution evidence receipt.
   HMC competition consume its actual layer formula instead of a fixed 90/10
   proxy. Strip archives and claim cards now retain layer formula, hydration,
   habit, transformation-boundary, and competition-allocation testimony.
+
+## SIM 274 — causal Elmwood barite masked-layer hypothesis
+
+- Corrected Elmwood's staged barite events to raise the explicit sulfate
+  reservoir instead of the derived combined-sulfur compatibility field. The
+  sulfate-water import is now visible in the sulfur ledger and cannot inflate
+  sulfide phases.
+- Made each clay/iron-oxide film a real low-Ba depositional hiatus. Later Ba
+  pulses are independently booked and break the preceding film at the next
+  authored stage, producing two positive-growth internal horizons; the final
+  low-Ba clay rind remains uncleared. Every Ba replacement/recharge and sulfate
+  import is spatially propagated and ledger-tested.
+- Disclosed the clay/iron masked-layer sequence as a simulator hypothesis based
+  on general mineral-ontogeny mechanics, not a documented Elmwood specimen
+  texture. Authenticated strips and claim cards now retain every generic fluid
+  boundary transaction, each horizon's source film/coverage/step, and the
+  terminal surface rind.
+- Reconciled the Elmwood fluorite guard with its locality-owned Gratz-Misra
+  brine. The former ~22 mm result depended on an uncited Cave-in-Rock material
+  package; the corrected seed-42 crystal remains specimen-scale at ~10.4 mm
+  without importing another locality's Ca/F inventory. Its accepted layers
+  remain smooth under that brine; the late CO3/pH pulse train is retained as
+  the cited stepped-calcite driver rather than being misreported as a fluorite
+  morphology mechanism.
+
+## SIM 273 — commissioned locality, transformation, and boundary authority
+
+- Reconciled every positive locality licence against the three-seed production
+  census without turning an undocumented or absent phase into a deterministic
+  promise. Elmwood anhydrite is now explicitly excluded; North Pennine pyrite
+  remains licensed but aspirational rather than falsely guaranteed.
+- Replaced shared material-bearing ambient pulses with owner-bound, cited
+  locality events; canonical locality chemistry, scenario authoring, browser
+  runtime, and the narrower headless agent boundary now agree on explicit
+  sulfate and sulfide reservoirs.
+- Required real parent loss and a matching route for replacement-outline
+  inheritance, redistributed unused shared-reagent allocations, and used each
+  HMC layer's actual Ca/Mg formula during competition. Transformation-only
+  products retain booked-layer acid dissolution without acquiring a fictitious
+  independent growth path.
+- Added an authenticated production-mechanism witness for all four
+  transformation-only reactivity controls. Claim cards link each control only
+  through an executed transformation product or an executed surviving parent,
+  so a locality seed is never misrepresented as having crossed a controlled
+  counterfactual boundary.
+- Modeled the Reactivated Fluorite Vein wash and recharge as exact open-system
+  pore-fluid replacements. Sulfide, sulfate, and elemental sulfur exported by
+  the wash are now booked from every spatial fluid before the replacement is
+  applied, closing the sulfur ledger instead of silently deleting inventory.
 
 ## SIM 271 — bounded production use of the raw PWP affinity
 

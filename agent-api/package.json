@@ -7,7 +7,7 @@
     "vugg-agent": "./vugg-agent.js"
   },
   "scripts": {
-    "test": "echo '{\"cmd\":\"help\"}' | node vugg-agent.js"
+    "test": "node smoke-test.js"
   },
   "dependencies": {
     "canvas": "^2.11.0"

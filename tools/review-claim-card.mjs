@@ -31,6 +31,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertStripIdentity } from './strip-identity.mjs';
+import { verifyMechanismWitnessArtifact } from './gen-mechanism-witnesses.mjs';
+import { reduceEnclosureLifecycle } from './enclosure-evidence.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -221,14 +223,216 @@ function buildSulfurLedgerTestimony(samples) {
   };
 }
 
-function buildExecutedScienceTestimony(strip) {
+function buildFluidBoundaryTestimony(samples) {
+  const transactions = Array.isArray(samples) ? samples : [];
+  const closedTransactionCount = transactions.filter((row) => row?.closed === true).length;
+  return {
+    source: 'archived declared non-sulfur fluid-boundary transactions; exact rows are authenticated by the strip SHA-256',
+    transaction_count: transactions.length,
+    closed_transaction_count: closedTransactionCount,
+    all_closed: transactions.length ? closedTransactionCount === transactions.length : null,
+    transactions,
+  };
+}
+
+const MORPHOLOGY_REGIMES = new Set([
+  'spiral_smooth', 'stepped_mild', 'stepped_macro',
+  'hopper_skeletal', 'dendritic',
+]);
+
+function evidenceMorphologyRegime(thresholds, surfaceSigma, label) {
+  const keys = ['SPIRAL_MAX', 'STEP_MILD_MAX', 'STEP_MACRO_MAX', 'HOPPER_MAX'];
+  if (!thresholds || keys.some((key) => !Number.isFinite(thresholds[key]))) {
+    throw new Error(`[card] ${label} has no finite morphology threshold authority`);
+  }
+  if (surfaceSigma < thresholds.SPIRAL_MAX) return 'spiral_smooth';
+  if (surfaceSigma < thresholds.STEP_MILD_MAX) return 'stepped_mild';
+  if (surfaceSigma < thresholds.STEP_MACRO_MAX) return 'stepped_macro';
+  if (surfaceSigma < thresholds.HOPPER_MAX) return 'hopper_skeletal';
+  return 'dendritic';
+}
+
+export function buildMorphologyLayerTestimony(layerGrowth, morphRegistry) {
+  if (!morphRegistry || typeof morphRegistry !== 'object') {
+    throw new Error('[card] missing MORPH_TH registry required to authenticate morphology layers');
+  }
+  const tenantMinerals = Object.keys(morphRegistry).sort();
+  const tenants = new Set(tenantMinerals);
+  const lastZoneIndexByCrystal = new Map();
+  const lastStepByCrystal = new Map();
+  const physicalRemainingByCrystal = new Map();
+  for (const [index, row] of layerGrowth.entries()) {
+    if (!row || typeof row !== 'object'
+        || typeof row.step !== 'number' || !Number.isSafeInteger(row.step) || row.step < 0
+        || typeof row.crystal_id !== 'number' || !Number.isSafeInteger(row.crystal_id)
+        || row.crystal_id <= 0
+        || typeof row.zone_index !== 'number' || !Number.isSafeInteger(row.zone_index)
+        || row.zone_index < 0
+        || typeof row.mineral !== 'string' || row.mineral.length === 0
+        || typeof row.thickness_um !== 'number' || !Number.isFinite(row.thickness_um)
+        || typeof row.is_phantom !== 'boolean') {
+      throw new Error(`[card] layer ${index} has a noncanonical identity, zone, mineral, thickness, or phantom schema`);
+    }
+    const lastZoneIndex = lastZoneIndexByCrystal.get(row.crystal_id);
+    const lastStep = lastStepByCrystal.get(row.crystal_id);
+    if ((lastZoneIndex == null && row.zone_index !== 0)
+        || (lastZoneIndex != null && row.zone_index !== lastZoneIndex + 1)) {
+      throw new Error(`[card] crystal ${row.crystal_id} layer zone indices are not contiguous from zero`);
+    }
+    if (lastStep != null && row.step < lastStep) {
+      throw new Error(`[card] crystal ${row.crystal_id} layer steps move backward`);
+    }
+    const priorPhysicalUm = physicalRemainingByCrystal.get(row.crystal_id) || 0;
+    const signedPhysicalUm = row.thickness_um > 0
+      ? (row.is_phantom ? 0 : row.thickness_um)
+      : row.thickness_um;
+    const nextPhysicalUm = priorPhysicalUm + signedPhysicalUm;
+    const prefixToleranceUm = Math.max(1e-9, Math.abs(priorPhysicalUm) * 1e-12);
+    if (nextPhysicalUm < -prefixToleranceUm) {
+      throw new Error(`[card] crystal ${row.crystal_id} has a negative physical-solid inventory prefix`);
+    }
+    lastZoneIndexByCrystal.set(row.crystal_id, row.zone_index);
+    lastStepByCrystal.set(row.crystal_id, row.step);
+    physicalRemainingByCrystal.set(row.crystal_id, Math.max(0, nextPhysicalUm));
+  }
+  const positiveLayers = layerGrowth.filter((row) =>
+    row.thickness_um > 0 && tenants.has(row.mineral));
+  const classifiedLayers = [];
+  const unavailableLayers = [];
+  const terminalDepletedLayers = [];
+  const regimeCounts = {};
+  const basisCounts = {};
+
+  for (const row of positiveLayers) {
+    const morphology = row?.morphology;
+    const label = `${row?.mineral || 'unknown'} crystal ${row?.crystal_id ?? '?'} step ${row?.step ?? '?'}`;
+    if (!morphology || typeof morphology !== 'object') {
+      throw new Error(`[card] ${label} has positive growth without morphology testimony`);
+    }
+    if (morphology.status === 'classified') {
+      const basis = morphology.sigma_basis;
+      const postStepSigma = morphology.post_step_sigma;
+      if (!['post-step', 'post-step-terminal-depleted'].includes(basis)
+          || !Number.isFinite(postStepSigma)
+          || !Number.isFinite(morphology.surface_sigma)
+          || !MORPHOLOGY_REGIMES.has(morphology.regime)
+          || typeof morphology.form !== 'string' || morphology.form.length === 0
+          || morphology.unavailable_reason !== null) {
+        throw new Error(`[card] ${label} has incomplete classified morphology testimony`);
+      }
+      if ((basis === 'post-step-terminal-depleted') !== (postStepSigma < 1)) {
+        throw new Error(`[card] ${label} morphology depletion basis disagrees with post-step sigma`);
+      }
+      const expectedRegime = evidenceMorphologyRegime(
+        morphRegistry[String(row.mineral)], morphology.surface_sigma, label,
+      );
+      if (morphology.regime !== expectedRegime) {
+        throw new Error(`[card] ${label} recorded regime disagrees with its threshold authority and surface sigma`);
+      }
+      classifiedLayers.push(row);
+      regimeCounts[morphology.regime] = (regimeCounts[morphology.regime] || 0) + 1;
+      basisCounts[basis] = (basisCounts[basis] || 0) + 1;
+      if (basis === 'post-step-terminal-depleted') terminalDepletedLayers.push(row);
+      continue;
+    }
+    if (morphology.status === 'unavailable-nonfinite-post-step') {
+      if (morphology.sigma_basis !== 'post-step-unavailable'
+          || morphology.unavailable_reason !== 'nonfinite-post-step-sigma'
+          || morphology.post_step_sigma !== null
+          || morphology.surface_sigma !== null
+          || morphology.regime !== null
+          || morphology.form !== null) {
+        throw new Error(`[card] ${label} has malformed unavailable morphology testimony`);
+      }
+      unavailableLayers.push(row);
+      basisCounts['post-step-unavailable'] = (basisCounts['post-step-unavailable'] || 0) + 1;
+      continue;
+    }
+    if (morphology.status === 'unavailable-derived-morphology') {
+      const basis = morphology.sigma_basis;
+      if (!['post-step', 'post-step-terminal-depleted'].includes(basis)
+          || !Number.isFinite(morphology.post_step_sigma)
+          || (basis === 'post-step-terminal-depleted') !== (morphology.post_step_sigma < 1)
+          || ![
+            'nonfinite-effective-sigma-multiplier',
+            'nonfinite-surface-sigma',
+            'missing-crystallographic-form',
+          ].includes(morphology.unavailable_reason)
+          || morphology.surface_sigma !== null
+          || morphology.regime !== null
+          || morphology.form !== null) {
+        throw new Error(`[card] ${label} has malformed derived-unavailable morphology testimony`);
+      }
+      unavailableLayers.push(row);
+      basisCounts[basis] = (basisCounts[basis] || 0) + 1;
+      continue;
+    }
+    if (morphology.status === 'unavailable-no-surviving-interface') {
+      if (morphology.unavailable_reason !== 'no-surviving-interface-after-same-step-dissolution'
+          || morphology.sigma_basis !== 'post-step-no-solid-interface'
+          || morphology.post_step_sigma !== null
+          || morphology.surface_sigma !== null
+          || morphology.regime !== null
+          || morphology.form !== null) {
+        throw new Error(`[card] ${label} has malformed no-surviving-interface morphology testimony`);
+      }
+      const sameCrystalThroughStep = layerGrowth.filter((candidate) =>
+        candidate.crystal_id === row.crystal_id && candidate.step <= row.step);
+      const physicalPositiveUm = sameCrystalThroughStep.reduce((sum, candidate) =>
+        sum + (candidate.thickness_um > 0 && candidate.is_phantom === false
+          ? candidate.thickness_um : 0), 0);
+      const physicalLossUm = sameCrystalThroughStep.reduce((sum, candidate) =>
+        sum + (candidate.thickness_um < 0 ? Math.abs(candidate.thickness_um) : 0), 0);
+      const sameStepLossUm = layerGrowth.reduce((sum, candidate) =>
+        sum + (candidate.crystal_id === row.crystal_id
+          && candidate.step === row.step
+          && candidate.zone_index > row.zone_index
+          && candidate.thickness_um < 0
+          ? Math.abs(candidate.thickness_um) : 0), 0);
+      const closureToleranceUm = Math.max(1e-9, physicalPositiveUm * 1e-12);
+      const remainingSolidUm = physicalPositiveUm - physicalLossUm;
+      if (typeof row.remaining_solid_um !== 'number'
+          || !Number.isFinite(row.remaining_solid_um)
+          || row.remaining_solid_um < 0
+          || row.remaining_solid_um > closureToleranceUm
+          || !(sameStepLossUm > 0)
+          || Math.abs(remainingSolidUm) > closureToleranceUm) {
+        throw new Error(`[card] ${label} claims no surviving interface without `
+          + 'same-step physical dissolution and signed solid-inventory closure');
+      }
+      unavailableLayers.push(row);
+      basisCounts['post-step-no-solid-interface'] =
+        (basisCounts['post-step-no-solid-interface'] || 0) + 1;
+      continue;
+    }
+    throw new Error(`[card] ${label} has an unknown morphology testimony status`);
+  }
+
+  return {
+    source: 'all positive layers for MORPH_TH-registered minerals; exact rows are authenticated by the strip SHA-256',
+    tenant_minerals: tenantMinerals,
+    positive_layer_count: positiveLayers.length,
+    classified_layer_count: classifiedLayers.length,
+    unavailable_layer_count: unavailableLayers.length,
+    terminal_depleted_layer_count: terminalDepletedLayers.length,
+    regime_counts: regimeCounts,
+    basis_counts: basisCounts,
+    terminal_depleted_layers: terminalDepletedLayers,
+    unavailable_layers: unavailableLayers,
+  };
+}
+
+function buildExecutedScienceTestimony(strip, science) {
   const pressurePhase = strip.executed_testimony?.pressure_phase || [];
   const stressEvents = strip.executed_testimony?.stress_events || [];
   const transformations = strip.executed_testimony?.transformations || [];
   const carbonateBoundary = strip.executed_testimony?.carbonate_boundary || [];
   const sulfurLedger = strip.executed_testimony?.sulfur_ledger || [];
+  const fluidBoundary = strip.executed_testimony?.fluid_boundary || [];
+  const enclosures = strip.executed_testimony?.enclosures || [];
   const layerGrowth = strip.executed_testimony?.layer_growth || [];
   const habitMorphology = strip.executed_testimony?.habit_morphology || [];
+  const enclosureLifecycle = reduceEnclosureLifecycle(enclosures);
   const al2Counts = {};
   let aragoniteSecureSteps = 0;
   for (const sample of pressurePhase) {
@@ -265,6 +469,16 @@ function buildExecutedScienceTestimony(strip) {
       samples: carbonateBoundary,
     },
     sulfur_ledger: buildSulfurLedgerTestimony(sulfurLedger),
+    fluid_boundary: buildFluidBoundaryTestimony(fluidBoundary),
+    enclosures: {
+      source: 'accepted host-over-guest and later liberation events from the archived executed run',
+      event_count: enclosures.length,
+      accepted_enclosure_count: enclosureLifecycle.accepted_enclosure_count,
+      liberation_count: enclosureLifecycle.liberation_count,
+      current_inclusion_count: enclosureLifecycle.current_inclusions.length,
+      current_inclusions: enclosureLifecycle.current_inclusions,
+      events: enclosures,
+    },
     crystal_layers: {
       source: 'accepted growth-zone stack from the archived executed run',
       layer_count: layerGrowth.length,
@@ -272,15 +486,50 @@ function buildExecutedScienceTestimony(strip) {
       solid_solution_layers: layerGrowth.filter((z) => z?.solid_solution),
       binding_competition_allocations: layerGrowth.filter((z) => z?.competition_allocation),
       reactive_transformation_layers: layerGrowth.filter((z) => z?.transformation_reactivity),
+      masked_horizons: layerGrowth.filter((z) => z?.masked_horizon),
+      morphology: buildMorphologyLayerTestimony(layerGrowth, science?.MORPH_TH),
     },
     habit_morphology: {
       source: 'final physical crystal state from the archived executed run',
       crystals: habitMorphology,
+      surface_films: habitMorphology.filter((crystal) => crystal?.surface_film),
     },
   };
 }
 
-export function buildCard(name, spec, strip, science, { stripSha256 = null } = {}) {
+function transformationReactivityCommissioning(scenario, strip, artifact) {
+  if (!artifact) return null;
+  const products = new Set((strip.executed_testimony?.transformations || [])
+    .map(event => event?.to)
+    .filter(Boolean));
+  const finalMinerals = new Set((strip.executed_testimony?.habit_morphology || [])
+    .map(crystal => crystal?.mineral)
+    .filter(Boolean));
+  const controls = (artifact.payload?.transformation_reactivity || [])
+    .filter(control => control?.claim_card_scenario === scenario);
+  for (const control of controls) {
+    if (control.claim_card_link === 'executed-transformation-product'
+        && !products.has(control.mineral)) {
+      throw new Error(`${scenario}: ${control.mineral} commissioning link lacks an executed transformation product`);
+    }
+    if (control.claim_card_link === 'executed-surviving-parent'
+        && !finalMinerals.has(control.parent_mineral)) {
+      throw new Error(`${scenario}: ${control.mineral} commissioning link lacks surviving ${control.parent_mineral}`);
+    }
+  }
+  return {
+    role: 'controlled production-engine boundary; not a locality trajectory',
+    artifact_schema: artifact.schema,
+    artifact_payload_sha256: artifact.payload_sha256,
+    link_authority: 'artifact-authored scenario route, verified against executed product or surviving parent',
+    controls,
+  };
+}
+
+export function buildCard(name, spec, strip, science, {
+  stripSha256 = null,
+  mechanismWitnessArtifact = null,
+} = {}) {
   const para = paragenesis(strip);
   const present = new Set(para.map((p) => p.mineral));
   const expects = spec.expects_species || [];
@@ -377,7 +626,11 @@ export function buildCard(name, spec, strip, science, { stripSha256 = null } = {
       excluded_species_appearances: excludedAppearances,
       environment: env,
       saturation_indices: si,
-      executed_science: buildExecutedScienceTestimony(strip),
+      executed_science: {
+        ...buildExecutedScienceTestimony(strip, science),
+        transformation_reactivity_commissioning:
+          transformationReactivityCommissioning(name, strip, mechanismWitnessArtifact),
+      },
     },
   };
 }
@@ -490,6 +743,23 @@ export function renderMarkdown(card) {
   } else {
     L.push('  - Mineral transformations: none executed.');
   }
+  const commissioning = ex.transformation_reactivity_commissioning;
+  if (commissioning) {
+    L.push(`  - Transformation reactivity commissioning: ${commissioning.role}; `
+      + `artifact ${commissioning.artifact_schema}/${commissioning.artifact_payload_sha256}.`);
+    if (commissioning.controls.length) {
+      for (const control of commissioning.controls) {
+        L.push(`    - ${control.mineral}: neutral positive growth=${control.positive_growth_above_boundary}; `
+          + `acid boundary pH ${control.pH_threshold}, control pH ${control.control_pH}; `
+          + `etch=${control.accepted_etch.thickness_um} µm; `
+          + `formula=${JSON.stringify(control.parent_shell.formula_stoichiometry)}; `
+          + `returned=${JSON.stringify(control.accepted_etch.returned_budget_inventory)}; `
+          + `closure error=${JSON.stringify(control.closure_error_ppm)}.`);
+      }
+    } else {
+      L.push('    - No controlled reactivity witness is applicable to a transformation product in this locality run.');
+    }
+  }
   if (ex.carbonate_boundary.sample_count) {
     const first = ex.carbonate_boundary.first;
     const last = ex.carbonate_boundary.last;
@@ -500,6 +770,48 @@ export function renderMarkdown(card) {
       + `blocked=${last.blocked}; failed latest transactions=${failed}; uncertainties=${JSON.stringify(last.uncertainties || [])}`);
   } else {
     L.push('  - Conserved carbonate boundary: not enabled for this archived run.');
+  }
+  const fluidBoundary = ex.fluid_boundary;
+  L.push('');
+  L.push('## Declared non-sulfur fluid-boundary transactions (archived run)');
+  L.push(`**Source:** ${fluidBoundary.source}`);
+  if (fluidBoundary.transaction_count) {
+    L.push(`  - Closure: ${fluidBoundary.closed_transaction_count}/${fluidBoundary.transaction_count} transactions; `
+      + `all_closed=${fluidBoundary.all_closed}.`);
+    for (const tx of fluidBoundary.transactions) {
+      L.push(`  - Step ${tx.step}: closed=${tx.closed}; declarations=${JSON.stringify(tx.declarations || [])}; `
+        + `testimony=${JSON.stringify(tx.testimony || [])}.`);
+    }
+  } else {
+    L.push('  - No declared non-sulfur fluid-boundary transaction was executed.');
+  }
+  const enclosures = ex.enclosures;
+  L.push('');
+  L.push('## Crystal enclosure receipts (archived run)');
+  L.push(`**Source:** ${enclosures.source}`);
+  if (enclosures.event_count) {
+    for (const receipt of enclosures.events) {
+      if (receipt.event === 'liberated') {
+        L.push(`  - Step ${receipt.step}: ${receipt.guest_mineral} #${receipt.guest_crystal_id} liberated `
+          + `from ${receipt.host_mineral} #${receipt.host_crystal_id}; original enclosure step=`
+          + `${receipt.enclosure_step}; host size/threshold/current=`
+          + `${receipt.host_size_at_enclosure_um}/${receipt.liberation_threshold_um}/`
+          + `${receipt.host_current_growth_um} µm; host still solid=${receipt.host_still_has_solid}; `
+          + `front-film contribution removed=${receipt.front_film_contribution_removed}.`);
+      } else {
+        L.push(`  - Step ${receipt.step}: ${receipt.host_mineral} #${receipt.host_crystal_id} enclosed `
+          + `${receipt.guest_mineral} #${receipt.guest_crystal_id}; route=${receipt.route}; `
+          + `host net layer=${receipt.host_same_step_net_growth_um} µm; `
+          + `distance/reach=${receipt.anchor_distance_mm}/${receipt.footprint_reach_mm} mm; `
+          + `size ratio=${receipt.size_ratio}; guest recent=${receipt.guest_recent_growth_um} µm; `
+          + `guest core/loss/remaining=${receipt.guest_positive_core_um}/${receipt.guest_loss_um}/`
+          + `${receipt.guest_remaining_growth_um} µm; partial loss=${receipt.guest_partially_dissolved}.`);
+      }
+    }
+    L.push(`  - Final inclusion status: ${enclosures.current_inclusion_count} current; `
+      + `${enclosures.accepted_enclosure_count} accepted and ${enclosures.liberation_count} liberated.`);
+  } else {
+    L.push('  - No host-over-guest enclosure was accepted in this run.');
   }
   const sulfur = ex.sulfur_ledger;
   L.push('');
@@ -529,7 +841,23 @@ export function renderMarkdown(card) {
   const layers = ex.crystal_layers;
   L.push(`  - Accepted layers: ${layers.layer_count}; formula-bearing=${layers.formula_layers.length}; `
     + `solid-solution=${layers.solid_solution_layers.length}; binding competition=${layers.binding_competition_allocations.length}; `
-    + `reactive transformation etches=${layers.reactive_transformation_layers.length}.`);
+    + `reactive transformation etches=${layers.reactive_transformation_layers.length}; `
+    + `masked horizons=${layers.masked_horizons.length}.`);
+  const morphology = layers.morphology;
+  L.push(`  - Registered-mineral morphology: positive=${morphology.positive_layer_count}; `
+    + `classified=${morphology.classified_layer_count}; unavailable=${morphology.unavailable_layer_count}; `
+    + `terminal-depleted=${morphology.terminal_depleted_layer_count}; `
+    + `regimes=${JSON.stringify(morphology.regime_counts)}; bases=${JSON.stringify(morphology.basis_counts)}.`);
+  for (const row of morphology.terminal_depleted_layers) {
+    L.push(`  - Terminal-depleted morphology crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
+      + `post-step sigma=${row.morphology.post_step_sigma}; surface sigma=${row.morphology.surface_sigma}; `
+      + `regime=${row.morphology.regime}; form=${row.morphology.form}.`);
+  }
+  for (const row of morphology.unavailable_layers) {
+    L.push(`  - Unavailable morphology crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
+      + `${row.morphology.status}/${row.morphology.unavailable_reason} `
+      + `(${row.morphology.sigma_basis}).`);
+  }
   for (const row of layers.solid_solution_layers) {
     L.push(`  - Solid-solution layer crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
       + `formula=${JSON.stringify(row.formula_stoichiometry)}; model=${JSON.stringify(row.solid_solution)}.`);
@@ -538,10 +866,19 @@ export function renderMarkdown(card) {
     L.push(`  - Competition crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
       + `${JSON.stringify(row.competition_allocation)}.`);
   }
+  for (const row of layers.masked_horizons) {
+    L.push(`  - Masked horizon crystal ${row.crystal_id}, film step ${row.originating_film_step}, `
+      + `breakthrough step ${row.step}: ${row.mineral} through ${row.film_mineral}; `
+      + `coverage term/prism=${row.masked_phi_term}/${row.masked_phi_prism}; thickness=${row.thickness_um} µm.`);
+  }
   for (const crystal of ex.habit_morphology.crystals) {
     L.push(`  - Habit crystal ${crystal.crystal_id}: ${crystal.mineral}; ${crystal.habit}; `
       + `extent=${crystal.extent_kind}; forms=${JSON.stringify(crystal.dominant_forms)}; `
       + `size authority=${JSON.stringify(crystal.size_authority)}; CDR=${JSON.stringify(crystal.cdr_replacement_evidence)}.`);
+  }
+  for (const crystal of ex.habit_morphology.surface_films) {
+    L.push(`  - Surviving surface film crystal ${crystal.crystal_id}: ${crystal.mineral}; `
+      + `${JSON.stringify(crystal.surface_film)}.`);
   }
   L.push('');
   L.push(`## Scenario notes (author's own rationale)`);
@@ -572,10 +909,20 @@ async function main() {
       'al2sio5PhaseAssessment', 'gypsumAnhydriteBoundaryC',
       'waterActivityAssessment', 'thermoPressureAssessment',
       'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
+      'MORPH_TH',
     ],
   });
   const { SCENARIOS } = science;
   const stripDir = path.join(ROOT, 'archive', 'strips', `v${version}`);
+  const mechanismPath = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${version}.json`);
+  if (!fs.existsSync(mechanismPath)) {
+    throw new Error(`[card] missing authenticated mechanism witness artifact for v${version}`);
+  }
+  const mechanismWitnessArtifact = JSON.parse(fs.readFileSync(mechanismPath, 'utf8'));
+  verifyMechanismWitnessArtifact(ROOT, mechanismWitnessArtifact, {
+    simVersion: science.SIM_VERSION,
+    modelDigest: science.MODEL_DIGEST,
+  });
 
   const names = all
     ? fs.readdirSync(stripDir).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort()
@@ -604,7 +951,10 @@ async function main() {
       scenarioSpecHash,
     });
     const stripSha256 = crypto.createHash('sha256').update(stripRaw).digest('hex');
-    const card = buildCard(name, spec, strip, science, { stripSha256 });
+    const card = buildCard(name, spec, strip, science, {
+      stripSha256,
+      mechanismWitnessArtifact,
+    });
     if (outDir) {
       fs.writeFileSync(path.join(outDir, `${name}.md`), renderMarkdown(card).trimEnd() + '\n');
       fs.writeFileSync(path.join(outDir, `${name}.json`), JSON.stringify(card, null, 2) + '\n');

@@ -47,6 +47,23 @@ function _ledgerTolerance(value: number): number {
   return Math.max(1e-7, Math.abs(value) * 1e-9);
 }
 
+function _physicalCrystalInventory(crystal: any, throughStep = Infinity): any {
+  let positiveCoreUm = 0;
+  let lossUm = 0;
+  for (const zone of (crystal?.zones || [])) {
+    if (!zone || Number(zone.step) > throughStep) continue;
+    const thicknessUm = Number(zone.thickness_um);
+    if (!Number.isFinite(thicknessUm)) continue;
+    if (thicknessUm > 0 && !zone.is_phantom) positiveCoreUm += thicknessUm;
+    else if (thicknessUm < 0) lossUm += Math.abs(thicknessUm);
+  }
+  return {
+    positiveCoreUm,
+    lossUm,
+    remainingUm: Math.max(0, positiveCoreUm - lossUm),
+  };
+}
+
 Object.assign(VugSimulator.prototype, {
   _replaceFullyMixedCarbonateFluid() {
     if (!this._carbonateBoundaryState) return false;
@@ -1474,28 +1491,64 @@ _diffuseRingState(rate?) {
 // one. Classic "Sweetwater mechanism" — pyrite first, then calcite
 // grows around it.
 _check_enclosure() {
+  const proposals: any[] = [];
   for (const grower of this.crystals) {
-    if (!grower.active || grower.c_length_mm < 0.5) continue;
+    if (!grower.active) continue;
     if (grower.enclosed_by != null) continue;
+    // SIM 275 — an enclosure is a growth event, not a retrospective size
+    // comparison.  The old predicate let a large but dormant crystal swallow
+    // a newly slowing/dissolving neighbour without depositing any host
+    // material: Bisbee's primary chalcopyrite, for example, claimed a
+    // supergene native-copper grain at step 150 even though the chalcopyrite
+    // recorded no layer from steps 130–156.  Require an accepted physical host
+    // layer in this exact step before the footprint/size tests below can mint
+    // an enclosure receipt. A later same-step etch must also be honoured: +1
+    // then -1 um is no advancing growth front. Positive phantom testimony is
+    // non-material, while negative phantom zones are real dissolved material.
+    const hostStepZones = Array.isArray(grower.zones)
+      ? grower.zones.filter((zone: any) => zone && zone.step === this.step
+        && Number.isFinite(Number(zone.thickness_um)))
+      : [];
+    const hostPositiveGrowthUm = hostStepZones.reduce(
+      (sum: number, zone: any) => sum + (
+        Number(zone.thickness_um) > 0 && !zone.is_phantom
+          ? Number(zone.thickness_um) : 0
+      ),
+      0,
+    );
+    const hostNegativeGrowthUm = hostStepZones.reduce(
+      (sum: number, zone: any) => sum + (
+        Number(zone.thickness_um) < 0 ? Math.abs(Number(zone.thickness_um)) : 0
+      ),
+      0,
+    );
+    const hostNetGrowthUm = hostPositiveGrowthUm - hostNegativeGrowthUm;
+    if (!(hostPositiveGrowthUm > 0 && hostNetGrowthUm > 0)) continue;
     // Size-ratio uses the chemistry-truthful uncapped c_length
     // (total_growth_um / 1000) rather than the rendered/capped value.
     // v59's cavity cap pins c_length at vug_radius for big crystals,
     // which would shrink their grower-vs-candidate size ratio and
     // suppress enclosures that should fire — cause of gem_pegmatite
     // baseline drift before this fix.
-    const growerSize = grower.total_growth_um / 1000;
+    const growerPhysical = _physicalCrystalInventory(grower);
+    if (!(growerPhysical.remainingUm > 0)) continue;
+    const growerSize = growerPhysical.remainingUm / 1000;
     for (const candidate of this.crystals) {
       if (candidate.crystal_id === grower.crystal_id) continue;
       if (candidate.enclosed_by != null) continue;
-      // W-F O3b — a geometrically BURIED crystal is already sealed by its
-      // overgrowing neighbor (selection); don't ALSO swallow it via the size-
-      // ratio enclosure mechanic (which frees its nucleation-cap slot and is a
-      // distinct case — the Sweetwater host-over-guest swallow). Its slow
-      // throttled growth would otherwise trip the `slowing` test below.
-      if (candidate._buried) continue;
+      const candidatePhysical = _physicalCrystalInventory(candidate);
+      const candidateRemainingGrowthUm = Number(candidatePhysical.remainingUm);
+      if (candidate.dissolved || !Number.isFinite(candidateRemainingGrowthUm)
+        || candidateRemainingGrowthUm <= 0) continue;
+      // W-F O3b records growth-front shadowing, not a physical inclusion.
+      // A shadowed solid therefore remains eligible for a later, independently
+      // proven enclosure when a substrate-linked or geometrically adjacent host
+      // deposits net-positive material over it.  Excluding `_buried` here was
+      // the other half of the old conflation: it both suppressed dissolution
+      // and prevented the actual overgrowth event from ever taking authority.
       if (grower.enclosed_crystals.includes(candidate.crystal_id)) continue;
 
-      const candidateSize = candidate.total_growth_um / 1000;
+      const candidateSize = candidateRemainingGrowthUm / 1000;
       const sizeRatio = growerSize / Math.max(candidateSize, 0.001);
       // W-F O4b (SIM 221) — GEOMETRIC adjacency. The string test this
       // replaces (position === position || position.includes(`#id`)) was
@@ -1520,20 +1573,43 @@ _check_enclosure() {
         !!(candHost && candHost.host && candHost.host.crystal_id === grower.crystal_id);
       const growerOnCand =
         !!(growerHost && growerHost.host && growerHost.host.crystal_id === candidate.crystal_id);
+      const route = candOnGrower
+        ? 'guest-on-host'
+        : (growerOnCand ? 'host-on-guest' : 'geometric-overlap');
+      // The 0.5-mm floor is a guard against an uncertain lateral footprint
+      // claiming a neighbour before it has a resolved macroscopic front. Exact
+      // substrate identity already proves contact, and the independent >3x
+      // host/guest ratio below proves that the current host front can overtake
+      // the guest; applying the lateral floor there wrongly blocked genuine
+      // sub-millimetre reaction rims such as chrysocolla growing directly on a
+      // retreating native-Cu grain.
+      if (route === 'geometric-overlap' && growerSize < 0.5) continue;
       let adjacent = candOnGrower || growerOnCand;
+      let anchorDistanceMm: number | null = null;
+      let footprintReachMm: number | null = null;
+      const aG = this.wall_state._resolveAnchor(grower);
+      const aC = this.wall_state._resolveAnchor(candidate);
+      if (aG && aC) {
+        const cellArc = this.wall_state.cell_arc_mm;
+        const halfG = Math.max(
+          this.wall_state.footprintArcMm(grower, growerPhysical.remainingUm) / 2,
+          cellArc,
+        );
+        const halfC = Math.max(
+          this.wall_state.footprintArcMm(candidate, candidatePhysical.remainingUm) / 2,
+          cellArc,
+        );
+        anchorDistanceMm = this.wall_state.anchorDistanceMm(aG, aC);
+        footprintReachMm = halfG + halfC + cellArc;
+      }
       if (!adjacent) {
-        const aG = this.wall_state._resolveAnchor(grower);
-        const aC = this.wall_state._resolveAnchor(candidate);
-        if (aG && aC) {
+        if (anchorDistanceMm != null && footprintReachMm != null) {
           // Per-crystal half-arcs floor at one cell — the painter's own
           // max(1, …) minimum (a nucleated crystal claims ±1 cell even
           // before its first zone), plus one cell of slack between the
           // patches for the tessellation. Matches the census predicate
           // exactly (the pre-registered blast radius depends on it).
-          const cellArc = this.wall_state.cell_arc_mm;
-          const halfG = Math.max(this.wall_state.footprintArcMm(grower) / 2, cellArc);
-          const halfC = Math.max(this.wall_state.footprintArcMm(candidate) / 2, cellArc);
-          adjacent = this.wall_state.anchorDistanceMm(aG, aC) <= halfG + halfC + cellArc;
+          adjacent = anchorDistanceMm <= footprintReachMm;
         }
       }
       // Require the candidate to have actually lived a bit before it
@@ -1544,47 +1620,139 @@ _check_enclosure() {
       // pyrite needs time to exhaust its chemistry and stop growing
       // before the calcite takes it.
       if (!candidate.zones || candidate.zones.length < 3) continue;
-      const recent = candidate.zones.slice(-3).reduce((s, z) => s + z.thickness_um, 0);
+      const recent = candidate.zones.slice(-3).reduce((sum: number, zone: any) => {
+        const thicknessUm = Number(zone?.thickness_um);
+        if (!Number.isFinite(thicknessUm)) return sum;
+        if (thicknessUm > 0 && zone?.is_phantom) return sum;
+        return sum + thicknessUm;
+      }, 0);
       const slowing = recent < 3.0;
       if (sizeRatio > 3.0 && adjacent && slowing) {
-        grower.enclosed_crystals.push(candidate.crystal_id);
-        grower.enclosed_at_step.push(this.step);
-        candidate.enclosed_by = grower.crystal_id;
-        // W-F O4b — coats_front: a guest that nucleated ON its swallower
-        // sits at the host's growth surface, so its burial marks the
-        // host's zone horizon at enclosed_at_step — the phantom-horizon
-        // datum O5's perturbed regrowth consumes. A lateral wall swallow
-        // (Sweetwater pyrite beside the calcite base) is embedded-inert:
-        // poikilotopic, no horizon significance. v1 is the substrate-link
-        // read; O5 sharpens it to per-face film coverage.
-        candidate.coats_front = candOnGrower;
-        // W-F O5 (perturbed regrowth) WRITER 2 — a front-coating guest is itself
-        // a film on the host's growth front: record it as termination-film on the
-        // grower (js/44b O5_COATS_FRONT_PHI_STEP, accumulating across guests,
-        // capped). This turns O4b's coats_front enclosures into O5's first organic
-        // film writers — no new scenario content needed. RECORDED in O5a, UNREAD
-        // (the σ*(φ) gate is behind O5_MASKING_ENABLED); deterministic, no RNG, so
-        // byte-identical until O5b. A lateral (embedded-inert) swallow deposits no
-        // film — it is poikilotopic, not a front coat.
-        if (candOnGrower) {
-          const prevT = grower._film ? (grower._film.phi_term || 0) : 0;
-          const prevP = grower._film ? (grower._film.phi_prism || 0) : 0;
-          grower._film = {
-            mineral: candidate.mineral,
-            phi_term: Math.min(O5_PHI_MAX, prevT + O5_COATS_FRONT_PHI_STEP),
-            phi_prism: prevP,
-            step: this.step,
-          };
-        }
-        candidate.active = false;
-        this.log.push(
-          `  💎 ENCLOSURE: ${capitalize(grower.mineral)} #${grower.crystal_id} ` +
-          `(${grower.c_length_mm.toFixed(1)}mm) has grown around ` +
-          `${candidate.mineral} #${candidate.crystal_id} (${candidate.c_length_mm.toFixed(2)}mm). ` +
-          `The ${candidate.mineral} is now an inclusion inside the ${grower.mineral}.`
-        );
+        proposals.push({
+          grower,
+          candidate,
+          route,
+          candOnGrower,
+          anchorDistanceMm,
+          footprintReachMm,
+          sizeRatio,
+          recent,
+          hostPositiveGrowthUm,
+          hostNegativeGrowthUm,
+          hostNetGrowthUm,
+          hostPhysicalSizeUm: growerPhysical.remainingUm,
+          guestPositiveCoreUm: candidatePhysical.positiveCoreUm,
+          guestLossUm: candidatePhysical.lossUm,
+          guestPhysicalRemainingUm: candidatePhysical.remainingUm,
+        });
       }
     }
+  }
+
+  // A guest may be reachable from several advancing hosts. Select one causal
+  // authority before mutating any crystal: its exact substrate host outranks a
+  // host rooted on the guest, which outranks lateral overlap. Within a route,
+  // nearest front, then larger size ratio, then crystal ID is deterministic.
+  const routeRank = (route: string) => route === 'guest-on-host' ? 0
+    : (route === 'host-on-guest' ? 1 : 2);
+  const compareCrystalId = (left: any, right: any) => {
+    const a = Number(left);
+    const b = Number(right);
+    if (Number.isFinite(a) && Number.isFinite(b) && a !== b) return a - b;
+    const as = String(left);
+    const bs = String(right);
+    return as < bs ? -1 : (as > bs ? 1 : 0);
+  };
+  const compareProposal = (a: any, b: any) => {
+    const routeDelta = routeRank(a.route) - routeRank(b.route);
+    if (routeDelta) return routeDelta;
+    const aDistance = Number.isFinite(a.anchorDistanceMm) ? a.anchorDistanceMm : Infinity;
+    const bDistance = Number.isFinite(b.anchorDistanceMm) ? b.anchorDistanceMm : Infinity;
+    if (aDistance !== bDistance) return aDistance - bDistance;
+    if (a.sizeRatio !== b.sizeRatio) return b.sizeRatio - a.sizeRatio;
+    return compareCrystalId(a.grower.crystal_id, b.grower.crystal_id);
+  };
+  const bestByGuest = new Map<any, any>();
+  for (const proposal of proposals) {
+    const key = proposal.candidate.crystal_id;
+    const prior = bestByGuest.get(key);
+    if (!prior || compareProposal(proposal, prior) < 0) bestByGuest.set(key, proposal);
+  }
+  const selected = Array.from(bestByGuest.values()).sort(
+    (a: any, b: any) => compareCrystalId(a.candidate.crystal_id, b.candidate.crystal_id),
+  );
+  if (!Array.isArray(this._enclosureReceipts)) this._enclosureReceipts = [];
+  for (const proposal of selected) {
+    const { grower, candidate, candOnGrower } = proposal;
+    if (!grower.active || grower.enclosed_by != null || candidate.enclosed_by != null) continue;
+    if (grower.enclosed_crystals.includes(candidate.crystal_id)) continue;
+    grower.enclosed_crystals.push(candidate.crystal_id);
+    grower.enclosed_at_step.push(this.step);
+    candidate.enclosed_by = grower.crystal_id;
+    const receipt: any = {
+      schema: 'enclosure-receipt-v1',
+      event: 'enclosed',
+      step: Number(this.step),
+      host_crystal_id: grower.crystal_id,
+      host_mineral: grower.mineral,
+      guest_crystal_id: candidate.crystal_id,
+      guest_mineral: candidate.mineral,
+      route: proposal.route,
+      adjacency_authority: proposal.route === 'geometric-overlap'
+        ? 'wall-anchor-footprint' : 'exact-substrate-id',
+      anchor_distance_mm: proposal.anchorDistanceMm,
+      footprint_reach_mm: proposal.footprintReachMm,
+      size_ratio: proposal.sizeRatio,
+      guest_recent_growth_um: proposal.recent,
+      guest_slowing_threshold_um: 3.0,
+      host_same_step_positive_growth_um: proposal.hostPositiveGrowthUm,
+      host_same_step_negative_growth_um: proposal.hostNegativeGrowthUm,
+      host_same_step_net_growth_um: proposal.hostNetGrowthUm,
+      host_physical_size_at_enclosure_um: proposal.hostPhysicalSizeUm,
+      guest_positive_core_um: proposal.guestPositiveCoreUm,
+      guest_loss_um: proposal.guestLossUm,
+      guest_remaining_growth_um: proposal.guestPhysicalRemainingUm,
+      guest_partially_dissolved: proposal.guestLossUm > 0
+        && proposal.guestPhysicalRemainingUm > 0,
+    };
+    const filmBefore = grower._film ? JSON.parse(JSON.stringify(grower._film)) : null;
+    candidate.enclosure_receipt = receipt;
+    this._enclosureReceipts.push(receipt);
+    // A guest that nucleated on its swallower sits at the active front; a
+    // lateral swallow is an embedded, poikilotopic inclusion instead.
+    candidate.coats_front = candOnGrower;
+    if (candOnGrower) {
+      const operationId = `enclosure:${this.step}:${String(grower.crystal_id)}:${String(candidate.crystal_id)}`;
+      const beforeTerm = Math.max(0, Number(grower._film?.phi_term) || 0);
+      const beforePrism = Math.max(0, Number(grower._film?.phi_prism) || 0);
+      grower._film = filmWithOperation(grower._film, {
+        kind: 'enclosure-add',
+        source_id: operationId,
+        mineral: candidate.mineral,
+        phi_term: O5_COATS_FRONT_PHI_STEP,
+        phi_prism: 0,
+        step: this.step,
+      });
+      const afterTerm = Math.max(0, Number(grower._film?.phi_term) || 0);
+      const afterPrism = Math.max(0, Number(grower._film?.phi_prism) || 0);
+      receipt.front_film_operation_id = operationId;
+      receipt.front_film_nominal_contribution = O5_COATS_FRONT_PHI_STEP;
+      receipt.front_film_contribution = Math.max(0, afterTerm - beforeTerm);
+      receipt.front_film_prism_contribution = Math.max(0, afterPrism - beforePrism);
+      receipt.host_film_before = filmBefore;
+      receipt.host_film_after = JSON.parse(JSON.stringify(grower._film));
+    } else {
+      receipt.front_film_contribution = 0;
+      receipt.host_film_before = filmBefore;
+      receipt.host_film_after = filmBefore;
+    }
+    candidate.active = false;
+    this.log.push(
+      `  💎 ENCLOSURE: ${capitalize(grower.mineral)} #${grower.crystal_id} ` +
+      `(${grower.c_length_mm.toFixed(1)}mm) has grown around ` +
+      `${candidate.mineral} #${candidate.crystal_id} (${candidate.c_length_mm.toFixed(2)}mm). ` +
+      `The ${candidate.mineral} is now an inclusion inside the ${grower.mineral}.`
+    );
   }
 },
 
@@ -1593,17 +1761,51 @@ _check_enclosure() {
 _check_liberation() {
   for (const host of this.crystals) {
     if (!host.enclosed_crystals.length) continue;
-    if (!host.dissolved) continue;
     const freed = [];
     for (let i = 0; i < host.enclosed_crystals.length; i++) {
       const encId = host.enclosed_crystals[i];
       const encStep = host.enclosed_at_step[i];
       const enc = this.crystals.find(c => c.crystal_id === encId);
       if (!enc) continue;
-      let hostSizeAtEnc = 0;
-      for (const z of host.zones) if (z.step <= encStep) hostSizeAtEnc += z.thickness_um;
-      if (host.total_growth_um < hostSizeAtEnc * 0.7) {
+      const originalReceipt = enc.enclosure_receipt || null;
+      const receiptedHostSize = Number(originalReceipt?.host_physical_size_at_enclosure_um);
+      const hostSizeAtEnc = Number.isFinite(receiptedHostSize) && receiptedHostSize > 0
+        ? receiptedHostSize
+        : _physicalCrystalInventory(host, Number(encStep)).remainingUm;
+      const liberationThresholdUm = hostSizeAtEnc * 0.7;
+      const hostCurrentGrowthUm = _physicalCrystalInventory(host).remainingUm;
+      if (Number.isFinite(hostCurrentGrowthUm)
+        && hostCurrentGrowthUm < liberationThresholdUm) {
         freed.push(i);
+        const operationId = String(originalReceipt?.front_film_operation_id || '');
+        const removal = operationId
+          ? filmWithoutOperation(host._film, operationId)
+          : { film: host._film || null, found: false, removed_phi_term: 0, removed_phi_prism: 0 };
+        host._film = removal.film;
+        if (!Array.isArray(this._enclosureReceipts)) this._enclosureReceipts = [];
+        const liberationReceipt = {
+          schema: 'liberation-receipt-v1',
+          event: 'liberated',
+          step: Number(this.step),
+          enclosure_step: Number(encStep),
+          host_crystal_id: host.crystal_id,
+          host_mineral: host.mineral,
+          guest_crystal_id: enc.crystal_id,
+          guest_mineral: enc.mineral,
+          host_size_at_enclosure_um: hostSizeAtEnc,
+          liberation_threshold_um: liberationThresholdUm,
+          host_current_growth_um: hostCurrentGrowthUm,
+          host_still_has_solid: hostCurrentGrowthUm > 0,
+          original_enclosure_schema: originalReceipt?.schema || null,
+          original_enclosure_route: originalReceipt?.route || null,
+          front_film_operation_id: operationId || null,
+          front_film_operation_found: removal.found,
+          front_film_nominal_contribution: Number(originalReceipt?.front_film_nominal_contribution) || 0,
+          front_film_contribution_removed: removal.removed_phi_term,
+          front_film_prism_contribution_removed: removal.removed_phi_prism,
+        };
+        enc.liberation_receipt = liberationReceipt;
+        this._enclosureReceipts.push(liberationReceipt);
         enc.enclosed_by = null;
         // O4b — coats_front describes HOW the crystal was enclosed; freed
         // means it isn't, so the classification clears with the enclosure.

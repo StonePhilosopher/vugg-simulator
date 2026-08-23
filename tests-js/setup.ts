@@ -215,6 +215,7 @@ const EXPORTS = [
   'classifyCelestineHabit',
   'findPseudomorphRoute',
   'cdrReplacementEvidence',
+  'unclaimedCdrReplacementHost',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
   'aragoniteCoSelector',

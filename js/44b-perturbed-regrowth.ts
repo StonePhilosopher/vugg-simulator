@@ -90,6 +90,78 @@ const O5_PHI_MAX = 0.995;
 let O5_COATS_FRONT_PHI_STEP = 0.15;
 function setO5CoatsFrontPhiStep(v: number): void { O5_COATS_FRONT_PHI_STEP = +v; }
 
+// Film coverage is the ordered result of two physically different operations:
+// event dusting takes the per-axis MAX, while a front-coating inclusion ADDS a
+// bounded termination contribution.  Retaining those operations lets later
+// liberation remove exactly its own contribution without subtracting from an
+// intervening clay/oxide dusting or from another enclosed guest.
+function _filmOperations(film: any): any[] {
+  if (!film) return [];
+  if (Array.isArray(film.operations)) {
+    return film.operations.map((operation: any) => ({ ...operation }));
+  }
+  const phiTerm = Math.max(0, Number(film.phi_term) || 0);
+  const phiPrism = Math.max(0, Number(film.phi_prism) || 0);
+  if (!(phiTerm > 0 || phiPrism > 0)) return [];
+  return [{
+    kind: 'dust-max',
+    source_id: `legacy-film:${Number(film.step) || 0}:${String(film.mineral || 'film')}`,
+    mineral: film.mineral || 'film',
+    phi_term: phiTerm,
+    phi_prism: phiPrism,
+    step: Number(film.step) || 0,
+  }];
+}
+
+function _filmFromOperations(operations: any[]): any {
+  let phiTerm = 0;
+  let phiPrism = 0;
+  let mineral = 'film';
+  let step = 0;
+  const retained: any[] = [];
+  for (const source of Array.isArray(operations) ? operations : []) {
+    if (!source || typeof source !== 'object') continue;
+    const operation = { ...source };
+    if (operation.kind === 'enclosure-add') {
+      phiTerm = Math.min(O5_PHI_MAX,
+        phiTerm + Math.max(0, Number(operation.phi_term) || 0));
+      phiPrism = Math.min(O5_PHI_MAX,
+        phiPrism + Math.max(0, Number(operation.phi_prism) || 0));
+    } else if (operation.kind === 'dust-max') {
+      phiTerm = Math.max(phiTerm, Math.max(0, Number(operation.phi_term) || 0));
+      phiPrism = Math.max(phiPrism, Math.max(0, Number(operation.phi_prism) || 0));
+    } else {
+      continue;
+    }
+    mineral = operation.mineral || mineral;
+    step = Number(operation.step) || step;
+    retained.push(operation);
+  }
+  if (!(phiTerm > 0 || phiPrism > 0)) return null;
+  return { mineral, phi_term: phiTerm, phi_prism: phiPrism, step, operations: retained };
+}
+
+function filmWithOperation(film: any, operation: any): any {
+  return _filmFromOperations([..._filmOperations(film), { ...operation }]);
+}
+
+function filmWithoutOperation(film: any, sourceId: string): any {
+  const beforeTerm = Math.max(0, Number(film?.phi_term) || 0);
+  const beforePrism = Math.max(0, Number(film?.phi_prism) || 0);
+  const operations = _filmOperations(film);
+  const retained = operations.filter((operation: any) => operation.source_id !== sourceId);
+  const found = retained.length !== operations.length;
+  const next = found ? _filmFromOperations(retained) : film;
+  const afterTerm = Math.max(0, Number(next?.phi_term) || 0);
+  const afterPrism = Math.max(0, Number(next?.phi_prism) || 0);
+  return {
+    film: next ? JSON.parse(JSON.stringify(next)) : null,
+    found,
+    removed_phi_term: Math.max(0, beforeTerm - afterTerm),
+    removed_phi_prism: Math.max(0, beforePrism - afterPrism),
+  };
+}
+
 // The reconciled dead-zone law. Pure, DOM-free, RNG-free — unit-tested in
 // isolation (tests-js/o5-film.test.ts) exactly as drawNucleationTilt is. Called
 // by NOTHING in O5a; the growth-path call site lands in O5b behind the flag.
@@ -121,21 +193,24 @@ function applyFilmDusting(
   phiPrism: number,
   step: number,
   mineralFilter?: string[] | null,
+  sim?: any,
 ): number {
   if (!Array.isArray(crystals)) return 0;
   const pt = Math.max(0, Math.min(1, Number(phiTerm) || 0));
   const pp = Math.max(0, Math.min(1, Number(phiPrism) || 0));
   let n = 0;
   for (const c of crystals) {
-    if (!c || !c.active || c.dissolved || c.enclosed_by != null) continue;
+    if (!c || !c.active || c.dissolved || currentEnclosureAuthority(sim, c)) continue;
     if (mineralFilter && mineralFilter.length && !mineralFilter.includes(c.mineral)) continue;
     const prev = c._film;
-    c._film = {
+    c._film = filmWithOperation(prev, {
+      kind: 'dust-max',
+      source_id: `event-dusting:${step}:${String(c.crystal_id)}:${filmMineral || 'film'}`,
       mineral: filmMineral || (prev && prev.mineral) || 'film',
-      phi_term: prev ? Math.max(prev.phi_term || 0, pt) : pt,
-      phi_prism: prev ? Math.max(prev.phi_prism || 0, pp) : pp,
+      phi_term: pt,
+      phi_prism: pp,
       step,
-    };
+    });
     n++;
   }
   return n;

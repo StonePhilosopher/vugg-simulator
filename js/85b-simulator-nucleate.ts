@@ -501,18 +501,18 @@ Object.assign(VugSimulator.prototype, {
   // 1967). Runs ONCE per step BEFORE the growth loop (js/85 run_step), gated by
   // GEOMETRIC_SELECTION_ENABLED (js/44a) — a no-op, byte-identical, when off.
   //
-  // A crystal is BURIED (arrested — active=false, the same handle the world-
-  // record size cap uses) when a NEIGHBOR that is more wall-normal has grown its
+  // A crystal is GROWTH-SHADOWED when a NEIGHBOR that is more wall-normal has grown its
   // front more than O3_BURY_GAP_MM past this crystal's own front: the more-normal
-  // neighbor has overtaken and sealed it off. Survivors are the near-normal ones;
+  // neighbor has overtaken its growth front. Survivors are the near-normal ones;
   // the base of a druse keeps the short tilted losers — the palisade EARNED.
   //
   // DETERMINISM: every crystal's front + tilt is SNAPSHOT before any burial is
   // marked, and the neighbor test reads only the snapshot (never live .active),
   // so the pass is order-independent — burial is decided simultaneously on the
-  // step-start configuration. Once buried, active=false is permanent (a sealed
-  // crystal never resumes; its front freezes while neighbors advance, so the
-  // lead only widens). Exempts air-mode (gravity-oriented stalactites/-mites)
+  // step-start configuration. Once shadowed, the growth throttle is permanent
+  // (its front freezes while neighbors advance, so the lead only widens), but
+  // the tag does not claim an impermeable chemical shell: exposed solid remains
+  // available to later fluid-driven dissolution. Exempts air-mode (gravity-oriented stalactites/-mites)
   // and enclosed/overgrowth crystals (templated, not free-wall competitors).
   _applyGeometricSelection() {
     if (!GEOMETRIC_SELECTION_ENABLED) return;
@@ -528,7 +528,7 @@ Object.assign(VugSimulator.prototype, {
     for (const c of this.crystals) {
       if (!c || !c.active || c.dissolved) continue;
       if (c.growth_environment === 'air') continue;   // gravity-oriented, not selected
-      if (c.enclosed_by != null) continue;             // templated overgrowth, not a competitor
+      if (currentEnclosureAuthority(this, c)) continue; // authenticated inclusion, not a competitor
       const t = c._nucTilt;
       if (!t) continue;
       // ELONGATE only — geometric selection is a palisade phenomenon (js/44a).
@@ -558,7 +558,7 @@ Object.assign(VugSimulator.prototype, {
     // cell ±1 wrapped). Buried by the first more-normal neighbor that has out-
     // reached it by the lead fraction (scale-invariant ratio, not an mm gap).
     for (const rec of elig) {
-      if (rec.c._buried) continue;                       // already sealed (sticky); still an overtaker via the bucket
+      if (rec.c._buried) continue;                       // already growth-shadowed (sticky); still an overtaker via the bucket
       if (this.step - rec.nucStep < minAge) continue;    // grace period (still an overtaker via the bucket)
       let buried = false;
       for (let dr = -1; dr <= 1 && !buried; dr++) {
@@ -580,7 +580,7 @@ Object.assign(VugSimulator.prototype, {
       if (buried) {
         // Throttle, don't kill — the crystal stays ACTIVE (present, counted) but
         // its growth is scaled to O3_BURY_GROWTH_MULT in run_step, ending a short
-        // leaning stub. Sticky: _buried never unsets (once sealed, sealed).
+        // leaning stub. Sticky: _buried never unsets (once shadowed, shadowed).
         rec.c._buried = true;
         this.log.push(
           `  ◄ ${capitalize(rec.c.mineral)} #${rec.c.crystal_id}: ` +
@@ -713,7 +713,7 @@ Object.assign(VugSimulator.prototype, {
       // acanthite (T paramorph) and borax → tincalconite (dehydration)
       // also benefit from this cap accounting.
       if (c.mineral !== mineral && c.paramorph_origin !== mineral) continue;
-      if (c.enclosed_by != null || c.dissolved) continue;
+      if (currentEnclosureAuthority(this, c) || c.dissolved) continue;
       n++;
       if (n >= cap) return true;
     }
@@ -967,7 +967,7 @@ _installLocalizedNucleationEnvelope() {
   //
   // Returns: { host: Crystal, discount: number } | null.
   _pickSubstrate(mineral) {
-    return pickSubstrateForMineral(mineral, this.crystals, rng);
+    return pickSubstrateForMineral(mineral, this.crystals, rng, this);
   },
 
   // Q1c — σ-discount lookup for an already-chosen substrate position.

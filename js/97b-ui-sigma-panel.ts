@@ -506,7 +506,7 @@ function _formationSubstrate(name: string, sim: any) {
     }>();
     const sigmaCrit = _satSigmaCrit(name);
     const localityActive = !!(sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated);
-    for (const candidate of executableSubstrateCandidates(name, sim.crystals)) {
+    for (const candidate of executableSubstrateCandidates(name, sim.crystals, sim)) {
       const cr = candidate.host;
       const key = `${cr.mineral}|${candidate.label}`;
       const prior = grouped.get(key);

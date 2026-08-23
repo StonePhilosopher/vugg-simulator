@@ -154,20 +154,23 @@ const MINERAL_GATES_HMC: MineralGates = {
   // species — a varietal-name on the calcite-dolomite solid-solution
   // joining ordered dolomite at x ≥ ~0.45.
   //
-  // sigma_crit: SI-engine omega scale, comparable to calcite (1.5)
-  // but tighter — HMC is a metastable intermediate, so a meaningful
-  // kinetic barrier prevents over-firing at marginal supersaturation.
-  // Empirical sigma_crit (when flag is off) is in ppm-style ratio.
-  // v146 sigma_crit: 2.0 (slightly above calcite's 1.5; HMC nucleates
-  // less readily than pure calcite because the Mg-substituted lattice
-  // has higher surface energy per Davis 2000).
-  sigma_crit: 2.0,
+  // sigma_crit is on the SI-engine omega scale. The simulator does not
+  // resolve microbial films or bioclastic surface chemistry: direct vug-wall
+  // admission is an authored heterogeneous-surface approximation restricted
+  // by locality licensing and the measured composition domain, not a claim of
+  // universal homogeneous nucleation. The thermodynamic boundary is omega > 1.
+  // The former value 2.0 was an uncited, invented barrier that
+  // suppressed the documented HMC precursor even during the scenario's
+  // measured-domain seawater intervals. Locality licensing, the measured
+  // Mucci partition domain, pH/T gates, and the PWP/Mg-poisoned growth rate
+  // remain the kinetic controls; do not fabricate a second numeric barrier.
+  sigma_crit: 1.0,
   T_min: 0, T_max: 60, T_optimal: 25,
   fluid_min: { Ca: 10, Mg: 5, CO3: 20 },
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'medium',
   _sources: ['Busenberg_Plummer_1989', 'Glynn_Reardon_1990', 'Mucci_1987', 'Mucci_Morse_1983', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
-  _notes: 'The candidate shell must contain 4-30 mol% Mg under a domain-bounded partition screen using aqueous molar Mg/Ca. Mucci 1987 D_Mg(T) applies only to the standard-seawater ratio+salinity proxy; Mucci-Morse 1983 supplies the separate Mg/Ca 7.5-20, seawater-matrix plateau at 25 C. Other parent fluids produce an explicit coverage gap, not a low-HMC verdict. T_max 60°C is an authored kinetic occurrence gate, not a solid-solution equilibrium boundary. The subregular calculation is a metastable fixed-composition screen inside the documented 25 C miscibility gap, never a stable homogeneous-solution claim.',
+  _notes: 'The candidate shell must contain 4-30 mol% Mg under a domain-bounded partition screen using aqueous molar Mg/Ca. Mucci 1987 D_Mg(T) applies only to the standard-seawater ratio+salinity proxy; Mucci-Morse 1983 supplies the separate Mg/Ca 7.5-20, seawater-matrix plateau at 25 C. Other parent fluids produce an explicit coverage gap, not a low-HMC verdict. Direct-wall heterogeneous admission requires omega > 1 as an authored surface approximation; locality licensing and the measured partition domain prevent universal firing, while microbial/bioclastic surface chemistry remains unresolved. T_max 60°C is an authored kinetic occurrence gate, not a solid-solution equilibrium boundary. The subregular calculation is a metastable fixed-composition screen inside the documented 25 C miscibility gap, never a stable homogeneous-solution claim.',
 };
 
 const MINERAL_GATES_siderite: MineralGates = {

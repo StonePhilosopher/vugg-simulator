@@ -8,9 +8,10 @@
 //      Sunagawa order, NO boundary-layer damping (SIZE_HALF_UM =
 //      Infinity — convection-stirred brine, Berg effect; surfσ ≡ bulkσ
 //      at any crystal size).
-//   2. THE SALT-PAN LOG (seed 42 searles_lake): halite zones stratify
-//      by the concentration plateaus — banded-cube mass AND hopper mass
-//      both ≥5%; every positive zone carries tags; morph_form 'cube'.
+//   2. THE SALT-PAN LOG (seed 42 searles_lake): desiccation spikes grow
+//      hopper crusts, subsequent snowmelt removes the attacked cohorts
+//      with exact shell/Na/Cl closure, and a later thin crust survives;
+//      every living positive zone carries tags; morph_form 'cube'.
 //   3. LOCALITY FIREWALL: Bisbee is not a halite tenant. The morphology
 //      calibration is carried by documented salt-pan scenarios only.
 //   4. HABIT ALPHABET + ASPECT FIREWALL: regime habits are cube-family
@@ -137,12 +138,31 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     const etched = halites.filter((c: any) =>
       (c.zones || []).some((z: any) => z.thickness_um < 0));
     const dissolved = halites.filter((c: any) => c.dissolved);
-    const weatheredRemnants = etched.filter((c: any) => !c.dissolved && c.total_growth_um > 0);
-    // Fresh-water pulses attack most seasonal crusts, but exact shell
-    // accounting distinguishes a weathered core from complete removal.
+    const livingCrusts = halites.filter((c: any) => !c.dissolved && c.total_growth_um > 0);
+    // Fresh-water pulses attack most seasonal crusts. At seed 42 each
+    // attacked cohort is completely removed; a separate late crust survives.
+    // Complete removal is a valid playa outcome, so prove the shell and
+    // returned-inventory closure instead of requiring an invented remnant.
     expect(etched.length / halites.length).toBeGreaterThanOrEqual(0.6);
     expect(dissolved.length).toBeGreaterThanOrEqual(1);
-    expect(weatheredRemnants.length).toBeGreaterThanOrEqual(1);
+    expect(livingCrusts.length).toBeGreaterThanOrEqual(1);
+    for (const c of etched) {
+      const positiveThickness = (c.zones || [])
+        .filter((z: any) => Number(z.thickness_um) > 0)
+        .reduce((sum: number, z: any) => sum + Number(z.thickness_um), 0);
+      const losses = (c.zones || []).filter((z: any) => Number(z.thickness_um) < 0);
+      const dissolvedThickness = losses
+        .reduce((sum: number, z: any) => sum - Number(z.thickness_um), 0);
+      expect(positiveThickness).toBeGreaterThan(0);
+      expect(losses.length).toBeGreaterThan(0);
+      expect(losses.every((z: any) => Number(z._returned_budget_inventory?.Na) > 0
+        && Number(z._returned_budget_inventory?.Cl) > 0)).toBe(true);
+      expect(c.dissolved).toBe(true);
+      expect(dissolvedThickness).toBeCloseTo(positiveThickness, 9);
+      expect(Number(c.total_growth_um)).toBeCloseTo(0, 12);
+    }
+    expect(livingCrusts.some((c: any) =>
+      !(c.zones || []).some((z: any) => Number(z.thickness_um) < 0))).toBe(true);
     // dendrite band deliberately unoccupied, like calcite's fleet
     expect(share(regimeMass(sim(), 'halite'), 'dendritic')).toBe(0);
   });

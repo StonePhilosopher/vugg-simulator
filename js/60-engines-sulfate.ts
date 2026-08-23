@@ -505,14 +505,14 @@ function grow_selenite(crystal, conditions, step) {
   // Selenite habit depends on conditions
   if (conditions.temperature < 30 && rate < 3) {
     // Slow, cool growth → large transparent blades ("cathedral" selenite)
-    crystal.habit = 'tabular blades';
+    crystal.habit = 'tabular';
     crystal.extent_kind = 'individual';
     crystal.dominant_forms = ['{010} blades', 'transparent'];
   } else if (rate > 8) {
     // Rapid growth → desert rose (sand inclusions) or satin spar
-    crystal.habit = rng.random() < 0.5 ? 'fibrous (satin spar)' : 'rosette';
+    crystal.habit = rng.random() < 0.5 ? 'fibrous_satin_spar' : 'desert_rose';
     crystal.extent_kind = 'aggregate';
-    crystal.dominant_forms = crystal.habit === 'rosette' ? 
+    crystal.dominant_forms = crystal.habit === 'desert_rose' ?
       ['desert rose', 'lenticular plates'] : ['fibrous aggregates', 'silky luster'];
   } else {
     // Standard prismatic selenite

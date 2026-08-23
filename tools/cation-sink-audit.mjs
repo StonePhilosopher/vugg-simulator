@@ -47,15 +47,20 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // the exact Cartesian surface/volume authority, yielding the value below while
 // preserving the five-crystal assemblage and every zero-Zn mass check. SIM 267
 // corrects solid occupancy, size-cap dissolution, and seal/reopen transitions.
-// SIM 272 adds authored locality/boundary authority and mass-balanced
-// transformation/competition allocation. Its deterministic seed-42 trajectory
-// moves the final proxy slightly while preserving the five-crystal assemblage,
-// every zero-Zn mass check, and the complete analytical-cation trajectory.
+// SIM 272 added authored locality/boundary authority and mass-balanced
+// transformation/competition allocation. SIM 273 commissions the reconciled
+// locality expectation tiers and exact pore-fluid replacement ledger. SIM 274
+// changes only Elmwood's staged Ba/sulfate boundary and snowball layers. Those
+// changes leave this seed-42 trajectory byte-for-number unchanged: the same
+// five-crystal assemblage and zero-Zn mass checks persist. SIM 275 moves
+// chemically accessible growth-shadowed solids and authenticated inclusions
+// onto distinct authorities; the resulting layered competition trajectory
+// commissions the exact proxy below without introducing any Zn source/sink.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 272,
-  model_digest_sha256: '6f209eb00b0e45167f7699f0b6d3913bd21b9ac37ea19d8af6c7cd420671ac3a',
+  sim_version: 275,
+  model_digest_sha256: '5cb41ef6f1e5ded590320300a7495ae451abee3a8200368c497b8f97a3584a39',
   pharmacolite_crystals: 5,
-  final_pharmacolite_Ca_molar_fraction_proxy: 0.58294331903161,
+  final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
 });
 

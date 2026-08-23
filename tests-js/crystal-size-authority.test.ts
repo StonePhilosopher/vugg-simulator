@@ -22,8 +22,11 @@ describe('individual crystal versus aggregate extent authority', () => {
   it('does not apply an individual-crystal cap to capacity-bound coatings and masses', () => {
     for (const c of [
       crystal('malachite', 'botryoidal', 500),
+      crystal('malachite', 'banded_massive', 500),
+      crystal('malachite', 'acicular_spray', 500),
       crystal('smithsonite', 'botryoidal/stalactitic', 500),
-      crystal('selenite', 'rosette', 5000),
+      crystal('selenite', 'fibrous_satin_spar', 5000),
+      crystal('selenite', 'desert_rose', 5000),
       crystal('celestine', 'fibrous_blanket', 500),
     ]) {
       expect(crystalSizeAuthority(c).extent_kind).toBe('aggregate');
@@ -40,10 +43,20 @@ describe('individual crystal versus aggregate extent authority', () => {
   });
 
   it('labels the unresolved 60 cm wulfenite report as aggregate, not individual authority', () => {
-    const individual = crystalSizeAuthority(crystal('wulfenite', 'tabular', 22));
+    const individual = crystalSizeAuthority(crystal('wulfenite', 'tabular_square', 22));
     const intergrowth = crystalSizeAuthority(crystal('wulfenite', 'intergrown_thin_plates', 120));
     expect(individual).toMatchObject({ extent_kind: 'individual', record_cm: 11, cap_cm: 22 });
     expect(intergrowth).toMatchObject({ extent_kind: 'aggregate', record_cm: 60, cap_cm: 120 });
+    expect(intergrowth.sources).toContain('Rickwood 1981, American Mineralogist 66:885-907, https://msaweb.org/AmMin/AM66/AM66_885.pdf');
+  });
+
+  it('uses only production habit identifiers in dimensional authority', () => {
+    expect(MINERAL_SPEC.malachite.size_authority.aggregate_habits)
+      .toEqual(expect.arrayContaining(['botryoidal', 'banded_massive', 'acicular_spray']));
+    expect(MINERAL_SPEC.selenite.size_authority.aggregate_habits)
+      .toEqual(expect.arrayContaining(['fibrous_satin_spar', 'desert_rose']));
+    expect(MINERAL_SPEC.wulfenite.size_authority.aggregate_habits)
+      .toContain('intergrown_thin_plates');
   });
 
   it('uses the production celestine precedence in census-visible classification', () => {

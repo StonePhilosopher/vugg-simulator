@@ -103,7 +103,11 @@ function buildRandomScenario(forcedArchetype: string | null, forcedSizeClass?: s
       salinity: _rU(15, 22),
     });
     _sprinkle(fluid, [["Ba",0.45,15,60],["Ag",0.25,1,8],["Cd",0.30,0.5,4]]);
-    events = [{ step: Math.floor(_rU(20,35)), name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing }];
+    // This procedural archetype already samples its complete mixed brine above.
+    // Do not attach a hidden locality recipe: authored scenarios own their own
+    // material-bearing mixing boundaries, while Random remains an explicitly
+    // synthetic initial-condition draw.
+    events = [];
     steps = Math.floor(_rU(100, 150));
   } else if (archetype === 'porphyry') {
     T = _rU(350, 520);

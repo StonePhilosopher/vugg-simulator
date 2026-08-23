@@ -41,12 +41,13 @@ import {
   STRIP_DIGEST_SCENARIOS,
   stripDigestForStory,
 } from './strip-digest-shape.mjs';
+import { verifyMechanismWitnessArtifact } from './gen-mechanism-witnesses.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const SCIENCE_EVIDENCE_RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v1';
 export const SCIENCE_EVIDENCE_PRODUCERS = Object.freeze([
   'seed42-baseline', 'strip-archive', 'locality-frequency', 'strip-digest',
-  'claim-cards', 'science-provenance', 'science-receipt',
+  'claim-cards', 'mechanism-witnesses', 'science-provenance', 'science-receipt',
 ]);
 
 function relative(root, file) {
@@ -58,6 +59,7 @@ export function scienceEvidenceArtifactFiles(root, version, scenarioNames) {
     path.join(root, 'tests-js', 'baselines', `seed42_v${version}.json`),
     path.join(root, 'tests-js', 'baselines', `locality_frequency_v${version}.json`),
     path.join(root, 'tests-js', 'baselines', `strip_digest_v${version}.json`),
+    path.join(root, 'archive', 'evidence', `mechanism-witnesses-v${version}.json`),
   ];
   for (const name of [...scenarioNames].sort()) {
     files.push(path.join(root, 'archive', 'strips', `v${version}`, `${name}.json`));
@@ -85,6 +87,12 @@ export function verifyArtifactHashMap(root, artifacts) {
 }
 
 export function buildScienceEvidenceReceipt({ root, simVersion, modelDigest, scenarioNames }) {
+  const mechanismPath = path.join(root, 'archive', 'evidence', `mechanism-witnesses-v${simVersion}.json`);
+  if (!fs.existsSync(mechanismPath)) throw new Error(`published science artifact is missing: ${relative(root, mechanismPath)}`);
+  verifyMechanismWitnessArtifact(root, JSON.parse(fs.readFileSync(mechanismPath, 'utf8')), {
+    simVersion,
+    modelDigest,
+  });
   const files = scienceEvidenceArtifactFiles(root, simVersion, scenarioNames);
   return {
     schema: SCIENCE_EVIDENCE_RECEIPT_SCHEMA,

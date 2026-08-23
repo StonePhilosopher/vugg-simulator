@@ -173,6 +173,7 @@ Object.assign(VugSimulator.prototype, {
           (typeof f.prism === 'number') ? f.prism : 0,
           this.step,
           f.minerals || null,
+          this,
         );
         const fms = f.minerals ? f.minerals.join(', ') : 'all exposed crystals';
         this.log.push(`     ▓ FILM: ${f.mineral || 'chlorite'} dusts ${fms} (${dusted} crystal${dusted === 1 ? '' : 's'}) — a foreign coat masks the growth front; growth stalls until a fresh pulse clears it`);

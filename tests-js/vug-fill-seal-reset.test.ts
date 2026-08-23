@@ -8,11 +8,37 @@ declare const setSeed: (seed: number) => void;
 declare const _liveRng: () => { state: number; next: () => number };
 declare const maxSizeCm: (mineral: string) => number | null;
 declare const stoichiometricBudgetDebitPpmPerUm: (species: string, coefficient: number) => number;
+declare const currentEnclosureAuthority: (sim: any, guest: any) => any;
+declare const StripRecorder: any;
 
 function makeSeed42Sim() {
   setSeed(42);
   const { conditions, events } = SCENARIOS.cooling();
   return new VugSimulator(conditions, events);
+}
+
+function acceptedZone(thicknessUm: number, step = 0) {
+  const zone = new GrowthZone({
+    step,
+    thickness_um: thicknessUm,
+    growth_rate: thicknessUm,
+  });
+  zone._time_scaled = true;
+  return zone;
+}
+
+function installChalcanthite(sim: any, crystal: any, cellIdx = 0) {
+  crystal.wall_anchor = sim.wall_state._anchorFromRingCell(0, cellIdx);
+  const localFluid = sim.wall_state.meshFor(sim).cellOf(crystal, sim.wall_state).fluid;
+  localFluid.sulfurPoolsExplicit = true;
+  localFluid.S_sulfate = Number(localFluid.S_sulfate) || 0;
+  localFluid.S_sulfide = Number(localFluid.S_sulfide) || 0;
+  localFluid.S_elemental = Number(localFluid.S_elemental) || 0;
+  localFluid.salinity = 0;
+  localFluid.pH = 7;
+  sim.conditions.fluid.salinity = 0;
+  sim.conditions.fluid.pH = 7;
+  return localFluid;
 }
 
 describe('vug seal reopening hysteresis', () => {
@@ -96,7 +122,11 @@ describe('vug seal reopening hysteresis', () => {
     const zone = new GrowthZone({ thickness_um: 10, growth_rate: 10 });
     zone._time_scaled = true;
     crystal.add_zone(zone);
-    crystal.active = false; // world-record cap: still a real exposed solid
+    // Size caps now suppress only later positive growth through the audited
+    // `_size_capped` path; they do not make an exposed solid inactive.  Keep
+    // this chalcanthite chemically active so the fixture represents a real
+    // pore-fluid-contacting crystal rather than an enclosed inclusion.
+    crystal.active = true;
     sim.crystals = [crystal];
     sim.check_nucleation = () => {};
     sim._vug_sealed = true;
@@ -136,7 +166,7 @@ describe('vug seal reopening hysteresis', () => {
     expect(crystal.total_growth_um).toBeCloseTo(6, 12);
     expect(crystal._volume_mm3).toBeCloseTo(beforeVolume * 0.216, 12);
     const decay = crystal.zones[crystal.zones.length - 1];
-    expect(decay?.dissolutionMode).toBe('low_salinity');
+    expect(decay?.dissolutionMode).toBe('water_solubility_high_pH');
     const expectedCu = 4 * stoichiometricBudgetDebitPpmPerUm('Cu', 1);
     const expectedS = 4 * stoichiometricBudgetDebitPpmPerUm('S', 1);
     expect(decay._returned_budget_inventory.Cu).toBeCloseTo(expectedCu, 12);
@@ -146,6 +176,228 @@ describe('vug seal reopening hysteresis', () => {
     expect(immediateBulkDelta).toEqual({ Cu: 0, S: 0 });
     expect(sim.get_vug_fill()).toBeLessThan(0.95);
     expect(sim._vug_sealed).toBe(false);
+  });
+
+  it('does not let cap, burial, or a stale inactive flag become a solubility shield', () => {
+    const cases = [
+      { label: 'authored-size cap', growthUm: Number(maxSizeCm('chalcanthite')) * 10000,
+        prepare: (_sim: any, _crystal: any) => {} },
+      { label: 'growth-front burial', growthUm: 10,
+        prepare: (_sim: any, crystal: any) => { crystal._buried = true; } },
+      { label: 'bare inactive flag', growthUm: 10,
+        prepare: (_sim: any, crystal: any) => { crystal.active = false; } },
+    ];
+
+    for (const [index, row] of cases.entries()) {
+      const sim = makeSeed42Sim();
+      const crystal = new Crystal({
+        mineral: 'chalcanthite', crystal_id: 30 + index, habit: 'prismatic',
+      });
+      crystal.add_zone(acceptedZone(row.growthUm));
+      row.prepare(sim, crystal);
+      sim.crystals = [crystal];
+      sim.check_nucleation = () => {};
+      sim._applyGeometricSelection = () => {};
+      sim._runEngineForCrystal = () => null;
+      sim.get_vug_fill = () => 0.5;
+      installChalcanthite(sim, crystal, index + 1);
+      expect(currentEnclosureAuthority(sim, crystal), row.label).toBeNull();
+      const before = crystal.total_growth_um;
+
+      sim.run_step();
+
+      const decay = crystal.zones[crystal.zones.length - 1];
+      const expectedLoss = Math.min(5, before * 0.4);
+      expect(before - crystal.total_growth_um, row.label).toBeCloseTo(expectedLoss, 12);
+      expect(decay.dissolutionMode, row.label).toBe('water_solubility_low_salinity_high_pH');
+      expect(decay._returned_budget_inventory.Cu, row.label).toBeCloseTo(
+        expectedLoss * stoichiometricBudgetDebitPpmPerUm('Cu', 1), 12,
+      );
+      expect(decay._returned_budget_inventory.S_sulfate, row.label).toBeCloseTo(
+        expectedLoss * stoichiometricBudgetDebitPpmPerUm('S', 1), 12,
+      );
+      if (row.label === 'authored-size cap') expect(crystal._size_capped).toBe(true);
+    }
+  });
+
+  it('withholds low-salinity decay only for a reciprocal authenticated enclosure', () => {
+    const sim = makeSeed42Sim();
+    sim.step = 9;
+    sim.events = [];
+    sim.check_nucleation = () => {};
+    sim._applyGeometricSelection = () => {};
+    sim._runEngineForCrystal = () => null;
+    sim.get_vug_fill = () => 0.5;
+
+    const guest = new Crystal({ mineral: 'chalcanthite', crystal_id: 70, habit: 'prismatic' });
+    for (const [step, amount] of [[0, 98.5], [1, 0.5], [2, 0.5], [3, 0.5]]) {
+      guest.add_zone(acceptedZone(amount, step));
+    }
+    const host = new Crystal({ mineral: 'calcite', crystal_id: 71, habit: 'rhombohedral' });
+    host.add_zone(acceptedZone(400, 9));
+    host.add_zone(acceptedZone(1, 10));
+    host.active = false;
+    const receipt = {
+      schema: 'enclosure-receipt-v1', event: 'enclosed', step: 10,
+      host_crystal_id: 71, host_mineral: 'calcite',
+      guest_crystal_id: 70, guest_mineral: 'chalcanthite',
+      route: 'guest-on-host', adjacency_authority: 'exact-substrate-id',
+      host_same_step_positive_growth_um: 1,
+      host_same_step_negative_growth_um: 0,
+      host_same_step_net_growth_um: 1,
+      host_physical_size_at_enclosure_um: 401,
+      guest_positive_core_um: 100,
+      guest_loss_um: 0,
+      guest_remaining_growth_um: 100,
+      guest_partially_dissolved: false,
+      size_ratio: 4.01,
+      guest_recent_growth_um: 1.5,
+      guest_slowing_threshold_um: 3,
+    };
+    guest.active = false;
+    guest.enclosed_by = host.crystal_id;
+    guest.enclosure_receipt = receipt;
+    host.enclosed_crystals = [guest.crystal_id];
+    host.enclosed_at_step = [10];
+    sim.crystals = [guest, host];
+    sim._enclosureReceipts = [receipt];
+    installChalcanthite(sim, guest, 5);
+    expect(currentEnclosureAuthority(sim, guest)).toMatchObject({ host, guest, receipt });
+
+    sim.run_step();
+
+    expect(guest.total_growth_um).toBeCloseTo(100, 12);
+    expect(guest.zones).toHaveLength(4);
+    expect(currentEnclosureAuthority(sim, guest)).toMatchObject({ host, guest, receipt });
+  });
+
+  it('uses the crystal cell rather than contradictory bulk fluid for the decay gate', () => {
+    const makeSpatialCase = (id: number) => {
+      const sim = makeSeed42Sim();
+      const crystal = new Crystal({ mineral: 'chalcanthite', crystal_id: id, habit: 'prismatic' });
+      crystal.add_zone(acceptedZone(10));
+      crystal._buried = true;
+      sim.crystals = [crystal];
+      sim.check_nucleation = () => {};
+      sim._applyGeometricSelection = () => {};
+      sim._runEngineForCrystal = () => null;
+      sim.get_vug_fill = () => 0.5;
+      const localFluid = installChalcanthite(sim, crystal, id % 12);
+      return { sim, crystal, localFluid };
+    };
+
+    const locallyStable = makeSpatialCase(81);
+    locallyStable.sim.conditions.fluid.salinity = 0;
+    locallyStable.sim.conditions.fluid.pH = 7;
+    locallyStable.localFluid.salinity = 10;
+    locallyStable.localFluid.pH = 3;
+    locallyStable.sim.run_step();
+    expect(locallyStable.crystal.total_growth_um).toBeCloseTo(10, 12);
+    expect(locallyStable.crystal.zones).toHaveLength(1);
+
+    const locallyUnstable = makeSpatialCase(82);
+    locallyUnstable.sim.conditions.fluid.salinity = 10;
+    locallyUnstable.sim.conditions.fluid.pH = 3;
+    locallyUnstable.localFluid.salinity = 0;
+    locallyUnstable.localFluid.pH = 7;
+    const beforeLocal = {
+      Cu: locallyUnstable.localFluid.Cu,
+      sulfate: locallyUnstable.localFluid.S_sulfate,
+    };
+    const beforeBulk = {
+      Cu: locallyUnstable.sim.conditions.fluid.Cu,
+      S: locallyUnstable.sim.conditions.fluid.S,
+    };
+    let bookedLocal: any = null;
+    let bookedBulk: any = null;
+    const applyBudget = locallyUnstable.sim._applyZoneGrowthBudget.bind(locallyUnstable.sim);
+    locallyUnstable.sim._applyZoneGrowthBudget = (target: any, accepted: any) => {
+      const localBefore = {
+        Cu: locallyUnstable.localFluid.Cu,
+        sulfate: locallyUnstable.localFluid.S_sulfate,
+      };
+      const bulkBefore = {
+        Cu: locallyUnstable.sim.conditions.fluid.Cu,
+        S: locallyUnstable.sim.conditions.fluid.S,
+      };
+      const result = applyBudget(target, accepted);
+      bookedLocal = {
+        Cu: locallyUnstable.localFluid.Cu - localBefore.Cu,
+        sulfate: locallyUnstable.localFluid.S_sulfate - localBefore.sulfate,
+      };
+      bookedBulk = {
+        Cu: locallyUnstable.sim.conditions.fluid.Cu - bulkBefore.Cu,
+        S: locallyUnstable.sim.conditions.fluid.S - bulkBefore.S,
+      };
+      return result;
+    };
+    locallyUnstable.sim.run_step();
+    const decay = locallyUnstable.crystal.zones.at(-1);
+    const expectedCu = 4 * stoichiometricBudgetDebitPpmPerUm('Cu', 1);
+    const expectedS = 4 * stoichiometricBudgetDebitPpmPerUm('S', 1);
+    expect(decay.dissolutionMode).toBe('water_solubility_low_salinity_high_pH');
+    expect(decay.note).toContain('local salinity 0.0, local pH 7.0');
+    expect(decay._returned_budget_inventory.Cu).toBeCloseTo(expectedCu, 12);
+    expect(decay._returned_budget_inventory.S_sulfate).toBeCloseTo(expectedS, 12);
+    expect(bookedLocal.Cu).toBeCloseTo(expectedCu, 12);
+    expect(bookedLocal.sulfate).toBeCloseTo(expectedS, 12);
+    expect(bookedBulk).toEqual({ Cu: 0, S: 0 });
+    // End-of-step diffusion may redistribute the local return, but it must not
+    // be silently credited to the bulk handle used only as a gate control.
+    expect(locallyUnstable.localFluid.Cu).toBeGreaterThan(beforeLocal.Cu);
+    expect(locallyUnstable.localFluid.S_sulfate).toBeGreaterThan(beforeLocal.sulfate);
+    expect(locallyUnstable.sim.conditions.fluid.Cu - beforeBulk.Cu).toBe(0);
+    expect(locallyUnstable.sim.conditions.fluid.S - beforeBulk.S).toBe(0);
+  });
+
+  it('records salinity-only, pH-only, combined, and absent water-solubility triggers truthfully', () => {
+    const controls = [
+      { salinity: 0, pH: 3, mode: 'water_solubility_low_salinity' },
+      { salinity: 10, pH: 7, mode: 'water_solubility_high_pH' },
+      { salinity: 0, pH: 7, mode: 'water_solubility_low_salinity_high_pH' },
+      { salinity: 10, pH: 3, mode: null },
+    ];
+    for (const [index, control] of controls.entries()) {
+      const sim = makeSeed42Sim();
+      const crystal = new Crystal({
+        mineral: 'chalcanthite', crystal_id: 90 + index, habit: 'prismatic',
+      });
+      crystal.add_zone(acceptedZone(10));
+      sim.crystals = [crystal];
+      sim.check_nucleation = () => {};
+      sim._applyGeometricSelection = () => {};
+      sim._runEngineForCrystal = () => null;
+      sim.get_vug_fill = () => 0.5;
+      const localFluid = installChalcanthite(sim, crystal, index + 8);
+      // Hold bulk at the opposite stable chemistry so this remains a local
+      // trigger test instead of accidentally exercising the fallback.
+      sim.conditions.fluid.salinity = 10;
+      sim.conditions.fluid.pH = 3;
+      localFluid.salinity = control.salinity;
+      localFluid.pH = control.pH;
+      const recorder = new StripRecorder(sim, { duration_steps: 1, angular_indices: 1 });
+
+      sim.run_step();
+      recorder.captureStep(sim);
+      const strip = recorder.finalize();
+      const recordedLosses = strip.layer_growth_testimony.filter((row: any) =>
+        row.crystal_id === crystal.crystal_id && row.thickness_um < 0);
+
+      if (control.mode == null) {
+        expect(crystal.total_growth_um).toBeCloseTo(10, 12);
+        expect(crystal.zones).toHaveLength(1);
+        expect(recordedLosses).toEqual([]);
+      } else {
+        const decay = crystal.zones.at(-1);
+        expect(crystal.total_growth_um).toBeCloseTo(6, 12);
+        expect(decay.dissolutionMode).toBe(control.mode);
+        expect(recordedLosses).toHaveLength(1);
+        expect(recordedLosses[0].dissolution_mode).toBe(control.mode);
+        expect(decay.note).toContain(
+          `local salinity ${control.salinity.toFixed(1)}, local pH ${control.pH.toFixed(1)}`,
+        );
+      }
+    }
   });
 
   it('lets an authored-size-capped fluorite dissolve and return local inventory', () => {

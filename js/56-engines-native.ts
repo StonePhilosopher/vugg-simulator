@@ -355,7 +355,7 @@ function grow_native_copper(crystal, conditions, step) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
       // Phase 1e: Cu credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_copper.
-      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — forms cuprite film, then malachite if CO₃ is present` });
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidative native-Cu retreat (O₂ ${conditions.fluid.O2.toFixed(1)}); cuprite and carbonate phases require their own independent saturation/nucleation gates` });
     }
     return null;
   }

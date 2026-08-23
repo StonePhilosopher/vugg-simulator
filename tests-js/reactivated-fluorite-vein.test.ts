@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const simulatorSulfurLedgerSnapshot: (sim: any) => any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NAME = 'reactivated_fluorite_vein';
@@ -104,6 +105,21 @@ describe('Reactivated fluorite vein scenario (v176)', () => {
     it('fires a Zn-sulfide (sphalerite OR wurtzite — the high-T polymorph)', () => {
       ensure();
       expect(species.has('sphalerite') || species.has('wurtzite')).toBe(true);
+    });
+  });
+
+  describe('open-system replacement accounting', () => {
+    it('books the acidic wash and recharge as sulfur exports instead of deleting sulfur', () => {
+      const sim = runScenario()!;
+      const ledger = simulatorSulfurLedgerSnapshot(sim);
+      expect(sim._sulfurPropagationViolations).toEqual([]);
+      expect(sim._fluidBoundaryViolations).toEqual([]);
+      expect(ledger).toMatchObject({ closed: true, propagationViolations: 0 });
+      expect(ledger.exportsPpm).toBeGreaterThan(0);
+      const replacementSteps = sim._sulfurBoundaryTransactions
+        .filter((tx: any) => tx.declarations.some((d: any) => d.kind === 'replacement'))
+        .map((tx: any) => tx.step);
+      expect(replacementSteps).toEqual([118, 119]);
     });
   });
 

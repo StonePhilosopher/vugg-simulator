@@ -165,13 +165,15 @@ describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () =>
     expect(series.first(dol)!).toBeLessThan(1);
     expect(ds.nucleation_events.some((event: any) => event.mineral === 'calcite')).toBe(true);
     expect(ds.nucleation_events.some((event: any) => event.mineral === 'dolomite')).toBe(false);
-    // Heat-only ambient pulses move the saturation state without importing a
-    // universal material package. The trajectory genuinely spans both sides
-    // of equilibrium and returns to its initial state; net depletion is not a
-    // scientific requirement for admitting calcite over dolomite.
+    // The owner-bound step-20 ore-fluid mixing event imports Ca and the later
+    // authored fluid/redox history moves the saturation state. The trajectory
+    // genuinely spans both sides of equilibrium and returns to
+    // supersaturation; it is not required to return to the exact initial SI
+    // after a material-bearing open-system boundary.
     expect(series.peak(cal)).toBeGreaterThan(series.first(cal)!);
     expect(series.min(cal)).toBeLessThan(0);
-    expect(series.last(cal)!).toBeCloseTo(series.first(cal)!, 10);
+    expect(series.crossings(cal, 0)).toBeGreaterThanOrEqual(1);
+    expect(series.last(cal)!).toBeGreaterThan(0);
   });
 });
 

@@ -337,8 +337,32 @@
         "Pb": 40,
         "pH": 7.2,
         "salinity": 15.0,
-        "Zn_note": "Zn=0 at init by design; delivered by event_fluid_mixing at step 20 (Zn=150).",
-        "S_note": "S=0 at init by design; delivered by event_fluid_mixing at step 20 (S=120). The low-S initial fluid is what makes MVT 'fluid mixing' the depositional mechanism (not single-fluid cooling)."
+        "Zn_note": "Zn=0 at init by design; delivered by the locality-owned mvt_fluid_mixing event at step 20 (Zn +150 ppm).",
+        "S_note": "All three sulfur reservoirs are 0 at init by design. The locality-owned mvt_fluid_mixing event at step 20 adds 90 ppm sulfide sulfur and 30 ppm sulfate sulfur. The low-sulfur initial fluid is what makes MVT fluid mixing the depositional mechanism rather than single-fluid cooling; the 90/30 split is the authored SIM-scale reducing-ore/subordinate-sulfate paragenetic endmember, not a measured fluid-inclusion ratio."
+      },
+      "authored_material_events": {
+        "mvt_fluid_mixing": {
+          "step": 20,
+          "fluid_transform": {
+            "add": {
+              "Zn": 150,
+              "Ca": 100,
+              "F": 40,
+              "Pb": 25,
+              "Fe": 30
+            },
+            "flow_rate": 4
+          },
+          "sulfur_boundary": {
+            "kind": "addition",
+            "pools": {
+              "sulfide": 90,
+              "sulfate": 30
+            }
+          },
+          "temperature_delta_C": -20,
+          "material_authority": "Roedder 1976; Anderson & Macqueen 1982; Stoffell et al. 2008 — Tri-State reducing Pb-Zn basinal brine with a subordinate sulfate-bearing gangue stage; sulfur split is an explicit SIM-scale paragenetic endmember, not a measured fluid-inclusion ratio"
+        }
       },
       "references": [
         "Roedder, E. (1976). Fluid inclusions as samples of ore-forming fluids. In: Wolf, K.H. (ed.), Handbook of Strata-bound and Stratiform Ore Deposits, vol. 2, Elsevier, p. 67-110. [Tri-State fluid-inclusion microthermometry baseline]",
@@ -387,12 +411,12 @@
       "mineral_realizations_v4_sulfate_expansion": {
         "barite": {
           "status": "active",
-          "reason": "Ba=20, S=120 (post event_fluid_mixing step 20), O2=0.25 (v5 bump). Verified seed-42: 6 active barite crystals, max 32 µm. The barite + galena MVT-diagnostic coexistence now reproduces in the sim.",
+          "reason": "Ba=20, sulfate sulfur=30 ppm after the locality-owned mvt_fluid_mixing event at step 20, O2=0.25 (v5 bump). The separate 90 ppm sulfide reservoir cannot drive barite admission. Verified seed-42: 6 active barite crystals, max 32 µm. The barite + galena MVT-diagnostic coexistence now reproduces in the sim.",
           "audit_action": "Resolved by v5 commit. O2 bump + supersat O2/0.4 retune both required."
         },
         "celestine": {
           "status": "active",
-          "reason": "Sr=15, S=120, O2=0.25. Verified seed-42: 10 celestine crystals, max 111 µm. Minor celestine in Tri-State carbonate gangue (Hanor 1994) now reproduces.",
+          "reason": "Sr=15, sulfate sulfur=30 ppm after the locality-owned mvt_fluid_mixing event, O2=0.25. The separate 90 ppm sulfide reservoir cannot drive celestine admission. Verified seed-42: 10 celestine crystals, max 111 µm. Minor celestine in Tri-State carbonate gangue (Hanor 1994) now reproduces.",
           "audit_action": "Resolved by v5 commit."
         },
         "jarosite": {

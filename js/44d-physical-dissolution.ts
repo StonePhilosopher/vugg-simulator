@@ -381,7 +381,10 @@ function applyPhysicalEtchDirective(sim: any, directive: any, step: number): any
   };
 
   for (const crystal of (sim?.crystals || [])) {
-    if (!crystal || crystal.dissolved || crystal.enclosed_by != null || crystal._buried) continue;
+    // Geometric-selection `_buried` means growth-front shadowing, not a
+    // hermetic shell. Only a real enclosure receipt/lifecycle withholds the
+    // solid from this fluid-facing physical etch path.
+    if (!crystal || crystal.dissolved || currentEnclosureAuthority(sim, crystal)) continue;
     if (mineralFilter && !mineralFilter.has(String(crystal.mineral))) continue;
     if (!(crystal.total_growth_um > 0)) continue;
     const firstStep = _physicalEtchFirstGrowthStep(crystal);

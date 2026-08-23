@@ -341,21 +341,20 @@ MORPH_TH.native_bismuth = {
   form(_conditions: any): string { return 'native'; },
 };
 
-// ---- fluorite — fourth tenant (the elmwood two-mineral showcase) ----
-// Survey (tools/morph-sigma-observe.mjs, seed 42): six scenarios, σ
-// range 1.25–7.16, in-step == post-step (stable like the halides).
+// ---- fluorite — fourth tenant (locality-authenticated fleet) ----
+// SIM 274 accepted-layer testimony spans σ about 1.00–7.65; in-step
+// == post-step (stable like the halides).
 // Plateaus → claims (defer-to-geology):
-//   reactivated_fluorite_vein 7.15 → stepped_macro: COMPOSITE/stepped
-//     cube faces — re-opened vein regrowing fast on old crystals
-//   elmwood base 3.96 / fault-valve spikes 5.94 → smooth ↔ banded:
-//     the SAME CO3/pH pulses that step the golden calcite zone the
-//     purple cubes — the two-mineral showcase (real Elmwood fluorite
-//     carries stepped/composite faces)
+//   reactivated_fluorite_vein crosses smooth, stepped-macro, and
+//     hopper bands as its two authored Ca-F generations evolve.
+//   elmwood 2.21–3.45 → smooth under its locality-owned Gratz-Misra
+//     Ca/F brine. The late CO3/pH fault-valve pulses are authored for
+//     calcite and do not become an invented fluorite coupling.
 //   mvt 4.96 → smooth (just under the edge — Tri-State glassy cubes)
 //   zoned_dripstone 2.21 / sunnyside 1.95 / jeffrey 1.3 → smooth
-// No damping: fluorite's whole fleet range spans 1.2–7.2 — the edges
+// No damping: fluorite's accepted-layer fleet spans about 1.0–7.7 — the edges
 // separate the claims directly on bulk σ; a calcite-style size damp
-// would glass every cabinet crystal (elmwood fluorite is 20 mm) with
+// would glass specimen-scale Elmwood fluorite (about 10 mm at seed 42) with
 // nothing for the band structure to gain.
 // FORM: composes with the v103 REE rule — the registry form hook
 // mirrors grow_fluorite's own Y>1 {111} flip (Bosze & Rakovan 2002).
@@ -367,28 +366,29 @@ MORPH_TH.fluorite = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
   SPIRAL_MAX: 5.0,       // < this → smooth glassy cube (mvt 4.96 lives here)
-  STEP_MILD_MAX: 6.5,    // growth-banded cube (elmwood pulse plateaus 5.94)
-  STEP_MACRO_MAX: 7.5,   // composite/stepped cube (reactivated vein 7.15)
-  HOPPER_MAX: 9.0,       // hopper frame (unoccupied in fleet)
+  STEP_MILD_MAX: 6.5,    // growth-banded cube
+  STEP_MACRO_MAX: 7.5,   // composite/stepped cube (reactivated vein)
+  HOPPER_MAX: 9.0,       // hopper frame (reactivated high-drive layers)
   // ≥ 9.0 → dendritic (unoccupied — kept for ladder completeness)
   sigma(conditions: any): number { return conditions.supersaturation_fluorite(); },
   form(conditions: any): string { return (conditions.fluid.Y > 1.0) ? 'octahedron' : 'cube'; },
 };
 
 // ---- pyrite — fifth tenant (striations ARE step bunching) ----
-// SIM 244 accepted-ledger survey: Sunnyside is tightly grouped at 3.26;
-// MVT and Sulphur Bank retain much higher diffusion-limited rinds. Band
-// edges deliberately separate Sunnyside's coarse striations from those
-// truly skeletal high-driving-force end members.
+// SIM 275 accepted-layer testimony places Sulphur Bank in the smooth band,
+// Sunnyside in the finely striated band, and MVT across smooth -> finely
+// striated layers. The macrostep, hopper, and dendritic bands remain
+// provisional upper rungs; no commissioned pyrite layer currently occupies
+// them. Band edges therefore express the ordered physical classifier rather
+// than an obsolete scenario plateau.
 // The continuous within-crystal distributions make pyrite ZONED as the
 // fluid wanders. The striations on pyrite
 // faces ({100} and {210} both) are oscillatory combination-growth step
 // bunching — the literal physical phenomenon the stepped bands model
 // (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
-// Claims: Sunnyside is the lower-instability, coarsely striated end-member and
-// never reaches skeletal/dendritic bands; MVT records a smooth core,
-// striated transition, and diffusion-limited rind; Sulphur Bank's
-// very-high-sigma history is dominated by unstable aggregate growth.
+// Claims: Sulphur Bank remains smooth, Sunnyside is finely striated, and MVT
+// records a smooth-to-finely-striated stack. None is currently used to claim
+// a diffusion-limited macrostep/skeletal rind.
 // FORM is T-driven in grow_pyrite (>300 cube / 200–300 pyritohedron /
 // 100–200 combo / <100 framboidal-micro) — the form hook mirrors it;
 // the regime overlays 'striated_' onto the euhedral forms only.
@@ -399,7 +399,7 @@ MORPH_TH.pyrite = {
   STEP_MILD_MAX: 2.4,    // fine striations
   STEP_MACRO_MAX: 3.5,   // coarse striations / stepped composite faces
   HOPPER_MAX: 4.2,       // skeletal transition
-  // ≥ 4.2 → dendritic/aggregate instability (MVT + Sulphur Bank rinds)
+  // ≥ 4.2 → dendritic/aggregate instability (provisional; unoccupied in v276)
   sigma(conditions: any): number { return conditions.supersaturation_pyrite(); },
   form(conditions: any): string {
     const T = conditions.temperature;
@@ -1571,9 +1571,68 @@ function classifyMorphologyStep(sim: any) {
     // Every growing crystal is evaluated at its own boundary cell. Form hooks
     // run in that same local chemistry/temperature context.
     for (const c of sim.crystals) {
-      if (!c || c.mineral !== mineral || c.dissolved) continue;
-      const z = c.zones.length ? c.zones[c.zones.length - 1] : null;
-      if (!z || z.step !== sim.step || z.thickness_um <= 0) continue;
+      if (!c || c.mineral !== mineral) continue;
+      // One step may append multiple positive shells and/or a later negative
+      // etch. Classifying only the array tail silently dropped real accepted
+      // layers whenever the final member was negative. Walk the complete
+      // signed stack once so every same-step positive shell gets its own
+      // size-before value on the same convention as Crystal.add_zone.
+      const positiveZones: Array<{ zone: any; sizeBefore: number }> = [];
+      let sizeAccUm = 0;
+      for (const zone of (Array.isArray(c.zones) ? c.zones : [])) {
+        const thickness = Number(zone?.thickness_um);
+        if (zone && zone.step === sim.step && Number.isFinite(thickness) && thickness > 0) {
+          positiveZones.push({ zone, sizeBefore: Math.max(0, sizeAccUm) });
+        }
+        if (Number.isFinite(thickness)) sizeAccUm += thickness;
+      }
+      if (!positiveZones.length) {
+        // A negative-only step can erase the last surviving interface. Do not
+        // retain a prior classified live summary on a dissolved husk.
+        if (c.dissolved) c._morphology = null;
+        continue;
+      }
+      const markUnavailable = (
+        status: string,
+        reason: string,
+        basis: string,
+        postStepSigma: number | null,
+      ) => {
+        for (const { zone } of positiveZones) {
+          zone.morphology_status = status;
+          zone.morph_unavailable_reason = reason;
+          zone.morph_sigma_basis = basis;
+          zone.morph_post_step_sigma = postStepSigma;
+          zone.morph_regime = null;
+          zone.morph_form = null;
+          zone.morph_surf_sigma = null;
+        }
+        // A dissolved husk retains its historical layer testimony but has no
+        // live growth interface. Otherwise publish an explicit unavailable
+        // summary so a prior regime cannot drive the next habit.
+        c._morphology = c.dissolved ? null : {
+          status,
+          unavailable_reason: reason,
+          sigma_basis: basis,
+          post_step_sigma: postStepSigma,
+          regime: null,
+          form: null,
+          surf_sigma: null,
+        };
+      };
+      if (c.dissolved) {
+        // The positive shell remains an authenticated historical event, but
+        // a same-step complete retreat leaves no terminal crystal interface
+        // on which a habit classification could physically reside.
+        for (const { zone } of positiveZones) zone._remaining_solid_um = 0;
+        markUnavailable(
+          'unavailable-no-surviving-interface',
+          'no-surviving-interface-after-same-step-dissolution',
+          'post-step-no-solid-interface',
+          null,
+        );
+        continue;
+      }
       const anchor = sim.wall_state?._resolveAnchor?.(c);
       const mesh = sim.wall_state?.meshFor?.(sim);
       const vertexIdx = anchor
@@ -1591,7 +1650,7 @@ function classifyMorphologyStep(sim: any) {
         if (isFinite(sigma) && th.environmentSigma) {
           sigma = th.environmentSigma(sim.conditions, c, sigma);
         }
-        if (isFinite(sigma) && sigma >= 1.0) {
+        if (Number.isFinite(sigma)) {
           mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
           form = th.form ? th.form(sim.conditions, c) : null;
         }
@@ -1601,15 +1660,76 @@ function classifyMorphologyStep(sim: any) {
         sim.conditions.fluid = savedFluid;
         sim.conditions.temperature = savedTemp;
       }
-      if (!isFinite(sigma) || sigma < 1.0) continue;
-      // Size BEFORE this zone — the map tool's sizeAcc semantics.
-      const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
-      const surf = morphSurfaceSigma(th, sigma, sizeBefore) * mult;
-      const regime = morphRegime(th, surf);
-      z.morph_regime = regime;
-      if (form) z.morph_form = form;
-      z.morph_surf_sigma = surf;
-      c._morphology = { regime, form, surf_sigma: surf };
+      // The morphology sample is intentionally post-step: it describes the
+      // terminal interface left after every same-step consumer has run. A
+      // layer may have been accepted from a supersaturated local fluid and
+      // leave that interface depleted below sigma=1 later in the same step.
+      // Omitting such a layer made the evidence incomplete. Preserve the
+      // finite terminal value, classify it conservatively on the monotone
+      // smooth end of the same ladder, and disclose the depleted basis rather
+      // than pretending it was the admission condition.
+      if (!Number.isFinite(sigma)) {
+        markUnavailable(
+          'unavailable-nonfinite-post-step',
+          'nonfinite-post-step-sigma',
+          'post-step-unavailable',
+          null,
+        );
+        continue;
+      }
+      const basis = sigma < 1.0 ? 'post-step-terminal-depleted' : 'post-step';
+      if (!Number.isFinite(mult)) {
+        markUnavailable(
+          'unavailable-derived-morphology',
+          'nonfinite-effective-sigma-multiplier',
+          basis,
+          sigma,
+        );
+        continue;
+      }
+      if (typeof form !== 'string' || form.length === 0) {
+        markUnavailable(
+          'unavailable-derived-morphology',
+          'missing-crystallographic-form',
+          basis,
+          sigma,
+        );
+        continue;
+      }
+      const classified = positiveZones.map(({ zone, sizeBefore }) => ({
+        zone,
+        surf: morphSurfaceSigma(th, sigma, sizeBefore) * mult,
+      }));
+      if (classified.some(({ surf }) => !Number.isFinite(surf))) {
+        markUnavailable(
+          'unavailable-derived-morphology',
+          'nonfinite-surface-sigma',
+          basis,
+          sigma,
+        );
+        continue;
+      }
+      for (const { zone, surf } of classified) {
+        const regime = morphRegime(th, surf);
+        zone.morphology_status = 'classified';
+        zone.morph_unavailable_reason = null;
+        zone.morph_sigma_basis = basis;
+        zone.morph_post_step_sigma = sigma;
+        zone.morph_regime = regime;
+        zone.morph_form = form || null;
+        zone.morph_surf_sigma = surf;
+        // The last accepted positive shell is the exposed live interface even
+        // if a later negative zone also occurred in this step.
+        c._morphology = {
+          status: zone.morphology_status,
+          unavailable_reason: null,
+          sigma_basis: zone.morph_sigma_basis,
+          post_step_sigma: sigma,
+          regime,
+          form,
+          surf_sigma: surf,
+        };
+      }
     }
   }
 }

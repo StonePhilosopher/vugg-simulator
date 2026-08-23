@@ -3012,9 +3012,15 @@ class WallState {
   // FOOTPRINT_SCALE rationale. Returns the FULL arc in mm; painters
   // derive halfCells from it exactly as before (byte-identical), the
   // enclosure gate uses arc/2 as the crystal's lateral reach.
-  footprintArcMm(crystal) {
+  footprintArcMm(crystal, physicalGrowthUm = undefined) {
     const FOOTPRINT_SCALE = 4.0;
-    return (crystal.total_growth_um / 1000.0)
+    // Painters use the public aggregate by default. Physical enclosure passes
+    // the independently integrated non-phantom solid extent so diagnostic or
+    // phantom layers cannot manufacture lateral reach.
+    const growthUm = Number.isFinite(Number(physicalGrowthUm))
+      ? Math.max(0, Number(physicalGrowthUm))
+      : Math.max(0, Number(crystal.total_growth_um) || 0);
+    return (growthUm / 1000.0)
            * Math.max(crystal.wall_spread, 0.05)
            * FOOTPRINT_SCALE;
   }

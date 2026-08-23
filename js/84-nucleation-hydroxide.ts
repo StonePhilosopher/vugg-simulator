@@ -14,12 +14,22 @@ function _nuc_goethite(sim) {
   const sigma_goe = sim.conditions.supersaturation_goethite();
   const existing_goe_active = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
   const total_goe = sim.crystals.filter(c => c.mineral === 'goethite').length;
-  if (sigma_goe > MINERAL_GATES_goethite.sigma_crit && !existing_goe_active.length && total_goe < 3 && !sim._atNucleationCap('goethite')) {
+  // An oxidatively retreating pyrite/marcasite crystal can earn its own
+  // replacement body even when a free goethite crystal already exists
+  // elsewhere. The accepted matching negative layer is the authority; a
+  // narrator string or a `dissolved` flag alone never grants inheritance.
+  const replacementHost = unclaimedCdrReplacementHost(sim.crystals, 'goethite');
+  const ordinaryBirthAllowed = !existing_goe_active.length;
+  if (sigma_goe > MINERAL_GATES_goethite.sigma_crit
+      && (replacementHost || ordinaryBirthAllowed)
+      && total_goe < 3 && !sim._atNucleationCap('goethite')) {
     let pos = 'vug wall';
     const dissolving_py = sim.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
     const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
     const active_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-    if (dissolving_py.length && rng.random() < 0.7) {
+    if (replacementHost) {
+      pos = `pseudomorph after ${replacementHost.mineral} #${replacementHost.crystal_id}`;
+    } else if (dissolving_py.length && rng.random() < 0.7) {
       pos = `pseudomorph after pyrite #${dissolving_py[0].crystal_id}`;
     } else if (dissolving_cp.length && rng.random() < 0.5) {
       pos = `pseudomorph after chalcopyrite #${dissolving_cp[0].crystal_id}`;

@@ -30,9 +30,15 @@ function grow_wulfenite(crystal, conditions, step) {
   let rate = 3.5 * excess * rng.uniform(0.8, 1.2); // slower growth — rare mineral
   if (rate < 0.1) return null;
 
-  crystal.habit = 'tabular';
-  crystal.extent_kind = 'individual';
-  crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
+  if (rate > 5) {
+    crystal.habit = 'intergrown_thin_plates';
+    crystal.extent_kind = 'aggregate';
+    crystal.dominant_forms = ['intergrown {001} plates', 'fragile reticulated aggregate'];
+  } else {
+    crystal.habit = 'tabular_square';
+    crystal.extent_kind = 'individual';
+    crystal.dominant_forms = ['{001} tabular plate', 'square outline'];
+  }
 
   // Aspect ratio: very flat plates
   // Phase 1d: Pb/Mo consumption owned by the wrapper (applyStoichiometricGrowthBudget).

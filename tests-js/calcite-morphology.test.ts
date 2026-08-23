@@ -18,9 +18,10 @@
 //      basis misbanded the whole dripstone family dendritic (thin-film σ
 //      spikes the crystal itself consumes within the step).
 //   4. THE VALIDATED FLEET PICTURE survives: stalactite_demo is stepped-
-//      dominant, mvt smooth-spar-dominant, and dendritic is never a
-//      dominant band at seed 42 (zero stable dendrites — geologically
-//      honest; the reviewer's prediction, confirmed by the corrected map).
+//      dominant, mvt is smooth-spar-dominant, and Sabkha records an early
+//      hopper interval followed by pulse-driven, dendritic-dominant growth.
+//      Those Sabkha regimes are checked layer by layer against the same
+//      Sunagawa thresholds; Mg independently selects scalenohedral form.
 //   5. THE INSTRUMENTS: per-zone tags carry regime/form/surf_sigma; the
 //      calcite_morph strip chip reads the Sunagawa ordinal at the
 //      crystal's anchor and null in empty rock.
@@ -192,17 +193,46 @@ describe('calcite morphology instruments (Phase 1)', () => {
       expect(/macrostep|growth steps/.test(forms)).toBe(true);
     }
 
-    // Sabkha calcite now sees extreme supersaturation after the authoritative
-    // sulfate ledger drains the shared Ca pool. It belongs at the terminal
-    // diffusion-limited end of the Sunagawa ladder, not the milder hopper
-    // band that the pre-v244 double-precipitation pathway happened to create.
+    // Sabkha's pulse train crosses two adjacent high-driving-force regimes:
+    // an early crystal terminates while the surface is still hopper-grade,
+    // then later local fluids cross into dendritic growth. Prove the claim
+    // over every positive layer rather than promoting the dominant regime
+    // into a false "every crystal" rule. The Mg axis independently keeps
+    // both regimes in the scalenohedral form family.
     const sabkha = runScenario('sabkha_dolomitization');
-    const sabkhaCal = sabkha.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
+    const sabkhaCal = sabkha.crystals.filter((c: any) =>
+      c.mineral === 'calcite' && !c.dissolved
+      && (c.zones || []).some((z: any) => Number(z.thickness_um) > 0));
     expect(sabkhaCal.length).toBeGreaterThan(0);
+    const sabkhaRegimeMass: Record<string, number> = {};
+    let sabkhaPositiveThickness = 0;
+    let sabkhaTaggedThickness = 0;
+    let sabkhaPositiveLayers = 0;
     for (const c of sabkhaCal) {
-      expect(c.habit).toBe('dendritic_scalenohedral');
-      expect((c.dominant_forms || []).join(' ')).toMatch(/dendrit|branch/i);
+      expect(c._morphology).toBeTruthy();
+      expect(['hopper_scalenohedral', 'dendritic_scalenohedral']).toContain(c.habit);
+      const forms = (c.dominant_forms || []).join(' ');
+      if (c.habit === 'hopper_scalenohedral') expect(forms).toMatch(/hopper|skeletal|funnel/i);
+      if (c.habit === 'dendritic_scalenohedral') expect(forms).toMatch(/dendrit|branch/i);
+      for (const z of c.zones || []) {
+        if (!(Number(z.thickness_um) > 0)) continue;
+        sabkhaPositiveLayers++;
+        sabkhaPositiveThickness += Number(z.thickness_um);
+        expect(Number.isFinite(Number(z.morph_surf_sigma))).toBe(true);
+        expect(['hopper_skeletal', 'dendritic']).toContain(z.morph_regime);
+        expect(z.morph_form).toBe('scalenohedral');
+        expect(z.morph_regime).toBe(calciteMorphRegime(Number(z.morph_surf_sigma)));
+        sabkhaTaggedThickness += Number(z.thickness_um);
+        sabkhaRegimeMass[z.morph_regime] = (sabkhaRegimeMass[z.morph_regime] || 0)
+          + Number(z.thickness_um);
+      }
     }
+    expect(sabkhaPositiveLayers).toBeGreaterThan(0);
+    expect(sabkhaTaggedThickness).toBeCloseTo(sabkhaPositiveThickness, 12);
+    expect(Object.keys(sabkhaRegimeMass).sort()).toEqual(['dendritic', 'hopper_skeletal']);
+    expect(sabkhaRegimeMass.dendritic / sabkhaPositiveThickness).toBeGreaterThan(0.90);
+    expect(sabkhaCal.some((c: any) => c.habit === 'hopper_scalenohedral')).toBe(true);
+    expect(sabkhaCal.some((c: any) => c.habit === 'dendritic_scalenohedral')).toBe(true);
 
     // mvt is smooth-spar (98%, and the stepped sliver is the tiny CORE,
     // not the rim): its calcite keeps the plain parent-form habit — the
@@ -285,16 +315,38 @@ describe('calcite morphology instruments (Phase 1)', () => {
       expect(reliefSpan).toBeLessThanOrEqual(0.15);              // phantom core, not a stepped rim
     }
 
-    // The dendritic exterior retains a small hopper core in its zone walk,
-    // but the final band must not be rendered as a hopper funnel.
+    // A pulse-driven Sabkha crystal that crosses hopper → dendritic retains
+    // both layers and terminates dendritic. Dendrite uses its own geometry;
+    // a sub-5% hopper core must not manufacture a terrace/hopper overlay.
     const sabkha = runScenario('sabkha_dolomitization');
-    const sabCal = sabkha.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved && c.total_growth_um > 0);
+    const sabCal = sabkha.crystals.find((c: any) => {
+      if (c.mineral !== 'calcite' || c.dissolved || !(c.total_growth_um > 0)) return false;
+      const regimes = new Set((c.zones || [])
+        .filter((z: any) => Number(z.thickness_um) > 0)
+        .map((z: any) => z.morph_regime));
+      return regimes.has('hopper_skeletal') && regimes.has('dendritic');
+    });
     expect(sabCal).toBeTruthy();
     const sabTerr = calciteTerraceBands(sabCal);
     expect(sabCal.habit).toBe('dendritic_scalenohedral');
-    expect(sabTerr).toBeTruthy();
-    expect(sabTerr.hopperTip).toBe(false);
-    expect(sabTerr.knots[sabTerr.knots.length - 1].regime).toBe('dendritic');
+    const mixedPositive = (sabCal.zones || []).filter((z: any) => Number(z.thickness_um) > 0);
+    expect(mixedPositive[mixedPositive.length - 1].morph_regime).toBe('dendritic');
+    const mixedTotal = mixedPositive.reduce((sum: number, z: any) => sum + Number(z.thickness_um), 0);
+    const mixedHopper = mixedPositive
+      .filter((z: any) => z.morph_regime === 'hopper_skeletal')
+      .reduce((sum: number, z: any) => sum + Number(z.thickness_um), 0);
+    expect(mixedHopper / mixedTotal).toBeLessThan(0.05);
+    expect(sabTerr).toBeNull();
+
+    // Paired geometry control: an early crystal that never crosses the
+    // dendritic threshold ends honestly as a hopper with a hollow tip.
+    const sabHopper = sabkha.crystals.find((c: any) =>
+      c.mineral === 'calcite' && !c.dissolved && c.habit === 'hopper_scalenohedral');
+    expect(sabHopper).toBeTruthy();
+    const hopperTerr = calciteTerraceBands(sabHopper);
+    expect(hopperTerr).toBeTruthy();
+    expect(hopperTerr.hopperTip).toBe(true);
+    expect(hopperTerr.knots[hopperTerr.knots.length - 1].regime).toBe('hopper_skeletal');
   });
 
   it('Phase 4 (SIM 187): the Mg axis — form elongation + bunching bias', () => {
@@ -309,8 +361,14 @@ describe('calcite morphology instruments (Phase 1)', () => {
 
     // Fleet: the Mg-dominated waters wear scalenohedral-family habits.
     const sabkha = runScenario('sabkha_dolomitization');   // Mg:Ca ≈ 3.3
-    const sabCal = sabkha.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
-    expect(sabCal.habit).toBe('dendritic_scalenohedral');
+    const sabCal = sabkha.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
+    expect(sabCal.length).toBeGreaterThan(0);
+    for (const c of sabCal) {
+      expect(String(c.habit).endsWith('scalenohedral')).toBe(true);
+      const positive = (c.zones || []).filter((z: any) => Number(z.thickness_um) > 0);
+      expect(positive.length).toBeGreaterThan(0);
+      for (const z of positive) expect(z.morph_form).toBe('scalenohedral');
+    }
 
     const ultra = runScenario('ultramafic_supergene');     // Mg:Ca ≈ 10
     const ultraCal = ultra.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);

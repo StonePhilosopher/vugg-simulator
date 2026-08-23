@@ -223,7 +223,7 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
         enclosed_by: null,
       };
       const sim = { conditions: c, crystals: [host] };
-      const route = engineExecutableSubstrateRoute(host, row.mineral);
+      const route = engineExecutableSubstrateRoute(host, row.mineral, sim);
       expect(route.executable, `${row.mineral} production host`).toBe(true);
       const why = _buildMineralFormationExplanation(row.mineral, c, sim, 0.8);
       expect(why.chemistryEligible, `${row.mineral} below bare wall`).toBe(false);

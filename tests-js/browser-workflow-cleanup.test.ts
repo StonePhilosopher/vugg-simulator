@@ -6,12 +6,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   assertOwnedDevToolsVersion,
+  captureOwnedBrowserProcessReceipts,
   CdpClient,
+  findOwnedBrowserRootPid,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
   terminateOwned,
-  terminateOwnedProfileProcesses,
+  terminateOwnedProcessReceipts,
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
@@ -105,6 +107,19 @@ describe('browser workflow owned-resource cleanup', () => {
     }, receipt)).toThrow(/exact owned-profile receipt/);
   });
 
+  it('binds the authenticated loopback DevTools port to one exact browser PID', async () => {
+    const netstatRunner = async () => ({
+      stdout: [
+        '  TCP    127.0.0.1:43123      0.0.0.0:0      LISTENING       5100',
+        '  TCP    127.0.0.1:43124      0.0.0.0:0      LISTENING       9999',
+      ].join('\r\n'),
+    });
+    await expect(findOwnedBrowserRootPid(43123, { netstatRunner: netstatRunner as never }))
+      .resolves.toBe(5100);
+    await expect(findOwnedBrowserRootPid(43125, { netstatRunner: netstatRunner as never }))
+      .rejects.toThrow(/0 listening process owners/);
+  });
+
   it('requires the per-run nonce before accepting the local content server', async () => {
     const server = new FakeOwnedProcess(5300);
     const response = (nonce: string | null) => ({
@@ -160,12 +175,26 @@ describe('browser workflow owned-resource cleanup', () => {
     expect((client.ws as NeverOpeningSocket).closeCalls).toBe(1);
   });
 
-  it('terminates a detached browser by the exact owned profile tree root', async () => {
-    let findCalls = 0;
-    const processFinder = async () => {
-      findCalls += 1;
-      return findCalls === 1
-        ? [{ pid: 5100, parentPid: 4000 }, { pid: 5101, parentPid: 5100 }]
+  it('captures the exact launched process tree fingerprints and terminates only exact survivors', async () => {
+    const captured = await captureOwnedBrowserProcessReceipts(5000, {
+      platform: 'win32',
+      processTreeProvider: async () => [
+        { pid: 5000, parentPid: 4000, start_ticks: '500000', executable_path: 'chrome.exe' },
+        { pid: 5100, parentPid: 5000, start_ticks: '510000', executable_path: 'chrome.exe' },
+        { pid: 5101, parentPid: 5100, start_ticks: '510100', executable_path: 'chrome.exe' },
+        { pid: 5199, parentPid: 9999, start_ticks: '519900', executable_path: 'chrome.exe' },
+      ],
+    });
+    expect(captured.map(row => row.pid)).toEqual([5000, 5100, 5101]);
+
+    let inspectCalls = 0;
+    const processTreeProvider = async () => {
+      inspectCalls += 1;
+      return inspectCalls === 1
+        ? [
+          { ...captured[1], parentPid: 5000 },
+          { ...captured[2], parentPid: 5100, start_ticks: 'different-process' },
+        ]
         : [];
     };
     const spawned: Array<{ command: string; args: string[] }> = [];
@@ -174,9 +203,9 @@ describe('browser workflow owned-resource cleanup', () => {
       return new FakeOwnedProcess(5200, 0) as never;
     };
 
-    await terminateOwnedProfileProcesses('C:\\Temp\\vugg-browser-qa-owned', {
+    await terminateOwnedProcessReceipts(captured, {
       platform: 'win32',
-      processFinder,
+      processTreeProvider,
       processSpawner,
       waitMs: 10,
     });
@@ -184,6 +213,6 @@ describe('browser workflow owned-resource cleanup', () => {
       command: 'taskkill.exe',
       args: ['/PID', '5100', '/T', '/F'],
     }]);
-    expect(findCalls).toBe(2);
+    expect(inspectCalls).toBe(2);
   });
 });

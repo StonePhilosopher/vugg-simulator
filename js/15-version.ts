@@ -12992,7 +12992,71 @@
 // mass-balanced acid retreat, and canonical evidence records layer formulae,
 // hydration transfer, competition allocation, habit, and transformation
 // boundaries. These changes alter admissions, trajectories, and evidence.
-const SIM_VERSION = 272;
+// v273 (August 2026): hostile SCI-03/04 closure makes the locality and
+// transformation contracts executable end to end. Tri-State fluid mixing is
+// an owner-bound, cited 90 ppm sulfide / 30 ppm sulfate event in both the
+// canonical locality catalogue and browser/headless runtimes; ambiguous
+// sulfur input fails closed. HMC now uses its dynamic booked Ca/Mg formula in
+// competition under a disclosed locality-licensed heterogeneous-wall
+// approximation, with its nucleation and habit thresholds stated consistently.
+// Dehydration requires positive parent mass, aggregate habit identifiers match
+// production, and controlled production-engine witnesses expose formula,
+// solid-solution, CDR, hydration, reactivity, and competition mechanisms in
+// authenticated claim-card evidence. These changes alter scientific admission,
+// allocation, transformation, and published evidence, so v272 remains an
+// immutable review candidate and this release receives a new identity.
+// v274 (August 2026): Elmwood's three cyclic masked-barite stages now address the
+// explicit sulfate reservoir rather than writing the derived combined-S
+// compatibility field. The first stage books the external sulfate-water
+// contribution; each inter-pulse film is paired with an exact, receipted Ba
+// drawdown, and each later Ba recharge is separately booked. This restores the
+// causal stall -> pulse -> breakthrough sequence: clay and iron-oxide films
+// become positive-growth internal horizons only after the next authored pulse,
+// while the terminal clay rind remains at the surface. Those clay/iron layers
+// are explicitly disclosed as a general mineral-ontogeny simulator hypothesis,
+// not a documented Elmwood specimen texture. Generic boundary transactions,
+// originating-film fields, and the surviving rind now reach authenticated
+// strips and claim cards. The old fluorite size
+// test is also reconciled to Elmwood's cited +22 F/+70 Ca brine rather than the
+// retired shared Cave-in-Rock +40 F/+100 Ca recipe. Chemistry, layers, and
+// evidence change, so SIM 273 remains immutable and this correction is v274.
+// v275 (August 2026): enclosure now requires accepted net-positive host
+// material in the exact step that records the swallow. The old
+// size-only gate let a large dormant crystal retroactively claim a newly
+// slowing neighbor without adding host material; Bisbee exposed the defect
+// when primary chalcopyrite enclosed partially oxidized supergene native
+// copper despite recording no chalcopyrite layer for 26 surrounding steps.
+// Geometric adjacency, footprint reach, size ratio, and guest slowing remain
+// necessary, but they are no longer sufficient without a moving host growth
+// front; a same-step etch can cancel the front. Competing hosts are selected
+// substrate-first rather than by crystal-array order, and every accepted event
+// carries an archived physical receipt. Geometric-selection burial now means
+// growth-front shadowing, not an impermeable chemical shell, so later pore-fluid
+// attack still books retreat unless an actual enclosure receipt protects the solid.
+// Direct substrate identity supplies contact authority for sub-millimetre
+// overgrowths; the legacy 0.5 mm minimum is retained only for uncertain lateral
+// footprint overlap. Guest and liberation thresholds are computed from accepted
+// non-phantom solid, and front films retain source operations so liberation
+// removes only the contribution of the enclosure being reversed.
+// Unsupported Bisbee cuprite-mantle and
+// universal nested-shell claims are retired rather than manufactured by an
+// unbooked transformation. This changes inclusion histories and evidence and
+// therefore receives a fresh simulation identity.
+// v276 (August 2026): morphology testimony now covers every accepted positive
+// layer for every registered morphology tenant. A finite post-step interface
+// below sigma=1 is retained as a terminal-depleted sample and classified on
+// the conservative smooth end of the existing monotone ladder; a non-finite
+// sample is an explicit unavailable receipt rather than a silently missing
+// layer. This closes the MVT pyrite and three calcite evidence omissions and
+// can change the exposed terminal habit used by the next step, so it receives
+// a fresh simulation identity and a full authenticated evidence bake.
+// v277 (August 2026): chalcanthite's dedicated low-salinity/high-pH
+// water-solubility hook now uses the same authenticated current-enclosure authority as physical
+// etching, substrate selection, transformations, and film deposition. A size
+// cap, growth-front burial, or stale inactive display flag can no longer act
+// as an impermeable chemical seal; only reciprocal topology plus the exact
+// enclosure receipt and chronological lifecycle can withhold dissolution.
+const SIM_VERSION = 277;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -13012,7 +13076,8 @@ const MODEL_DIGEST = [
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
-  'event-fluid:locality-authored-material-transform+atomic-heat-only-default-v2',
+  'event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4',
+  'elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1',
   'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
@@ -13029,16 +13094,16 @@ const MODEL_DIGEST = [
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
-  'solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2',
+  'solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4',
   'cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
-  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+dynamic-competition-stoichiometry+booked-return-v4',
+  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-locality-licensed-heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v5',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
   'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
-  'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
+  'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4',
   'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3',
   'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
   'beryl:K36-postHF-recovery-v1',
@@ -13047,7 +13112,7 @@ const MODEL_DIGEST = [
   'competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5',
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
-  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+causal-event-prerequisite+valence-correct-reconciliation-v8',
+  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v10',
   'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
   'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
   'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
@@ -13056,14 +13121,17 @@ const MODEL_DIGEST = [
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
   'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-  'run-testimony:actual-step+sample-index+nucleation+layer-formula+habit-extent+hydration-transfer+competition-allocation+solid-state-transformation+null-confining-pressure-v4',
+  'run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v7',
+  'morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2',
   'locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1',
   'crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1',
   'replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1',
-  'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar-v1',
+  'enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10',
+  'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2',
+  'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
-  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
-  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5',
+  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
+  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v8',
 ].join('|');
 

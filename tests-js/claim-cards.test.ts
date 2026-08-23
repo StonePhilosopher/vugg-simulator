@@ -3,17 +3,181 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { verifyMechanismWitnessArtifact } from '../tools/gen-mechanism-witnesses.mjs';
 
 declare const SIM_VERSION: number;
 declare const MODEL_DIGEST: string;
 declare const SCENARIOS: Record<string, any>;
 declare const STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE: Record<string, any>;
+declare const MORPH_TH: Record<string, any>;
+declare const morphRegime: (thresholds: any, surfaceSigma: number) => string;
+
+const MORPHOLOGY_REGIMES = new Set([
+  'spiral_smooth', 'stepped_mild', 'stepped_macro',
+  'hopper_skeletal', 'dendritic',
+]);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('adversarial claim-card fleet', () => {
+  it('rejects a self-consistent-looking morphology row whose regime contradicts its surface sigma', () => {
+    const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
+    const script = `
+      import { buildMorphologyLayerTestimony } from ${JSON.stringify(moduleUrl)};
+      const forged = [{
+        step: 1, crystal_id: 1, zone_index: 0, mineral: 'pyrite',
+        thickness_um: 10, is_phantom: false, remaining_solid_um: null,
+        morphology: {
+          status: 'classified', sigma_basis: 'post-step', post_step_sigma: 1.2,
+          surface_sigma: 1.2, regime: 'dendritic', form: 'cubic', unavailable_reason: null
+        }
+      }];
+      const registry = { pyrite: {
+        SPIRAL_MAX: 1.6, STEP_MILD_MAX: 2.4, STEP_MACRO_MAX: 3.5, HOPPER_MAX: 4.2
+      } };
+      try {
+        buildMorphologyLayerTestimony(forged, registry);
+        console.error('forged morphology unexpectedly accepted');
+        process.exit(3);
+      } catch (error) {
+        if (!/recorded regime disagrees/.test(String(error?.message || error))) {
+          console.error(error);
+          process.exit(4);
+        }
+      }
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+  });
+
+  it('rejects coerced layer identity, thickness, mineral, and phantom fields at the producer boundary', () => {
+    const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
+    const script = `
+      import { buildMorphologyLayerTestimony } from ${JSON.stringify(moduleUrl)};
+      const registry = { pyrite: {
+        SPIRAL_MAX: 1.6, STEP_MILD_MAX: 2.4, STEP_MACRO_MAX: 3.5, HOPPER_MAX: 4.2
+      } };
+      const morphology = {
+        status: 'classified', unavailable_reason: null, sigma_basis: 'post-step',
+        post_step_sigma: 1.2, surface_sigma: 1.2, regime: 'spiral_smooth', form: 'cubic'
+      };
+      const valid = {
+        step: 1, crystal_id: 1, zone_index: 0, mineral: 'pyrite', thickness_um: 10,
+        is_phantom: false, morphology
+      };
+      const forgedRows = [
+        [{ ...valid, thickness_um: '10' }],
+        [{ ...valid, mineral: ['pyrite'] }],
+        [{ ...valid, step: '1' }],
+        [{ ...valid, crystal_id: '1' }],
+        [{ ...valid, is_phantom: 'false' }]
+      ];
+      for (const forged of forgedRows) {
+        try {
+          buildMorphologyLayerTestimony(forged, registry);
+          console.error('coerced morphology layer unexpectedly accepted');
+          process.exit(3);
+        } catch (error) {
+          if (!/noncanonical identity, zone, mineral, thickness, or phantom schema/.test(String(error?.message || error))) {
+            console.error(error);
+            process.exit(4);
+          }
+        }
+      }
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+  });
+
+  it('authenticates a fully erased shell only as no-surviving-interface testimony', () => {
+    const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
+    const script = `
+      import { buildMorphologyLayerTestimony } from ${JSON.stringify(moduleUrl)};
+      const registry = { pyrite: {
+        SPIRAL_MAX: 1.6, STEP_MILD_MAX: 2.4, STEP_MACRO_MAX: 3.5, HOPPER_MAX: 4.2
+      } };
+      const row = {
+        step: 1, crystal_id: 1, zone_index: 0, mineral: 'pyrite',
+        thickness_um: 10, is_phantom: false, remaining_solid_um: 0,
+        morphology: {
+          status: 'unavailable-no-surviving-interface',
+          unavailable_reason: 'no-surviving-interface-after-same-step-dissolution',
+          sigma_basis: 'post-step-no-solid-interface', post_step_sigma: null,
+          surface_sigma: null, regime: null, form: null
+        }
+      };
+      const loss = {
+        step: 1, crystal_id: 1, zone_index: 1, mineral: 'pyrite',
+        thickness_um: -10, is_phantom: true, remaining_solid_um: null,
+        morphology: {
+          status: null, unavailable_reason: null, sigma_basis: null, post_step_sigma: null,
+          surface_sigma: null, regime: null, form: null
+        }
+      };
+      const summary = buildMorphologyLayerTestimony([row, loss], registry);
+      if (summary.unavailable_layer_count !== 1 || summary.classified_layer_count !== 0) {
+        console.error(summary);
+        process.exit(3);
+      }
+      const invalidLedgers = [
+        [row],
+        [row, { ...loss, crystal_id: 2, zone_index: 0 }],
+        [row, { ...loss, step: 2 }],
+        [row, { ...loss, thickness_um: -9 }],
+        [{ ...loss, zone_index: 0 }, { ...row, zone_index: 1 }],
+        [row, { ...loss, zone_index: 0 }],
+        [{ ...row, zone_index: 1 }, { ...loss, zone_index: 2 }],
+        [row, { ...loss, zone_index: 2 }],
+        [
+          { ...row, step: 0, zone_index: 0, thickness_um: 5, remaining_solid_um: null,
+            morphology: { ...row.morphology, status: 'classified', unavailable_reason: null,
+              sigma_basis: 'post-step', post_step_sigma: 1.2,
+              surface_sigma: 1.2, regime: 'spiral_smooth', form: 'cubic' } },
+          { ...loss, zone_index: 1, thickness_um: -10 },
+          { ...row, zone_index: 2, thickness_um: 5 }
+        ],
+        [{ ...row, remaining_solid_um: 1 }, loss]
+      ];
+      for (const ledger of invalidLedgers) {
+        try {
+          buildMorphologyLayerTestimony(ledger, registry);
+          console.error('unclosed no-interface morphology unexpectedly accepted');
+          process.exit(4);
+        } catch (error) {
+          if (!/(without same-step physical dissolution|not contiguous from zero|negative physical-solid inventory)/
+            .test(String(error?.message || error))) {
+            console.error(error);
+            process.exit(5);
+          }
+        }
+      }
+      row.morphology.regime = 'spiral_smooth';
+      try {
+        buildMorphologyLayerTestimony([row, loss], registry);
+        console.error('erased shell with a surviving regime unexpectedly accepted');
+        process.exit(6);
+      } catch (error) {
+        if (!/malformed no-surviving-interface/.test(String(error?.message || error))) {
+          console.error(error);
+          process.exit(7);
+        }
+      }
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+  });
+
   it('builds and inspects every current scenario card, including executed testimony', () => {
     const stripDir = path.join(ROOT, 'archive', 'strips', `v${SIM_VERSION}`);
     const files = fs.readdirSync(stripDir).filter(name => name.endsWith('.json')).sort();
@@ -22,6 +186,21 @@ describe('adversarial claim-card fleet', () => {
 
     const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vugg-claim-cards-'));
     try {
+      const mechanismArtifact = JSON.parse(fs.readFileSync(
+        path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`),
+        'utf8',
+      ));
+      expect(verifyMechanismWitnessArtifact(ROOT, mechanismArtifact, {
+        simVersion: SIM_VERSION,
+        modelDigest: MODEL_DIGEST,
+      })).toBe(true);
+      let formulaLayerCount = 0;
+      let solidSolutionLayerCount = 0;
+      let cdrReplacementCount = 0;
+      let reactivityControlCount = 0;
+      let citedSizeAuthorityCount = 0;
+      let claimCitationCount = 0;
+      let enclosureReceiptCount = 0;
       const run = spawnSync(process.execPath, [
         'tools/review-claim-card.mjs', '--all', '--version', String(SIM_VERSION), '--out', outDir,
       ], { cwd: ROOT, encoding: 'utf8' });
@@ -71,6 +250,7 @@ describe('adversarial claim-card fleet', () => {
         .toEqual(spec.excluded_species || {});
       expect(card.claim.claim_citations, `${scenario}: claim-level citations`)
         .toEqual(spec.claim_citations || []);
+      claimCitationCount += card.claim.claim_citations.length;
       expect(card.claim.authored_science_context.model_digest, `${scenario}: authored science digest`).toBe(MODEL_DIGEST);
       expect(card.claim.authored_science_context.growth_budget, `${scenario}: disclosed growth-budget boundary`)
         .toEqual(STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE);
@@ -116,12 +296,247 @@ describe('adversarial claim-card fleet', () => {
         .toBe(sulfurSamples.filter((sample: any) => sample.closed && sample.testimonyClosed).length);
       expect(executed.sulfur_ledger.all_closed, `${scenario}: sulfur-ledger closure`)
         .toBe(sulfurSamples.length ? true : null);
+      const fluidBoundarySamples = strip.executed_testimony?.fluid_boundary || [];
+      expect(executed.fluid_boundary.transactions, `${scenario}: fluid-boundary testimony`)
+        .toEqual(fluidBoundarySamples);
+      expect(executed.fluid_boundary.transaction_count, `${scenario}: fluid-boundary transaction count`)
+        .toBe(fluidBoundarySamples.length);
+      expect(executed.fluid_boundary.closed_transaction_count, `${scenario}: fluid-boundary closure count`)
+        .toBe(fluidBoundarySamples.filter((sample: any) => sample.closed).length);
+      expect(executed.fluid_boundary.all_closed, `${scenario}: fluid-boundary closure`)
+        .toBe(fluidBoundarySamples.length ? true : null);
+      const enclosureSamples = strip.executed_testimony?.enclosures || [];
+      expect(executed.enclosures.events, `${scenario}: enclosure testimony`)
+        .toEqual(enclosureSamples);
+      expect(executed.enclosures.event_count, `${scenario}: enclosure event count`)
+        .toBe(enclosureSamples.length);
+      for (const receipt of enclosureSamples) {
+        const layers = strip.executed_testimony?.layer_growth || [];
+        if (receipt.schema === 'enclosure-receipt-v1') {
+          expect(receipt.event).toBe('enclosed');
+          expect(receipt.host_same_step_positive_growth_um).toBeGreaterThan(0);
+          expect(receipt.host_same_step_net_growth_um).toBeGreaterThan(0);
+          expect(receipt.size_ratio).toBeGreaterThan(3);
+          expect(['guest-on-host', 'host-on-guest', 'geometric-overlap']).toContain(receipt.route);
+          if (receipt.route === 'geometric-overlap') {
+            expect(receipt.anchor_distance_mm).toBeLessThanOrEqual(receipt.footprint_reach_mm);
+          }
+          const hostStep = layers.filter((row: any) => row.crystal_id === receipt.host_crystal_id
+            && row.step === receipt.step);
+          const hostPositive = hostStep.reduce((sum: number, row: any) =>
+            sum + (row.thickness_um > 0 && !row.is_phantom ? row.thickness_um : 0), 0);
+          const hostNegative = hostStep.reduce((sum: number, row: any) =>
+            sum + (row.thickness_um < 0 ? Math.abs(row.thickness_um) : 0), 0);
+          expect(hostPositive).toBeCloseTo(receipt.host_same_step_positive_growth_um, 12);
+          expect(hostNegative).toBeCloseTo(receipt.host_same_step_negative_growth_um, 12);
+          expect(hostPositive - hostNegative).toBeCloseTo(receipt.host_same_step_net_growth_um, 12);
+          const hostToStep = layers.filter((row: any) => row.crystal_id === receipt.host_crystal_id
+            && row.step <= receipt.step);
+          const hostPhysical = hostToStep.reduce((sum: number, row: any) => {
+            if (row.thickness_um > 0 && !row.is_phantom) return sum + row.thickness_um;
+            if (row.thickness_um < 0) return sum - Math.abs(row.thickness_um);
+            return sum;
+          }, 0);
+          expect(hostPhysical).toBeCloseTo(receipt.host_physical_size_at_enclosure_um, 10);
+
+          const guestToStep = layers.filter((row: any) => row.crystal_id === receipt.guest_crystal_id
+            && row.step <= receipt.step);
+          const guestCore = guestToStep.reduce((sum: number, row: any) =>
+            sum + (row.thickness_um > 0 && !row.is_phantom ? row.thickness_um : 0), 0);
+          const guestLoss = guestToStep.reduce((sum: number, row: any) =>
+            sum + (row.thickness_um < 0 ? Math.abs(row.thickness_um) : 0), 0);
+          expect(guestCore).toBeCloseTo(receipt.guest_positive_core_um, 12);
+          expect(guestLoss).toBeCloseTo(receipt.guest_loss_um, 12);
+          expect(guestCore - guestLoss).toBeCloseTo(receipt.guest_remaining_growth_um, 10);
+        } else {
+          expect(receipt).toMatchObject({
+            schema: 'liberation-receipt-v1',
+            event: 'liberated',
+            host_still_has_solid: true,
+          });
+          const original = enclosureSamples.find((row: any) =>
+            row.schema === 'enclosure-receipt-v1'
+            && row.host_crystal_id === receipt.host_crystal_id
+            && row.guest_crystal_id === receipt.guest_crystal_id
+            && row.step === receipt.enclosure_step);
+          expect(original, `${scenario}: liberation must reference an accepted enclosure`).toBeTruthy();
+          expect(receipt.host_current_growth_um).toBeLessThan(receipt.liberation_threshold_um);
+          expect(receipt.liberation_threshold_um)
+            .toBeCloseTo(receipt.host_size_at_enclosure_um * 0.7, 12);
+          const hostAtEnclosure = layers.filter((row: any) =>
+            row.crystal_id === receipt.host_crystal_id && row.step <= receipt.enclosure_step)
+            .reduce((sum: number, row: any) => {
+              if (row.thickness_um > 0 && !row.is_phantom) return sum + row.thickness_um;
+              if (row.thickness_um < 0) return sum - Math.abs(row.thickness_um);
+              return sum;
+            }, 0);
+          const hostAtLiberation = layers.filter((row: any) =>
+            row.crystal_id === receipt.host_crystal_id && row.step <= receipt.step)
+            .reduce((sum: number, row: any) => {
+              if (row.thickness_um > 0 && !row.is_phantom) return sum + row.thickness_um;
+              if (row.thickness_um < 0) return sum - Math.abs(row.thickness_um);
+              return sum;
+            }, 0);
+          expect(hostAtEnclosure).toBeCloseTo(receipt.host_size_at_enclosure_um, 10);
+          expect(Math.max(0, hostAtLiberation)).toBeCloseTo(receipt.host_current_growth_um, 10);
+        }
+      }
+      enclosureReceiptCount += enclosureSamples.length;
       expect(executed.crystal_layers.formula_layers, `${scenario}: formula-layer testimony`)
         .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.formula_stoichiometry));
+      expect(executed.crystal_layers.solid_solution_layers, `${scenario}: solid-solution testimony`)
+        .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.solid_solution));
       expect(executed.crystal_layers.binding_competition_allocations, `${scenario}: competition testimony`)
         .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.competition_allocation));
+      expect(executed.crystal_layers.masked_horizons, `${scenario}: masked-horizon testimony`)
+        .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.masked_horizon));
+      const tenantMinerals = Object.keys(MORPH_TH).sort();
+      const tenantSet = new Set(tenantMinerals);
+      const layerRows = strip.executed_testimony?.layer_growth || [];
+      for (const row of layerRows) {
+        expect(typeof row.step === 'number' && Number.isSafeInteger(row.step) && row.step >= 0).toBe(true);
+        expect(typeof row.crystal_id === 'number' && Number.isSafeInteger(row.crystal_id)
+          && row.crystal_id > 0).toBe(true);
+        expect(typeof row.zone_index === 'number' && Number.isSafeInteger(row.zone_index)
+          && row.zone_index >= 0).toBe(true);
+        expect(typeof row.mineral === 'string' && row.mineral.length > 0).toBe(true);
+        expect(typeof row.thickness_um === 'number' && Number.isFinite(row.thickness_um)).toBe(true);
+        expect(typeof row.is_phantom).toBe('boolean');
+      }
+      const positiveMorphologyLayers = layerRows.filter((row: any) =>
+        row.thickness_um > 0 && tenantSet.has(row.mineral));
+      const regimeCounts: Record<string, number> = {};
+      const basisCounts: Record<string, number> = {};
+      const terminalDepletedLayers: any[] = [];
+      const unavailableLayers: any[] = [];
+      for (const row of positiveMorphologyLayers) {
+        const morphology = row.morphology;
+        expect(morphology, `${scenario}: ${row.mineral} step ${row.step} morphology object`).toBeTruthy();
+        if (morphology.status === 'classified') {
+          expect(['post-step', 'post-step-terminal-depleted']).toContain(morphology.sigma_basis);
+          expect(Number.isFinite(morphology.post_step_sigma)).toBe(true);
+          expect(Number.isFinite(morphology.surface_sigma)).toBe(true);
+          expect(MORPHOLOGY_REGIMES.has(morphology.regime)).toBe(true);
+          expect(morphology.regime).toBe(morphRegime(
+            MORPH_TH[String(row.mineral)], morphology.surface_sigma,
+          ));
+          expect(typeof morphology.form === 'string' && morphology.form.length > 0).toBe(true);
+          expect(morphology.unavailable_reason).toBeNull();
+          expect(morphology.sigma_basis === 'post-step-terminal-depleted')
+            .toBe(morphology.post_step_sigma < 1);
+          regimeCounts[morphology.regime] = (regimeCounts[morphology.regime] || 0) + 1;
+          basisCounts[morphology.sigma_basis] = (basisCounts[morphology.sigma_basis] || 0) + 1;
+          if (morphology.sigma_basis === 'post-step-terminal-depleted') {
+            terminalDepletedLayers.push(row);
+          }
+        } else if (morphology.status === 'unavailable-nonfinite-post-step') {
+          expect(morphology).toEqual({
+            status: 'unavailable-nonfinite-post-step',
+            unavailable_reason: 'nonfinite-post-step-sigma',
+            sigma_basis: 'post-step-unavailable',
+            post_step_sigma: null,
+            regime: null,
+            form: null,
+            surface_sigma: null,
+          });
+          expect(row.remaining_solid_um).toBe(0);
+          unavailableLayers.push(row);
+          basisCounts['post-step-unavailable'] = (basisCounts['post-step-unavailable'] || 0) + 1;
+        } else if (morphology.status === 'unavailable-derived-morphology') {
+          expect(morphology.status).toBe('unavailable-derived-morphology');
+          expect([
+            'nonfinite-effective-sigma-multiplier',
+            'nonfinite-surface-sigma',
+            'missing-crystallographic-form',
+          ]).toContain(morphology.unavailable_reason);
+          expect(['post-step', 'post-step-terminal-depleted']).toContain(morphology.sigma_basis);
+          expect(Number.isFinite(morphology.post_step_sigma)).toBe(true);
+          expect(morphology.sigma_basis === 'post-step-terminal-depleted')
+            .toBe(morphology.post_step_sigma < 1);
+          expect(morphology.regime).toBeNull();
+          expect(morphology.form).toBeNull();
+          expect(morphology.surface_sigma).toBeNull();
+          unavailableLayers.push(row);
+          basisCounts[morphology.sigma_basis] = (basisCounts[morphology.sigma_basis] || 0) + 1;
+        } else {
+          expect(morphology).toEqual({
+            status: 'unavailable-no-surviving-interface',
+            unavailable_reason: 'no-surviving-interface-after-same-step-dissolution',
+            sigma_basis: 'post-step-no-solid-interface',
+            post_step_sigma: null,
+            regime: null,
+            form: null,
+            surface_sigma: null,
+          });
+          const sameCrystalThroughStep = layerRows.filter((candidate: any) =>
+            candidate.crystal_id === row.crystal_id && candidate.step <= row.step);
+          const physicalPositiveUm = sameCrystalThroughStep.reduce((sum: number, candidate: any) =>
+            sum + (candidate.thickness_um > 0 && !candidate.is_phantom
+              ? candidate.thickness_um : 0), 0);
+          const physicalLossUm = sameCrystalThroughStep.reduce((sum: number, candidate: any) =>
+            sum + (candidate.thickness_um < 0 ? Math.abs(candidate.thickness_um) : 0), 0);
+          const sameStepLossUm = layerRows.reduce((sum: number, candidate: any) =>
+            sum + (candidate.crystal_id === row.crystal_id
+              && candidate.step === row.step
+              && candidate.zone_index > row.zone_index
+              && candidate.thickness_um < 0
+              ? Math.abs(candidate.thickness_um) : 0), 0);
+          expect(sameStepLossUm).toBeGreaterThan(0);
+          expect(Math.abs(physicalPositiveUm - physicalLossUm))
+            .toBeLessThanOrEqual(Math.max(1e-9, physicalPositiveUm * 1e-12));
+          unavailableLayers.push(row);
+          basisCounts['post-step-no-solid-interface'] =
+            (basisCounts['post-step-no-solid-interface'] || 0) + 1;
+        }
+      }
+      expect(executed.crystal_layers.morphology, `${scenario}: complete morphology summary`).toEqual({
+        source: 'all positive layers for MORPH_TH-registered minerals; exact rows are authenticated by the strip SHA-256',
+        tenant_minerals: tenantMinerals,
+        positive_layer_count: positiveMorphologyLayers.length,
+        classified_layer_count: positiveMorphologyLayers.length - unavailableLayers.length,
+        unavailable_layer_count: unavailableLayers.length,
+        terminal_depleted_layer_count: terminalDepletedLayers.length,
+        regime_counts: regimeCounts,
+        basis_counts: basisCounts,
+        terminal_depleted_layers: terminalDepletedLayers,
+        unavailable_layers: unavailableLayers,
+      });
       expect(executed.habit_morphology.crystals, `${scenario}: habit testimony`)
         .toEqual(strip.executed_testimony?.habit_morphology || []);
+      expect(executed.habit_morphology.surface_films, `${scenario}: surviving-film testimony`)
+        .toEqual((strip.executed_testimony?.habit_morphology || []).filter((c: any) => c.surface_film));
+      formulaLayerCount += executed.crystal_layers.formula_layers.length;
+      solidSolutionLayerCount += executed.crystal_layers.solid_solution_layers.length;
+      cdrReplacementCount += executed.habit_morphology.crystals
+        .filter((crystal: any) => crystal.cdr_replacement_evidence).length;
+      citedSizeAuthorityCount += executed.habit_morphology.crystals
+        .filter((crystal: any) => (crystal.size_authority?.sources || []).length > 0).length;
+      for (const event of executed.transformations.filter((row: any) => row.mechanism === 'dehydration')) {
+        expect(event.dehydration?.formula_amount_mmol_kg,
+          `${scenario}: dehydration testimony must represent positive parent solid`).toBeGreaterThan(0);
+      }
+      const transformedProducts = new Set(executed.transformations.map((event: any) => event.to));
+      const finalMinerals = new Set(executed.habit_morphology.crystals.map((crystal: any) => crystal.mineral));
+      const expectedControls = mechanismArtifact.payload.transformation_reactivity
+        .filter((control: any) => control.claim_card_scenario === scenario);
+      for (const control of expectedControls) {
+        if (control.claim_card_link === 'executed-transformation-product') {
+          expect(transformedProducts, `${scenario}: ${control.mineral} transformation-product link`)
+            .toContain(control.mineral);
+        } else {
+          expect(finalMinerals, `${scenario}: ${control.mineral} surviving-parent link`)
+            .toContain(control.parent_mineral);
+        }
+      }
+      expect(executed.transformation_reactivity_commissioning,
+        `${scenario}: authenticated reactivity commissioning`).toMatchObject({
+        role: 'controlled production-engine boundary; not a locality trajectory',
+        artifact_schema: mechanismArtifact.schema,
+        artifact_payload_sha256: mechanismArtifact.payload_sha256,
+        link_authority: 'artifact-authored scenario route, verified against executed product or surviving parent',
+        controls: expectedControls,
+      });
+      reactivityControlCount += expectedControls.length;
       if (sulfurSamples.length) {
         expect(executed.sulfur_ledger.activation, `${scenario}: sulfur-ledger activation`)
           .toEqual(sulfurSamples[0].activation);
@@ -164,10 +579,57 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');
         expect(markdown, `${scenario}: carbonate testimony`).toContain('Conserved carbonate boundary:');
         expect(markdown, `${scenario}: sulfur testimony`).toContain('Sulfur reservoir identity and conservation');
+        expect(markdown, `${scenario}: enclosure testimony`).toContain('Crystal enclosure receipts');
         expect(markdown, `${scenario}: layer testimony`).toContain('Layer, solid-solution, competition, and habit testimony');
+        expect(markdown, `${scenario}: morphology completeness`).toContain('Registered-mineral morphology: positive=');
+        expect(markdown, `${scenario}: reactivity testimony`).toContain('Transformation reactivity commissioning:');
         if (scenario === 'elmwood') {
           expect(card.claim.claim_citations.map((c: any) => c.claim_id)).toContain('elmwood-celestine-license');
+          expect(card.claim.claim_citations.map((c: any) => c.claim_id)).toContain('elmwood-masked-layer-hypothesis');
           expect(markdown).toContain('celestine-individual-size');
+          const elmwoodBa = executed.fluid_boundary.transactions.filter((tx: any) =>
+            (tx.testimony || []).some((row: any) => row.field === 'Ba'));
+          expect(elmwoodBa.map((tx: any) => tx.step), 'Elmwood Ba boundary sequence')
+            .toEqual([28, 40, 50, 60, 68, 78]);
+          expect(elmwoodBa.every((tx: any) => tx.closed), 'Elmwood Ba boundary closure').toBe(true);
+          const horizons = executed.crystal_layers.masked_horizons
+            .filter((row: any) => row.mineral === 'barite');
+          expect([...new Set(horizons.map((row: any) => row.step))], 'Elmwood breakthrough steps')
+            .toEqual([50, 68]);
+          expect([...new Set(horizons.map((row: any) => row.originating_film_step))], 'Elmwood source-film steps')
+            .toEqual([40, 60]);
+          expect(horizons.length, 'Elmwood published masked horizons').toBeGreaterThan(0);
+          expect(horizons.every((row: any) => row.thickness_um > 0
+            && ['clay', 'iron oxide'].includes(row.film_mineral))).toBe(true);
+          const finalFilms = executed.habit_morphology.surface_films
+            .filter((row: any) => row.mineral === 'barite');
+          expect(finalFilms.length, 'Elmwood published terminal rind').toBeGreaterThan(0);
+          expect(finalFilms.every((row: any) => row.surface_film?.mineral === 'clay'
+            && row.surface_film?.step === 78)).toBe(true);
+          expect(markdown).toContain('Declared non-sulfur fluid-boundary transactions');
+          expect(markdown).toContain('Masked horizon crystal');
+          expect(markdown).toContain('Surviving surface film crystal');
+        }
+        if (scenario === 'bisbee') {
+          const copperLoss = (strip.executed_testimony?.layer_growth || []).filter((row: any) =>
+            row.mineral === 'native_copper' && row.thickness_um < 0);
+          expect(copperLoss.length, 'Bisbee must archive a mass-booked native-Cu retreat')
+            .toBe(5);
+          expect(copperLoss.reduce((sum: number, row: any) => sum + Math.abs(row.thickness_um), 0))
+            .toBeCloseTo(50, 12);
+          expect(copperLoss.every((row: any) => Number(row.returned_budget_inventory?.Cu) > 0))
+            .toBe(true);
+          const copperEnclosure = enclosureSamples.filter((row: any) =>
+            row.schema === 'enclosure-receipt-v1' && row.guest_mineral === 'native_copper');
+          expect(copperEnclosure).toHaveLength(1);
+          expect(copperEnclosure[0]).toMatchObject({
+            step: 154,
+            host_mineral: 'chrysocolla',
+            route: 'host-on-guest',
+            adjacency_authority: 'exact-substrate-id',
+            guest_loss_um: 50,
+            guest_partially_dissolved: true,
+          });
         }
         if (sulfurSamples.length) {
           expect(markdown, `${scenario}: sulfur activation rendered`).toContain('Ledger activation: step');
@@ -191,6 +653,13 @@ describe('adversarial claim-card fleet', () => {
         expect(fs.readFileSync(path.join(outDir, `${scenario}.json`), 'utf8'), `${scenario}: committed JSON card`).toBe(committedJson);
         expect(markdown, `${scenario}: committed Markdown card`).toBe(committedMarkdown);
       }
+      expect(formulaLayerCount, 'fleet must publish formula-bearing crystal layers').toBeGreaterThan(0);
+      expect(solidSolutionLayerCount, 'fleet must publish dynamic solid-solution layers').toBeGreaterThan(0);
+      expect(cdrReplacementCount, 'fleet must publish a positive CDR replacement').toBeGreaterThan(0);
+      expect(reactivityControlCount, 'fleet must link every transformation-only reactivity control').toBe(4);
+      expect(citedSizeAuthorityCount, 'fleet habit testimony must retain size-authority sources').toBeGreaterThan(0);
+      expect(claimCitationCount, 'claim-level citations must be materially populated').toBeGreaterThan(3);
+      expect(enclosureReceiptCount, 'fleet must publish at least one physical enclosure receipt').toBeGreaterThan(0);
     } finally {
       fs.rmSync(outDir, { recursive: true, force: true });
     }

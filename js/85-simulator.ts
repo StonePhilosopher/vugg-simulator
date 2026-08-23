@@ -302,6 +302,10 @@ class VugSimulator {
     this._carbonLedgerHistory = [];
     this._fluidBoundaryTransactions = [];
     this._fluidBoundaryViolations = [];
+    // SIM 275: append-only physical receipts for host-over-guest enclosure.
+    // StripRecorder clones newly appended rows into the authenticated archive;
+    // live crystal pointers remain presentation state, not the evidence source.
+    this._enclosureReceipts = [];
     // Conserved carbonate boundary v1 is explicit opt-in. It lives on both the
     // simulator and conditions because event handlers receive conditions, while
     // the step controller owns equilibration. The state is plain JSON data so a
@@ -644,7 +648,8 @@ class VugSimulator {
     // later silica attach/grow as quartz instead of restarting a metastable
     // chalcedony generation after cooling or renewed supply.
     this.conditions._stableQuartzExposed = this.crystals.some(
-      c => c.mineral === 'quartz' && c.active && !c.dissolved && c.enclosed_by == null,
+      c => c.mineral === 'quartz' && c.active && !c.dissolved
+        && !currentEnclosureAuthority(this, c),
     );
     this.check_nucleation(vugFill);
 
@@ -713,21 +718,18 @@ class VugSimulator {
           this.log.push(`  â—† ${capitalize(crystal.mineral)} #${crystal.crystal_id}: REACTION OVERPRINT ${zone.note}`);
           continue;
         }
-        // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
-        // as the main-path guard below. Byte-identical when selection is off.
+        // W-F O3b — `_buried` is a growth-front selection state, not an
+        // authenticated impermeable shell.  A short, shadowed crystal can no
+        // longer win outward growth space, but its remaining exposed solid is
+        // still in contact with the pore fluid and must accept mass-balanced
+        // acid/redox retreat.  True inclusions are protected separately by
+        // `enclosed_by`/inactive lifecycle authority.
         if (zone && zone.thickness_um < 0) {
-          if (!crystal._buried) {
-            this._finalizeZoneForApplication(crystal, zone);
-            this._applyZoneGrowthBudget(crystal, zone);
-            crystal.add_zone(zone);
-            currentFill = this._refreshVugFillAndSeal(openSystem);
-            this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
-          } else if (crystal.total_growth_um > 1e-9) {
-            // Several legacy engines optimistically set dissolved=true while
-            // constructing a negative candidate. A buried crystal never accepts
-            // that candidate, so its physical state must remain unchanged.
-            crystal.dissolved = false;
-          }
+          this._finalizeZoneForApplication(crystal, zone);
+          this._applyZoneGrowthBudget(crystal, zone);
+          crystal.add_zone(zone);
+          currentFill = this._refreshVugFillAndSeal(openSystem);
+          this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
         }
         continue;
       }
@@ -789,16 +791,10 @@ class VugSimulator {
         // Texture state is committed only after the formula-pool cap confirms
         // that some positive solid was actually accepted.
         let markLateInterlocking = false;
-        // W-F O3b — a SEALED (geometrically buried) crystal is shielded from the
-        // corrosive fluid by its overgrowing neighbors: suppress its dissolution
-        // so it persists as a present short stub rather than being etched away
-        // (which would also reopen its mineral's nucleation cap on the freed
-        // slot). Positive growth is throttled just below. No-op when selection
-        // is off (nothing is _buried) → byte-identical.
-        if (crystal._buried && zone.thickness_um < 0) {
-          zone.thickness_um = 0;
-          if (crystal.total_growth_um > 1e-9) crystal.dissolved = false;
-        }
+        // W-F O3b — geometric selection only shadows the outward growth front.
+        // Do not turn that morphology tag into a chemical seal: negative zones
+        // remain local, booked, and physically accepted.  A genuinely swallowed
+        // crystal is instead made inactive by the enclosure lifecycle.
         // Proposal A — apply fill dampener to positive zone thickness
         // (growth). check_nucleation stashed this._fillDampener for the
         // current step; it equals 1.0 below vugFill ~0.7 and tapers
@@ -859,6 +855,14 @@ class VugSimulator {
               // Breakthrough: growth resumes through the film — a phantom horizon.
               zone.masked_horizon = true;
               zone.film_mineral = film.mineral;
+              // Preserve the depositional hiatus that produced this buried
+              // boundary.  The accepted growth step alone says when the film
+              // was overgrown; `originating_film_step` says when the foreign
+              // material actually settled.  Both are required to distinguish
+              // a causal film -> stall -> breakthrough sequence from a label
+              // attached after the fact in generated evidence.
+              zone.originating_film_step = Number.isFinite(Number(film.step))
+                ? Number(film.step) : null;
               // W-F O5 masking SCEPTRE — record which AXIS the film masked. The
               // classifier (js/45 classifyQuartzSceptre) reads this to tell a
               // PRISM-dominant mask (sides frosted, tip renews wider = a sceptre,
@@ -1110,10 +1114,11 @@ class VugSimulator {
       if (lightTarget && (_scenarioSpeciesExclusion(this, lightTarget)
           || _scenarioPositiveLicenseBlock(this, lightTarget))) continue;
       const localIsLit = weatheringLightAtCrystal(this, crystal, isLit);
-      const transition = applyLightTransitions(crystal, localIsLit, this.step);
+      const transition = applyLightTransitions(
+        crystal, localIsLit, this.step, lightExposure,
+      );
       if (transition) {
         const [oldM, newM] = transition;
-        crystal.light_exposure_route = lightExposure;
         this.log.push(
           `  ☼ LIGHT-INDUCED: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
           `(${crystal.light_exposure_steps} steps of ${lightExposure} light exposure; ` +
@@ -1181,11 +1186,34 @@ class VugSimulator {
     // re-dissolves when fluid.salinity < 4 OR fluid.pH > 5. The geological
     // truth: every chalcanthite is a temporary victory over entropy.
     let chalcanthiteVolumeChanged = false;
+    const chalcanthiteMesh = this.wall_state.meshFor
+      ? this.wall_state.meshFor(this) : null;
+    const chalcanthiteRingCount = this.wall_state.ring_count;
     for (const crystal of this.crystals) {
-      // Growth eligibility is not a dissolution shield. A genuinely buried
-      // crystal is protected; an exposed size-capped solid is not.
-      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || crystal._buried) continue;
-      if (this.conditions.fluid.salinity < 4.0 || this.conditions.fluid.pH > 5.0) {
+      // Growth-front shadowing, size caps, and a stale display-only `active`
+      // flag are not dissolution shields.  Match the shared chemistry boundary:
+      // only a reciprocal, receipted, chronological physical enclosure may
+      // withhold this unusually soluble phase from its pore fluid.
+      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved
+          || currentEnclosureAuthority(this, crystal)) continue;
+      const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+      const ringIdx = chemistry ? chemistry.ringIdx : null;
+      const validRing = ringIdx != null && ringIdx >= 0
+        && ringIdx < chalcanthiteRingCount;
+      const cell = validRing && chalcanthiteMesh?.cellOf
+        ? chalcanthiteMesh.cellOf(crystal, this.wall_state) : null;
+      const localFluid = cell?.fluid
+        || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
+      const localSalinity = Number(localFluid?.salinity);
+      const localPH = Number(localFluid?.pH);
+      const lowSalinityTrigger = localSalinity < 4.0;
+      const highPHTrigger = localPH > 5.0;
+      if (lowSalinityTrigger || highPHTrigger) {
+        const dissolutionMode = lowSalinityTrigger && highPHTrigger
+          ? 'water_solubility_low_salinity_high_pH'
+          : lowSalinityTrigger
+            ? 'water_solubility_low_salinity'
+            : 'water_solubility_high_pH';
         // 40%/step decay, with a 0.5-µm absolute floor below which we
         // collapse to full dissolution (asymptotic decay otherwise).
         let dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.4);
@@ -1196,8 +1224,8 @@ class VugSimulator {
           temperature: this.conditions.temperature,
           thickness_um: -dissolved_um,
           growth_rate: -dissolved_um,
-          dissolutionMode: 'low_salinity',
-          note: `water-solubility decay (salinity ${this.conditions.fluid.salinity.toFixed(1)}, pH ${this.conditions.fluid.pH.toFixed(1)})`,
+          dissolutionMode,
+          note: `water-solubility decay (local salinity ${localSalinity.toFixed(1)}, local pH ${localPH.toFixed(1)})`,
         });
         // dissolved_um is already the accepted per-step loss; do not apply the
         // geological time multiplier a second time.
@@ -1210,14 +1238,14 @@ class VugSimulator {
           crystal.active = false;
           this.log.push(
             `  💧 RE-DISSOLVED: Chalcanthite #${crystal.crystal_id} ` +
-            `completely returned to solution (salinity=${this.conditions.fluid.salinity.toFixed(1)}, ` +
-            `pH=${this.conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + SO₄²⁻ back in fluid`
+            `completely returned to its local solution (salinity=${localSalinity.toFixed(1)}, ` +
+            `pH=${localPH.toFixed(1)}) — Cu²⁺ + SO₄²⁻ back in fluid`
           );
         } else {
           this.log.push(
             `  💧 Chalcanthite #${crystal.crystal_id}: re-dissolving ` +
-            `(${dissolved_um.toFixed(1)} µm lost; salinity=${this.conditions.fluid.salinity.toFixed(1)}, ` +
-            `pH=${this.conditions.fluid.pH.toFixed(1)})`
+            `(${dissolved_um.toFixed(1)} µm lost; local salinity=${localSalinity.toFixed(1)}, ` +
+            `local pH=${localPH.toFixed(1)})`
           );
         }
       }
@@ -1303,8 +1331,10 @@ class VugSimulator {
     // Phase 0 originally) — tag this step's zones for every mineral in
     // MORPH_TH from the POST-STEP σ (the calibrated basis; see
     // js/45-morphology.ts for the 18th-catch sampling-basis note).
-    // Pure metadata pass: no rng, no fluid mutation — byte-identical
-    // chemistry.
+    // Chemistry/RNG-inert pass: no fluid mutation or random draw. The
+    // resulting live interface is nevertheless simulation state because next
+    // step's habit dispatch reads it; SIM 276 authenticates the formerly
+    // omitted terminal-depleted/unavailable cases accordingly.
     classifyMorphologyStep(this);
     // Quartz sceptre — crystal-level structural classifier (alpine-cleft arc
     // SIM 206). Reads completed zones for the resorption→renewal phantom

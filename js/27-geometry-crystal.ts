@@ -190,6 +190,16 @@ class GrowthZone {
     //                     'scalenohedral' | 'cube' | …, per mineral)
     //   morph_surf_sigma: (damped) surface σ the regime was classified
     //                     from (post-step basis — 18th catch)
+    //   morph_post_step_sigma: finite local terminal-interface σ sampled
+    //                     after all same-step consumers
+    //   morph_sigma_basis: 'post-step' | 'post-step-terminal-depleted' |
+    //                     'post-step-unavailable'
+    //   morphology_status: 'classified' |
+    //                     'unavailable-nonfinite-post-step' |
+    //                     'unavailable-derived-morphology' |
+    //                     'unavailable-no-surviving-interface'
+    //   morph_unavailable_reason: explicit failure reason for unavailable
+    //                     testimony; null on classified layers
     // Optional like dissolutionMode: written post-hoc by
     // classifyMorphologyStep (js/45 registry — calcite was the first
     // tenant, halite/sylvite the second wave) at end of run_step; only
@@ -199,6 +209,10 @@ class GrowthZone {
     if (opts.morph_regime) this.morph_regime = opts.morph_regime;
     if (opts.morph_form) this.morph_form = opts.morph_form;
     if (opts.morph_surf_sigma != null) this.morph_surf_sigma = opts.morph_surf_sigma;
+    if (opts.morph_post_step_sigma != null) this.morph_post_step_sigma = opts.morph_post_step_sigma;
+    if (opts.morph_sigma_basis) this.morph_sigma_basis = opts.morph_sigma_basis;
+    if (opts.morphology_status) this.morphology_status = opts.morphology_status;
+    if (opts.morph_unavailable_reason) this.morph_unavailable_reason = opts.morph_unavailable_reason;
   }
 }
 

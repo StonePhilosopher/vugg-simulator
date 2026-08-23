@@ -11,8 +11,8 @@
 //      morphology) — bisbee gold reads spongy/dendritic, the σ-top
 //      copper band is the arborescent tree
 //   3. THE COPPER STORY: bisbee's copper grows on the pulse, records
-//      stepped mass, and preserves a smooth terminal shell; any later cast
-//      claim must be earned by an actual dissolution/enclosure receipt
+//      stepped mass and preserves a smooth terminal positive shell. Any later
+//      oxidation or enclosure must be backed by its own physical receipt.
 //   4. chips under the native group
 
 import { describe, expect, it } from 'vitest';
@@ -55,15 +55,85 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     expect(morphRegime(MORPH_TH.native_gold, 1.35)).toBe('spiral_smooth');
   });
 
-  it('the Bisbee pulse grows stepped copper and wanes to a smooth, still-exposed termination', () => {
-    const cu = bisbee().crystals.filter((c: any) => c.mineral === 'native_copper' && c.total_growth_um > 0);
+  it('the Bisbee pulse grows stepped copper and any later loss/enclosure is physically receipted', () => {
+    const sim = bisbee();
+    const cu = sim.crystals.filter((c: any) => c.mineral === 'native_copper' && c.total_growth_um > 0);
     expect(cu.length).toBeGreaterThanOrEqual(1);
-    // SIM 272 preserves the positive Cu core but records neither a negative
-    // dissolution shell nor an enclosing child at seed 42. Do not narrate a
-    // cast until those physical receipts actually exist.
-    expect(cu.every((c: any) => !c.dissolved)).toBe(true);
-    expect(cu.every((c: any) => c.enclosed_by == null)).toBe(true);
-    expect(cu.every((c: any) => c.zones.every((z: any) => z.thickness_um >= 0))).toBe(true);
+    let fleetOxidativeLoss = 0;
+    let fleetReturnedCu = 0;
+    for (const c of cu) {
+      const positiveCore = c.zones.reduce((sum: number, z: any) =>
+        sum + (z.thickness_um > 0 && !z.is_phantom ? z.thickness_um : 0), 0);
+      const lossZones = c.zones.filter((z: any) => z.thickness_um < 0);
+      const oxidativeLoss = lossZones.reduce((sum: number, z: any) =>
+        sum + Math.abs(z.thickness_um), 0);
+      const returnedCu = lossZones.reduce((sum: number, z: any) =>
+        sum + Number(z._returned_budget_inventory?.Cu || 0), 0);
+      fleetOxidativeLoss += oxidativeLoss;
+      fleetReturnedCu += returnedCu;
+      expect(positiveCore).toBeGreaterThan(0);
+      expect(oxidativeLoss).toBeLessThan(positiveCore);
+      expect(c.total_growth_um).toBeGreaterThan(0);
+      expect(c.dissolved).toBe(false);
+      if (oxidativeLoss > 0) {
+        // O3 geometric selection shadows the growth front; it is not an
+        // impermeable enclosure.  Bisbee's oxygenated late fluid must still
+        // remove a booked outer Cu shell and return Cu to solution.
+        expect(c.partially_dissolved).toBe(true);
+        expect(returnedCu).toBeGreaterThan(0);
+        expect(c.total_growth_um).toBeCloseTo(positiveCore - oxidativeLoss, 9);
+      }
+      if (c.enclosed_by != null) {
+        const host = sim.crystals.find((row: any) => row.crystal_id === c.enclosed_by);
+        expect(host).toBeTruthy();
+        expect(host.mineral).toBe('chrysocolla');
+        expect(host.enclosed_crystals).toContain(c.crystal_id);
+        expect(c.enclosure_receipt).toMatchObject({
+          schema: 'enclosure-receipt-v1',
+          host_crystal_id: host.crystal_id,
+          guest_crystal_id: c.crystal_id,
+          guest_mineral: 'native_copper',
+          host_mineral: 'chrysocolla',
+          route: 'host-on-guest',
+        });
+        expect(c.enclosure_receipt.host_same_step_net_growth_um).toBeGreaterThan(0);
+        expect(c.enclosure_receipt.size_ratio).toBeGreaterThan(3);
+        expect(['guest-on-host', 'host-on-guest', 'geometric-overlap'])
+          .toContain(c.enclosure_receipt.route);
+      }
+    }
+    const fleetLossZones = cu.flatMap((c: any) =>
+      c.zones.filter((zone: any) => zone.thickness_um < 0));
+    expect(fleetLossZones).toHaveLength(5);
+    expect(fleetOxidativeLoss).toBeCloseTo(50, 12);
+    expect(fleetReturnedCu).toBeGreaterThan(0);
+    const bookedCu = cu.flatMap((c: any) => c.zones)
+      .filter((zone: any) => zone.thickness_um > 0)
+      .reduce((sum: number, zone: any) =>
+        sum + zone.thickness_um * Number(zone._budget_inventory_per_um?.Cu || 0), 0);
+    const remainingCu = cu.flatMap((c: any) => c.zones)
+      .filter((zone: any) => zone.thickness_um > 0)
+      .reduce((sum: number, zone: any) => sum
+        + Number(zone._remaining_solid_um ?? zone.thickness_um)
+          * Number(zone._budget_inventory_per_um?.Cu || 0), 0);
+    expect(bookedCu - remainingCu).toBeCloseTo(fleetReturnedCu, 12);
+    const copperEnclosures = (sim._enclosureReceipts || []).filter(
+      (row: any) => row.event === 'enclosed' && row.guest_mineral === 'native_copper',
+    );
+    expect(copperEnclosures).toHaveLength(1);
+    expect(copperEnclosures[0]).toMatchObject({
+      schema: 'enclosure-receipt-v1',
+      step: 154,
+      host_mineral: 'chrysocolla',
+      guest_mineral: 'native_copper',
+      route: 'host-on-guest',
+      adjacency_authority: 'exact-substrate-id',
+      guest_loss_um: 50,
+      guest_partially_dissolved: true,
+    });
+    expect(copperEnclosures[0].guest_loss_um).toBeGreaterThan(0);
+    expect(copperEnclosures[0].guest_loss_um)
+      .toBeLessThan(copperEnclosures[0].guest_positive_core_um);
     let stepped = 0, tot = 0;
     for (const c of cu) for (const z of c.zones || []) {
       if (z.thickness_um > 0 && z.morph_regime) {
@@ -80,6 +150,24 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
       // retains the much larger stepped/arborescent pulse beneath it.
       expect(c.habit).toBe('cubic_dodecahedral');
     }
+  });
+
+  it('growth-front shadowing does not suppress a booked oxidative shell loss', () => {
+    const sim = runScenario('bisbee', 42, 149);
+    const copper = sim.crystals.find((c: any) =>
+      c.mineral === 'native_copper' && c.total_growth_um > 0);
+    expect(copper).toBeTruthy();
+    const before = copper.total_growth_um;
+    copper._buried = true;
+    sim.run_step();
+    const loss = copper.zones.at(-1);
+    expect(loss.step).toBe(150);
+    expect(loss.thickness_um).toBeLessThan(0);
+    expect(loss._returned_budget_inventory?.Cu).toBeGreaterThan(0);
+    expect(copper.total_growth_um).toBeLessThan(before);
+    expect(copper.total_growth_um).toBeGreaterThan(0);
+    expect(copper._buried).toBe(true);
+    expect(copper.partially_dissolved).toBe(true);
   });
 
   it('THE CONFLATION FIX: bisbee gold is spongy/dendritic, never nugget; the legacy texture strings are retired from dispatch', () => {

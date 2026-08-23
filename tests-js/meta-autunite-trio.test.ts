@@ -44,6 +44,12 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+function solidCrystal(mineral: string, opts: any = {}) {
+  const crystal = new Crystal({ mineral, active: true, ...opts });
+  crystal.total_growth_um = 10;
+  return crystal;
+}
+
 const schneebergCache = new Map<number, any>();
 
 function runSchneeberg(seed: number) {
@@ -75,6 +81,11 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
       expect(DEHYDRATION_TRANSITIONS.borax).toEqual(['tincalconite', 25, 1.5, 60.8]);
       expect(DEHYDRATION_TRANSITIONS.mirabilite).toEqual(['thenardite', 30, 1.5, 32.4]);
     });
+
+    it('keeps the structured meta-autunite formula consistent with the 11-to-8-hydrate receipt', () => {
+      expect((globalThis as any).MINERAL_SPEC.autunite.formula).toBe('Ca(UO2)2(PO4)2·11H2O');
+      expect((globalThis as any).MINERAL_SPEC['meta-autunite'].formula).toBe('Ca(UO2)2(PO4)2·8H2O');
+    });
   });
 
   describe('heat path fires when T crosses threshold', () => {
@@ -90,7 +101,7 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
         setSeed(42);
         let transformed = 0;
         for (let i = 0; i < 50; i++) {
-          const c = new Crystal({ mineral: parent, active: true });
+          const c = solidCrystal(parent);
           const r = applyDehydrationTransitions(
             c,
             { concentration: 0 },
@@ -114,7 +125,7 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
     for (const parent of ['autunite', 'torbernite', 'zeunerite']) {
       it(`${parent}: transforms after 40 vadose steps`, () => {
         setSeed(42);
-        const c = new Crystal({ mineral: parent, active: true });
+        const c = solidCrystal(parent);
         let transitioned = null;
         for (let step = 0; step < 40; step++) {
           transitioned = applyDehydrationTransitions(
@@ -134,6 +145,17 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
         expect(c.dry_exposure_steps).toBeGreaterThanOrEqual(40);
       });
     }
+  });
+
+  it('does not promote a zero-mass nucleus into a dehydration product', () => {
+    setSeed(42);
+    const nucleus = new Crystal({ mineral: 'mirabilite', active: true });
+    expect(nucleus.total_growth_um).toBe(0);
+    expect(applyDehydrationTransitions(
+      nucleus, { concentration: 2 }, 'vadose', 40, 1,
+    )).toBeNull();
+    expect(nucleus.mineral).toBe('mirabilite');
+    expect(nucleus.dehydration_receipt).toBeUndefined();
   });
 
   describe('aqueous ring at ambient T preserves the parent indefinitely', () => {

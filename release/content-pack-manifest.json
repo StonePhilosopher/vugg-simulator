@@ -6,8 +6,8 @@
       "id": "core",
       "content_version": "1.0.0",
       "compatibility": {
-        "sim_version": 272,
-        "model_digest_sha256": "6f209eb00b0e45167f7699f0b6d3913bd21b9ac37ea19d8af6c7cd420671ac3a",
+        "sim_version": 277,
+        "model_digest_sha256": "dfcf1a3beeccb116d8947d12e8b8c9950d1c2a849ebf518c2a4d873b772daa4e",
         "save_format": 3
       },
       "counts": {
@@ -15,13 +15,13 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "f2ffb290c5279bda79e4c260978a938223240f9ef1f29c7935c03e9e0b3b9dee",
-      "runtime_execution_sha256": "99d4305110b1632dbd6e037a68c30d069128ae4597f9be6d88cecd3280b876f5",
+      "browser_bundle_sha256": "baa82577af1dca32c2d6da804ea2181bdfcee1ee722623b5945bf297e7c525d2",
+      "runtime_execution_sha256": "fd1127eeb09d4b4e16311e2a63a52228a4c7fe2aa361b20ba33779c0734ea563",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
-          "bytes": 97110,
-          "sha256": "d2c595310450a6e0a53bfa2dd113af74bddd0fb8e858077864063d3dd966fdb0"
+          "bytes": 98436,
+          "sha256": "cddf1df2be4bf90ade2bc142d158f48b80fcdcc92d0cf4f292db890e4536907b"
         },
         {
           "path": "data/mindat-species-refs.json5",
@@ -30,13 +30,13 @@
         },
         {
           "path": "data/minerals.json",
-          "bytes": 968835,
-          "sha256": "c8f8620c376979592453bbfb1e7a362f61d0c8c8d1e7b4fbb644035741cb54a3"
+          "bytes": 969938,
+          "sha256": "3a44cde8d1488322bf4bedb597af0d17217bdab9cd5d126b1613309ac2e51a46"
         },
         {
           "path": "data/scenarios.json5",
-          "bytes": 503436,
-          "sha256": "72ab3b3d7f40a9fe6bf590723c9d5ef24a40de07664ac1ff5a51c7d4a92145fe"
+          "bytes": 510189,
+          "sha256": "29370f90db8cb56902313f57446191edf11b4d74c54af1aed24325c5227f94d2"
         },
         {
           "path": "data/structural.json",
@@ -526,7 +526,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "f842a35442b4b0b3a473ccf003dca704225b6bd7ee395b9eec0acb4c21ee2db2",
+  "producer_contract_sha256": "c2113348ed17287f6956e6180afb23b1c4242470c94a838a45bd6f0851666b92",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "5b9d0ec662b1bddea69b611d399f2de47ab9d7523e9dcb3d02b17730f62f66d4"
+  "catalog_sha256": "0b4f4a4a3d3f32e60978a347f5e7607e2261c0a5316021e73a975aeb62c6b918"
 }

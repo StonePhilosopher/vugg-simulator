@@ -41,6 +41,51 @@ function event_reactivated_vein_seal(c: any) {
   return `Feeder cementation seals the cavity — T ${c.temperature.toFixed(0)}°C, flow stalls; the vug goes quiet.`;
 }
 
+// A pore-fluid replacement is an open-system export/import boundary, not an
+// internal reaction. Build the complete target, declare it, and request exact
+// propagation so every voxel and WallCell receives the same authored
+// endmember before reaction or physical etch.
+function _reactivatedVeinReplaceFluid(
+  c: any,
+  source: string,
+  targets: Record<string, number>,
+) {
+  const numericFields = Object.keys(c.fluid)
+    .filter(key => typeof c.fluid[key] === 'number');
+  for (const key of numericFields) c.fluid[key] = 0;
+  for (const [key, raw] of Object.entries(targets)) {
+    const value = Number(raw);
+    if (!(key in c.fluid) || !Number.isFinite(value) || value < 0) {
+      throw new Error(`Invalid ${source} replacement field '${key}'`);
+    }
+    c.fluid[key] = value;
+  }
+
+  c.fluid.sulfurPoolsExplicit = true;
+  c.fluid.sulfateInherited = false;
+  c.fluid.S_sulfide = Math.max(0, Number(c.fluid.S_sulfide) || 0);
+  c.fluid.S_sulfate = Math.max(0, Number(c.fluid.S_sulfate) || 0);
+  c.fluid.S_elemental = Math.max(0, Number(c.fluid.S_elemental) || 0);
+  syncExplicitSulfurTotal(c.fluid);
+  declareSulfurBoundaryReplacement(c, source, {
+    sulfide: c.fluid.S_sulfide,
+    sulfate: c.fluid.S_sulfate,
+    elemental: c.fluid.S_elemental,
+  });
+
+  const nonsulfurTargets: Record<string, number> = {};
+  for (const key of numericFields) {
+    if (key === 'S' || key === 'S_sulfide' || key === 'S_sulfate'
+        || key === 'S_elemental') continue;
+    nonsulfurTargets[key] = Number(c.fluid[key]) || 0;
+  }
+  declareFluidBoundaryReplacement(c, source, nonsulfurTargets);
+  c._pending_fluid_replace_fields = numericFields.filter(
+    key => key !== 'concentration',
+  );
+  c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+}
+
 // BREACH WASH — tectonic reactivation first admits a cool acidic,
 // fluorite-undersaturated ionic-strength analogue of the direct {100}
 // measurements of Godinho et al. (2012). Fresh mineralizing brine follows one
@@ -50,25 +95,21 @@ function event_reactivated_vein_seal(c: any) {
 function event_reactivated_vein_breach(c: any) {
   c.temperature = 21;
   c.pressure = 0.001;
-  // Replace the reactive solute inventory with the experimental-analogue
-  // wash. The boundary-delta propagator then carries this authored fluid to
-  // every local cell before the physical etch is evaluated.
-  for (const key of Object.keys(c.fluid)) {
-    if (typeof c.fluid[key] === 'number') c.fluid[key] = 0;
-  }
-  c.fluid.Ca = 8;
-  c.fluid.F = 0.01;
-  c.fluid.Na = 1138;
-  c.fluid.Cl = 1755;
-  c.fluid.pH = 3.6;
-  c.fluid.salinity = 2.9;
-  c.fluid.concentration = 1;
-  c.fluid.O2 = 8;
-  c.fluid.Eh = ehFromO2(c.fluid.O2);
-  // Delta propagation preserves pre-existing spatial gradients. This event is
-  // a pore-fluid replacement, so ask the post-propagation etch stage to replace
-  // every local handle with this exact authored wash before rate evaluation.
-  c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+  _reactivatedVeinReplaceFluid(
+    c,
+    'reactivated-vein acidic reopening wash',
+    {
+      Ca: 8,
+      F: 0.01,
+      Na: 1138,
+      Cl: 1755,
+      pH: 3.6,
+      salinity: 2.9,
+      concentration: 1,
+      O2: 8,
+      Eh: ehFromO2(8),
+    },
+  );
   c.flow_rate = 0.8;
   return 'Tectonic reactivation breaches the feeder — a 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue retreats eligible flat {100} fluorite. The rate transfer is a fixed-pH closed-return extrapolation from Godinho\'s 48-hour-renewed NaClO4 bath; its ΔG≤−7 far-field gate is a mineral-level transfer from Cama\'s {111}, pH 2 experiment, not that study\'s rate. Systematic uncertainty is unquantified.';
 }
@@ -78,24 +119,26 @@ function event_reactivated_vein_breach(c: any) {
 // described as both fluorine-recharging and fluorite-undersaturated.
 function event_reactivated_vein_recharge(c: any) {
   c.temperature = 90;
-  for (const key of Object.keys(c.fluid)) {
-    if (typeof c.fluid[key] === 'number') c.fluid[key] = 0;
-  }
-  c.fluid.pH = 6.4;
   // Slightly above the existing-crystal growth threshold but below the new-
   // nucleus gate: the old face heals over several steps instead of erasing
   // the measured sub-micrometre relief in one frame.
-  c.fluid.F = 18.01;
-  c.fluid.Ca = 300;
-  c.fluid.CO3 = 250;
-  c.fluid.Mg = 30;
-  c.fluid.Na = 80;
-  c.fluid.Cl = 200;
-  c.fluid.salinity = 15;
-  c.fluid.concentration = 1;
-  c.fluid.O2 = 0.25;
-  c.fluid.Eh = ehFromO2(c.fluid.O2);
-  c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+  _reactivatedVeinReplaceFluid(
+    c,
+    'reactivated-vein mineralizing recharge',
+    {
+      pH: 6.4,
+      F: 18.01,
+      Ca: 300,
+      CO3: 250,
+      Mg: 30,
+      Na: 80,
+      Cl: 200,
+      salinity: 15,
+      concentration: 1,
+      O2: 0.25,
+      Eh: ehFromO2(0.25),
+    },
+  );
   c.flow_rate = 0.4;
   return `Fresh mineralizing brine replaces the wash — F 18.01, Ca 300, CO3 250 ppm at T ${c.temperature.toFixed(0)}°C; second-generation fluorite + calcite can overgrow and heal the pitted surface.`;
 }

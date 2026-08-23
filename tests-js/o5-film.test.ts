@@ -21,6 +21,7 @@ declare const O5_MASKING_ENABLED: any;
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const GrowthZone: any;
 
 describe('W-F O5 — σ*(φ) masking law (pure, unread in O5a)', () => {
   beforeEach(() => setSigmaStarK(1.0));
@@ -74,16 +75,52 @@ describe('W-F O5 — applyFilmDusting (writer 1 core, deterministic)', () => {
   });
 
   it('sets _film on active, exposed, matching crystals only', () => {
+    const receipt = {
+      schema: 'enclosure-receipt-v1', event: 'enclosed', step: 41,
+      host_crystal_id: 9, host_mineral: 'calcite',
+      guest_crystal_id: 4, guest_mineral: 'quartz',
+      route: 'guest-on-host', adjacency_authority: 'exact-substrate-id',
+      host_same_step_positive_growth_um: 1,
+      host_same_step_negative_growth_um: 0,
+      host_same_step_net_growth_um: 1,
+      host_physical_size_at_enclosure_um: 401,
+      guest_positive_core_um: 100,
+      guest_loss_um: 0,
+      guest_remaining_growth_um: 100,
+      guest_partially_dissolved: false,
+      size_ratio: 4.01,
+      guest_recent_growth_um: 1.5,
+      guest_slowing_threshold_um: 3,
+    };
+    const host: any = {
+      crystal_id: 9, mineral: 'calcite', active: true, dissolved: false,
+      enclosed_crystals: [4], enclosed_at_step: [41],
+      zones: [{ step: 40, thickness_um: 400 }, { step: 41, thickness_um: 1 }],
+    };
     const crystals = [
       mk({ id: 1, mineral: 'quartz' }),
       mk({ id: 2, mineral: 'quartz', active: false }),     // inactive → skip
       mk({ id: 3, mineral: 'quartz', dissolved: true }),   // dissolved → skip
-      mk({ id: 4, mineral: 'quartz', enclosed_by: 9 }),    // already enclosed → skip
+      Object.assign(mk({ id: 4, mineral: 'quartz', enclosed_by: 9 }), {
+        enclosure_receipt: receipt, active: false,
+        zones: [
+          { step: 1, thickness_um: 98.5 },
+          { step: 2, thickness_um: 0.5 },
+          { step: 3, thickness_um: 0.5 },
+          { step: 4, thickness_um: 0.5 },
+        ],
+      }),                                                   // authenticated inclusion → skip
       mk({ id: 5, mineral: 'calcite' }),                   // not in filter → skip
+      host,
     ];
-    const n = applyFilmDusting(crystals, 'chlorite', 0.1, 0.8, 42, ['quartz']);
+    const sim = { crystals, _enclosureReceipts: [receipt] };
+    const n = applyFilmDusting(crystals, 'chlorite', 0.1, 0.8, 42, ['quartz'], sim);
     expect(n).toBe(1);
-    expect(crystals[0]._film).toEqual({ mineral: 'chlorite', phi_term: 0.1, phi_prism: 0.8, step: 42 });
+    expect(crystals[0]._film).toMatchObject({ mineral: 'chlorite', phi_term: 0.1, phi_prism: 0.8, step: 42 });
+    expect(crystals[0]._film.operations).toHaveLength(1);
+    expect(crystals[0]._film.operations[0]).toMatchObject({
+      kind: 'dust-max', source_id: 'event-dusting:42:1:chlorite',
+    });
     expect(crystals[1]._film).toBeNull();
     expect(crystals[3]._film).toBeNull();
     expect(crystals[4]._film).toBeNull();
@@ -121,9 +158,24 @@ describe('W-F O5 — coats_front writer 2 records host film (O4b enclosures)', (
   function place(sim: any, c: any, ring: number, cell: number, growthUm: number) {
     c.wall_anchor = sim.wall_state._anchorFromRingCell(ring, cell);
     c.total_growth_um = growthUm; c.c_length_mm = growthUm / 1000;
-    c.zones = [{ step: 1, thickness_um: 0.5 }, { step: 2, thickness_um: 0.5 }, { step: 3, thickness_um: 0.5 }];
+    c.zones = [
+      { step: 0, thickness_um: growthUm - 1.5 },
+      { step: 1, thickness_um: 0.5 },
+      { step: 2, thickness_um: 0.5 },
+      { step: 3, thickness_um: 0.5 },
+    ];
     c.active = true; c.dissolved = false; c._buried = false;
     return c;
+  }
+  function growHost(sim: any, host: any) {
+    const zone = new GrowthZone({
+      step: sim.step,
+      temperature: sim.conditions.temperature,
+      thickness_um: 1,
+      growth_rate: 1,
+    });
+    zone._time_scaled = true;
+    host.add_zone(zone);
   }
 
   it('a front-coating enclosure records termination-film on the host; a lateral one does not', () => {
@@ -131,6 +183,8 @@ describe('W-F O5 — coats_front writer 2 records host film (O4b enclosures)', (
     const ring = Math.floor(sim.wall_state.ring_count / 2);
     const host = place(sim, sim.nucleate('calcite'), ring, 10, 9000);
     const onFront = place(sim, sim.nucleate('chalcopyrite', `on calcite #${host.crystal_id}`), ring, 10, 100);
+    sim.step = 4;
+    growHost(sim, host);
     sim._check_enclosure();
     expect(onFront.coats_front).toBe(true);
     expect(host._film).toBeTruthy();
@@ -141,6 +195,8 @@ describe('W-F O5 — coats_front writer 2 records host film (O4b enclosures)', (
     // A second, LATERAL swallow on a fresh host deposits no film.
     const host2 = place(sim, sim.nucleate('calcite'), ring, 40, 9000);
     const lateral = place(sim, sim.nucleate('pyrite'), ring, 41, 100);
+    sim.step = 5;
+    growHost(sim, host2);
     sim._check_enclosure();
     expect(lateral.coats_front).toBe(false);
     expect(host2._film).toBeNull();

@@ -758,21 +758,17 @@ function grow_malachite(crystal, conditions, step) {
 
   const zone_count = crystal.zones.length;
   if (zone_count >= 20) {
-    crystal.habit = 'banded';
+    crystal.habit = 'banded_massive';
     crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['banded botryoidal', 'concentric layers'];
   } else if (rate > 8) {
-    crystal.habit = 'fibrous/acicular';
+    crystal.habit = 'acicular_spray';
     crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['acicular sprays', 'fibrous radiating'];
   } else {
     crystal.habit = 'botryoidal';
     crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['botryoidal masses', 'mammillary'];
-  }
-
-  if (crystal.habit === 'botryoidal' || crystal.habit === 'banded') {
-  } else if (crystal.habit === 'fibrous/acicular') {
   }
 
   // Phase 1d: Cu consumption owned by the wrapper (applyStoichiometricGrowthBudget).

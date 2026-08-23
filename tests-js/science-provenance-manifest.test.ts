@@ -72,7 +72,9 @@ describe('generated science/provenance manifest', () => {
         locale: new Intl.Collator().resolvedOptions().locale,
       },
       node_runtime_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
-      artifact_count: 126,
+      // 41 strips + 41 JSON cards + 41 Markdown cards, plus seed-42,
+      // locality-frequency, strip-digest, and controlled mechanism witnesses.
+      artifact_count: Object.keys(SCENARIOS).length * 3 + 4,
     });
     expect(manifest.science_evidence.sha256)
       .toBe(crypto.createHash('sha256').update(evidenceBytes).digest('hex'));

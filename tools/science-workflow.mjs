@@ -24,6 +24,7 @@ const SCIENCE_TESTS = [
   'tests-js/scenario-expectation-contracts.test.ts',
   'tests-js/locality-envelope-audit.test.ts',
   'tests-js/claim-cards.test.ts',
+  'tests-js/mechanism-witnesses.test.ts',
   'tests-js/science-provenance-manifest.test.ts',
   'tests-js/pressure-science.test.ts',
 ];
@@ -67,6 +68,7 @@ function rebake() {
   run('canonical seed-42 strip archive', ['tools/gen-strip-archive.mjs']);
   run('canonical seed-42 scenario baseline', ['tools/gen-js-baseline.mjs']);
   run('strip digest tripwire', ['tools/gen-strip-digest.mjs']);
+  run('production mechanism boundary witnesses', ['tools/gen-mechanism-witnesses.mjs']);
   run('byte-bound hostile-review claim cards', [
     'tools/review-claim-card.mjs', '--all', '--version', String(version), '--out', cardDir,
   ]);

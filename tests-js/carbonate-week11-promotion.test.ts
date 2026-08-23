@@ -25,6 +25,8 @@
 //   - Kim et al. 2023 Science 382:915 (cyclic-Ω ordering to dolomite)
 
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
@@ -47,9 +49,24 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC mineral add + SI promotion 
     expect(typeof MINERAL_ENGINES.HMC).toBe('function');
   });
 
-  it('HMC is in MINERAL_GATES_REGISTRY with sigma_crit = 2.0', () => {
+  it('uses the thermodynamic omega > 1 boundary without an invented HMC barrier', () => {
     expect(MINERAL_GATES_REGISTRY.HMC).toBeDefined();
-    expect(MINERAL_GATES_REGISTRY.HMC.sigma_crit).toBeCloseTo(2.0, 1);
+    expect(MINERAL_GATES_REGISTRY.HMC.sigma_crit).toBe(1.0);
+  });
+
+  it('keeps catalog thresholds and composition language identical to the executable HMC model', () => {
+    const catalog = JSON.parse(fs.readFileSync(
+      path.resolve(process.cwd(), 'data/minerals.json'), 'utf8',
+    ));
+    const hmc = catalog.minerals.HMC;
+    expect(hmc.nucleation_sigma).toBe(1.0);
+    const recrystallized = hmc.habit_variants.find((habit: any) => habit.name === 'recrystallized_HMC');
+    expect(recrystallized.trigger).toContain('Ω - 1 > 1.5');
+    expect(recrystallized.trigger).toContain('Ω > 2.5');
+    expect(hmc._ingredients_note).toContain('Mucci 1987 D_Mg(T)');
+    expect(hmc._ingredients_note).toContain('reported unresolved rather than extrapolated');
+    expect(hmc._ingredients_note).toContain('authored heterogeneous-surface approximation');
+    expect(hmc._ingredients_note).not.toContain('linear:');
   });
 
   it('HMC per-mineral flag is true; kspSupersatActiveFor returns true', () => {
@@ -209,6 +226,16 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — scenario firings', () => {
     expect(sim._last_hmc_coverage_log).toContain('low_MgCa_composition_dependent_DMg_unresolved');
     expect(active).toBe(0);
     expect(total).toBe(0);
+  });
+
+  it('sabkha seed 42 records real formula-bearing HMC shells in its measured seawater interval', () => {
+    const sim = runScenario('sabkha_dolomitization');
+    const hmc = sim.crystals.filter((crystal: any) => crystal.mineral === 'HMC');
+    expect(hmc.length).toBeGreaterThan(0);
+    const layers = hmc.flatMap((crystal: any) => crystal.zones || [])
+      .filter((zone: any) => Number(zone.thickness_um) > 0);
+    expect(layers.some((zone: any) => zone.formula_stoichiometry)).toBe(true);
+    expect(layers.some((zone: any) => zone.solid_solution)).toBe(true);
   });
 
   it('unsupported low-Mg scenarios do not fabricate an HMC composition', () => {

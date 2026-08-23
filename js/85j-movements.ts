@@ -408,7 +408,7 @@ function assessProductionNucleationDecision(
     ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
   if (requiredSubstrate) {
     const candidates = typeof executableSubstrateCandidates === 'function'
-      ? executableSubstrateCandidates(name, sim.crystals || []) : [];
+      ? executableSubstrateCandidates(name, sim.crystals || [], sim) : [];
     if (!candidates.some((candidate: any) => candidate.host?.mineral === requiredSubstrate)) {
       return {
         available: true,

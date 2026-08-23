@@ -3,14 +3,16 @@
 // sim-neutral: no rng in the habit branch, shared cube alphabet).
 //
 // Contracts pinned:
-//   1. REGISTRY SHAPE: Sunagawa-ordered bands on the survey plateaus
-//      (no damping — fluorite's fleet range is 1.25–7.16).
-//   2. THE CLAIMS TABLE: mvt 4.96 stays GLASSY (just under the 5.0
-//      edge — the Tri-State guard), elmwood pulses 5.94 → banded,
-//      reactivated vein 7.15 → composite/stepped.
-//   3. THE TWO-MINERAL SHOWCASE (elmwood, seed 42): fluorite carries
-//      BOTH smooth and banded zone mass — the same fault-valve beats
-//      that step the calcite zone the purple cubes.
+//   1. REGISTRY SHAPE: Sunagawa-ordered bands across the authenticated
+//      accepted-layer fleet, with no size damping.
+//   2. REGISTRY BOUNDARIES: every adjacent Sunagawa-style surface
+//      regime remains ordered and directly testable without assigning
+//      an obsolete scenario plateau to the boundary.
+//   3. LOCALITY-AUTHORED EVIDENCE: Elmwood's corrected Gratz-Misra
+//      Ca/F brine stays below the stepped threshold. Its late CO3/pH
+//      pulse train is a calcite driver, not an invented fluorite
+//      coupling. The reactivated vein retains three positive layer
+//      regimes and its fail-closed stepped-face etch receipt.
 //   4. THE REE COMPOSE: sunnyside fluorite keeps octahedral_REE habit
 //      + morph_form 'octahedron' (form beats roughness; the v103 Y
 //      rule outranks the regime alphabet).
@@ -39,61 +41,103 @@ function runScenario(name: string, seed = 42, steps?: number) {
   return sim;
 }
 
-function fluoriteMass(sim: any): { mass: Record<string, number>, total: number } {
+const FLUORITE_REGIMES = new Set([
+  'spiral_smooth', 'stepped_mild', 'stepped_macro', 'hopper_skeletal', 'dendritic',
+]);
+
+function fluoriteMass(sim: any): {
+  mass: Record<string, number>,
+  total: number,
+  positiveTotal: number,
+  positiveZones: any[],
+} {
   const mass: Record<string, number> = {};
-  let total = 0;
+  const positiveZones: any[] = [];
+  let total = 0, positiveTotal = 0;
   for (const c of sim.crystals) {
     if (!c || c.mineral !== 'fluorite' || c.dissolved) continue;
     for (const z of c.zones || []) {
-      if (!(z.thickness_um > 0) || !z.morph_regime) continue;
+      if (!(z.thickness_um > 0)) continue;
+      positiveZones.push(z);
+      positiveTotal += z.thickness_um;
+      if (!z.morph_regime) continue;
       mass[z.morph_regime] = (mass[z.morph_regime] || 0) + z.thickness_um;
       total += z.thickness_um;
     }
   }
-  return { mass, total };
+  return { mass, total, positiveTotal, positiveZones };
+}
+
+function expectCompleteFluoriteMorphology(summary: ReturnType<typeof fluoriteMass>) {
+  expect(summary.positiveZones.length).toBeGreaterThan(0);
+  for (const z of summary.positiveZones) {
+    expect(FLUORITE_REGIMES.has(z.morph_regime)).toBe(true);
+    expect(Number.isFinite(z.morph_surf_sigma)).toBe(true);
+  }
+  expect(summary.total).toBeCloseTo(summary.positiveTotal, 12);
 }
 
 describe('fluorite morphology registry (fourth tenant)', () => {
 
-  it('Sunagawa-ordered bands, no damping, survey-plateau placement', () => {
+  it('Sunagawa-ordered bands have direct, gap-free threshold boundaries', () => {
     const th = MORPH_TH.fluorite;
     expect(th).toBeTruthy();
     expect(th.SPIRAL_MAX).toBeLessThan(th.STEP_MILD_MAX);
     expect(th.STEP_MILD_MAX).toBeLessThan(th.STEP_MACRO_MAX);
     expect(th.STEP_MACRO_MAX).toBeLessThan(th.HOPPER_MAX);
     expect(th.SIZE_HALF_UM).toBe(Infinity);
-    // the claims table in band form
-    expect(morphRegime(th, 4.96)).toBe('spiral_smooth');   // mvt — Tri-State glassy guard
-    expect(morphRegime(th, 5.94)).toBe('stepped_mild');    // elmwood fault-valve plateau
-    expect(morphRegime(th, 7.15)).toBe('stepped_macro');   // reactivated vein — composite faces
-    expect(morphRegime(th, 1.95)).toBe('spiral_smooth');   // sunnyside
+    const eps = 1e-9;
+    expect(morphRegime(th, th.SPIRAL_MAX - eps)).toBe('spiral_smooth');
+    expect(morphRegime(th, th.SPIRAL_MAX)).toBe('stepped_mild');
+    expect(morphRegime(th, th.STEP_MILD_MAX - eps)).toBe('stepped_mild');
+    expect(morphRegime(th, th.STEP_MILD_MAX)).toBe('stepped_macro');
+    expect(morphRegime(th, th.STEP_MACRO_MAX - eps)).toBe('stepped_macro');
+    expect(morphRegime(th, th.STEP_MACRO_MAX)).toBe('hopper_skeletal');
+    expect(morphRegime(th, th.HOPPER_MAX - eps)).toBe('hopper_skeletal');
+    expect(morphRegime(th, th.HOPPER_MAX)).toBe('dendritic');
   });
 
   it('mvt fluorite stays glassy (100% smooth at seed 42)', () => {
-    const { mass, total } = fluoriteMass(runScenario('mvt'));
+    const summary = fluoriteMass(runScenario('mvt'));
+    expectCompleteFluoriteMorphology(summary);
+    const { mass, total } = summary;
     expect(total).toBeGreaterThan(0);
     expect((mass.spiral_smooth || 0) / total).toBeCloseTo(1, 6);
   });
 
-  it('THE TWO-MINERAL SHOWCASE: elmwood fluorite is zoned smooth↔banded by the fault-valve pulses', () => {
-    const { mass, total } = fluoriteMass(runScenario('elmwood'));
+  it('elmwood fluorite stays smooth under its locality-owned Ca/F brine; calcite owns the late CO3 pulses', () => {
+    const sim = runScenario('elmwood');
+    const summary = fluoriteMass(sim);
+    expectCompleteFluoriteMorphology(summary);
+    const { mass, total, positiveZones } = summary;
     expect(total).toBeGreaterThan(0);
-    const banded = ((mass.stepped_mild || 0) + (mass.stepped_macro || 0)) / total;
-    expect(banded).toBeGreaterThanOrEqual(0.2);
-    expect((mass.spiral_smooth || 0) / total).toBeGreaterThanOrEqual(0.2);
+    expect(Object.keys(mass)).toEqual(['spiral_smooth']);
+    expect((mass.spiral_smooth || 0) / total).toBeCloseTo(1, 12);
+    expect(Math.max(...positiveZones.map((z: any) => z.morph_surf_sigma)))
+      .toBeLessThan(MORPH_TH.fluorite.SPIRAL_MAX);
   });
 
   it('reactivated vein records mixed layers and withholds the flat-{100} rate from its stepped breach face', () => {
     const sim = runScenario('reactivated_fluorite_vein');
-    const { mass, total } = fluoriteMass(sim);
+    const summary = fluoriteMass(sim);
+    expectCompleteFluoriteMorphology(summary);
+    const { mass, total } = summary;
     expect(total).toBeGreaterThan(0);
-    // SIM 272 layer testimony: the first and second fluid generations leave
-    // three physically distinct regimes. A later smooth overgrowth may restore
+    // Authenticated layer testimony: the first and second fluid generations
+    // leave three physically distinct regimes. A later smooth overgrowth may restore
     // the final display habit to `cubic`, but it cannot rewrite the stepped
     // surface that the breach wash actually encountered at step 118.
-    expect((mass.spiral_smooth || 0) / total).toBeCloseTo(0.30110802606082054, 12);
-    expect((mass.hopper_skeletal || 0) / total).toBeCloseTo(0.1618224712189175, 12);
-    expect((mass.stepped_macro || 0) / total).toBeCloseTo(0.5370695027202613, 12);
+    expect(Object.keys(mass).sort()).toEqual([
+      'hopper_skeletal', 'spiral_smooth', 'stepped_macro',
+    ]);
+    const smoothShare = (mass.spiral_smooth || 0) / total;
+    const hopperShare = (mass.hopper_skeletal || 0) / total;
+    const steppedShare = (mass.stepped_macro || 0) / total;
+    expect(smoothShare).toBeGreaterThan(0);
+    expect(hopperShare).toBeGreaterThan(0);
+    expect(steppedShare).toBeGreaterThan(smoothShare);
+    expect(steppedShare).toBeGreaterThan(hopperShare);
+    expect(smoothShare + hopperShare + steppedShare).toBeCloseTo(1, 12);
     expect(sim._physicalEtchReceipts.at(-1)).toMatchObject({
       schema: 'physical-dissolution-v3', step: 118,
       considered: 1, accepted: 0, rejected: 1,

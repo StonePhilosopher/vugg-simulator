@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 
 declare const EVENT_REGISTRY: Record<string, Function>;
 declare const eventScenarioOwner: any;
@@ -43,7 +45,7 @@ describe('locality-specific event ownership', () => {
 
   it('leaves only explicitly reusable event families unowned', () => {
     const reusable = new Set([
-      'cooling_pulse', 'film_coat', 'fluid_mixing', 'fluid_pulse', 'tectonic_shock',
+      'cooling_pulse', 'film_coat', 'fluid_pulse', 'tectonic_shock',
     ]);
     for (const [scenarioId, makeScenario] of Object.entries(SCENARIOS)) {
       for (const event of makeScenario._json5_spec?.events || []) {
@@ -52,5 +54,50 @@ describe('locality-specific event ownership', () => {
         else expect(owner, `${scenarioId}/${event.type}`).toBe(scenarioId);
       }
     }
+  });
+
+  it('binds every material-bearing fluid-mixing recipe to its authored locality', () => {
+    expect(eventScenarioOwner('mvt_fluid_mixing')).toBe('mvt');
+    expect(eventScenarioOwner('elmwood_fluid_mixing')).toBe('elmwood');
+    expect(eventScenarioOwner('reactivated_vein_fluid_mixing')).toBe('reactivated_fluorite_vein');
+
+    const payload = SCENARIOS.elmwood._json5_spec.events
+      .find((event: any) => event.type === 'elmwood_fluid_mixing');
+    const wrong = SCENARIOS.mvt().conditions;
+    expect(() => EVENT_REGISTRY.elmwood_fluid_mixing(wrong, payload))
+      .toThrow(/belongs to scenario 'elmwood'/);
+  });
+
+  it('keeps the canonical Tri-State catalog exactly aligned with its authored event reservoirs', () => {
+    const locality = JSON.parse(fs.readFileSync(
+      path.resolve(process.cwd(), 'data/locality_chemistry.json'), 'utf8',
+    ));
+    const triState = locality.localities.tri_state;
+    expect(triState).toBeDefined();
+
+    const event = SCENARIOS.mvt._json5_spec.events
+      .find((candidate: any) => candidate.type === 'mvt_fluid_mixing');
+    const projection = {
+      step: 20,
+      fluid_transform: {
+        add: { Zn: 150, Ca: 100, F: 40, Pb: 25, Fe: 30 },
+        flow_rate: 4,
+      },
+      sulfur_boundary: {
+        kind: 'addition',
+        pools: { sulfide: 90, sulfate: 30 },
+      },
+      temperature_delta_C: -20,
+      material_authority: event.material_authority,
+    };
+    expect(event).toMatchObject(projection);
+    expect(triState.authored_material_events.mvt_fluid_mixing).toEqual(projection);
+
+    const canonicalText = JSON.stringify(triState);
+    expect(canonicalText).toContain('mvt_fluid_mixing');
+    expect(canonicalText).toContain('90 ppm sulfide sulfur');
+    expect(canonicalText).toContain('30 ppm sulfate sulfur');
+    expect(canonicalText).not.toContain('event_fluid_mixing');
+    expect(canonicalText).not.toContain('S=120');
   });
 });

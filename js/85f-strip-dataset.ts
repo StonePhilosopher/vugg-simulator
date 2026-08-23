@@ -176,6 +176,8 @@ interface StripDataset {
   transformation_event_testimony?: StripTransformationEvent[];
   carbonate_boundary_testimony?: any[];
   sulfur_ledger_testimony?: any[];
+  fluid_boundary_testimony?: any[];
+  enclosure_testimony?: any[];
   layer_growth_testimony?: any[];
   habit_morphology_testimony?: any[];
 }
@@ -298,6 +300,8 @@ async function stripSerialize(
     transformation_event_testimony: ds.transformation_event_testimony || [],
     carbonate_boundary_testimony: ds.carbonate_boundary_testimony || [],
     sulfur_ledger_testimony: ds.sulfur_ledger_testimony || [],
+    fluid_boundary_testimony: ds.fluid_boundary_testimony || [],
+    enclosure_testimony: ds.enclosure_testimony || [],
     layer_growth_testimony: ds.layer_growth_testimony || [],
     habit_morphology_testimony: ds.habit_morphology_testimony || [],
   })) : null;
@@ -370,6 +374,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let transformation_event_testimony: StripTransformationEvent[] | undefined;
   let carbonate_boundary_testimony: any[] | undefined;
   let sulfur_ledger_testimony: any[] | undefined;
+  let fluid_boundary_testimony: any[] | undefined;
+  let enclosure_testimony: any[] | undefined;
   let layer_growth_testimony: any[] | undefined;
   let habit_morphology_testimony: any[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
@@ -388,6 +394,10 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.carbonate_boundary_testimony : [];
     sulfur_ledger_testimony = Array.isArray(testimony.sulfur_ledger_testimony)
       ? testimony.sulfur_ledger_testimony : [];
+    fluid_boundary_testimony = Array.isArray(testimony.fluid_boundary_testimony)
+      ? testimony.fluid_boundary_testimony : [];
+    enclosure_testimony = Array.isArray(testimony.enclosure_testimony)
+      ? testimony.enclosure_testimony : [];
     layer_growth_testimony = Array.isArray(testimony.layer_growth_testimony)
       ? testimony.layer_growth_testimony : [];
     habit_morphology_testimony = Array.isArray(testimony.habit_morphology_testimony)
@@ -402,6 +412,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
     ...(carbonate_boundary_testimony ? { carbonate_boundary_testimony } : {}),
     ...(sulfur_ledger_testimony ? { sulfur_ledger_testimony } : {}),
+    ...(fluid_boundary_testimony ? { fluid_boundary_testimony } : {}),
+    ...(enclosure_testimony ? { enclosure_testimony } : {}),
     ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
     ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
   };

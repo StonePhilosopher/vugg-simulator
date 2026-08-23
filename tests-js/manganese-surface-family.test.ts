@@ -187,12 +187,9 @@ describe('SIM 250 honest Mn-oxide surface-family selector', () => {
     zeroGrowth.total_growth_um = 0;
     const noBookedMn = bookedBirnessite(92);
     noBookedMn.zones = [];
-    const enclosed = bookedBirnessite(93);
-    enclosed.enclosed_by = 999;
-
-    for (const invalid of [zeroGrowth, noBookedMn, enclosed]) {
+    for (const invalid of [zeroGrowth, noBookedMn]) {
       sim.crystals = [invalid];
-      expect(isTodorokiteBirnessitePrecursor(invalid)).toBe(false);
+      expect(isTodorokiteBirnessitePrecursor(invalid, sim)).toBe(false);
       const decision = assessProductionNucleationDecision('todorokite', sim, sigma, 1);
       expect(decision).toMatchObject({
         eligible: false,
@@ -204,9 +201,59 @@ describe('SIM 250 honest Mn-oxide surface-family selector', () => {
       expect(substrate.chips[0].text).toContain('birnessite precursor absent');
     }
 
+    const staleFlag = bookedBirnessite(95);
+    staleFlag.enclosed_by = 999;
+    sim.crystals = [staleFlag];
+    sim._enclosureReceipts = [];
+    expect(isTodorokiteBirnessitePrecursor(staleFlag, sim)).toBe(true);
+    expect(assessProductionNucleationDecision('todorokite', sim, sigma, 1).eligible)
+      .toBe(true);
+
+    const enclosed = bookedBirnessite(93);
+    const host: any = {
+      crystal_id: 999, mineral: 'calcite', active: true, dissolved: false,
+      enclosed_crystals: [93], enclosed_at_step: [4],
+      zones: [
+        { step: 3, thickness_um: 400 },
+        { step: 4, thickness_um: 1 },
+      ],
+    };
+    const inventory = (enclosed.zones || []).reduce(
+      (sum: number, zone: any) => sum + (zone.thickness_um > 0 ? zone.thickness_um : 0),
+      0,
+    );
+    const receipt = {
+      schema: 'enclosure-receipt-v1', event: 'enclosed', step: 4,
+      host_crystal_id: 999, host_mineral: 'calcite',
+      guest_crystal_id: 93, guest_mineral: 'birnessite',
+      route: 'guest-on-host', adjacency_authority: 'exact-substrate-id',
+      host_same_step_positive_growth_um: 1,
+      host_same_step_negative_growth_um: 0,
+      host_same_step_net_growth_um: 1,
+      host_physical_size_at_enclosure_um: 401,
+      guest_positive_core_um: inventory,
+      guest_loss_um: 0,
+      guest_remaining_growth_um: inventory,
+      guest_partially_dissolved: false,
+      size_ratio: 0.401 / Math.max(inventory / 1000, 0.001),
+      guest_recent_growth_um: (enclosed.zones || []).slice(-3)
+        .reduce((sum: number, zone: any) => sum + zone.thickness_um, 0),
+      guest_slowing_threshold_um: 3,
+    };
+    enclosed.enclosed_by = 999;
+    enclosed.enclosure_receipt = receipt;
+    enclosed.active = false;
+    sim.crystals = [enclosed, host];
+    sim._enclosureReceipts = [receipt];
+    expect(isTodorokiteBirnessitePrecursor(enclosed, sim)).toBe(false);
+    expect(assessProductionNucleationDecision('todorokite', sim, sigma, 1)).toMatchObject({
+      eligible: false, source: 'required transformation precursor',
+    });
+
     const valid = bookedBirnessite(94);
     sim.crystals = [valid];
-    expect(isTodorokiteBirnessitePrecursor(valid)).toBe(true);
+    sim._enclosureReceipts = [];
+    expect(isTodorokiteBirnessitePrecursor(valid, sim)).toBe(true);
     expect(assessProductionNucleationDecision('todorokite', sim, sigma, 1).eligible).toBe(true);
   });
 

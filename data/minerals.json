@@ -895,7 +895,7 @@
     },
     "HMC": {
       "formula": "Ca(1-x)Mg(x)CO3, x ≈ 0.05-0.30 (mole fraction Mg)",
-      "nucleation_sigma": 2.0,
+      "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
       "max_size_cm": 0.5,
       "growth_rate_mult": 0.35,
@@ -921,7 +921,7 @@
           "wall_spread": 0.4,
           "void_reach": 0.4,
           "vector": "equant",
-          "trigger": "high σ (>1.5) at cool T (<35°C) — small discrete rhombohedral aggregates with incipient ordered domains"
+          "trigger": "high supersaturation excess (Ω - 1 > 1.5, therefore Ω > 2.5) at cool T (<35°C) — small discrete rhombohedral aggregates with incipient ordered domains"
         }
       ],
       "class": "carbonate",
@@ -948,7 +948,7 @@
         "Mg": 5,
         "CO3": 20
       },
-      "_ingredients_note": "Engine gates: Mg/Ca ratio 0.5-30 (below 0.5, pure calcite wins; above ~4 with T > 30°C, aragonite wins kinetically per Davis 2000 Mg-poisoning + Burton-Walter 1987 thermal preference). pH 7.0-10.5 (acidic dissolves, very-alkaline competition with dolomite). T 0-60°C. The mg_content of any individual crystal is computed at nucleation from fluid Mg/Ca per Mucci & Morse 1983 partitioning (linear: mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30).",
+      "_ingredients_note": "Engine gates: molar Mg/Ca ratio 0.5-30 (below 0.5 the composition-dependent partition model is unresolved; above ~4 with T > 30°C aragonite wins kinetically per Davis 2000 Mg-poisoning + Burton-Walter 1987 thermal preference). pH 7.0-10.5 (acidic dissolves; very alkaline fluid competes with dolomite). T 0-60°C. Per-crystal mg_content is computed only inside the measured parent-fluid domains: Mucci 1987 D_Mg(T) supplies the standard-seawater proxy and the Mucci & Morse 1983 Mg/Ca 7.5-20 experiments supply the 25°C high-ratio plateau. Outside those domains the composition is reported unresolved rather than extrapolated. Activity uses the documented non-ideal subregular solid-solution screen. Direct vug-wall admission at Ω > 1 is an authored heterogeneous-surface approximation restricted by locality licensing; the simulator does not resolve microbial or bioclastic surface chemistry and does not claim homogeneous HMC nucleation.",
       "trace_ingredients": {
         "Fe": "ferroan magnesian calcite — slight brown tint at Fe > 20 ppm",
         "Mn": "manganoan HMC — orange CL+UV fluorescence at Mn > 2 ppm (calcite-like activator behavior)",
@@ -994,13 +994,13 @@
           "aragonite",
           "vug wall"
         ],
-        "note": "HMC overgrows existing calcite (Mg-substituted overgrowth diagenesis) or replaces aragonite (HMC cement post-aragonite recrystallization). Direct vug-wall nucleation is also common in moderately-saline Mg-rich brines."
+        "note": "HMC overgrows existing calcite (Mg-substituted overgrowth diagenesis) or replaces aragonite (HMC cement post-aragonite recrystallization). Direct vug-wall admission is the simulator's disclosed heterogeneous-surface approximation where microbial films and bioclastic surface chemistry are unresolved; it is locality-licensed and is not a universal homogeneous-nucleation claim."
       },
       "narrate_function": null,
       "runtimes_present": [
         "index.html"
       ],
-      "audit_status": "new v146 (Week 11, 2026-05). Disordered Mg-substituted calcite, kinetic precursor to ordered dolomite per Kim 2023 cyclic-omega mechanism. SI engine + PWP kinetic engine via saturationIndex_HMC (32b) + HMCRate (52b) — both threaded with crystal._mg_content. Substrate priority: on-calcite (0.45) > on-aragonite (0.35) > vug-wall (default). Three habits: micritic (default), high_Mg_micritic (mg_content > 0.20), recrystallized_HMC (high σ + cool T). Not an IMA species — solid-solution composition; treated as a MINERAL_SPEC because its solubility, kinetics, and diagenetic fate differ materially from pure calcite. Primary refs: Bischoff, Mackenzie & Bishop 1987 GCA 51:1413 (solubility scaling), Davis et al. 2000 Science 290:1134 (Mg poisoning), Goldsmith & Graf 1958 Am. Mineral. 43:84 (XRD d104 discriminator), Burton & Walter 1987 GCA 51:777 (T-Mg-Ca thermal preference), Kim et al. 2023 Science 382:915 (cyclic-omega ordering to dolomite).",
+      "audit_status": "new v146 (Week 11, 2026-05). Disordered Mg-substituted calcite, kinetic precursor to ordered dolomite per Kim 2023 cyclic-omega mechanism. SI engine + PWP kinetic engine via saturationIndex_HMC (32b) + HMCRate (52b) — both threaded with crystal._mg_content. Substrate priority: on-calcite (0.45) > on-aragonite (0.35) > vug-wall disclosed approximation (default). Three habits: micritic (default), high_Mg_micritic (mg_content > 0.20), recrystallized_HMC (supersaturation excess Ω-1 > 1.5 plus cool T). Not an IMA species — solid-solution composition; treated as a MINERAL_SPEC because its solubility, kinetics, and diagenetic fate differ materially from pure calcite. Primary refs: Bischoff, Mackenzie & Bishop 1987 GCA 51:1413 (solubility scaling), Davis et al. 2000 Science 290:1134 (Mg poisoning), Goldsmith & Graf 1958 Am. Mineral. 43:84 (XRD d104 discriminator), Burton & Walter 1987 GCA 51:777 (T-Mg-Ca thermal preference), Kim et al. 2023 Science 382:915 (cyclic-omega ordering to dolomite).",
       "late_stage_propensity": 0.4,
       "_late_stage_note": "HMC forms as cement in modern/active environments and as biogenic-skeletal phase. Both are typically EARLY in a deposit's history (modern marine + sabkha intertidal), with later diagenetic conversion to LMC or dolomite. Treated as moderate-stage (0.4) to reflect the cement-deposition window.",
       "class_color": "#eb7f13"
@@ -2118,7 +2118,7 @@
         "individual_cap_cm": 18,
         "aggregate_record_cm": 9,
         "aggregate_cap_cm": null,
-        "aggregate_habits": ["botryoidal", "banded", "fibrous/acicular", "pseudomorph_after_azurite", "stalactitic"],
+        "aggregate_habits": ["botryoidal", "banded_massive", "acicular_spray", "pseudomorph_after_azurite", "stalactitic"],
         "status": "Handbook record includes crystals, sprays, and crude composite aggregates to 9 cm; larger botryoidal/stalactitic bodies are aggregate extents and are bounded by cavity capacity, not mislabeled as one crystal.",
         "sources": ["Handbook of Mineralogy, Malachite (Anthony et al.), https://www.handbookofmineralogy.org/pdfs/malachite.pdf"]
       },
@@ -2619,11 +2619,11 @@
           "trigger": "rare, specific chemistry"
         },
         {
-          "name": "thin_plate_honey",
+          "name": "intergrown_thin_plates",
           "wall_spread": 0.7,
           "void_reach": 0.1,
           "vector": "tabular",
-          "trigger": "high σ, rapid growth, very thin"
+          "trigger": "high σ, rapid nucleation and growth; multiple extremely thin plates form one fragile intergrowth rather than one giant crystal"
         }
       ],
       "class": "molybdate",
@@ -4990,7 +4990,7 @@
         "individual_cap_cm": 2400,
         "aggregate_record_cm": null,
         "aggregate_cap_cm": null,
-        "aggregate_habits": ["fibrous (satin spar)", "rosette", "desert_rose"],
+        "aggregate_habits": ["fibrous_satin_spar", "desert_rose"],
         "status": "Naica's 11-12 m selenite beams are individual crystals. Satin-spar fiber packs and desert-rose rosettes are aggregate habits with no universal record extent and are capacity-bound.",
         "sources": ["García-Ruiz et al. 2007, Geology 35:327-330", "Van Driessche et al. 2011, PNAS 108:15721-15726", "Pérez-Rodríguez et al. 2018, Crystal Growth & Design 18:6231-6243"]
       },
@@ -7134,7 +7134,7 @@
         }
       ],
       "class": "native",
-      "description": "Cu — elemental native copper. Only forms when S²⁻ is absent (otherwise precipitates as sulfide) AND Eh is strongly reducing (otherwise oxidizes to cuprite/malachite). The Michigan Keweenaw peninsula basalt vesicles produced 500-ton masses from basalt-hosted brines. Copper-red fresh, tarnishes brown, eventually green (malachite coating). The Statue of Liberty's iconic patina IS malachite growing on native copper — the reverse of supergene ore formation, where rain and air turn metal into mineral in front of us.",
+      "description": "Cu — elemental native copper. Only forms when S²⁻ is absent (otherwise precipitates as sulfide) AND Eh is strongly reducing (otherwise it can oxidize into a multiphase weathering assemblage). The Michigan Keweenaw peninsula basalt vesicles produced 500-ton masses from basalt-hosted brines. Copper-red fresh, tarnishing brown and potentially green as oxides, sulfates, chlorides, or carbonates develop under the local atmosphere and fluid chemistry. The Statue of Liberty is not a malachite analogue: X-ray diffraction identifies a cuprite base with predominantly brochantite plus antlerite and, locally, copper chlorides (Matyi & Baboian 1986, Powder Diffraction 1:299-304, DOI 10.1017/S0885715600011970; Nassau et al. 1987, Corrosion Science 27:669-684, DOI 10.1016/0010-938X(87)90049-7).",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -16101,7 +16101,7 @@
       "_transformation_only": true
     },
     "meta-autunite": {
-      "formula": "Ca(UO2)2(PO4)2·6H2O",
+      "formula": "Ca(UO2)2(PO4)2·8H2O",
       "nucleation_sigma": 99.0,
       "max_nucleation_count": 0,
       "max_size_cm": 6,

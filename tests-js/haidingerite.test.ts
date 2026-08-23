@@ -39,6 +39,12 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+function solidPharmacolite() {
+  const crystal = new Crystal({ mineral: 'pharmacolite', active: true });
+  crystal.total_growth_um = 10;
+  return crystal;
+}
+
 describe('Haidingerite — pharmacolite dehydration paramorph (v90)', () => {
   describe('DEHYDRATION_TRANSITIONS table has the pharmacolite entry', () => {
     it('pharmacolite → haidingerite, threshold 30 steps, T_max 80°C', () => {
@@ -61,7 +67,7 @@ describe('Haidingerite — pharmacolite dehydration paramorph (v90)', () => {
       setSeed(42);
       let transformed = 0;
       for (let i = 0; i < 50; i++) {
-        const c = new Crystal({ mineral: 'pharmacolite', active: true });
+        const c = solidPharmacolite();
         const r = applyDehydrationTransitions(
           c,
           { concentration: 0 },
@@ -84,7 +90,7 @@ describe('Haidingerite — pharmacolite dehydration paramorph (v90)', () => {
   describe('vadose path fires after 30 dry steps', () => {
     it('pharmacolite transforms after 30 vadose steps (T below threshold)', () => {
       setSeed(42);
-      const c = new Crystal({ mineral: 'pharmacolite', active: true });
+      const c = solidPharmacolite();
       let transitioned = null;
       for (let step = 0; step < 30; step++) {
         transitioned = applyDehydrationTransitions(

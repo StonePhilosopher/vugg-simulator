@@ -74,9 +74,9 @@ function grow_fluorite(crystal, conditions, step) {
     crystal._photobleachable_color = true;
   } else {
     // Morphology-generalization arc (2026-06-12, fourth tenant): the
-    // cube path is regime-driven (MORPH_TH.fluorite, js/45 — survey
-    // plateaus: reactivated vein 7.15 → composite/stepped, elmwood
-    // fault-valve spikes 5.94 → banded, mvt 4.96 → glassy smooth).
+    // cube path is regime-driven (MORPH_TH.fluorite, js/45). The
+    // locality-authenticated fleet keeps Elmwood smooth, while the
+    // reactivated vein crosses smooth, stepped, and hopper layers.
     // Same shared cube alphabet as the halides — render, aspect, and
     // texture routes all pre-exist. The REE octahedral branch above
     // outranks the regime for FORM, and carries its own regime grading

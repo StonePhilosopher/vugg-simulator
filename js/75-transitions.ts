@@ -35,6 +35,19 @@ function applyParamorphTransitions(crystal, T, step) {
   crystal.mineral = coolMineral;
   crystal.paramorph_origin = oldMineral;
   if (step != null) crystal.paramorph_step = step;
+  crystal.phase_transition_driver = 'cooling-below-phase-boundary';
+  const receipt = Object.freeze({
+    schema: 'paramorph-transition-v1',
+    step: step == null ? null : Number(step),
+    from: oldMineral,
+    to: coolMineral,
+    driver: crystal.phase_transition_driver,
+    temperature_C: Number(T),
+    phase_boundary_C: Number(Tthresh),
+    external_form_preserved: true,
+  });
+  (crystal.phase_transition_history ||= []).push(receipt);
+  crystal.paramorph_receipt = receipt;
   return [oldMineral, coolMineral];
 }
 
@@ -151,6 +164,11 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
   if (!crystal.active || crystal.dissolved) return null;
   const spec = DEHYDRATION_TRANSITIONS[crystal.mineral];
   if (!spec) return null;
+  // A nucleation object is not yet a mineral mass. Dehydration can transform
+  // only a positively booked solid layer; otherwise a zero-mass seed would be
+  // promoted into a new phase and appear as a scientific transformation in
+  // archived testimony.
+  if (!(Number(crystal.total_growth_um) > 0)) return null;
   const [newMineral, thresholdSteps, concMin, Tmax] = spec;
   const heatThreshold = crystal.mineral === 'borax'
     ? boraxTincalconiteHeatThreshold(ringFluid)
@@ -202,6 +220,7 @@ const GYPSUM_MOLAR_VOLUME_CM3_MOL = 73.9;
 const ANHYDRITE_MOLAR_VOLUME_CM3_MOL = 46.1;
 
 type CaSO4PhaseTransitionRecord = {
+  schema: 'caso4-phase-replacement-v1';
   step: number | null;
   from: 'selenite' | 'anhydrite';
   to: 'selenite' | 'anhydrite';
@@ -217,6 +236,10 @@ type CaSO4PhaseTransitionRecord = {
   caAfterPpm: number;
   sulfateBeforePpm: number;
   sulfateAfterPpm: number;
+  temperatureC: number;
+  fluidPressureKbar: number;
+  phaseAtTransition: 'gypsum' | 'anhydrite';
+  solidGrowthUm: number;
 };
 
 // Replacement preserves the existing external envelope and every booked Ca/S
@@ -270,7 +293,8 @@ function applyCaSO4PhaseTransition(
     : 0;
   crystal._ca_so4_pseudomorphic_envelope_preserved = true;
 
-  const record: CaSO4PhaseTransitionRecord = {
+  const record: CaSO4PhaseTransitionRecord = Object.freeze({
+    schema: 'caso4-phase-replacement-v1',
     step,
     from,
     to,
@@ -288,7 +312,11 @@ function applyCaSO4PhaseTransition(
     sulfateAfterPpm: typeof sulfateAvailablePpm === 'function'
       ? sulfateAvailablePpm(fluid, temperatureC)
       : Math.max(0, Number(fluid?.S) || 0),
-  };
+    temperatureC: Number(temperatureC),
+    fluidPressureKbar: Number(fluidPressureKbar),
+    phaseAtTransition: evaluation.phase.phase as 'gypsum' | 'anhydrite',
+    solidGrowthUm: Number(crystal.total_growth_um),
+  });
   (crystal.phase_transition_history ||= []).push(record);
   return record;
 }
@@ -306,8 +334,10 @@ function applyBirnessiteTodorokiteTransition(
   fluid: any,
   temperatureC: number,
   step: number | null,
+  sim?: any,
 ): any | null {
   if (!crystal?.active || crystal.dissolved || crystal.mineral !== 'birnessite') return null;
+  if (currentEnclosureAuthority(sim, crystal)) return null;
   if (!(Number(crystal.total_growth_um) > 0)) return null;
   if (temperatureC < MINERAL_GATES_todorokite.T_min!
       || temperatureC > MINERAL_GATES_todorokite.T_max!) return null;
@@ -321,7 +351,9 @@ function applyBirnessiteTodorokiteTransition(
   const mgBeforePpm = Math.max(0, Number(fluid?.Mg) || 0);
   if (mgBeforePpm + 1e-12 < requiredMgPpm) return null;
 
-  for (const zone of (crystal.zones || [])) {
+  const zoneAllocations: any[] = [];
+  for (let zoneIndex = 0; zoneIndex < (crystal.zones || []).length; zoneIndex++) {
+    const zone = crystal.zones[zoneIndex];
     if (!(zone && Number(zone.thickness_um) > 0)) continue;
     const remaining = Number.isFinite(Number(zone._remaining_solid_um))
       ? Math.max(0, Number(zone._remaining_solid_um))
@@ -330,8 +362,17 @@ function applyBirnessiteTodorokiteTransition(
     const mnPerUm = Number(zone._budget_inventory_per_um?.Mn) || 0;
     if (!(mnPerUm > 0)) continue;
     zone._budget_inventory_per_um ||= {};
+    const mgPerUmBefore = Number(zone._budget_inventory_per_um.Mg) || 0;
+    const mgPerUmAdded = mnPerUm * TODOROKITE_MG_MASS_PER_MN_MASS;
     zone._budget_inventory_per_um.Mg = (Number(zone._budget_inventory_per_um.Mg) || 0)
-      + mnPerUm * TODOROKITE_MG_MASS_PER_MN_MASS;
+      + mgPerUmAdded;
+    zoneAllocations.push(Object.freeze({
+      zone_index: zoneIndex,
+      remaining_solid_um_at_transition: remaining,
+      mn_ppm_per_um: mnPerUm,
+      mg_ppm_per_um_before: mgPerUmBefore,
+      mg_ppm_per_um_added: mgPerUmAdded,
+    }));
   }
   fluid.Mg = Math.max(0, mgBeforePpm - requiredMgPpm);
 
@@ -354,7 +395,8 @@ function applyBirnessiteTodorokiteTransition(
   crystal.position = `in-place after birnessite #${crystal.crystal_id} (Mg-exchanged tunnel transformation)`;
   crystal._todorokite_transition_mg_ppm = requiredMgPpm;
 
-  const record = {
+  const record = Object.freeze({
+    schema: 'birnessite-todorokite-transformation-v1',
     step,
     from,
     to,
@@ -364,8 +406,14 @@ function applyBirnessiteTodorokiteTransition(
     mgBeforePpm,
     mgAfterPpm: fluid.Mg,
     temperatureC,
+    temperatureEnvelopeC: Object.freeze([
+      MINERAL_GATES_todorokite.T_min,
+      MINERAL_GATES_todorokite.T_max,
+    ]),
+    mgPerMnMassRatio: TODOROKITE_MG_MASS_PER_MN_MASS,
+    zoneAllocations: Object.freeze(zoneAllocations),
     modelBoundary: 'in-place booked-solid proxy for Mg exchange and layer-to-tunnel reorganization; structural water and Mn(III) ordering are not conserved state variables',
-  };
+  });
   (crystal.phase_transition_history ||= []).push(record);
   return record;
 }
@@ -426,7 +474,7 @@ const LIGHT_TRANSITIONS = {
   realgar: ['pararealgar', 60],
 };
 
-function applyLightTransitions(crystal, isLit, step) {
+function applyLightTransitions(crystal, isLit, step, exposureRoute) {
   // Convert a light-sensitive mineral in place after sufficient light
   // exposure. Increments crystal.light_exposure_steps each step the
   // cavity is lit; transition fires once the counter reaches threshold.
@@ -434,7 +482,7 @@ function applyLightTransitions(crystal, isLit, step) {
   if (!crystal.active || crystal.dissolved) return null;
   const spec = LIGHT_TRANSITIONS[crystal.mineral];
   if (!spec) return null;
-  if (!isLit) return null;
+  if (!isLit || (exposureRoute !== 'surface' && exposureRoute !== 'excavated')) return null;
   const [newMineral, thresholdSteps] = spec;
   crystal.light_exposure_steps = (crystal.light_exposure_steps || 0) + 1;
   if (crystal.light_exposure_steps >= thresholdSteps) {
@@ -442,6 +490,20 @@ function applyLightTransitions(crystal, isLit, step) {
     crystal.mineral = newMineral;
     crystal.paramorph_origin = old;
     if (step != null) crystal.paramorph_step = step;
+    crystal.phase_transition_driver = 'visible-light-isomerization';
+    crystal.light_exposure_route = exposureRoute;
+    const receipt = Object.freeze({
+      schema: 'light-induced-transformation-v1',
+      step: step == null ? null : Number(step),
+      from: old,
+      to: newMineral,
+      driver: crystal.phase_transition_driver,
+      exposure_route: exposureRoute,
+      exposure_steps: Number(crystal.light_exposure_steps),
+      threshold_steps: Number(thresholdSteps),
+    });
+    (crystal.phase_transition_history ||= []).push(receipt);
+    crystal.light_transition_receipt = receipt;
     return [old, newMineral];
   }
   return null;

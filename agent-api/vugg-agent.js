@@ -19,22 +19,21 @@
 // ============================================================
 // Role in the project (read this before refactoring)
 // ============================================================
-// This is the THIRD runtime of the simulation engine, after vugg.py
-// (dev/test harness) and index.html (shipped product). It is
-// **intentionally kept simpler** than the other two — fewer features,
+// This is the narrower headless runtime shipped beside the browser product.
+// The retired Python prototype is not a runtime or test authority. This file is
+// **intentionally kept simpler** than the browser engine — fewer features,
 // less coupling — because its job is "minimum viable headless sim for
 // an AI agent to play 200 steps and write about what it saw."
 //
 // What that means in practice:
 //   - Some grow_*() implementations here are simplifications of their
-//     vugg.py / index.html counterparts.
+//     browser counterparts.
 //   - Some mechanics (paramorph transitions, water-solubility
 //     metastability, etc.) may not be wired up here even after they
-//     ship in the other two runtimes. That is a deliberate lag, not
-//     drift.
-//   - tools/sync-spec.js will flag this lag in `runtimes_present`
-//     arrays; entries that legitimately don't claim agent-api are
-//     documenting an intentional gap, not a bug.
+//     ship in the browser runtime. That narrower capability is disclosed, but
+//     shared chemical identities are not allowed to drift: sulfur valence,
+//     mirrored locality events, and their wrong-reservoir controls are policed
+//     by the root test suite.
 //
 // When does this file change?
 //   - Always: load mineral data from ../data/minerals.json (below).
@@ -87,12 +86,17 @@ let rng = new SeededRandom(Date.now());
 
 class FluidChemistry {
   constructor(opts = {}) {
+    if (Object.prototype.hasOwnProperty.call(opts, 'S')) {
+      throw new Error('Ambiguous fluid.S is not accepted; specify S_sulfide, S_sulfate, and S_elemental explicitly');
+    }
     this.SiO2 = opts.SiO2 ?? 500.0;
     this.Ca = opts.Ca ?? 200.0;
     this.CO3 = opts.CO3 ?? 150.0;
     this.F = opts.F ?? 10.0;
     this.Zn = opts.Zn ?? 0.0;
-    this.S = opts.S ?? 0.0;
+    this.S_sulfide = opts.S_sulfide ?? 0.0;
+    this.S_sulfate = opts.S_sulfate ?? 0.0;
+    this.S_elemental = opts.S_elemental ?? 0.0;
     this.Fe = opts.Fe ?? 5.0;
     this.Mn = opts.Mn ?? 2.0;
     this.Al = opts.Al ?? 3.0;
@@ -116,6 +120,20 @@ class FluidChemistry {
     this.salinity = opts.salinity ?? 5.0;
   }
 
+  get S() {
+    // Diagnostic total only. Phase admission and growth must select a valence
+    // reservoir through the helpers below.
+    return this.S_sulfide + this.S_sulfate + this.S_elemental;
+  }
+
+  sulfideAvailablePpm() {
+    return Math.max(0, this.S_sulfide);
+  }
+
+  sulfateAvailablePpm() {
+    return Math.max(0, this.S_sulfate);
+  }
+
   describe() {
     const parts = [];
     if (this.SiO2 > 300) parts.push(`silica-rich (${this.SiO2.toFixed(0)} ppm SiO₂)`);
@@ -123,7 +141,8 @@ class FluidChemistry {
     if (this.Fe > 20) parts.push(`Fe-bearing (${this.Fe.toFixed(0)} ppm)`);
     if (this.Mn > 5) parts.push(`Mn-bearing (${this.Mn.toFixed(0)} ppm)`);
     if (this.Zn > 50) parts.push(`Zn-rich (${this.Zn.toFixed(0)} ppm)`);
-    if (this.S > 50) parts.push(`sulfur-bearing (${this.S.toFixed(0)} ppm)`);
+    if (this.S_sulfide > 10) parts.push(`sulfide-S ${this.S_sulfide.toFixed(0)} ppm`);
+    if (this.S_sulfate > 10) parts.push(`sulfate-S ${this.S_sulfate.toFixed(0)} ppm`);
     if (this.Cu > 20) parts.push(`Cu-bearing (${this.Cu.toFixed(0)} ppm)`);
     if (this.Pb > 10) parts.push(`Pb-bearing (${this.Pb.toFixed(0)} ppm)`);
     if (this.Mo > 10) parts.push(`Mo-bearing (${this.Mo.toFixed(0)} ppm)`);
@@ -197,6 +216,7 @@ class VugConditions {
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
     this.wall = opts.wall || new VugWall();
+    this._scenario_id = opts.scenario_id ?? null;
   }
 
   // Mo flux effect: Mo > 20 ppm = minerals nucleate as if temp 15% higher
@@ -281,24 +301,27 @@ class VugConditions {
   }
 
   supersaturation_sphalerite() {
-    if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
-    const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+    const sulfide = this.fluid.sulfideAvailablePpm();
+    if (this.fluid.Zn < 10 || sulfide < 10) return 0;
+    const product = (this.fluid.Zn / 100.0) * (sulfide / 100.0);
     return product * 2.0 * Math.exp(-0.004 * this.temperature);
   }
 
   supersaturation_pyrite() {
-    if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
+    const sulfide = this.fluid.sulfideAvailablePpm();
+    if (this.fluid.Fe < 5 || sulfide < 10) return 0;
     if (this.fluid.O2 > 1.5) return 0;
-    const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+    const product = (this.fluid.Fe / 50.0) * (sulfide / 80.0);
     const eT = this.effectiveTemperature;
     const T_factor = (100 < eT && eT < 400) ? 1.0 : 0.5;
     return product * T_factor * (1.5 - this.fluid.O2);
   }
 
   supersaturation_chalcopyrite() {
-    if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || this.fluid.S < 15) return 0;
+    const sulfide = this.fluid.sulfideAvailablePpm();
+    if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || sulfide < 15) return 0;
     if (this.fluid.O2 > 1.5) return 0;
-    const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+    const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (sulfide / 80.0);
     const eT = this.effectiveTemperature;
     // Porphyry window 300-500°C (Seo et al. 2012), viable 200-300°C, rare below 180°C
     let T_factor;
@@ -331,8 +354,7 @@ class VugConditions {
   }
 
   supersaturation_uraninite() {
-    // Reconciled to Python canonical (v12, May 2026). Pre-v12 had a T-only
-    // formula with no O2 gate. Now: needs reducing + U + slight high-T pref.
+    // Historical v12 correction: needs reducing + U + slight high-T preference.
     if (this.fluid.U < 5 || this.fluid.O2 > 0.3) return 0;
     let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
     if (this.temperature > 200) sigma *= 1.3;
@@ -340,10 +362,10 @@ class VugConditions {
   }
 
   supersaturation_galena() {
-    // v13: reconciled to Python — pre-v13 had no O2 gate. Now matches vugg.py.
-    if (this.fluid.Pb < 5 || this.fluid.S < 10) return 0;
+    const sulfide = this.fluid.sulfideAvailablePpm();
+    if (this.fluid.Pb < 5 || sulfide < 10) return 0;
     if (this.fluid.O2 > 1.5) return 0;
-    let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * (1.5 - this.fluid.O2);
+    let sigma = (this.fluid.Pb / 50.0) * (sulfide / 80.0) * (1.5 - this.fluid.O2);
     const eT = this.effectiveTemperature;
     if (eT >= 200 && eT <= 400) sigma *= 1.3;
     if (this.temperature > 450) sigma *= Math.exp(-0.008 * (this.temperature - 450));
@@ -384,9 +406,10 @@ class VugConditions {
 
   // Molybdenite (MoS₂) — porphyry sulfide, Mo source for wulfenite paragenesis.
   supersaturation_molybdenite() {
-    if ((this.fluid.Mo || 0) < 3 || this.fluid.S < 10) return 0;
+    const sulfide = this.fluid.sulfideAvailablePpm();
+    if ((this.fluid.Mo || 0) < 3 || sulfide < 10) return 0;
     if (this.fluid.O2 > 1.2) return 0;
-    let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * (1.5 - this.fluid.O2);
+    let sigma = (this.fluid.Mo / 15.0) * (sulfide / 60.0) * (1.5 - this.fluid.O2);
     if (this.temperature < 150) sigma *= Math.exp(-0.01 * (150 - this.temperature));
     else if (this.temperature > 300 && this.temperature < 500) sigma *= 1.3;
     return Math.max(sigma, 0);
@@ -410,8 +433,9 @@ class VugConditions {
 
   // Selenite (CaSO₄·2H₂O) — low-T evaporite, Naica's giant crystals.
   supersaturation_selenite() {
-    if (this.fluid.Ca < 20 || this.fluid.S < 15 || this.fluid.O2 < 0.2) return 0;
-    let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 0.5);
+    const sulfate = this.fluid.sulfateAvailablePpm();
+    if (this.fluid.Ca < 20 || sulfate < 15 || this.fluid.O2 < 0.2) return 0;
+    let sigma = (this.fluid.Ca / 60.0) * (sulfate / 50.0) * (this.fluid.O2 / 0.5);
     if (this.temperature > 60) sigma *= Math.exp(-0.06 * (this.temperature - 60));
     if (this.fluid.pH < 5.0) sigma -= (5.0 - this.fluid.pH) * 0.2;
     return Math.max(sigma, 0);
@@ -880,9 +904,9 @@ function grow_pyrite(crystal, conditions, step) {
     if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.1);
-      // RECYCLING: Fe and S return to fluid
+      // RECYCLING: pyrite returns reduced sulfur to the sulfide reservoir.
       conditions.fluid.Fe += dissolved_um * 1.0;
-      conditions.fluid.S += dissolved_um * 0.5;
+      conditions.fluid.S_sulfide += dissolved_um * 0.5;
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -893,7 +917,7 @@ function grow_pyrite(crystal, conditions, step) {
     if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       conditions.fluid.Fe += 2.0;
-      conditions.fluid.S += 1.5;
+      conditions.fluid.S_sulfide += 1.5;
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -2.0, growth_rate: -2.0,
@@ -950,10 +974,10 @@ function grow_chalcopyrite(crystal, conditions, step) {
     if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
-      // RECYCLING: Cu, Fe, S return to fluid
+      // RECYCLING: chalcopyrite returns reduced sulfur to the sulfide reservoir.
       conditions.fluid.Cu += dissolved_um * 0.8;
       conditions.fluid.Fe += dissolved_um * 0.5;
-      conditions.fluid.S += dissolved_um * 0.3;
+      conditions.fluid.S_sulfide += dissolved_um * 0.3;
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -1185,11 +1209,10 @@ function grow_galena(crystal, conditions, step) {
   crystal.habit = 'cubic';
   crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
 
-  // Pb and S consumption
+  // Pb and sulfide-S consumption
   conditions.fluid.Pb -= rate * 0.005;
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-  conditions.fluid.S -= rate * 0.003;
-  conditions.fluid.S = Math.max(conditions.fluid.S, 0);
+  conditions.fluid.S_sulfide = Math.max(conditions.fluid.S_sulfide - rate * 0.003, 0);
 
   if (!crystal.twinned && rng.random() < 0.008) {
     crystal.twinned = true;
@@ -1316,7 +1339,7 @@ function grow_molybdenite(crystal, conditions, step) {
       crystal.dissolved = true;
       const d = Math.min(4.0, crystal.total_growth_um * 0.15);
       conditions.fluid.Mo += d * 0.8;
-      conditions.fluid.S += d * 0.2;
+      conditions.fluid.S_sulfide += d * 0.2;
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: 'oxidation — molybdenite releases MoO₄²⁻' });
     }
     return null;
@@ -1326,7 +1349,7 @@ function grow_molybdenite(crystal, conditions, step) {
   if (rate < 0.1) return null;
   crystal.habit = 'hexagonal platy';
   conditions.fluid.Mo = Math.max(conditions.fluid.Mo - rate * 0.004, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
+  conditions.fluid.S_sulfide = Math.max(conditions.fluid.S_sulfide - rate * 0.003, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: 'bluish-gray metallic, platy habit, sectile' });
 }
 
@@ -1393,7 +1416,7 @@ function grow_selenite(crystal, conditions, step) {
       crystal.dissolved = true;
       const d = Math.min(5.0, crystal.total_growth_um * 0.10);
       conditions.fluid.Ca += d * 0.4;
-      conditions.fluid.S += d * 0.4;
+      conditions.fluid.S_sulfate += d * 0.4;
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `selenite acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
     }
     return null;
@@ -1406,7 +1429,7 @@ function grow_selenite(crystal, conditions, step) {
   crystal.habit = zoneCount >= 30 ? 'cathedral_blade' : (rate > 8 ? 'tabular' : 'prismatic');
   if (!crystal.twinned && rng.random() < 0.08) { crystal.twinned = true; crystal.twin_law = 'swallowtail {100}'; }
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.008, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
+  conditions.fluid.S_sulfate = Math.max(conditions.fluid.S_sulfate - rate * 0.005, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: 'water-clear selenite' });
 }
 
@@ -1508,7 +1531,7 @@ function event_tectonic_shock(conditions) {
 function event_copper_injection(conditions) {
   conditions.fluid.Cu = 120.0;
   conditions.fluid.Fe += 40.0;
-  conditions.fluid.S += 80.0;
+  conditions.fluid.S_sulfide += 80.0;
   conditions.fluid.SiO2 += 200.0;
   conditions.fluid.O2 = 0.3;
   conditions.temperature += 30;
@@ -1518,9 +1541,11 @@ function event_copper_injection(conditions) {
 
 function event_oxidation(conditions) {
   conditions.fluid.O2 = 1.8;
-  conditions.fluid.S *= 0.3;
+  const oxidized = conditions.fluid.S_sulfide * 0.7;
+  conditions.fluid.S_sulfide -= oxidized;
+  conditions.fluid.S_sulfate += oxidized;
   conditions.temperature -= 40;
-  return `Oxidizing meteoric water infiltrates. Sulfides becoming unstable. T drops to ${conditions.temperature.toFixed(0)}°C.`;
+  return `Oxidizing meteoric water infiltrates. ${oxidized.toFixed(1)} ppm sulfide-S transfers to sulfate-S; sulfides become unstable. T drops to ${conditions.temperature.toFixed(0)}°C.`;
 }
 
 function event_acidify(conditions) {
@@ -1535,17 +1560,24 @@ function event_alkalinize(conditions) {
   return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
 }
 
-function event_fluid_mixing(conditions) {
-  // Phase-3: sync with vugg.py — F bumped 15→40 (Cave-in-Rock fluid-inclusion
-  // data) so fluorite actually crosses σ=1.2. Pb added so galena nucleates.
-  conditions.fluid.Zn = 150.0;
-  conditions.fluid.S = 120.0;
+function event_mvt_fluid_mixing(conditions) {
+  if (conditions?._scenario_id !== 'mvt') {
+    throw new Error(`mvt_fluid_mixing belongs to scenario 'mvt', not '${conditions?._scenario_id || 'unclaimed'}'`);
+  }
+  // Tri-State locality-owned mixing boundary. The 90/30 reservoir split is an
+  // authored SIM-scale paragenetic endmember grounded in Roedder 1976,
+  // Anderson & Macqueen 1982, and Stoffell et al. 2008; it is not asserted as
+  // a measured fluid-inclusion ratio.
+  conditions.fluid.Zn += 150.0;
+  conditions.fluid.S_sulfide += 90.0;
+  conditions.fluid.S_sulfate += 30.0;
   conditions.fluid.Ca += 100.0;
   conditions.fluid.F += 40.0;
   conditions.fluid.Pb += 25.0;
   conditions.fluid.Fe += 30.0;
   conditions.temperature -= 20;
-  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite, fluorite, and galena become possible.';
+  conditions.flow_rate = 4.0;
+  return `Tri-State ore-fluid mixing: reducing Zn-Pb brine adds 90 ppm sulfide-S while subordinate groundwater adds 30 ppm sulfate-S. Zn reaches ${conditions.fluid.Zn.toFixed(0)} ppm; T drops to ${conditions.temperature.toFixed(0)}°C.`;
 }
 
 // ============================================================
@@ -1574,14 +1606,14 @@ function scenario_pulse() {
 
 function scenario_mvt() {
   const conditions = new VugConditions({
-    temperature: 180.0, pressure: 0.3,
+    temperature: 180.0, pressure: 0.3, scenario_id: 'mvt',
     fluid: new FluidChemistry({
       SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 8,
-      Zn: 0, S: 0, F: 5, Pb: 40, pH: 7.2, salinity: 15.0
+      Zn: 0, S_sulfide: 0, S_sulfate: 0, S_elemental: 0, F: 5, Pb: 40, pH: 7.2, salinity: 15.0
     })
   });
   const events = [
-    { step: 20, name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing },
+    { step: 20, name: 'Tri-State Ore-Fluid Mixing', description: 'Reducing Pb-Zn brine meets subordinate sulfate-bearing groundwater', apply_fn: event_mvt_fluid_mixing },
     { step: 60, name: 'Second Pulse', description: 'Another mixing event', apply_fn: event_fluid_pulse },
     { step: 80, name: 'Tectonic', description: 'Minor seismic event', apply_fn: event_tectonic_shock },
   ];
@@ -1593,7 +1625,7 @@ function scenario_porphyry() {
     temperature: 400.0, pressure: 2.0,
     fluid: new FluidChemistry({
       SiO2: 700, Ca: 80, CO3: 50, Fe: 30, Mn: 2,
-      Zn: 0, S: 60, F: 5, Cu: 0, O2: 0.2,
+      Zn: 0, S_sulfide: 60, F: 5, Cu: 0, O2: 0.2,
       pH: 4.5, salinity: 10.0
     })
   });
@@ -1611,7 +1643,7 @@ function scenario_reactive_wall() {
     temperature: 140.0, pressure: 0.2,
     fluid: new FluidChemistry({
       SiO2: 50, Ca: 250, CO3: 200, Fe: 8, Mn: 5,
-      Zn: 80, S: 60, F: 8, pH: 7.0, salinity: 18.0
+      Zn: 80, S_sulfide: 60, F: 8, pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
       composition: 'limestone',
@@ -1624,7 +1656,7 @@ function scenario_reactive_wall() {
 
   function acid_pulse_1(cond) {
     cond.fluid.pH = 3.5;
-    cond.fluid.S += 40.0;
+    cond.fluid.S_sulfide += 40.0;
     cond.fluid.Zn += 60.0;
     cond.fluid.Fe += 15.0;
     cond.flow_rate = 4.0;
@@ -1633,7 +1665,7 @@ function scenario_reactive_wall() {
 
   function acid_pulse_2(cond) {
     cond.fluid.pH = 3.0;
-    cond.fluid.S += 50.0;
+    cond.fluid.S_sulfide += 50.0;
     cond.fluid.Zn += 80.0;
     cond.fluid.Fe += 25.0;
     cond.fluid.Mn += 10.0;
@@ -1643,7 +1675,7 @@ function scenario_reactive_wall() {
 
   function acid_pulse_3(cond) {
     cond.fluid.pH = 4.0;
-    cond.fluid.S += 20.0;
+    cond.fluid.S_sulfide += 20.0;
     cond.fluid.Zn += 30.0;
     cond.flow_rate = 3.0;
     return 'Third acid pulse — weaker now. pH only drops to 4.0. The fluid system is exhausting. But the wall still has carbonate to give.';
@@ -1674,7 +1706,7 @@ function scenario_radioactive_pegmatite() {
     temperature: 600.0, pressure: 2.0,
     fluid: new FluidChemistry({
       SiO2: 12000, Ca: 50, CO3: 20, Fe: 60, Mn: 8,
-      Zn: 0, S: 40, F: 25, Cu: 0, U: 150, Pb: 30,
+      Zn: 0, S_sulfide: 40, F: 25, Cu: 0, U: 150, Pb: 30,
       O2: 0, pH: 6.5, salinity: 8.0
     })
   });
@@ -2057,12 +2089,13 @@ class VugSimulator {
       this.conditions.fluid.SiO2 = Math.max(this.conditions.fluid.SiO2 - depletion, 10);
     }
 
-    // Sulfide growth depletes Fe, S, Cu, Zn
+    // Sulfide growth depletes Fe, sulfide-S, Cu, and Zn. Sulfate cannot
+    // substitute for the reduced sulfur reagent.
     const active_sulfides = this.crystals.filter(c => (c.mineral === 'pyrite' || c.mineral === 'chalcopyrite' || c.mineral === 'sphalerite') && c.active);
     for (const c of active_sulfides) {
       if (c.zones.length) {
         const dep = c.zones[c.zones.length - 1].thickness_um * 0.05;
-        this.conditions.fluid.S = Math.max(this.conditions.fluid.S - dep, 0);
+        this.conditions.fluid.S_sulfide = Math.max(this.conditions.fluid.S_sulfide - dep, 0);
         this.conditions.fluid.Fe = Math.max(this.conditions.fluid.Fe - dep * 0.5, 0);
         if (c.mineral === 'chalcopyrite') {
           this.conditions.fluid.Cu = Math.max(this.conditions.fluid.Cu - dep * 0.8, 0);
@@ -2742,37 +2775,37 @@ const FLUID_PRESETS = {
   silica: {
     label: 'Silica-rich',
     desc: 'High silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth.',
-    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
+    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
   },
   carbonate: {
     label: 'Carbonate',
     desc: 'Ca-CO₃ rich fluid (Ca 300, CO₃ 250 ppm), moderate Mn. Calcite-dominant.',
-    fluid: { SiO2: 80, Ca: 300, CO3: 250, Fe: 10, Mn: 8, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 8.0 }
+    fluid: { SiO2: 80, Ca: 300, CO3: 250, Fe: 10, Mn: 8, Ti: 0.2, Al: 1, F: 5, Zn: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 8.0 }
   },
   mvt: {
     label: 'MVT Brine',
-    desc: 'Zinc + sulfur-bearing brine (Zn 150, S 120 ppm), high Ca + F. Sphalerite + fluorite + smithsonite potential. Mo flux.',
-    fluid: { SiO2: 100, Ca: 350, CO3: 200, Fe: 25, Mn: 5, Ti: 0.3, Al: 2, F: 30, Zn: 150, S: 120, Cu: 0, Mo: 20, O2: 0, pH: 5.5, salinity: 18.0 }
+    desc: 'Tri-State-style Zn brine with 90 ppm sulfide-S and 30 ppm sulfate-S, high Ca + F. Sulfide and sulfate phases read only their own reservoirs.',
+    fluid: { SiO2: 100, Ca: 350, CO3: 200, Fe: 25, Mn: 5, Ti: 0.3, Al: 2, F: 30, Zn: 150, S_sulfide: 90, S_sulfate: 30, Cu: 0, Mo: 20, O2: 0, pH: 5.5, salinity: 18.0 }
   },
   clean: {
     label: 'Clean/Dilute',
     desc: 'Low-concentration fluid. Slow growth, high purity crystals. Near-equilibrium conditions.',
-    fluid: { SiO2: 200, Ca: 80, CO3: 60, Fe: 2, Mn: 1, Ti: 0.1, Al: 1, F: 3, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 2.0 }
+    fluid: { SiO2: 200, Ca: 80, CO3: 60, Fe: 2, Mn: 1, Ti: 0.1, Al: 1, F: 3, Zn: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 2.0 }
   },
   porphyry: {
     label: 'Copper Porphyry',
-    desc: 'Cu-Fe-S bearing magmatic fluid (Cu 100, Fe 40, S 80 ppm), reducing. Pyrite + chalcopyrite potential.',
-    fluid: { SiO2: 500, Ca: 80, CO3: 50, Fe: 40, Mn: 2, Ti: 0.5, Al: 3, F: 5, Zn: 0, S: 80, Cu: 100, O2: 0.2, pH: 4.5, salinity: 10.0 }
+    desc: 'Cu-Fe-sulfide bearing magmatic fluid (Cu 100, Fe 40, sulfide-S 80 ppm), reducing. Pyrite + chalcopyrite potential.',
+    fluid: { SiO2: 500, Ca: 80, CO3: 50, Fe: 40, Mn: 2, Ti: 0.5, Al: 3, F: 5, Zn: 0, S_sulfide: 80, Cu: 100, O2: 0.2, pH: 4.5, salinity: 10.0 }
   },
   oxidized_cu: {
     label: 'Oxidized Copper',
     desc: 'Cu-bearing oxidized fluid (Cu 60, Fe 40, O₂ 1.5), CO₃-rich. Malachite + hematite potential. Low temperature favored.',
-    fluid: { SiO2: 100, Ca: 150, CO3: 200, Fe: 40, Mn: 3, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 5, Cu: 60, O2: 1.5, pH: 6.0, salinity: 5.0 }
+    fluid: { SiO2: 100, Ca: 150, CO3: 200, Fe: 40, Mn: 3, Ti: 0.2, Al: 1, F: 5, Zn: 0, S_sulfate: 5, Cu: 60, O2: 1.5, pH: 6.0, salinity: 5.0 }
   },
   radioactive: {
     label: 'Radioactive Pegmatite',
     desc: 'U-bearing pegmatite: high silica, uranium-rich. Uraninite crystallizes first, quartz grows around it, radiation darkens quartz over deep time. ☢️',
-    fluid: { SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5, Ti: 0.5, Al: 3, F: 15, Zn: 0, S: 30, Cu: 0, U: 100, Pb: 20, O2: 0, pH: 6.0, salinity: 5.0 }
+    fluid: { SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5, Ti: 0.5, Al: 3, F: 15, Zn: 0, S_sulfide: 30, Cu: 0, U: 100, Pb: 20, O2: 0, pH: 6.0, salinity: 5.0 }
   }
 };
 
@@ -2815,6 +2848,9 @@ function getState() {
       F: +c.fluid.F.toFixed(1),
       Zn: +c.fluid.Zn.toFixed(1),
       S: +c.fluid.S.toFixed(1),
+      S_sulfide: +c.fluid.S_sulfide.toFixed(1),
+      S_sulfate: +c.fluid.S_sulfate.toFixed(1),
+      S_elemental: +c.fluid.S_elemental.toFixed(1),
       Cu: +c.fluid.Cu.toFixed(1),
       Pb: +c.fluid.Pb.toFixed(1),
       U: +c.fluid.U.toFixed(1),
@@ -2837,7 +2873,7 @@ function getState() {
     },
     vug_diameter_mm: +c.wall.vug_diameter_mm.toFixed(1),
     wall_dissolved_mm: +c.wall.total_dissolved_mm.toFixed(1),
-    redox: c.fluid.O2 > 1.0 ? 'oxidizing' : (c.fluid.O2 < 0.3 && (c.fluid.S > 20 || c.fluid.Fe > 20) ? 'reducing' : 'neutral'),
+    redox: c.fluid.O2 > 1.0 ? 'oxidizing' : (c.fluid.O2 < 0.3 && (c.fluid.S_sulfide > 20 || c.fluid.Fe > 20) ? 'reducing' : 'neutral'),
     radiation_dose: gameSim.radiation_dose || 0,
   };
 }
@@ -2928,9 +2964,10 @@ function applyAction(type) {
       break;
     case 'brine':
       c.fluid.Zn += 150;
-      c.fluid.S += 120;
+      c.fluid.S_sulfide += 90;
+      c.fluid.S_sulfate += 30;
       c.temperature -= 10;
-      actionDesc = `Brine mixed — Zn +150, S +120 ppm, T −10°C`;
+      actionDesc = `Tri-State-style brine mixed — Zn +150, sulfide-S +90, sulfate-S +30 ppm, T −10°C`;
       break;
     case 'fluorine':
       c.fluid.F += 25;
@@ -2940,7 +2977,7 @@ function applyAction(type) {
     case 'copper':
       c.fluid.Cu = 120.0;
       c.fluid.Fe += 40;
-      c.fluid.S += 80;
+      c.fluid.S_sulfide += 80;
       c.fluid.SiO2 += 200;
       c.fluid.O2 = 0.3;
       c.temperature += 30;
@@ -2950,10 +2987,14 @@ function applyAction(type) {
       break;
     case 'oxidize':
       c.fluid.O2 = 1.8;
-      c.fluid.S *= 0.3;
+      {
+        const oxidized = c.fluid.S_sulfide * 0.7;
+        c.fluid.S_sulfide -= oxidized;
+        c.fluid.S_sulfate += oxidized;
+      }
       c.temperature -= 40;
       c.temperature = Math.max(c.temperature, 25);
-      actionDesc = `Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
+      actionDesc = `Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfide-S transferred to sulfate-S. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
       break;
     case 'tectonic':
       c.pressure += 0.5;
@@ -3407,6 +3448,7 @@ function renderGroovePNG(crystal, outputPath) {
 const readline = require('readline');
 const path = require('path');
 
+function runCli() {
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
 
 rl.on('line', (line) => {
@@ -3433,6 +3475,13 @@ rl.on('line', (line) => {
       rng = new SeededRandom(seed);
 
       const fluidParams = Object.assign({}, presetData.fluid);
+      if (cmd.fluid && Object.prototype.hasOwnProperty.call(cmd.fluid, 'S')) {
+        console.log(JSON.stringify({
+          ok: false,
+          error: 'Ambiguous fluid.S is not accepted; use S_sulfide, S_sulfate, and S_elemental',
+        }));
+        return;
+      }
       if (cmd.fluid) Object.assign(fluidParams, cmd.fluid);
       const fluid = new FluidChemistry(fluidParams);
       const wall = new VugWall({ composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 });
@@ -3534,3 +3583,17 @@ rl.on('line', (line) => {
 rl.on('close', () => {
   process.exit(0);
 });
+}
+
+if (require.main === module) runCli();
+
+module.exports = {
+  FluidChemistry,
+  VugConditions,
+  event_mvt_fluid_mixing,
+  event_copper_injection,
+  event_oxidation,
+  FLUID_PRESETS,
+  SCENARIOS,
+  runCli,
+};

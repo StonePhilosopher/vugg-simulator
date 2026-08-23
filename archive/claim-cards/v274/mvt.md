@@ -1,0 +1,207 @@
+# CLAIM CARD — mvt  (v274, seed 42, 120 steps)
+
+**Anchor:** Tri-State district (Joplin / Picher / Galena MO-KS-OK) — Pb-Zn in Mississippian Boone Formation cherty limestone
+**Deposit:** Mississippi Valley-type Pb-Zn deposit. NaCl-CaCl2 basinal brine, sphalerite + galena + barite + fluorite paragenesis.
+**Initial:** 180 °C, 0.3 kbar, wall=irregular
+**Model digest:** Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-locality-licensed-heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v5|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v10|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+controlled-production-engine-witness+solid-state-transformation+null-confining-pressure-v5|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5
+**Scenario spec hash:** 82fe035d793bf1d333dafe7fd0cf481473a25e255fa73799f6309d416769727b
+**Archived strip SHA-256:** 16e5bd07ce1bea62d196f31ab162680e11edf53981bf4dad9813e3dcf14a57ef
+
+## Model boundary: calibrated growth budget
+  - Kind: calibrated stoichiometric axial-growth budget proxy
+  - Basis: 0.00008 mmol formula/kg solvent per accepted axial micrometre
+  - Preserves: formula mole ratios and exact closure of booked inventory on dissolution
+  - Limitation: not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume
+
+## Expectation contract
+**Deterministic headline (5):** sphalerite, galena, fluorite, barite, calcite
+**Deterministic accessories (4):** pyrite — Documented at the Picher Field locality and a legitimate accessory sulfide in the reducing Tri-State brine.; greenockite — Documented at Picher and independently supported by Cd-bearing Tri-State sphalerite; a minor CdS accessory rather than a deterministic headline.; quartz — Documented Picher gangue and a valid late silica product, but subordinate to the defining carbonate-fluorite-barite assemblage.; anhydrite — The corrected PHREEQC analytical K(T) path reproducibly resolves a trace Ca-sulfate accessory in all three evidence seeds. This is transparent model classification, not promotion of anhydrite as a defining Picher locality claim; gypsum/selenite remains the documented Ca-sulfate occurrence.
+**Statistical (0):** (none)
+**Aspirational (0):** (none)
+**Locality exclusions (4):** rhodochrosite — Not documented in the audited Picher Field inventory; dissolved Mn does not establish an Mn-carbonate occurrence.; siderite — Not documented in the audited Picher Field inventory; the Fe-carbonate engine must not turn generic MVT chemistry into a locality claim.; celestine — Not documented in the audited Picher Field inventory; Sr is retained as a basinal-brine tracer rather than evidence for a discrete phase.; hawleyite — Not documented at Picher; the locality-supported CdS phase is greenockite, not its cubic polymorph.
+
+**Cited sources:**
+  - Roedder 1976 — Tri-State fluid-inclusion microthermometry
+  - Ohle 1959 — Tri-State district geology
+  - Hagni 1976 — Tri-State paragenesis
+  - Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses
+  - Anderson & Macqueen 1982 — MVT mineralogy review
+  - Schwartz 2000 (Econ. Geol. 95) — Cd in MVT sphalerite
+  - Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)
+
+**Claim-level citations:**
+  - (none authored)
+
+## Paragenetic order as grown (9 species)
+| # | mineral | first step | nucleations | transformations | pathway |
+|--|--|--|--|--|--|
+| 1 | calcite | 5 | 1 | 0 | nucleation |
+| 2 | fluorite | 20 | 1 | 0 | nucleation |
+| 3 | galena | 20 | 1 | 0 | nucleation |
+| 4 | pyrite | 20 | 1 | 0 | nucleation |
+| 5 | sphalerite | 20 | 2 | 0 | nucleation |
+| 6 | barite | 21 | 40 | 0 | nucleation |
+| 7 | greenockite | 22 | 5 | 0 | nucleation |
+| 8 | quartz | 28 | 1 | 0 | nucleation |
+| 9 | anhydrite | 75 | 8 | 0 | nucleation |
+
+**Surprises (present but absent from all authored expectation tiers):** (none)
+**Deterministic no-shows:** (none)
+**Statistical no-shows (non-failing):** (none)
+**Aspirational no-shows (non-failing):** (none)
+**Excluded-locality appearances (failing):** (none)
+
+## Environment trajectory (first → last, [min,max])
+  - T: 178.260894354712 → 151.3663856007618 °C  [90.49107971857285, 179.71592432130092] (raw_simulation_state)
+  - pH: 7.2 → 7   [7, 7.2] (raw_simulation_state)
+  - Eh: 40.28940581998064 → -230.40917574741053 mV  [-246.20234885448465, 59.70497947810308] (raw_simulation_state)
+  - salinity: 15 → 15 psu  [15, 15] (raw_simulation_state)
+  - O2: 0.2891729219067179 → 0.007868795207043642 ppm (mg/kg solvent)  [0.005469863786785064, 0.34579596230104137] (raw_simulation_state)
+  - concentration: 1 → 1 ×  [1, 1] (raw_simulation_state)
+
+## Saturation drivers
+  - SI_calcite: 0.126 → 0.189  [-0.126, 0.756]
+  - SI_aragonite: 0 → 0.063  [-0.252, 0.693]
+  - SI_dolomite: 0.252 → 0.063  [-0.441, 0.819]
+  - SI_HMC: 0.441 → 0.441  [0.126, 0.945]
+  - SI_siderite: 1.575 → 2.016  [1.575, 2.205]
+  - SI_selenite: -8 → -8  [-8, -8]
+  - SI_anhydrite: -8 → 0.441  [-8, 1.134]
+  - SI_barite: -8 → 1.953  [-8, 2.205]
+  - SI_celestine: -8 → 0.882  [-8, 2.457]
+
+## Authored pressure/stress/phase context (claim, not run testimony)
+  - Fluid pressure: 0.3 kbar — cavity-fluid pressure; never silently substituted for rock pressure or differential stress
+  - Rock pressure: unspecified kbar — unspecified; metamorphic phase field is reported unconstrained
+  - Calcite/aragonite boundary: 2.420 kbar; secure aragonite=false
+  - Al2SiO5: unconstrained (nominal n/a) — Rock/confining pressure is not specified; fluid pressure cannot substitute for it.
+  - Gypsum/anhydrite pure-water boundary: 62.41 °C; initial a_w=0.991 ±0.020 (temperature-extrapolation)
+  - Ksp pressure rule: reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy
+    - calcite: temperature-clamped-to-envelope; active=true; ΔlogK=0.271155145; Requested 180 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary.
+    - aragonite: temperature-clamped-to-envelope; active=true; ΔlogK=0.2597098; Requested 180 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary.
+    - dolomite: active; active=true; ΔlogK=0.6131692409999999; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.613 relative to 1 bar at the same temperature.
+    - siderite: active; active=true; ΔlogK=0.310786303; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.311 relative to 1 bar at the same temperature.
+    - rhodochrosite: active; active=true; ΔlogK=0.296897945; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.297 relative to 1 bar at the same temperature.
+    - anhydrite: active; active=true; ΔlogK=0.254547565; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.255 relative to 1 bar at the same temperature.
+    - barite: active; active=true; ΔlogK=0.241655511; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.242 relative to 1 bar at the same temperature.
+    - celestine: active; active=true; ΔlogK=0.251729373; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.252 relative to 1 bar at the same temperature.
+    - selenite: unsupported-reaction; active=false; ΔlogK=0; Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated.
+  - Stress/overprint step 80: tectonic_shock — resolved-shear threshold pulse; fluid pressure unchanged; no creep law
+
+## Executed pressure/stress/phase testimony (archived run)
+**Source:** archived executed run state; not reconstructed from scenario definition
+  - Fluid pressure: 0.3 → 0.3 kbar [0.3, 0.3], n=120
+  - Rock/confining pressure: not recorded
+  - Temperature: 178.260894354712 → 151.3663856007618 °C [90.49107971857285, 179.71592432130092], n=120
+  - Secure aragonite assessment: 0/120 executed steps; first={"boundary_kbar":2.4195970419362336,"secure_aragonite":false}, last={"boundary_kbar":2.4379322463658983,"secure_aragonite":false}
+  - Al2SiO5 executed phase counts: {"unconstrained":120}; first=unconstrained, last=unconstrained
+  - Executed stress step 80: σdiff=50 MPa; affected crystal IDs=[]; outcomes={"below_crss":1}
+  - Mineral transformations: none executed.
+  - Transformation reactivity commissioning: controlled production-engine boundary; not a locality trajectory; artifact vugg-mechanism-witnesses-v1/23bade18c1f579f7afdbbe5a8a19318ab3e4ab79641548cf4359a550b1589a83.
+    - No controlled reactivity witness is applicable to a transformation product in this locality run.
+  - Conserved carbonate boundary: not enabled for this archived run.
+
+## Declared non-sulfur fluid-boundary transactions (archived run)
+**Source:** archived declared non-sulfur fluid-boundary transactions; exact rows are authenticated by the strip SHA-256
+  - No declared non-sulfur fluid-boundary transaction was executed.
+
+## Sulfur reservoir identity and conservation (archived run)
+**Source:** archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256
+  - Ledger activation: step 20, kind=legacy_combined_to_explicit_reservoirs, closed=true; initial fluid=0 ppm; initial solid=0 ppm.
+  - Closure: 101/101 samples; all_closed=true; max |balance error|=6.51925802230835e-9 ppm; max |testimony error|=5.587935447692871e-9 ppm.
+  - Fluid reservoirs (sulfide/sulfate/elemental), first → last: {"sulfide":691199.6394722046,"sulfate":230400,"elemental":0} → {"sulfide":691134.9892006263,"sulfate":230362.25596351732,"elemental":0}.
+  - Solid reservoirs, first → last: {"sulfide":0.36052779532124646,"sulfate":0,"elemental":0,"unclassified":0} → {"sulfide":65.0107993755242,"sulfate":37.74403648211677,"elemental":0,"unclassified":0}.
+  - Phase identities: anhydrite→sulfate, barite→sulfate, galena→sulfide, greenockite→sulfide, pyrite→sulfide, sphalerite→sulfide.
+
+## Layer, solid-solution, competition, and habit testimony
+  - Accepted layers: 1460; formula-bearing=0; solid-solution=0; binding competition=0; reactive transformation etches=0; masked horizons=18.
+  - Masked horizon crystal 5, film step 30, breakthrough step 31: galena through barite; coverage term/prism=0.15/0; thickness=101.74398835300495 µm.
+  - Masked horizon crystal 5, film step 31, breakthrough step 32: galena through barite; coverage term/prism=0.15/0; thickness=125.6284096971744 µm.
+  - Masked horizon crystal 5, film step 36, breakthrough step 37: galena through barite; coverage term/prism=0.15/0; thickness=95.74373424258306 µm.
+  - Masked horizon crystal 3, film step 43, breakthrough step 44: sphalerite through barite; coverage term/prism=0.15/0; thickness=28.970706459375965 µm.
+  - Masked horizon crystal 3, film step 47, breakthrough step 48: sphalerite through barite; coverage term/prism=0.15/0; thickness=11.339749663359044 µm.
+  - Masked horizon crystal 3, film step 48, breakthrough step 49: sphalerite through barite; coverage term/prism=0.15/0; thickness=12.624869720936825 µm.
+  - Masked horizon crystal 3, film step 51, breakthrough step 52: sphalerite through barite; coverage term/prism=0.15/0; thickness=9.8480100095118 µm.
+  - Masked horizon crystal 3, film step 58, breakthrough step 59: sphalerite through barite; coverage term/prism=0.15/0; thickness=13.391615607645214 µm.
+  - Masked horizon crystal 3, film step 68, breakthrough step 69: sphalerite through barite; coverage term/prism=0.15/0; thickness=13.164713081351264 µm.
+  - Masked horizon crystal 4, film step 68, breakthrough step 69: pyrite through barite; coverage term/prism=0.15/0; thickness=19.435995088144896 µm.
+  - Masked horizon crystal 3, film step 71, breakthrough step 72: sphalerite through barite; coverage term/prism=0.15/0; thickness=17.5658958316017 µm.
+  - Masked horizon crystal 3, film step 77, breakthrough step 78: sphalerite through barite; coverage term/prism=0.15/0; thickness=9.367332462180208 µm.
+  - Masked horizon crystal 3, film step 79, breakthrough step 80: sphalerite through barite; coverage term/prism=0.15/0; thickness=9.825648317006388 µm.
+  - Masked horizon crystal 3, film step 80, breakthrough step 81: sphalerite through barite; coverage term/prism=0.15/0; thickness=9.174920427438991 µm.
+  - Masked horizon crystal 5, film step 105, breakthrough step 106: galena through barite; coverage term/prism=0.15/0; thickness=98.73699190902934 µm.
+  - Masked horizon crystal 5, film step 106, breakthrough step 107: galena through barite; coverage term/prism=0.15/0; thickness=127.50187908595662 µm.
+  - Masked horizon crystal 5, film step 118, breakthrough step 119: galena through barite; coverage term/prism=0.15/0; thickness=115.52668297150308 µm.
+  - Masked horizon crystal 4, film step 119, breakthrough step 120: pyrite through barite; coverage term/prism=0.15/0; thickness=29.478190508505094 µm.
+  - Habit crystal 1: calcite; scalenohedral; extent=individual; forms=["v{211} scalenohedron","dog-tooth (Mg-elongated)"]; size authority={"extent_kind":"individual","cap_cm":2000,"record_cm":1000}; CDR=null.
+  - Habit crystal 2: fluorite; cubic; extent=individual; forms=["{100} cube"]; size authority={"extent_kind":"individual","cap_cm":400,"record_cm":200}; CDR=null.
+  - Habit crystal 3: sphalerite; tetrahedral; extent=individual; forms=["{111} tetrahedron"]; size authority={"extent_kind":"individual","cap_cm":80,"record_cm":40}; CDR=null.
+  - Habit crystal 4: pyrite; striated_cubo_pyritohedral; extent=individual; forms=["{100} + {210}, striated"]; size authority={"extent_kind":"individual","cap_cm":40,"record_cm":20}; CDR=null.
+  - Habit crystal 5: galena; cubic; extent=individual; forms=["{100} cube","{111} octahedron"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 6: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 7: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 8: greenockite; colloform_crust; extent=individual; forms=["encrusting colloform aggregate"]; size authority={"extent_kind":"individual","cap_cm":3,"record_cm":1.5}; CDR=null.
+  - Habit crystal 9: barite; tabular; extent=individual; forms=["{001} tabular plates"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 10: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 11: greenockite; colloform_crust; extent=individual; forms=["encrusting colloform aggregate"]; size authority={"extent_kind":"individual","cap_cm":3,"record_cm":1.5}; CDR=null.
+  - Habit crystal 12: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 13: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 14: quartz; gwindel; extent=individual; forms=["m{100}","r{101}","z{011} dominant"]; size authority={"extent_kind":"individual","cap_cm":1200,"record_cm":600}; CDR=null.
+  - Habit crystal 15: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 16: greenockite; colloform_crust; extent=individual; forms=["encrusting colloform aggregate"]; size authority={"extent_kind":"individual","cap_cm":3,"record_cm":1.5}; CDR=null.
+  - Habit crystal 17: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 18: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 19: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 20: greenockite; colloform_crust; extent=individual; forms=["encrusting colloform aggregate"]; size authority={"extent_kind":"individual","cap_cm":3,"record_cm":1.5}; CDR=null.
+  - Habit crystal 21: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 22: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 23: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 24: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 25: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 26: barite; tabular; extent=individual; forms=["{001} tabular plates"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 27: barite; tabular; extent=individual; forms=["{001} tabular plates"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 28: barite; tabular; extent=individual; forms=["{001} tabular plates"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 29: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 30: greenockite; colloform_crust; extent=individual; forms=["encrusting colloform aggregate"]; size authority={"extent_kind":"individual","cap_cm":3,"record_cm":1.5}; CDR=null.
+  - Habit crystal 31: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 32: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 33: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 34: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 35: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 36: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 37: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 38: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 39: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 40: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 41: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 42: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 43: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 44: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 45: sphalerite; tetrahedral; extent=individual; forms=["{111} tetrahedron"]; size authority={"extent_kind":"individual","cap_cm":80,"record_cm":40}; CDR=null.
+  - Habit crystal 46: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 47: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 48: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 49: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 50: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 51: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 52: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 53: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 54: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 55: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 56: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 57: anhydrite; massive_granular; extent=individual; forms=["granular massive layers"]; size authority={"extent_kind":"individual","cap_cm":200,"record_cm":100}; CDR=null.
+  - Habit crystal 58: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 59: barite; snowball; extent=individual; forms=["radiating bladed sphere","on sulfide seed core"]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Habit crystal 60: barite; snowball; extent=individual; forms=[]; size authority={"extent_kind":"individual","cap_cm":60,"record_cm":30}; CDR=null.
+  - Surviving surface film crystal 3: sphalerite; {"mineral":"barite","phi_term":0.3,"phi_prism":0,"step":87}.
+
+## Scenario notes (author's own rationale)
+> Anchor: Tri-State Pb-Zn mining district. Brines per Roedder 1976, Ohle 1959, Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity, 150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over aragonite). Tri-State is diagnostically silver-POOR: the district produced lead and zinc only, and low-Ag galena is an MVT fingerprint — Ag-in-galena rides Sb/Bi substitution, a high-temperature vein phenomenon absent from a ~150°C basinal brine (Leach et al. 2010 USGS MVT deposit model: Ag 'generally absent in most deposits').
+
+> Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature — an UNCITED confabulation, removed v195, see next note), Ba (barite documented locally), Sr (basinal-brine tracer + minor celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from JS-side intent into Python init.
+
+> Silver de-confabulation (v195, boss catch 2026-06-12): the Apr-2026 gap-fill claim 'Tri-State galena is documented argentiferous; Ag was historically a meaningful smelter byproduct' cited no source because none exists — none of this scenario's references (Roedder/Ohle/Hagni/Stoffell) report district Ag, and the district record is Pb+Zn only. The claim was a v139-adamite-family fabrication that survived two rebake reviews because per-pin verdicts inherited it as ground truth. Broth Ag 5 → 0; the baseline's acanthite + native_silver were artifacts riding it (expects_species never promised a silver mineral). Greenockite STAYS — Cd-in-sphalerite is genuinely documented at Tri-State (Schwartz 2000).
+
+> SIM 273 locality-boundary correction: the former shared Cave-in-Rock-style fluid_mixing recipe is retired. Step 20 is now a Tri-State-owned, cited basinal-brine endmember with explicit sulfide and sulfate reservoirs; fluid_pulse step 60 and tectonic_shock step 80 remain separate boundaries.
+
+> MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Picher Field, Tri-State Mining District, mindat locality 12395; boss picked the iconic sub-locality deliberately 'so the data is more consistent'; 44 valid incl. sub-localities): Albite (var. Anorthoclase), Allophane, Anglesite, Aragonite, Arsenopyrite, Aurichalcite, Baryte, 'Calamine', Calcite, Caledonite, Cerussite, Chalcopyrite, Chrysocolla, Copiapite, Covellite, Cuprite, Diadochite, Dolomite, Enargite, Epsomite, Fluorapatite, Galena, Gedrite, Goslarite (var. Cuprogoslarite), Greenockite, GYPSUM (var. SELENITE), Hemimorphite, Hydroniumjarosite, Hydrozincite, Kaolinite, Ktenasite, Linarite, Luzonite, Malachite, Marcasite, Melanterite, Native Sulphur, 'Petroleum' (var. Bitumen), Plumbojarosite, Pyrite, Pyromorphite, Pyrophyllite, Quartz, Smithsonite, Sphalerite, Szomolnokite, Vivianite. WHAT THE LIST VOTES ON (vs seed-42 v236 sim output): (a) GYPSUM var. SELENITE IS VALID HERE — the S2 selenite migration's mvt tenant is record-LICENSED (the exact opposite of elmwood; the per-locality instrument earning its keep); (b) sim species NOT on the list — census flags: FLUORITE (11.9 mm + in expects_species! Picher Field lists none; the anchor spans the whole Tri-State so a Joplin-side sub-locality may still license it — BOSS ADJUDICATION needed before any kill), CELESTINE (39.7 µm, freshly Ba-flipped in S2 — unlisted here), RHODOCHROSITE (5.7 mm, unlisted), SIDERITE (3.7 mm, unlisted — SAME flag as elmwood: the Fe/Mn carbonates may be over-firing in MVT broths), hawleyite (CdS cubic polymorph unlisted; greenockite is), anhydrite (6.3 µm dust; gypsum listed instead); (c) DOUBLE-LICENSED: greenockite (Schwartz 2000 in the v195 note AND the Picher list) — the de-confabulation instrument and the literature agree; (d) the list's big supergene tail (smithsonite/hemimorphite/cerussite/anglesite/malachite/aurichalcite/hydrozincite/native sulphur/the jarosites) is largely post-mining oxidation — the scenario models the hypogene ore stage and ends before the gossan, so their absence from the sim is CORRECT, not a gap; they become relevant only if a Picher supergene-epilogue stage is ever authored.

@@ -173,10 +173,32 @@ function _simulationCrystalProjection(crystal: any): any {
     mineral: crystal.mineral,
     active: !!crystal.active,
     dissolved: !!crystal.dissolved,
+    buried: !!crystal._buried,
     totalGrowthUm: Number(crystal.total_growth_um) || 0,
     cLengthMm: Number(crystal.c_length_mm) || 0,
     aWidthMm: Number(crystal.a_width_mm) || 0,
     habit: crystal.habit || null,
+    position: crystal.position || null,
+    enclosedBy: crystal.enclosed_by ?? null,
+    enclosedCrystals: _simulationCanonicalProjection(crystal.enclosed_crystals || []),
+    enclosedAtStep: _simulationCanonicalProjection(crystal.enclosed_at_step || []),
+    coatsFront: crystal.coats_front ?? null,
+    surfaceFilm: _simulationCanonicalProjection(crystal._film || null),
+    enclosureReceipt: _simulationCanonicalProjection(crystal.enclosure_receipt || null),
+    liberationReceipt: _simulationCanonicalProjection(crystal.liberation_receipt || null),
+    phaseTransitionHistory: _simulationCanonicalProjection(
+      crystal.phase_transition_history || [],
+    ),
+    dehydrationHistory: _simulationCanonicalProjection(crystal.dehydration_history || []),
+    paramorphOrigin: crystal.paramorph_origin || null,
+    paramorphStep: crystal.paramorph_step ?? null,
+    lightExposureSteps: crystal.light_exposure_steps ?? null,
+    lightExposureRoute: crystal.light_exposure_route || null,
+    dryExposureSteps: crystal.dry_exposure_steps ?? null,
+    // Future-determining: growth engines dispatch the next habit from this
+    // exact live terminal interface. An unavailable all-null summary must be
+    // distinguishable from either a prior classified regime or no sample.
+    liveMorphology: _simulationCanonicalProjection(crystal._morphology ?? null),
     nucleationTemperatureC: Number(crystal.nucleation_temp) || 0,
     wallAnchor: crystal.wall_anchor ? _simulationJsonClone(crystal.wall_anchor) : null,
     // Full canonical zone state is future-determining. In particular the
@@ -249,6 +271,7 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
       sim?.wall_state?.cavitySurfaceAnchorProviderReceipt?.() || { kind: 'wall-mesh' },
     ),
     crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
+    enclosureLifecycle: _simulationCanonicalProjection(sim?._enclosureReceipts || []),
     carbonateBoundary: sim?._carbonateBoundaryState
       ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
   };

@@ -270,17 +270,46 @@ function event_alkalinize(conditions) {
   return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
 }
 
-function event_fluid_mixing(conditions) {
-  // Phase-3: sync with vugg.py — F bumped 15→40 (Cave-in-Rock fluid-inclusion
-  // data) so fluorite actually crosses σ=1.2. Pb added so galena nucleates.
-  conditions.fluid.Zn = 150.0;
-  conditions.fluid.S = 120.0;
-  conditions.fluid.Ca += 100.0;
-  conditions.fluid.F += 40.0;
-  conditions.fluid.Pb += 25.0;
-  conditions.fluid.Fe += 30.0;
-  conditions.temperature -= 20;
-  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite, fluorite, and galena become possible.';
+function event_locality_fluid_mixing(conditions, payload) {
+  const eventType = String(payload?.type || 'locality_fluid_mixing');
+  const temperatureDelta = Number(payload?.temperature_delta_C);
+  const boundary = payload?.sulfur_boundary;
+  if (!Number.isFinite(temperatureDelta)) {
+    throw new Error(`${eventType} requires an authored temperature_delta_C`);
+  }
+  if (!boundary || boundary.kind !== 'addition'
+      || !boundary.pools || typeof boundary.pools !== 'object'
+      || Array.isArray(boundary.pools)) {
+    throw new Error(`${eventType} requires an authored valence-specific sulfur_boundary addition`);
+  }
+  const allowedPools = new Set(['sulfide', 'sulfate', 'elemental']);
+  const sulfurAdditions: Array<[any, number]> = [];
+  for (const [pool, rawAmount] of Object.entries(boundary.pools)) {
+    const amount = Number(rawAmount);
+    if (!allowedPools.has(pool) || !Number.isFinite(amount) || amount < 0) {
+      throw new Error(`${eventType} has an invalid sulfur-boundary pool '${pool}'`);
+    }
+    sulfurAdditions.push([pool, amount]);
+  }
+  if (!sulfurAdditions.length || !sulfurAdditions.some(([, amount]) => amount > 0)) {
+    throw new Error(`${eventType} requires a positive valence-specific sulfur addition`);
+  }
+
+  // Validate every non-sulfur change before mutating anything. Sulfur is kept
+  // out of the generic transform on purpose: each oxidized/reduced reservoir
+  // receives an authored ledger declaration that the spatial event broadcast
+  // can propagate and later authenticate.
+  const plan = _planAuthoredEventFluidTransform(conditions, payload, eventType);
+  plan.apply();
+  for (const [pool, amount] of sulfurAdditions) {
+    declareSulfurBoundaryAddition(conditions, pool, amount, plan.authority);
+  }
+  conditions.temperature += temperatureDelta;
+  const sulfurText = sulfurAdditions
+    .filter(([, amount]) => amount > 0)
+    .map(([pool, amount]) => `${pool} S+${amount}`)
+    .join(', ');
+  return `Locality-authored fluid mixing (${plan.changed.join(', ') || 'no nonsulfur change'}; ${sulfurText}; T ${temperatureDelta >= 0 ? '+' : ''}${temperatureDelta}°C). Authority: ${plan.authority}`;
 }
 
 // --- Tutorials (May 2026) ---
@@ -338,21 +367,32 @@ let _legendsPlaybackStep = 0;
 window.startTutorial = startTutorial;
 window.endTutorial = endTutorial;
 
-// W-F O5 FIRST CONTENT (2026-07-08) — the Elmwood barite snowball. Elmwood is
-// famous for barite on honey sphalerite (boss), and the scenario already
+// W-F O5 FIRST CONTENT (2026-07-08) — the Elmwood cyclic masked-layer
+// hypothesis. Elmwood's audited paragenesis includes barite with sphalerite,
+// but does not document these specific clay/iron horizons; the scenario already
 // nucleates barite on the sphalerite base — but at seed 42 its barite σ peaks
 // at 0.97 and never clears the 1.0 growth floor, so the barite sat as
-// subcritical dust. This handler is the documented "purple fluorite + barite"
-// stage: a Ba-rich brine pulse that lifts barite σ above the O5 masking barrier
+// subcritical dust. This handler models the documented "purple fluorite +
+// barite" stage and a disclosed general-ontogeny hypothesis: a Ba-rich brine
+// pulse lifts barite σ above the O5 masking barrier
 // σ*(φ), so the seeded barite grows one GENERATION through whatever clay/Fe-
 // oxide film currently coats it — leaving a masked_horizon (js/85 gate). Between
 // pulses σ decays (the waning system cools, Ba is consumed) below the next
 // film's σ*, the crystal stalls, and the film sits until the next pulse: the
-// stall→pulse→break cycle IS the snowball's concentric banding. Ba-only + a flow
-// bump — it touches NO Ca/CO3, so the late golden-scalenohedral calcite showcase
+// stall→pulse→break cycle records a cyclic masked layer. The boundary supplies
+// a Ba floor plus oxidized sulfate, with no flow/Ca/CO3 mutation, so the late
+// golden-scalenohedral calcite showcase
 // (the CO3 pulse train, steps 80+) is untouched. Growth budget debits Ba back as
 // the barite grows, so the pulse doesn't run away.
-function event_elmwood_barite_stage(conditions) {
+function event_elmwood_barite_stage(conditions, payload) {
+  const authority = String(payload?.material_authority || '').trim();
+  const sulfateFloorPpm = Number(payload?.sulfate_floor_ppm);
+  if (!authority || !Number.isFinite(sulfateFloorPpm) || sulfateFloorPpm <= 0) {
+    throw new Error('elmwood_barite_stage requires sulfate_floor_ppm and material_authority');
+  }
+  if (!conditions?.fluid?.sulfurPoolsExplicit) {
+    throw new Error('elmwood_barite_stage requires the preceding explicit-valence Elmwood brine');
+  }
   // A Ba FLOOR (set, not add) refreshed each stage as barite consumes it down —
   // NOT a stacking pulse. The first cut added +22/stage; the excess Ba stacked to
   // σ_barite≈3.2 (capped), and against elmwood's high CO3 (180, the calcite
@@ -368,16 +408,58 @@ function event_elmwood_barite_stage(conditions) {
   // S pool ~22% harder through the pulse window (strip S at step 40: 106 → 83
   // ppm), leaving σ_barite just UNDER the clay-film break-through — 16 barite
   // seeds all stalled as dust. Raising the Ba floor instead was MEASURED and
-  // REJECTED (floor 36: snowball back but witherite ×4 — the aragonite death
+  // REJECTED (floor 36: layered barite back but witherite ×4 — the aragonite death
   // freed CO3, so witherite's Ba-headroom is now THINNER than when 28 was
   // tuned; floor 32: neither side happy). The S floor is the honest lever:
-  // σ_barite ∝ Ba·S, σ_witherite ∝ Ba·CO3 — sulfate feeds the snowball and
+  // σ_barite ∝ Ba·S, σ_witherite ∝ Ba·CO3 — sulfate feeds the barite and
   // CANNOT feed the carbonate. It is also the truer story: MVT barite grows
   // where the Ba brine MIXES with sulfate water, so the stage pulse carrying
   // its own SO4 charge is the textbook mechanism, not a patch.
-  conditions.fluid.Ba = Math.max(conditions.fluid.Ba || 0, 28);
-  conditions.fluid.S = Math.max(conditions.fluid.S || 0, 106);
-  return `A barium-sulfate brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)}, S ${conditions.fluid.S.toFixed(0)} ppm).`;
+  const baBefore = Math.max(0, Number(conditions.fluid.Ba) || 0);
+  const baTarget = Math.max(baBefore, 28);
+  const baAddition = baTarget - baBefore;
+  conditions.fluid.Ba = baTarget;
+  if (baAddition > 0) {
+    declareFluidBoundaryAddition(conditions, authority, { Ba: baAddition });
+  }
+
+  // SIM 274 correction: `fluid.S` is a derived compatibility total once the
+  // Elmwood mixing event has established independent sulfide and sulfate
+  // reservoirs. Writing that total neither supplies barite nor earns sulfur-
+  // boundary testimony. Refresh the OXIDIZED pool only; the reduced Zn/Pb-sulfide
+  // inventory is deliberately untouched. The floor preserves the commissioned
+  // non-stacking pulse semantics while the declaration makes the external
+  // sulfate-water contribution explicit in the spatial sulfur ledger.
+  const sulfateBefore = sulfateAvailablePpm(conditions.fluid, conditions.temperature);
+  const sulfateAddition = Math.max(0, sulfateFloorPpm - sulfateBefore);
+  if (sulfateAddition > 0) {
+    declareSulfurBoundaryAddition(conditions, 'sulfate', sulfateAddition, authority);
+  }
+  const sulfateAfter = sulfateAvailablePpm(conditions.fluid, conditions.temperature);
+  return `A locality-authored barium-sulfate brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)} ppm, sulfate-S ${sulfateAfter.toFixed(0)} ppm). Authority: ${authority}`;
+}
+
+function event_elmwood_interpulse_film(conditions, payload) {
+  const authority = String(payload?.material_authority || '').trim();
+  const bariumTargetPpm = Number(payload?.barium_target_ppm);
+  if (!authority || !Number.isFinite(bariumTargetPpm) || bariumTargetPpm < 0) {
+    throw new Error('elmwood_interpulse_film requires barium_target_ppm and material_authority');
+  }
+  if (!conditions?.fluid || !Number.isFinite(Number(conditions.fluid.Ba))) {
+    throw new Error('elmwood_interpulse_film requires a finite barium inventory');
+  }
+  // The film is a depositional hiatus, not merely a cosmetic coating. Replace
+  // the Ba concentration in every spatial fluid with the disclosed waning-
+  // brine target before the film is applied. The next stage therefore has to
+  // earn breakthrough by importing Ba again; continuous high supersaturation
+  // cannot manufacture a same-step masked-growth horizon.
+  conditions.fluid.Ba = bariumTargetPpm;
+  declareFluidBoundaryReplacement(conditions, authority, { Ba: bariumTargetPpm });
+  conditions._pending_fluid_replace_fields = Array.from(new Set([
+    ...(conditions._pending_fluid_replace_fields || []),
+    'Ba',
+  ]));
+  return `MODEL HYPOTHESIS: the Elmwood barite feeder wanes to ${bariumTargetPpm.toFixed(0)} ppm Ba before the hypothesized film settles; a later Ba pulse is required for renewed growth. General mechanism basis and locality limitation: ${authority}`;
 }
 
 // S2 celestine tranche (SIM 236, 2026-07-25; boss-approved Sr 10→30 with the
@@ -426,6 +508,7 @@ const EVENT_REGISTRY = {
   amethyst_quartz_renewal: event_amethyst_quartz_renewal,
   elmwood_barite_stage: event_elmwood_barite_stage,
   elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
+  elmwood_interpulse_film: event_elmwood_interpulse_film,
   film_coat: event_film_coat,
   cooling_pulse: event_cooling_pulse,
   tectonic_shock: event_tectonic_shock,
@@ -438,7 +521,9 @@ const EVENT_REGISTRY = {
   acidify: event_acidify,
   alkalinize: event_alkalinize,
   molybdenum_pulse: event_molybdenum_pulse,
-  fluid_mixing: event_fluid_mixing,
+  mvt_fluid_mixing: event_locality_fluid_mixing,
+  elmwood_fluid_mixing: event_locality_fluid_mixing,
+  reactivated_vein_fluid_mixing: event_locality_fluid_mixing,
   // Phase 2 — marble_contact_metamorphism
   marble_peak_metamorphism: event_marble_peak_metamorphism,
   marble_retrograde_cooling: event_marble_retrograde_cooling,
@@ -680,6 +765,7 @@ const EVENT_SCENARIO_OWNER_PREFIXES: Record<string, string> = {
   jeffrey_mine: 'jeffrey_mine',
   marble: 'marble_contact_metamorphism',
   molybdenum_pulse: 'porphyry',
+  mvt: 'mvt',
   naica: 'naica_geothermal',
   ouro_preto: 'ouro_preto',
   porphyry: 'porphyry',

@@ -206,9 +206,9 @@ function _nuc_malachite(sim) {
   let pos = 'vug wall';
   // Preference for chalcopyrite surface (classic oxidation paragenesis!)
   const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved
-    && engineExecutableSubstrateRoute(c, 'malachite').executable);
+    && engineExecutableSubstrateRoute(c, 'malachite', sim).executable);
   const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite'
-    && engineExecutableSubstrateRoute(c, 'malachite').executable);
+    && engineExecutableSubstrateRoute(c, 'malachite', sim).executable);
   if (dissolving_cp.length && rng.random() < 0.7) {
     pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
   } else if (active_cp_all.length && rng.random() < 0.4) {
@@ -233,9 +233,9 @@ function _nuc_smithsonite(sim) {
   // with paragenesis discount for the chosen host.
   let pos = 'vug wall';
   const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved
-    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
+    && engineExecutableSubstrateRoute(c, 'smithsonite', sim).executable);
   const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite'
-    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
+    && engineExecutableSubstrateRoute(c, 'smithsonite', sim).executable);
   if (dissolved_sph.length && rng.random() < 0.7) {
     pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
   } else if (any_sph.length && rng.random() < 0.3) {

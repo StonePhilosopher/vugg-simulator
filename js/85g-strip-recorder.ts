@@ -113,6 +113,10 @@ class StripRecorder {
   private seenTransformationKeys: Set<string>;
   private carbonateBoundaryTestimony: any[];
   private sulfurLedgerTestimony: any[];
+  private fluidBoundaryTestimony: any[];
+  private lastSeenFluidBoundaryTransactionCount: number;
+  private enclosureTestimony: any[];
+  private lastSeenEnclosureReceiptCount: number;
   private layerGrowthTestimony: any[];
   private lastSeenZoneCounts: Map<number | string, number>;
   private latestHabitMorphology: Map<number | string, any>;
@@ -200,6 +204,10 @@ class StripRecorder {
     this.seenTransformationKeys = new Set();
     this.carbonateBoundaryTestimony = [];
     this.sulfurLedgerTestimony = [];
+    this.fluidBoundaryTestimony = [];
+    this.lastSeenFluidBoundaryTransactionCount = 0;
+    this.enclosureTestimony = [];
+    this.lastSeenEnclosureReceiptCount = 0;
     this.layerGrowthTestimony = [];
     this.lastSeenZoneCounts = new Map();
     this.latestHabitMorphology = new Map();
@@ -423,8 +431,12 @@ class StripRecorder {
             mineral: String(c.mineral || ''),
             zone_index: zi,
             thickness_um: Number(z.thickness_um),
-            remaining_solid_um: Number.isFinite(Number(z._remaining_solid_um))
-              ? Number(z._remaining_solid_um) : null,
+            is_phantom: !!z.is_phantom,
+            remaining_solid_um: typeof z._remaining_solid_um === 'number'
+              && Number.isFinite(z._remaining_solid_um)
+              ? z._remaining_solid_um : null,
+            budget_inventory_per_um: z._budget_inventory_per_um || null,
+            returned_budget_inventory: z._returned_budget_inventory || null,
             formula_stoichiometry: z.formula_stoichiometry || null,
             solid_solution: z.solid_solution || null,
             competition_allocation: allocation && (
@@ -433,11 +445,26 @@ class StripRecorder {
             ) ? allocation : null,
             dissolution_mode: z.dissolutionMode || null,
             transformation_reactivity: z.transformation_reactivity || null,
+            masked_horizon: !!z.masked_horizon,
+            film_mineral: z.film_mineral || null,
+            masked_phi_term: Number.isFinite(Number(z.masked_phi_term))
+              ? Number(z.masked_phi_term) : null,
+            masked_phi_prism: Number.isFinite(Number(z.masked_phi_prism))
+              ? Number(z.masked_phi_prism) : null,
+            originating_film_step: Number.isFinite(Number(z.originating_film_step))
+              ? Number(z.originating_film_step) : null,
             morphology: {
+              status: z.morphology_status || null,
+              unavailable_reason: z.morph_unavailable_reason || null,
+              sigma_basis: z.morph_sigma_basis || null,
+              post_step_sigma: typeof z.morph_post_step_sigma === 'number'
+                && Number.isFinite(z.morph_post_step_sigma)
+                ? z.morph_post_step_sigma : null,
               regime: z.morph_regime || null,
               form: z.morph_form || null,
-              surface_sigma: Number.isFinite(Number(z.morph_surf_sigma))
-                ? Number(z.morph_surf_sigma) : null,
+              surface_sigma: typeof z.morph_surf_sigma === 'number'
+                && Number.isFinite(z.morph_surf_sigma)
+                ? z.morph_surf_sigma : null,
             },
           })));
         }
@@ -456,6 +483,7 @@ class StripRecorder {
           size_authority: size,
           cdr_replacement_evidence: c.cdr_replacement_evidence || null,
           surface_growth: c._surfaceGrowth || null,
+          surface_film: c._film || null,
           zone_count: zones.length,
         })));
       }
@@ -522,6 +550,25 @@ class StripRecorder {
         sample_index: step,
       })));
     }
+    const fluidBoundaryTransactions = Array.isArray(sim?._fluidBoundaryTransactions)
+      ? sim._fluidBoundaryTransactions : [];
+    for (let i = this.lastSeenFluidBoundaryTransactionCount;
+      i < fluidBoundaryTransactions.length; i++) {
+      this.fluidBoundaryTestimony.push(JSON.parse(JSON.stringify({
+        ...fluidBoundaryTransactions[i],
+        sample_index: step,
+      })));
+    }
+    this.lastSeenFluidBoundaryTransactionCount = fluidBoundaryTransactions.length;
+    const enclosureReceipts = Array.isArray(sim?._enclosureReceipts)
+      ? sim._enclosureReceipts : [];
+    for (let i = this.lastSeenEnclosureReceiptCount; i < enclosureReceipts.length; i++) {
+      this.enclosureTestimony.push(JSON.parse(JSON.stringify({
+        ...enclosureReceipts[i],
+        sample_index: step,
+      })));
+    }
+    this.lastSeenEnclosureReceiptCount = enclosureReceipts.length;
     const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
     for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
       // Clone so later mutations cannot rewrite archived testimony.
@@ -569,6 +616,8 @@ class StripRecorder {
       transformation_event_testimony: this.transformationEventTestimony,
       carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
       sulfur_ledger_testimony: this.sulfurLedgerTestimony,
+      fluid_boundary_testimony: this.fluidBoundaryTestimony,
+      enclosure_testimony: this.enclosureTestimony,
       layer_growth_testimony: this.layerGrowthTestimony,
       habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
     };

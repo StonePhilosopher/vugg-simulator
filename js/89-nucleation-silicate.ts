@@ -16,7 +16,7 @@ function _nuc_quartz(sim) {
   if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
     if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
       const substrate = typeof executableSubstrateCandidates === 'function'
-        ? executableSubstrateCandidates('quartz', sim.crystals)[0]
+        ? executableSubstrateCandidates('quartz', sim.crystals, sim)[0]
         : null;
       const chalcedony = substrate?.host || null;
       const pos = chalcedony ? `chalcedony #${chalcedony.crystal_id}` : 'vug wall';
@@ -120,13 +120,13 @@ function _nuc_chrysocolla(sim) {
   // Pick substrate first, then σ-check with discount.
   let pos = 'vug wall';
   const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active
-    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+    && engineExecutableSubstrateRoute(c, 'chrysocolla', sim).executable);
   const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved
-    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+    && engineExecutableSubstrateRoute(c, 'chrysocolla', sim).executable);
   const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active
-    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+    && engineExecutableSubstrateRoute(c, 'chrysocolla', sim).executable);
   const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active
-    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+    && engineExecutableSubstrateRoute(c, 'chrysocolla', sim).executable);
   if (dissolving_azr_chry.length && rng.random() < 0.6) pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
   else if (active_azr_chry.length && rng.random() < 0.3) pos = `on azurite #${active_azr_chry[0].crystal_id}`;
   else if (active_cpr_chry.length && rng.random() < 0.5) pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
@@ -626,7 +626,7 @@ function _localTigerIronPhase(sim, substrate) {
   const toleranceMm = Math.max(1e-10, localRadiusMm * 1e-9);
   return sim.crystals.find(crystal => {
     if (!['hematite', 'jasper'].includes(crystal?.mineral)) return false;
-    if (!crystal.active || crystal.dissolved || crystal._buried || crystal.enclosed_by != null) return false;
+    if (!crystal.active || crystal.dissolved || currentEnclosureAuthority(sim, crystal)) return false;
     const anchor = wall._resolveAnchor(crystal);
     const target = wall.chemistryVertexForCrystal(crystal);
     return !!anchor && target >= 0 && distances[target] <= localRadiusMm + toleranceMm;
