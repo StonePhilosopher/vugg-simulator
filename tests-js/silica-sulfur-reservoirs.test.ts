@@ -263,6 +263,51 @@ describe('SIM 243 explicit sulfur reservoirs', () => {
     expect(simulatorSulfurLedgerSnapshot(sim).closed).toBe(false);
   });
 
+  it('commissions legacy sulfur at construction and preserves that baseline through first explicit activation', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.cooling();
+    conditions.fluid.S = 120;
+    conditions.fluid.S_sulfide = 0;
+    conditions.fluid.S_sulfate = 0;
+    conditions.fluid.S_elemental = 0;
+    conditions.fluid.sulfurPoolsExplicit = false;
+    conditions.fluid.sulfateInherited = false;
+    conditions.fluid.nativeSulfurPathway = null;
+    const sim = new VugSimulator(conditions, events);
+    const count = sim.wall_state.voxelGridFor(sim).voxels.length;
+    expect(simulatorSulfurLedgerSnapshot(sim)).toMatchObject({
+      initialPpm: 120 * count,
+      actualPpm: 120 * count,
+      closed: true,
+      activation: null,
+    });
+
+    const target = new FluidChemistry({
+      ...sim.conditions.fluid,
+      S_sulfide: 30,
+      S_sulfate: 90,
+      S_elemental: 0,
+      sulfurPoolsExplicit: true,
+      sulfateInherited: false,
+      nativeSulfurPathway: null,
+    });
+    const boundary = sim.replaceFullyMixedFluidBoundary(
+      target,
+      'first explicit sulfur activation control',
+    );
+    const ledger = simulatorSulfurLedgerSnapshot(sim);
+    expect(boundary).toMatchObject({ ok: true });
+    expect(ledger).toMatchObject({
+      initialPpm: 120 * count,
+      importsPpm: 0,
+      exportsPpm: 0,
+      actualPpm: 120 * count,
+      closed: true,
+      activation: { kind: 'legacy_combined_to_explicit_reservoirs' },
+    });
+    expect(sim._sulfurBoundaryTransactions).toHaveLength(1);
+  });
+
   it('books H2S recharge from its declaration and oxidation as zero-boundary transfer', () => {
     setSeed(42);
     const { conditions, events } = SCENARIOS.sulphur_bank();

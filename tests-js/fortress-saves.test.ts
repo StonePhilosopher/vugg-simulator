@@ -269,14 +269,34 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     showTitleScreen();
     openNewGameMenu();
     fortressBeginFromScenario('cooling', 777101);
-    const scenarioInitialFe = _liveFortressSim().conditions.fluid.Fe;
+    const scenarioSim = _liveFortressSim();
+    const scenarioInitialFe = scenarioSim.conditions.fluid.Fe;
     expect(scenarioInitialFe).not.toBe(987);
     const activeId = _liveSaveActiveRecord().id;
 
     fortressStep('inject_species', { species: 'Fe', ppm: 111 });
     expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe + 111, 12);
+    const scenarioGrid = scenarioSim.wall_state.voxelGridFor(scenarioSim);
     fortressStep('replenish');
     expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe, 12);
+    expect(scenarioGrid.voxels.every((voxel: any) =>
+      voxel.fluid.Fe === scenarioInitialFe
+    )).toBe(true);
+    const boundary = scenarioSim._fluidBoundaryTransactions.at(-1);
+    const iron = boundary.testimony.find((row: any) => row.field === 'Fe');
+    expect(boundary).toMatchObject({
+      schema: 'fully-mixed-fluid-replacement-v1',
+      source: 'Creative starting-fluid replenish',
+      spatial_scope: 'canonical-wet-voxel-volume',
+      authority_closed: true,
+      closed: true,
+    });
+    expect(iron).toMatchObject({
+      declaredReplacementTarget: scenarioInitialFe,
+      unit: 'mg_per_kg_solvent',
+      spatial: { closed: true, targetValuePerFluid: scenarioInitialFe },
+      closed: true,
+    });
     const expectedFingerprint = simulationStateFingerprint(_liveFortressSim());
     expect(loadSaves().find(record => record.id === activeId).actions.map((row: any) => row.a))
       .toEqual(['inject_species', 'replenish']);
@@ -286,6 +306,240 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe, 12);
     expect(simulationStateFingerprint(_liveFortressSim())).toBe(expectedFingerprint);
   });
+
+  it('replenishes every wet voxel and restores explicit/legacy sulfur authority for Custom and Starter replays', () => {
+    _fortressBeginCustomFromParams({
+      temp: 180,
+      pressure: 1,
+      fluidParams: {
+        Fe: 987,
+        S: 999,
+        S_sulfide: 30,
+        S_sulfate: 70,
+        S_elemental: 5,
+        sulfurPoolsExplicit: true,
+        sulfateInherited: true,
+        nativeSulfurPathway: 'oxidative_interface',
+        Eh: -150,
+        pH: 6.2,
+      },
+      wallOpts: {
+        composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
+        wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
+      },
+      conditionOpts: {},
+      scenarioOpts: {},
+      initialWaterTablePct: 100,
+      presetLabel: 'explicit sulfur replenish authority',
+    }, 777102);
+    const explicitSim = _liveFortressSim();
+    const explicitGrid = explicitSim.wall_state.voxelGridFor(explicitSim);
+    const beforeInvalidTarget = simulationStateFingerprint(explicitSim);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, Fe: -5 },
+      'hostile negative-concentration target',
+    )).toThrow(/Fe must be non-negative/);
+    expect(simulationStateFingerprint(explicitSim)).toBe(beforeInvalidTarget);
+    explicitSim.conditions.fluid.S_sulfide = 20;
+    explicitSim.conditions.fluid.S = 90;
+    explicitGrid.voxels.at(-1).fluid.S_sulfide = 10;
+    explicitGrid.voxels.at(-1).fluid.S = 80;
+    fortressStep('replenish');
+    const priorSulfurTransaction = JSON.parse(JSON.stringify(
+      explicitSim._sulfurBoundaryTransactions.at(-1),
+    ));
+    const priorSulfurImports = explicitSim._sulfurBoundaryImportsPpm;
+    expect(priorSulfurTransaction.closed).toBe(true);
+    expect(priorSulfurImports).toBeGreaterThan(0);
+
+    explicitSim.conditions.fluid.Fe = 1;
+    explicitSim.conditions.fluid.S = 12;
+    explicitSim.conditions.fluid.S_sulfide = 0;
+    explicitSim.conditions.fluid.S_sulfate = 0;
+    explicitSim.conditions.fluid.S_elemental = 0;
+    explicitSim.conditions.fluid.sulfurPoolsExplicit = false;
+    explicitSim.conditions.fluid.sulfateInherited = false;
+    explicitSim.conditions.fluid.nativeSulfurPathway = null;
+    explicitSim.conditions.fluid.Eh = 225;
+    Object.assign(explicitGrid.voxels.at(-1).fluid, {
+      Fe: 321,
+      S: 17,
+      S_sulfide: 0,
+      S_sulfate: 0,
+      S_elemental: 0,
+      sulfurPoolsExplicit: false,
+      sulfateInherited: false,
+      nativeSulfurPathway: null,
+      Eh: 225,
+    });
+    fortressStep('replenish');
+
+    expect(explicitSim._sulfurBoundaryTransactions).toHaveLength(2);
+    expect(explicitSim._sulfurBoundaryTransactions[0]).toEqual(priorSulfurTransaction);
+    expect(explicitSim._sulfurBoundaryImportsPpm).toBeGreaterThanOrEqual(priorSulfurImports);
+
+    expect(explicitSim.conditions.fluid).toMatchObject({
+      Fe: 987,
+      S: 100,
+      S_sulfide: 30,
+      S_sulfate: 70,
+      S_elemental: 5,
+      sulfurPoolsExplicit: true,
+      sulfateInherited: true,
+      nativeSulfurPathway: 'oxidative_interface',
+      Eh: -150,
+    });
+    expect(explicitGrid.voxels.every((voxel: any) =>
+      voxel.fluid.Fe === 987
+      && voxel.fluid.S === 100
+      && voxel.fluid.S_sulfide === 30
+      && voxel.fluid.S_sulfate === 70
+      && voxel.fluid.S_elemental === 5
+      && voxel.fluid.sulfurPoolsExplicit === true
+      && voxel.fluid.sulfateInherited === true
+      && voxel.fluid.nativeSulfurPathway === 'oxidative_interface'
+      && voxel.fluid.Eh === -150
+    )).toBe(true);
+    expect(explicitSim._fluidBoundaryTransactions.at(-1)).toMatchObject({
+      authority_target: {
+        sulfurPoolsExplicit: true,
+        sulfateInherited: true,
+        nativeSulfurPathway: 'oxidative_interface',
+      },
+      authority_closed: true,
+      authority_after_spatial: {
+        count: explicitGrid.voxels.length,
+        sulfurPoolsExplicitCount: explicitGrid.voxels.length,
+        sulfateInheritedCount: explicitGrid.voxels.length,
+        nativeSulfurPathways: { oxidative_interface: explicitGrid.voxels.length },
+      },
+      sulfur_spatial_closed: true,
+      sulfur_spatial_testimony: {
+        S: { targetValuePerFluid: 100, closed: true },
+        S_sulfide: { targetValuePerFluid: 30, closed: true },
+        S_sulfate: { targetValuePerFluid: 70, closed: true },
+        S_elemental: { targetValuePerFluid: 5, closed: true },
+      },
+      closed: true,
+    });
+    expect(explicitSim._sulfurBoundaryTransactions.at(-1)).toMatchObject({
+      declarations: [{
+        kind: 'replacement',
+        targets: { S_sulfide: 30, S_sulfate: 70, S_elemental: 5 },
+      }],
+      closed: true,
+    });
+    showTitleScreen();
+    openNewGameMenu();
+    fortressBeginFromStarterFluid('carbonate', 777103);
+    const legacySim = _liveFortressSim();
+    const legacyGrid = legacySim.wall_state.voxelGridFor(legacySim);
+    legacySim.conditions.fluid.S = 60;
+    legacySim.conditions.fluid.S_sulfide = 20;
+    legacySim.conditions.fluid.S_sulfate = 35;
+    legacySim.conditions.fluid.S_elemental = 5;
+    legacySim.conditions.fluid.sulfurPoolsExplicit = true;
+    legacySim.conditions.fluid.sulfateInherited = true;
+    legacySim.conditions.fluid.nativeSulfurPathway = 'oxidative_interface';
+    Object.assign(legacyGrid.voxels.at(-1).fluid, {
+      Fe: 654,
+      S: 60,
+      S_sulfide: 20,
+      S_sulfate: 35,
+      S_elemental: 5,
+      sulfurPoolsExplicit: true,
+      sulfateInherited: true,
+      nativeSulfurPathway: 'oxidative_interface',
+    });
+    fortressStep('replenish');
+
+    expect(legacySim.conditions.fluid).toMatchObject({
+      S: 0,
+      S_sulfide: 0,
+      S_sulfate: 0,
+      S_elemental: 0,
+      sulfurPoolsExplicit: false,
+      sulfateInherited: false,
+      nativeSulfurPathway: null,
+    });
+    expect(legacyGrid.voxels.every((voxel: any) =>
+      voxel.fluid.S === 0
+      && voxel.fluid.S_sulfide === 0
+      && voxel.fluid.S_sulfate === 0
+      && voxel.fluid.S_elemental === 0
+      && voxel.fluid.sulfurPoolsExplicit === false
+      && voxel.fluid.sulfateInherited === false
+      && voxel.fluid.nativeSulfurPathway === null
+    )).toBe(true);
+    expect(legacySim._fluidBoundaryTransactions.at(-1)).toMatchObject({
+      authority_before: {
+        sulfurPoolsExplicit: true,
+        sulfateInherited: true,
+        nativeSulfurPathway: 'oxidative_interface',
+      },
+      authority_target: {
+        sulfurPoolsExplicit: false,
+        sulfateInherited: false,
+        nativeSulfurPathway: null,
+      },
+      authority_closed: true,
+      authority_after_spatial: {
+        count: legacyGrid.voxels.length,
+        sulfurPoolsExplicitCount: 0,
+        sulfateInheritedCount: 0,
+        nativeSulfurPathways: { null: legacyGrid.voxels.length },
+      },
+      sulfur_spatial_closed: true,
+      sulfur_spatial_testimony: {
+        S: { targetValuePerFluid: 0, closed: true },
+        S_sulfide: { targetValuePerFluid: 0, closed: true },
+        S_sulfate: { targetValuePerFluid: 0, closed: true },
+        S_elemental: { targetValuePerFluid: 0, closed: true },
+      },
+      closed: true,
+    });
+    expect(legacySim._sulfurBoundaryTransactions.at(-1)).toMatchObject({ closed: true });
+  }, 60_000);
+
+  it('replays receipted Replenish actions from clean Custom and Starter origins', () => {
+    const assertReplay = () => {
+      const activeId = _liveSaveActiveRecord().id;
+      fortressStep('inject_species', { species: 'Fe', ppm: 13 });
+      fortressStep('replenish');
+      const expected = simulationStateFingerprint(_liveFortressSim());
+      const receipt = _liveFortressSim()._fluidBoundaryTransactions.at(-1);
+      expect(receipt).toMatchObject({
+        schema: 'fully-mixed-fluid-replacement-v1',
+        authority_closed: true,
+        closed: true,
+      });
+      receipt.source = 'forged replacement source';
+      expect(simulationStateFingerprint(_liveFortressSim())).not.toBe(expected);
+      receipt.source = 'Creative starting-fluid replenish';
+      expect(simulationStateFingerprint(_liveFortressSim())).toBe(expected);
+      fortressReset();
+      expect(loadSaveById(activeId)).toBe(true);
+      expect(simulationStateFingerprint(_liveFortressSim())).toBe(expected);
+    };
+
+    _fortressBeginCustomFromParams({
+      temp: 180,
+      pressure: 1,
+      fluidParams: { Fe: 87, S: 12, pH: 6.2 },
+      wallOpts: {
+        composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
+        wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
+      },
+      conditionOpts: {}, scenarioOpts: {}, initialWaterTablePct: 100,
+      presetLabel: 'custom replay replenish',
+    }, 777104);
+    assertReplay();
+
+    showTitleScreen();
+    openNewGameMenu();
+    fortressBeginFromStarterFluid('carbonate', 777105);
+    assertReplay();
+  }, 60_000);
 
   it('migrates the legacy raw array while preserving unprovable v1 recipes as incompatible', () => {
     const v2 = minimalSave('legacy-v2', { format: 2 });
