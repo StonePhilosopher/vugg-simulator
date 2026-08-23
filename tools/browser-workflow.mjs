@@ -22,6 +22,11 @@ const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;
 const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
 const DEFAULT_TIMEOUT_MS = 20_000;
+// Full app navigation includes the canonical 7.99 MB bundle, 98 embedded
+// authored assets, WebGL commissioning, and scenario/narrative registration.
+// Keep individual CDP operations on the tighter default, but give this one
+// measured product boundary enough time on a contended review workstation.
+const BROWSER_NAVIGATION_TIMEOUT_MS = 60_000;
 const DEBUG_CDP = process.env.VUGG_BROWSER_DEBUG === '1';
 const OWNED_PROCESS_ERRORS = new WeakMap();
 const execFileAsync = promisify(execFile);
@@ -705,6 +710,7 @@ class BrowserDriver {
     await this.waitFor(
       `document.readyState === 'complete' && !!window.vugg && !!window.vugg.SCENARIOS`,
       `Vugg boot at ${url}`,
+      BROWSER_NAVIGATION_TIMEOUT_MS,
     );
   }
 
@@ -713,6 +719,7 @@ class BrowserDriver {
     await this.waitFor(
       `document.readyState === 'complete' && !!window.vugg && !!window.vugg.SCENARIOS`,
       'Vugg reload',
+      BROWSER_NAVIGATION_TIMEOUT_MS,
     );
   }
 
@@ -1579,6 +1586,8 @@ async function main() {
 
 export {
   assertOwnedDevToolsVersion,
+  BROWSER_NAVIGATION_TIMEOUT_MS,
+  BrowserDriver,
   captureOwnedBrowserProcessReceipts,
   captureOwnedBrowserProcessReceiptsForPort,
   CdpClient,

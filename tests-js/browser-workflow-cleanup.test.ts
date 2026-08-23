@@ -6,6 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   assertOwnedDevToolsVersion,
+  BROWSER_NAVIGATION_TIMEOUT_MS,
+  BrowserDriver,
   captureOwnedBrowserProcessReceipts,
   CdpClient,
   findOwnedBrowserRootPid,
@@ -42,6 +44,26 @@ class FakeOwnedProcess extends EventEmitter {
 }
 
 describe('browser workflow owned-resource cleanup', () => {
+  it('gives full app navigation a bounded 60-second commissioning window', async () => {
+    const sent: Array<[string, unknown]> = [];
+    const driver = new BrowserDriver({
+      send: async (method: string, params: unknown) => {
+        sent.push([method, params]);
+        return {};
+      },
+    } as never);
+    const waits: unknown[][] = [];
+    driver.waitFor = async (...args: unknown[]) => {
+      waits.push(args);
+      return true;
+    };
+
+    await driver.navigate('http://127.0.0.1:8765/?v=test');
+    expect(BROWSER_NAVIGATION_TIMEOUT_MS).toBe(60_000);
+    expect(sent).toEqual([['Page.navigate', { url: 'http://127.0.0.1:8765/?v=test' }]]);
+    expect(waits[0]?.[2]).toBe(BROWSER_NAVIGATION_TIMEOUT_MS);
+  });
+
   it('attempts every cleanup action before reporting aggregate failures', async () => {
     const attempted: string[] = [];
     await expect(runCleanupActions([
