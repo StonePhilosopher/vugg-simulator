@@ -379,10 +379,13 @@ function _nucleateClass_carbonate(sim) {
   _runNuc(sim, _nuc_calcite);
   _runNuc(sim, _nuc_aragonite);
   _runNuc(sim, _nuc_dolomite);
-  _registerNucleatorForProbe(_nuc_HMC, ['HMC']);
-  if (!_REGISTER_NUCLEATORS_ONLY) {
-    _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
-  }
+  // Locality/exclusion/window/prerequisite authority lives in `_runNuc`
+  // (85j-movements.ts). HMC used to register for diagnostics here and then
+  // call its engine directly, bypassing that fail-closed production boundary.
+  // Keep this route identical to every other carbonate; Creative/custom
+  // broths remain unrestricted because 85j applies locality policy only when
+  // an authored scenario id is present.
+  _runNuc(sim, _nuc_HMC);  // disordered Mg-calcite, Kim 2023 precursor
   _runNuc(sim, _nuc_siderite);
   _runNuc(sim, _nuc_rhodochrosite);
   _runNuc(sim, _nuc_malachite);

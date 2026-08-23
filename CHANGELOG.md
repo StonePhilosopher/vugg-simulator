@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 277**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 278**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -53,6 +53,12 @@ and the exact-execution evidence receipt.
   authenticated Cartesian lattice's volume resolution are now withheld as a
   complete transaction, so numerical noise cannot produce negative cavity
   growth or unpaired solution chemistry.
+- SIM 278 closes the last production-dispatch exception to that locality
+  contract. HMC now passes through the same exclusion, four-tier positive
+  license, paragenetic-window, prerequisite, and derived-RNG boundary as every
+  other carbonate. Eligible chemistry alone cannot introduce HMC into an
+  authored scenario that does not positively license it; Creative and custom
+  broths remain intentionally unrestricted.
 - Locality expectation tiers were reconciled to the complete SIM 272
   three-seed census: 3/3 products are deterministic, 1–2/3 products are
   statistical, and 0/3 documented possibilities remain positively licensed

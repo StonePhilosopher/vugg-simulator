@@ -8,6 +8,28 @@ declare const assertEventScenarioOwnership: any;
 declare const _scenarioPositiveLicenseBlock: any;
 declare const _scenarioSpeciesExclusion: any;
 declare const SCENARIOS: Record<string, any>;
+declare const FluidChemistry: any;
+declare const VugConditions: any;
+declare const VugSimulator: any;
+declare const _nucleateClass_carbonate: (sim: any) => void;
+declare const setSeed: (seed: number) => void;
+
+function hmcEligibleLocality(licensedMinerals: string[]): any {
+  const conditions = new VugConditions({
+    temperature: 25,
+    fluid: new FluidChemistry({
+      Ca: 400.78, Mg: 1263.86, CO3: 5000, pH: 8, salinity: 35,
+    }),
+  });
+  conditions._scenario = {
+    id: 'hostile_hmc_license_control',
+    expects_species: licensedMinerals,
+    deterministic_species: [],
+    statistical_species: [],
+    aspirational_species: [],
+  };
+  return new VugSimulator(conditions, []);
+}
 
 describe('locality authority fails closed', () => {
   it('requires every scenario-grown phase to belong to a positive tier', () => {
@@ -28,6 +50,21 @@ describe('locality authority fails closed', () => {
 
   it('keeps Creative/custom broths unrestricted when no locality is claimed', () => {
     expect(_scenarioPositiveLicenseBlock({ conditions: { _scenario: {} } }, 'celestine')).toBeNull();
+  });
+
+  it('routes HMC through the same four-tier production licence as every other nucleator', () => {
+    setSeed(42);
+    const blocked = hmcEligibleLocality(['calcite']);
+    expect(_scenarioPositiveLicenseBlock(blocked, 'HMC'))
+      .toContain('no positive four-tier locality license');
+    _nucleateClass_carbonate(blocked);
+    expect(blocked.crystals.some((crystal: any) => crystal.mineral === 'HMC')).toBe(false);
+
+    setSeed(42);
+    const licensed = hmcEligibleLocality(['HMC']);
+    expect(_scenarioPositiveLicenseBlock(licensed, 'HMC')).toBeNull();
+    _nucleateClass_carbonate(licensed);
+    expect(licensed.crystals.some((crystal: any) => crystal.mineral === 'HMC')).toBe(true);
   });
 });
 
