@@ -160,6 +160,10 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   });
 
   fortressSim = new VugSimulator(conditions, []);
+  // Replenish consumes a run-owned recipe in 97-ui-fortress.ts. Binding it at
+  // every constructor boundary also makes 93a save replay reconstruct the
+  // same future input from the recorded Starter origin.
+  _fortressBindInitialFluidRecipe(fortressSim, fluid);
   _attachStripRecorderToSim(fortressSim, `fortress_starter_${presetId}`, `Fortress — starter fluid: ${preset.label}`);
   fortressActive = true;
   fortressLogLines = [];
@@ -233,6 +237,9 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   }
 
   fortressSim = new VugSimulator(conditions, events);
+  // Never inherit the previous Custom run's recipe: the authored Scenario is
+  // the sole source for Replenish, both live and during origin-based replay.
+  _fortressBindInitialFluidRecipe(fortressSim, conditions.fluid);
   _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
   fortressActive = true;
   fortressLogLines = [];

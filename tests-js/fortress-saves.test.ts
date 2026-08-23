@@ -26,9 +26,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 declare function fortressBeginFromScenario(name: string, seed?: number): void;
 declare function fortressBeginFromStarterFluid(presetId: string, seed?: number): void;
+declare function _fortressBeginCustomFromParams(params: any, seed?: number): void;
 declare function fortressStep(action: string, payload?: any): void;
 declare function fortressFinish(): void;
 declare function fortressReset(): void;
+declare function showTitleScreen(): void;
+declare function openNewGameMenu(): void;
 declare function setFortressInstantLines(v: boolean): void;
 declare function _liveFortressSim(): any;
 declare function _liveFortressActive(): boolean;
@@ -247,6 +250,43 @@ beforeEach(() => {
 });
 
 describe('fortress save system (93a) — event-sourced replay', () => {
+  it('does not carry a Custom replenish recipe through Home/New Game into an authored Scenario or its replay', () => {
+    _fortressBeginCustomFromParams({
+      temp: 180,
+      pressure: 1,
+      fluidParams: { Fe: 987, pH: 6.2 },
+      wallOpts: {
+        composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
+        wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
+      },
+      conditionOpts: {},
+      scenarioOpts: {},
+      initialWaterTablePct: 100,
+      presetLabel: 'hostile custom recipe',
+    }, 777100);
+    expect(_liveFortressSim().conditions.fluid.Fe).toBe(987);
+
+    showTitleScreen();
+    openNewGameMenu();
+    fortressBeginFromScenario('cooling', 777101);
+    const scenarioInitialFe = _liveFortressSim().conditions.fluid.Fe;
+    expect(scenarioInitialFe).not.toBe(987);
+    const activeId = _liveSaveActiveRecord().id;
+
+    fortressStep('inject_species', { species: 'Fe', ppm: 111 });
+    expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe + 111, 12);
+    fortressStep('replenish');
+    expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe, 12);
+    const expectedFingerprint = simulationStateFingerprint(_liveFortressSim());
+    expect(loadSaves().find(record => record.id === activeId).actions.map((row: any) => row.a))
+      .toEqual(['inject_species', 'replenish']);
+
+    fortressReset();
+    expect(loadSaveById(activeId)).toBe(true);
+    expect(_liveFortressSim().conditions.fluid.Fe).toBeCloseTo(scenarioInitialFe, 12);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(expectedFingerprint);
+  });
+
   it('migrates the legacy raw array while preserving unprovable v1 recipes as incompatible', () => {
     const v2 = minimalSave('legacy-v2', { format: 2 });
     delete v2.run_id;

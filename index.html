@@ -19853,7 +19853,12 @@ function scenarioSpecHash(spec) {
 // HMC into a named scenario unless that scenario positively licenses it.
 // Creative/custom broths remain unrestricted. The change affects production
 // admission authority and therefore receives a fresh simulation identity.
-const SIM_VERSION = 278;
+// v279 (August 2026): every Creative constructor now binds Replenish to that
+// simulator's own canonical starting fluid. Scenario and Starter runs can no
+// longer inherit a hidden Custom recipe across Home/New Game, and save replay
+// deterministically reconstructs the same future input from its recorded
+// origin before applying actions.
+const SIM_VERSION = 279;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19928,7 +19933,7 @@ const MODEL_DIGEST = [
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
-    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v8',
+    'save-identity:version+model+scenario+origin-bound-replenishment+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v9',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -92307,6 +92312,10 @@ function fortressBeginFromStarterFluid(presetId, seedOverride) {
         temperature: 200.0, pressure: 1.0, fluid, wall
     });
     fortressSim = new VugSimulator(conditions, []);
+    // Replenish consumes a run-owned recipe in 97-ui-fortress.ts. Binding it at
+    // every constructor boundary also makes 93a save replay reconstruct the
+    // same future input from the recorded Starter origin.
+    _fortressBindInitialFluidRecipe(fortressSim, fluid);
     _attachStripRecorderToSim(fortressSim, `fortress_starter_${presetId}`, `Fortress — starter fluid: ${preset.label}`);
     fortressActive = true;
     fortressLogLines = [];
@@ -92372,6 +92381,9 @@ function fortressBeginFromScenario(scenarioName, seedOverride) {
         });
     }
     fortressSim = new VugSimulator(conditions, events);
+    // Never inherit the previous Custom run's recipe: the authored Scenario is
+    // the sole source for Replenish, both live and during origin-based replay.
+    _fortressBindInitialFluidRecipe(fortressSim, conditions.fluid);
     _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
     fortressActive = true;
     fortressLogLines = [];
@@ -94717,11 +94729,24 @@ function readCreativeGeologicalControls(baseWall = {}) {
         })(),
     };
 }
-// Snapshot of the starting fluid recipe captured at fortressBegin time.
-// Used by fortressStep('replenish') to reset the broth — represents the
-// host rock leaching its starting chemistry back into the cavity. Cleared
-// in fortressReset.
-let _fortressInitialFluidParams = null;
+// Each live Creative simulator owns its starting-fluid recipe. The three
+// producers are the Custom constructor below and the Scenario/Starter
+// constructors in 94-ui-menu.ts; fortressStep('replenish') is the consumer.
+// Saves intentionally persist the constructor origin, not this derived copy,
+// so 93a-ui-saves.ts rebuilds the same recipe before replaying any action.
+// Keeping the binding on the simulator (rather than in a cross-run global)
+// prevents Custom -> Home/New Game -> Scenario from importing hidden broth.
+const FORTRESS_INITIAL_FLUID_RECIPES = new WeakMap();
+const _fortressBindInitialFluidRecipe = (sim, source) => {
+    if (!sim || !source)
+        throw new TypeError('Creative initial-fluid recipe requires a simulator and fluid');
+    const canonical = new FluidChemistry(source);
+    const recipe = {};
+    for (const field of FLUID_CHEMISTRY_INPUT_FIELDS)
+        recipe[field] = canonical[field];
+    FORTRESS_INITIAL_FLUID_RECIPES.set(sim, Object.freeze(recipe));
+};
+const _fortressInitialFluidRecipeFor = sim => (sim && FORTRESS_INITIAL_FLUID_RECIPES.get(sim)) || null;
 function _creativePresetWallDefaults(preset) {
     if (preset === 'mvt') {
         return { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
@@ -94829,9 +94854,6 @@ function _fortressBeginCustomFromParams(params, seedOverride) {
     const fluidParams = Object.assign({}, params.fluidParams);
     const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
     rng = new SeededRandom(seed);
-    // Snapshot the post-override recipe so Replenish can restore exactly
-    // what the player started with (preset + setup-slider tweaks).
-    _fortressInitialFluidParams = Object.assign({}, fluidParams);
     const fluid = new FluidChemistry(fluidParams);
     const wall = new VugWall(Object.assign({}, wallOpts));
     const conditions = new VugConditions(Object.assign({ temperature: temp, pressure, fluid, wall }, params.conditionOpts || {}));
@@ -94846,6 +94868,9 @@ function _fortressBeginCustomFromParams(params, seedOverride) {
             || 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
     });
     fortressSim = new VugSimulator(conditions, []);
+    // Bind after construction so omitted controls resolve to FluidChemistry's
+    // canonical defaults. Scenario and Starter entry points do the same in 94.
+    _fortressBindInitialFluidRecipe(fortressSim, fluid);
     if (Number.isFinite(params.initialWaterTablePct)) {
         const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
         conditions.fluid_surface_height_mm
@@ -95228,12 +95253,13 @@ function fortressStep(action, payload) {
         // pressure, and water level are NOT reset — those are separate axes
         // controlled by their own buttons.
         case 'replenish': {
-            if (!_fortressInitialFluidParams) {
-                actionDesc = '🥣 Replenish — no starting recipe captured (sim wasn\'t begun via fortressBegin)';
+            const initialFluidRecipe = _fortressInitialFluidRecipeFor(fortressSim);
+            if (!initialFluidRecipe) {
+                actionDesc = '🥣 Replenish — no starting recipe is bound to this Creative run';
                 break;
             }
             let touched = 0;
-            for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
+            for (const [k, v] of Object.entries(initialFluidRecipe)) {
                 if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
                     if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH'))
                         continue;
@@ -95242,8 +95268,8 @@ function fortressStep(action, payload) {
                 }
             }
             if (fortressSim._carbonateBoundaryState) {
-                const incomingDIC = Number(_fortressInitialFluidParams.CO3);
-                const incomingPH = Number(_fortressInitialFluidParams.pH);
+                const incomingDIC = Number(initialFluidRecipe.CO3);
+                const incomingPH = Number(initialFluidRecipe.pH);
                 const tx = _fortressCarbonateRecharge(1, Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3, Number.isFinite(incomingPH) ? incomingPH : c.fluid.pH, 'Creative host-rock replenish recharge');
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? 'Replenish executed as full replacement-water recharge with explicit incoming DIC and reduced alkalinity.'
@@ -95862,7 +95888,6 @@ function fortressReset() {
     fortressActive = false;
     fortressLogLines = [];
     brothSnapshots = [];
-    _fortressInitialFluidParams = null;
     // Drop the save-system recording state. The persisted autosave keeps
     // whatever was last written — an abandoned run stays loadable.
     if (typeof _saveNoteReset === 'function')

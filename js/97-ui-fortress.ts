@@ -924,11 +924,25 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
   };
 }
 
-// Snapshot of the starting fluid recipe captured at fortressBegin time.
-// Used by fortressStep('replenish') to reset the broth — represents the
-// host rock leaching its starting chemistry back into the cavity. Cleared
-// in fortressReset.
-let _fortressInitialFluidParams = null;
+// Each live Creative simulator owns its starting-fluid recipe. The three
+// producers are the Custom constructor below and the Scenario/Starter
+// constructors in 94-ui-menu.ts; fortressStep('replenish') is the consumer.
+// Saves intentionally persist the constructor origin, not this derived copy,
+// so 93a-ui-saves.ts rebuilds the same recipe before replaying any action.
+// Keeping the binding on the simulator (rather than in a cross-run global)
+// prevents Custom -> Home/New Game -> Scenario from importing hidden broth.
+const FORTRESS_INITIAL_FLUID_RECIPES = new WeakMap<object, Readonly<Record<string, any>>>();
+
+const _fortressBindInitialFluidRecipe = (sim, source) => {
+  if (!sim || !source) throw new TypeError('Creative initial-fluid recipe requires a simulator and fluid');
+  const canonical = new FluidChemistry(source);
+  const recipe: Record<string, any> = {};
+  for (const field of FLUID_CHEMISTRY_INPUT_FIELDS) recipe[field] = canonical[field];
+  FORTRESS_INITIAL_FLUID_RECIPES.set(sim, Object.freeze(recipe));
+};
+
+const _fortressInitialFluidRecipeFor = sim =>
+  (sim && FORTRESS_INITIAL_FLUID_RECIPES.get(sim)) || null;
 
 function _creativePresetWallDefaults(preset: string) {
   if (preset === 'mvt') {
@@ -1041,9 +1055,6 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
   rng = new SeededRandom(seed);
 
-  // Snapshot the post-override recipe so Replenish can restore exactly
-  // what the player started with (preset + setup-slider tweaks).
-  _fortressInitialFluidParams = Object.assign({}, fluidParams);
   const fluid = new FluidChemistry(fluidParams);
   const wall = new VugWall(Object.assign({}, wallOpts));
   const conditions = new VugConditions(Object.assign(
@@ -1066,6 +1077,9 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   );
 
   fortressSim = new VugSimulator(conditions, []);
+  // Bind after construction so omitted controls resolve to FluidChemistry's
+  // canonical defaults. Scenario and Starter entry points do the same in 94.
+  _fortressBindInitialFluidRecipe(fortressSim, fluid);
   if (Number.isFinite(params.initialWaterTablePct)) {
     const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
     conditions.fluid_surface_height_mm
@@ -1470,12 +1484,13 @@ function fortressStep(action, payload) {
     // pressure, and water level are NOT reset — those are separate axes
     // controlled by their own buttons.
     case 'replenish': {
-      if (!_fortressInitialFluidParams) {
-        actionDesc = '🥣 Replenish — no starting recipe captured (sim wasn\'t begun via fortressBegin)';
+      const initialFluidRecipe = _fortressInitialFluidRecipeFor(fortressSim);
+      if (!initialFluidRecipe) {
+        actionDesc = '🥣 Replenish — no starting recipe is bound to this Creative run';
         break;
       }
       let touched = 0;
-      for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
+      for (const [k, v] of Object.entries(initialFluidRecipe)) {
         if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
           if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH')) continue;
           c.fluid[k] = v;
@@ -1483,8 +1498,8 @@ function fortressStep(action, payload) {
         }
       }
       if (fortressSim._carbonateBoundaryState) {
-        const incomingDIC = Number(_fortressInitialFluidParams.CO3);
-        const incomingPH = Number(_fortressInitialFluidParams.pH);
+        const incomingDIC = Number(initialFluidRecipe.CO3);
+        const incomingPH = Number(initialFluidRecipe.pH);
         const tx = _fortressCarbonateRecharge(
           1,
           Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3,
@@ -2082,7 +2097,6 @@ function fortressReset() {
   fortressActive = false;
   fortressLogLines = [];
   brothSnapshots = [];
-  _fortressInitialFluidParams = null;
   // Drop the save-system recording state. The persisted autosave keeps
   // whatever was last written — an abandoned run stays loadable.
   if (typeof _saveNoteReset === 'function') _saveNoteReset();

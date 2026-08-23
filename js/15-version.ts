@@ -13062,7 +13062,12 @@
 // HMC into a named scenario unless that scenario positively licenses it.
 // Creative/custom broths remain unrestricted. The change affects production
 // admission authority and therefore receives a fresh simulation identity.
-const SIM_VERSION = 278;
+// v279 (August 2026): every Creative constructor now binds Replenish to that
+// simulator's own canonical starting fluid. Scenario and Starter runs can no
+// longer inherit a hidden Custom recipe across Home/New Game, and save replay
+// deterministically reconstructs the same future input from its recorded
+// origin before applying actions.
+const SIM_VERSION = 279;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -13138,6 +13143,6 @@ const MODEL_DIGEST = [
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
-  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v8',
+  'save-identity:version+model+scenario+origin-bound-replenishment+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v9',
 ].join('|');
 
