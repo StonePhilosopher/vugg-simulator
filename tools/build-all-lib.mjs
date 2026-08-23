@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +12,7 @@ export function runBuildAll({
   root = ROOT,
   tscEntry = TSC_ENTRY,
   forwardedArgs = process.argv.slice(2),
+  remove = rmSync,
 } = {}) {
   const narrativeArgs = ['tools/narrative-workflow.mjs'];
   if (forwardedArgs.includes('--check')) narrativeArgs.push('--check');
@@ -26,6 +28,13 @@ export function runBuildAll({
   if (narratives.status !== 0) {
     console.error(`[build-all] narrative audit failed (exit ${narratives.status ?? 'unknown'}); compilation skipped.`);
     return narratives.status ?? 1;
+  }
+  console.log('[build-all] cleaning dist/ before exact compilation…');
+  try {
+    remove(join(root, 'dist'), { recursive: true, force: true });
+  } catch (error) {
+    console.error(`[build-all] could not clean dist/: ${error.message}`);
+    return 1;
   }
   console.log('[build-all] running tsc…');
   const tsc = spawn(execPath, [tscEntry, '-p', 'tsconfig.json'], {

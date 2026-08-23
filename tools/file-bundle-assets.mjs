@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const FILE_BUNDLE_ASSET_SCHEMA = 'vugg-file-bundle-assets-v1';
+export const FILE_BUNDLE_ASSET_SCHEMA = 'vugg-file-bundle-assets-v2';
 export const FILE_BUNDLE_START_MARKER = '// === BUILD:file-assets:start ===';
 export const FILE_BUNDLE_END_MARKER = '// === BUILD:file-assets:end ===';
 
@@ -14,6 +14,18 @@ const EXPLICIT_RUNTIME_ASSETS = Object.freeze([
 ]);
 
 const codePointCompare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
+
+// Authored inputs are text, but checkouts may expose LF, CRLF, or mixed line
+// endings. The single-file product authenticates canonical text, not the
+// builder's host newline convention.
+export function canonicalText(text) {
+  return String(text).replace(/\r\n?/g, '\n');
+}
+
+export function canonicalTextBytes(value) {
+  const text = Buffer.isBuffer(value) ? value.toString('utf8') : String(value);
+  return Buffer.from(canonicalText(text), 'utf8');
+}
 
 export function fileBundleAssetFiles(root) {
   const narrativesDirectory = path.join(root, 'narratives');
@@ -33,7 +45,7 @@ export function fileBundleAssetDigest(root, relativeFiles = fileBundleAssetFiles
   const hash = crypto.createHash('sha256');
   hash.update(`${FILE_BUNDLE_ASSET_SCHEMA}\0`);
   for (const relative of relativeFiles) {
-    const bytes = fs.readFileSync(path.join(root, relative));
+    const bytes = canonicalTextBytes(fs.readFileSync(path.join(root, relative)));
     hash.update(`${relative.length}:${relative}\0${bytes.length}:`);
     hash.update(bytes);
     hash.update('\0');
@@ -52,7 +64,7 @@ export function buildFileBundlePrelude(root) {
   const relativeFiles = fileBundleAssetFiles(root);
   const assets = {};
   for (const relative of relativeFiles) {
-    assets[relative] = fs.readFileSync(path.join(root, relative), 'utf8');
+    assets[relative] = canonicalText(fs.readFileSync(path.join(root, relative), 'utf8'));
   }
   const receipt = Object.freeze({
     schema: FILE_BUNDLE_ASSET_SCHEMA,
@@ -62,7 +74,7 @@ export function buildFileBundlePrelude(root) {
   const receiptJson = scriptSafeJson(receipt);
   const assetsJson = scriptSafeJson(assets);
 
-  return `${FILE_BUNDLE_START_MARKER}
+  return canonicalText(`${FILE_BUNDLE_START_MARKER}
 (function installVuggLocalFileAssets() {
   const receipt = Object.freeze(${receiptJson});
   Object.defineProperty(globalThis, '__VUGG_FILE_BUNDLE_RECEIPT', {
@@ -113,5 +125,5 @@ export function buildFileBundlePrelude(root) {
     throw new TypeError('fetch is unavailable for non-bundled file URL: ' + raw);
   };
 })();
-${FILE_BUNDLE_END_MARKER}`;
+${FILE_BUNDLE_END_MARKER}`);
 }

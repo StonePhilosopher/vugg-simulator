@@ -5,15 +5,18 @@ import { auditNarratorSourceText } from '../tools/narrative-workflow.mjs';
 describe('build-all fail-closed generated-data and compiler gates', () => {
   it('returns the narrative-audit exit code and never compiles stale generated data', () => {
     const spawn = vi.fn(() => ({ status: 3, error: undefined }));
+    const remove = vi.fn();
     const status = runBuildAll({
       spawn,
       execPath: 'node-test',
       root: 'repo-test',
       tscEntry: 'tsc-test',
       forwardedArgs: ['--check'],
+      remove,
     });
     expect(status).toBe(3);
     expect(spawn).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled();
     expect(spawn.mock.calls[0][1]).toEqual(['tools/narrative-workflow.mjs', '--check']);
   });
 
@@ -21,9 +24,13 @@ describe('build-all fail-closed generated-data and compiler gates', () => {
     const spawn = vi.fn()
       .mockReturnValueOnce({ status: 0, error: undefined })
       .mockReturnValueOnce({ status: 2, error: undefined });
-    const status = runBuildAll({ spawn, tscEntry: 'tsc-test', forwardedArgs: ['--check'] });
+    const remove = vi.fn();
+    const status = runBuildAll({ spawn, remove, tscEntry: 'tsc-test', forwardedArgs: ['--check'] });
     expect(status).toBe(2);
     expect(spawn).toHaveBeenCalledTimes(2);
+    expect(remove).toHaveBeenCalledWith(expect.stringMatching(/[\\/]dist$/), {
+      recursive: true, force: true,
+    });
     expect(spawn.mock.calls[1][1]).toEqual(['tsc-test', '-p', 'tsconfig.json']);
   });
 
@@ -32,9 +39,17 @@ describe('build-all fail-closed generated-data and compiler gates', () => {
       .mockReturnValueOnce({ status: 0, error: undefined })
       .mockReturnValueOnce({ status: 0, error: undefined })
       .mockReturnValueOnce({ status: 0, error: undefined });
-    expect(runBuildAll({ spawn, forwardedArgs: ['--check'] })).toBe(0);
+    const remove = vi.fn();
+    expect(runBuildAll({ spawn, remove, forwardedArgs: ['--check'] })).toBe(0);
     expect(spawn).toHaveBeenCalledTimes(3);
     expect(spawn.mock.calls[2][1]).toEqual(['tools/build.mjs', '--check']);
+  });
+
+  it('fails closed before compilation when the stale dist tree cannot be removed', () => {
+    const spawn = vi.fn(() => ({ status: 0, error: undefined }));
+    const remove = vi.fn(() => { throw new Error('access denied'); });
+    expect(runBuildAll({ spawn, remove, forwardedArgs: ['--check'] })).toBe(1);
+    expect(spawn).toHaveBeenCalledTimes(1);
   });
 });
 

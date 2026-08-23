@@ -9,6 +9,7 @@ import {
   nodeRuntimeIdentity,
   producerContractDigest,
   producerContractFiles,
+  runtimeDependencyFiles,
   runtimeExecutionDigest,
 } from '../tools/evidence-runtime.mjs';
 import { buildFileBundlePrelude } from '../tools/file-bundle-assets.mjs';
@@ -73,6 +74,28 @@ describe('evidence executable and producer identities', () => {
     expect(runtimeExecutionDigest(root)).not.toBe(before);
     fs.writeFileSync(path.join(root, 'dist', '00.js'), 'const answer = 43;\n');
     expect(() => runtimeExecutionDigest(root)).toThrow('index.html does not contain the exact dist');
+  });
+
+  it('canonicalizes checkout newlines without weakening executable or producer identity', () => {
+    const lf = makeExecutionFixture();
+    const crlf = makeExecutionFixture();
+    for (const file of runtimeDependencyFiles(crlf)) {
+      const text = fs.readFileSync(file, 'utf8').replace(/\r?\n/g, '\r\n');
+      fs.writeFileSync(file, text);
+    }
+    writeFixtureIndex(crlf, 'const answer = 42;');
+    expect(runtimeExecutionDigest(crlf)).toBe(runtimeExecutionDigest(lf));
+
+    const producerRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vugg-producer-eol-'));
+    for (const source of producerContractFiles(ROOT, 'mechanism-witnesses')) {
+      const relative = path.relative(ROOT, source);
+      const destination = path.join(producerRoot, relative);
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.writeFileSync(destination,
+        fs.readFileSync(source, 'utf8').replace(/\r?\n/g, '\r\n'));
+    }
+    expect(producerContractDigest(producerRoot, 'mechanism-witnesses'))
+      .toBe(producerContractDigest(ROOT, 'mechanism-witnesses'));
   });
 
   it('invalidates every harness-using producer when harness semantics change', () => {

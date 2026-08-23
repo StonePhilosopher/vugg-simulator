@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM, VirtualConsole } from 'jsdom';
@@ -10,6 +11,7 @@ import {
   FILE_BUNDLE_END_MARKER,
   FILE_BUNDLE_START_MARKER,
   buildFileBundlePrelude,
+  canonicalText,
   fileBundleAssetDigest,
   fileBundleAssetFiles,
 } from '../tools/file-bundle-assets.mjs';
@@ -53,10 +55,10 @@ describe('self-contained file URL bundle', () => {
 
     const scenarioResponse = await fileGlobal.fetch('./data/scenarios.json5');
     expect(await scenarioResponse.text())
-      .toBe(fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8'));
+      .toBe(canonicalText(fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')));
     const narrativeResponse = await fileGlobal.fetch('./narratives/quartz.md');
     expect(await narrativeResponse.text())
-      .toBe(fs.readFileSync(path.join(ROOT, 'narratives', 'quartz.md'), 'utf8'));
+      .toBe(canonicalText(fs.readFileSync(path.join(ROOT, 'narratives', 'quartz.md'), 'utf8')));
     expect(nativeFetch).not.toHaveBeenCalled();
 
     const unknown = await fileGlobal.fetch('./not-bundled.txt');
@@ -71,6 +73,29 @@ describe('self-contained file URL bundle', () => {
     };
     new Function('globalThis', 'URL', buildFileBundlePrelude(ROOT))(httpGlobal, URL);
     expect(httpGlobal.fetch).toBe(httpFetch);
+  });
+
+  it('produces identical embedded assets and receipts from LF, CRLF, and mixed checkouts', () => {
+    const roots = ['lf', 'crlf', 'mixed'].map(kind => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), `vugg-file-assets-${kind}-`));
+      fs.mkdirSync(path.join(root, 'data'), { recursive: true });
+      fs.mkdirSync(path.join(root, 'narratives'), { recursive: true });
+      const newline = kind === 'crlf' ? '\r\n' : '\n';
+      for (const name of ['minerals.json', 'thermo-carbonates.json', 'thermo-sulfates.json']) {
+        fs.writeFileSync(path.join(root, 'data', name), `{${newline}}${newline}`);
+      }
+      const scenarioText = kind === 'mixed'
+        ? `{ scenarios: {} }\r\n// text\n`
+        : `{ scenarios: {} }${newline}// text${newline}`;
+      fs.writeFileSync(path.join(root, 'data', 'scenarios.json5'), scenarioText);
+      fs.writeFileSync(path.join(root, 'narratives', 'quartz.md'), `# Quartz${newline}`);
+      return root;
+    });
+    const preludes = roots.map(buildFileBundlePrelude);
+    const digests = roots.map(root => fileBundleAssetDigest(root));
+    expect(new Set(preludes).size).toBe(1);
+    expect(new Set(digests).size).toBe(1);
+    expect(preludes[0]).not.toContain('\r');
   });
 
   it('boots the generated index from file:// with every scenario menu populated', async () => {
