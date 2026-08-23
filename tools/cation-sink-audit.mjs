@@ -56,9 +56,14 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // chemically accessible growth-shadowed solids and authenticated inclusions
 // onto distinct authorities; the resulting layered competition trajectory
 // commissions the exact proxy below without introducing any Zn source/sink.
+// SIM 278 changes only HMC's named-locality admission dispatcher. Schneeberg
+// neither licenses nor produces HMC, and the fresh 161-row replay retains the
+// exact SIM 275 proxy, five pharmacolite crystals, 7,680 finite zero-Zn
+// control volumes, and zero booked Zn. Commission the new semantic identity
+// explicitly rather than allowing a matching number to bypass the guard.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 275,
-  model_digest_sha256: '5cb41ef6f1e5ded590320300a7495ae451abee3a8200368c497b8f97a3584a39',
+  sim_version: 278,
+  model_digest_sha256: 'e91502c496ff6a7a2e0e2dc4ef5befffb2ce120140cfcb5ead831d45943cf278',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
