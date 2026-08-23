@@ -1,0 +1,4252 @@
+{
+  "schema": "vugg-claim-card-v2",
+  "scenario": "radioactive_pegmatite",
+  "sim_version": 278,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v7|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v8",
+  "scenario_spec_hash": "80a704c33aa58aabff83d5529c305e35605f2d8f504a4e0eccc7eae146731819",
+  "strip_steps": 120,
+  "strip_sha256": "95f5e4e426c9725b5086307ddc06cc1391eaa29dd25ccc93797c13324d2e37b3",
+  "claim": {
+    "anchor": "(generic high-T alkali-granite pocket — not anchored to a specific locality)",
+    "description": "High-T pegmatitic fluid + U + Pb. Grows uraninite, smoky quartz (darkened by radiation), feldspar/albite, and late-stage galena from radiogenic Pb.",
+    "expects_species": [
+      "uraninite",
+      "quartz",
+      "feldspar",
+      "lepidolite",
+      "cassiterite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        {
+          "mineral": "uraninite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "quartz",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "feldspar",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "lepidolite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "cassiterite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "albite",
+          "reason": "A standard sodic feldspar accessory in the generic evolved pegmatite pocket.",
+          "headline": false
+        },
+        {
+          "mineral": "morganite",
+          "reason": "A plausible Be-bearing late pegmatite beryl variety in this intentionally generic incompatible-element broth.",
+          "headline": false
+        },
+        {
+          "mineral": "spodumene",
+          "reason": "A plausible Li-aluminosilicate accessory in the generic evolved pegmatite.",
+          "headline": false
+        },
+        {
+          "mineral": "tourmaline",
+          "reason": "A plausible B-bearing pegmatite accessory, non-diagnostic in this uranium-focused scaffold.",
+          "headline": false
+        },
+        {
+          "mineral": "topaz",
+          "reason": "A plausible F-Al late pocket phase after the crystallization pulse.",
+          "headline": false
+        },
+        {
+          "mineral": "opal",
+          "reason": "A possible low-temperature hydrated-silica sink during the oxidizing meteoric interval.",
+          "headline": false
+        },
+        {
+          "mineral": "plumbogummite",
+          "reason": "A possible late Pb-Al-phosphate sink after radiogenic Pb release and weathering; this scenario is generic rather than locality-assertive.",
+          "headline": false
+        }
+      ],
+      "deterministic_headline": [
+        "uraninite",
+        "quartz",
+        "feldspar",
+        "lepidolite",
+        "cassiterite"
+      ],
+      "deterministic_accessory": [
+        {
+          "mineral": "albite",
+          "reason": "A standard sodic feldspar accessory in the generic evolved pegmatite pocket."
+        },
+        {
+          "mineral": "morganite",
+          "reason": "A plausible Be-bearing late pegmatite beryl variety in this intentionally generic incompatible-element broth."
+        },
+        {
+          "mineral": "spodumene",
+          "reason": "A plausible Li-aluminosilicate accessory in the generic evolved pegmatite."
+        },
+        {
+          "mineral": "tourmaline",
+          "reason": "A plausible B-bearing pegmatite accessory, non-diagnostic in this uranium-focused scaffold."
+        },
+        {
+          "mineral": "topaz",
+          "reason": "A plausible F-Al late pocket phase after the crystallization pulse."
+        },
+        {
+          "mineral": "opal",
+          "reason": "A possible low-temperature hydrated-silica sink during the oxidizing meteoric interval."
+        },
+        {
+          "mineral": "plumbogummite",
+          "reason": "A possible late Pb-Al-phosphate sink after radiogenic Pb release and weathering; this scenario is generic rather than locality-assertive."
+        }
+      ],
+      "statistical": [],
+      "aspirational": [
+        {
+          "mineral": "autunite",
+          "reason": "Secondary hydration product absent from the release seed audit; requires a demonstrably executed oxidation-hydration window before promotion to deterministic."
+        }
+      ]
+    },
+    "excluded_species": {},
+    "sources": [
+      "(generic testing scenario — no published source)"
+    ],
+    "claim_citations": [],
+    "initial_temperature_C": 600,
+    "initial_pressure_kbar": 2,
+    "wall_architecture": null,
+    "notes": [
+      "Generic testing scenario — not anchored to a real locality (per the user's clarification on the audit brief). Pegmatitic fluids are silica-saturated melts with abundant K + Na + Al + U.",
+      "Mechanic: 4-event lifecycle. Crystallization pulse (step 20): main quartz + uraninite growth. Deep time (step 50): radiation slowly transmutes U → Pb, darkens nearby quartz. Oxidizing meteoric water (step 80): late-stage fracture flow brings O2; sulfides destabilize but uraninite endures. Final cooling (step 100): system approaches ambient, galena precipitates from the radiogenic Pb.",
+      "v184 thermal_pulses:false (PEGMATITE-SHAPE, T-rollout close-out): same sealed-pocket logic as gem_pegmatite's v183 flag — the four events anchor the whole arc (450@20, 300@50, 120@80, 50@100) and a sealed granite pocket has no fracture-valve plumbing. The measured violation was worse here: a late ambient pulse re-warmed the 'approaches ambient' endgame to 541°C at one v180 seed — with autunite (a ≤50°C supergene mineral) in the expects list. Dark-observed at 3 seeds: the post-step-100 autunite window (50→25°C) now opens deterministically every run (under pulses it was destroyed whenever a late re-warm landed); pyrite/goethite drop out (they were pulse-Fe-rider artifacts, not expects); autunite itself remains a pre-existing aspirational miss at the observed seeds (absent in BASE too — chemistry-side, a separate tune arc; it fires elsewhere in the 10-seed coverage sweep).",
+      "Audit gap-fill (Apr 2026): Mg=5 — brief-required non-zero Mg baseline. Pegmatite pocket fluids are Mg-poor (Mg partitions into outer-shell biotite/chlorite during pegmatite differentiation), matches the gem_pegmatite scenario's Mg=5 abstraction."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v7|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v8",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 2,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 6.67303054,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 87.4,
+          "initial_water_activity": {
+            "value": 0.9952,
+            "salinityPpt": 8,
+            "naclWeightPercentEquivalent": 0.8,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 1.57292838,
+            "waterDensityGcm3": 1.03930885,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 1.49626881,
+            "waterDensityGcm3": 1.03930885,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 250,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 4.17636763,
+            "waterDensityGcm3": 0.92734954,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-250 C fitted envelope; the nearest 250 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 1.72144134,
+            "waterDensityGcm3": 0.96638666,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 1.64390137,
+            "waterDensityGcm3": 0.96638666,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 300,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 2.59163674,
+            "waterDensityGcm3": 0.8851944,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-300 C fitted envelope; the nearest 300 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 300,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 2.45039976,
+            "waterDensityGcm3": 0.8851944,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-300 C fitted envelope; the nearest 300 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 1.36378163,
+            "waterDensityGcm3": 0.96638666,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 600 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 600,
+            "evaluatedTemperatureC": 600,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 2,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 12,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 1,
+        "events": 2,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 1,
+        "events": 2,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "lepidolite",
+        "first_step": 1,
+        "events": 6,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "morganite",
+        "first_step": 1,
+        "events": 4,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 1,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "spodumene",
+        "first_step": 1,
+        "events": 4,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "tourmaline",
+        "first_step": 1,
+        "events": 8,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "uraninite",
+        "first_step": 1,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "cassiterite",
+        "first_step": 6,
+        "events": 5,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "topaz",
+        "first_step": 20,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "opal",
+        "first_step": 94,
+        "events": 5,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "plumbogummite",
+        "first_step": 107,
+        "events": 2,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [
+      "autunite"
+    ],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 598.2608943547076,
+        "last": 25.000000000000018,
+        "min": 25.000000000000018,
+        "max": 598.2608943547076,
+        "units": "°C",
+        "source": "raw_simulation_state"
+      },
+      "pH": {
+        "first": 6.5,
+        "last": 6.5,
+        "min": 6.5,
+        "max": 6.5,
+        "units": "",
+        "source": "raw_simulation_state"
+      },
+      "Eh": {
+        "first": -200,
+        "last": 181.23599479677745,
+        "min": -200,
+        "max": 181.23599479677745,
+        "units": "mV",
+        "source": "raw_simulation_state"
+      },
+      "salinity": {
+        "first": 8,
+        "last": 8,
+        "min": 8,
+        "max": 8,
+        "units": "psu",
+        "source": "raw_simulation_state"
+      },
+      "O2": {
+        "first": 0,
+        "last": 0.8,
+        "min": 0,
+        "max": 0.8,
+        "units": "ppm (mg/kg solvent)",
+        "source": "raw_simulation_state"
+      },
+      "concentration": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "units": "×",
+        "source": "raw_simulation_state"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -5.48,
+        "last": -4.283,
+        "min": -5.48,
+        "max": -3.276,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -5.543,
+        "last": -4.346,
+        "min": -5.543,
+        "max": -3.336,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -7.433,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -3.78,
+        "last": -2.646,
+        "min": -3.843,
+        "max": -1.827,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -2.457,
+        "last": -1.824,
+        "min": -2.457,
+        "max": -0.819,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -2.016,
+        "min": -8,
+        "max": -1.953,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -3.654,
+        "min": -8,
+        "max": -2.079,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 120,
+      "fluid_pressure_kbar": {
+        "first": 2,
+        "last": 2,
+        "min": 2,
+        "max": 2,
+        "samples": 120
+      },
+      "confining_pressure_kbar": null,
+      "temperature_C": {
+        "first": 598.2608943547076,
+        "last": 25.000000000000018,
+        "min": 25.000000000000018,
+        "max": 598.2608943547076,
+        "samples": 120
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 6.637960672127139,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 120
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 87.4
+        },
+        "last": {
+          "pure_water_boundary_C": 87.4
+        }
+      },
+      "stress_events": [],
+      "transformations": [],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      },
+      "sulfur_ledger": {
+        "source": "archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256",
+        "sample_count": 0,
+        "closed_sample_count": 0,
+        "all_closed": null,
+        "max_abs_balance_error_ppm": 0,
+        "max_abs_testimony_error_ppm": 0,
+        "first_fluid_reservoir_ppm": null,
+        "last_fluid_reservoir_ppm": null,
+        "first_solid_reservoir_ppm": null,
+        "last_solid_reservoir_ppm": null,
+        "activation": null,
+        "phase_identities": [],
+        "samples": []
+      },
+      "fluid_boundary": {
+        "source": "archived declared non-sulfur fluid-boundary transactions; exact rows are authenticated by the strip SHA-256",
+        "transaction_count": 0,
+        "closed_transaction_count": 0,
+        "all_closed": null,
+        "transactions": []
+      },
+      "enclosures": {
+        "source": "accepted host-over-guest and later liberation events from the archived executed run",
+        "event_count": 19,
+        "accepted_enclosure_count": 19,
+        "liberation_count": 0,
+        "current_inclusion_count": 19,
+        "current_inclusions": [
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 16,
+            "host_crystal_id": 5,
+            "host_mineral": "spodumene",
+            "guest_crystal_id": 8,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 9.223866628221108,
+            "guest_recent_growth_um": 2.2868020051417863,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 6.135762572894093,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 6.135762572894093,
+            "host_physical_size_at_enclosure_um": 349.6328238656374,
+            "guest_positive_core_um": 37.9052341017063,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 37.9052341017063,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:16:5:8",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 16,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:16:5:8",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 16
+                }
+              ]
+            },
+            "sample_index": 15
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 21,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 23,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 57.248059436415154,
+            "guest_recent_growth_um": 1.4968158824112727,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 62.61261889811302,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 62.61261889811302,
+            "host_physical_size_at_enclosure_um": 1257.1239623735808,
+            "guest_positive_core_um": 21.9592414965586,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 21.9592414965586,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:21:7:23",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 21,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:21:7:23",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 21
+                }
+              ]
+            },
+            "sample_index": 20
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 27,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 30,
+            "guest_mineral": "topaz",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.052151437061877,
+            "size_ratio": 291.7214586635373,
+            "guest_recent_growth_um": 2.1397661841437494,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 193.4741358371787,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 193.4741358371787,
+            "host_physical_size_at_enclosure_um": 7846.37374195139,
+            "guest_positive_core_um": 26.89680004308891,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 26.89680004308891,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:27:2:30",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "topaz",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 27,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:27:2:30",
+                  "mineral": "topaz",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 27
+                }
+              ]
+            },
+            "sample_index": 26
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 31,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 33,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.501012874688826,
+            "size_ratio": 204.07304745056746,
+            "guest_recent_growth_um": 2.629811966823093,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 132.81408408151287,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 132.81408408151287,
+            "host_physical_size_at_enclosure_um": 8407.450538985076,
+            "guest_positive_core_um": 41.19824074769898,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 41.19824074769898,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:31:2:33",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 31,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:31:2:33",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 31
+                }
+              ]
+            },
+            "sample_index": 30
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 35,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 36,
+            "guest_mineral": "topaz",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.9867879713067,
+            "size_ratio": 286.2080905062197,
+            "guest_recent_growth_um": 2.795464632579935,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 185.59678420614523,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 185.59678420614523,
+            "host_physical_size_at_enclosure_um": 9014.669409757418,
+            "guest_positive_core_um": 31.496906302729126,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 31.496906302729126,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:35:2:36",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "topaz",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 35,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:35:2:36",
+                  "mineral": "topaz",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 35
+                }
+              ]
+            },
+            "sample_index": 34
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 39,
+            "host_crystal_id": 5,
+            "host_mineral": "spodumene",
+            "guest_crystal_id": 38,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 11.846633013579094,
+            "guest_recent_growth_um": 2.056464081052879,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 1.9844597498921555,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 1.9844597498921555,
+            "host_physical_size_at_enclosure_um": 440.0364169549994,
+            "guest_positive_core_um": 37.14442883903061,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 37.14442883903061,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:39:5:38",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 39,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:39:5:38",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 39
+                }
+              ]
+            },
+            "sample_index": 38
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 5,
+            "guest_mineral": "spodumene",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.071628015542885,
+            "size_ratio": 23.06107342392418,
+            "guest_recent_growth_um": 2.8907342293013336,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 56.164165573277685,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 56.164165573277685,
+            "host_physical_size_at_enclosure_um": 10370.719465052649,
+            "guest_positive_core_um": 449.7067102823489,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 449.7067102823489,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:2:5",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "spodumene",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 3,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 21,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 50.159623863852055,
+            "size_ratio": 215.9606192841325,
+            "guest_recent_growth_um": 2.9456165971465267,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 341.25641555076976,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 341.25641555076976,
+            "host_physical_size_at_enclosure_um": 38653.80951695941,
+            "guest_positive_core_um": 178.9854541308933,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 178.9854541308933,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:3:21",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:3:21",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 31,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.82697557522152,
+            "size_ratio": 33.7920369641512,
+            "guest_recent_growth_um": 2.936577095586053,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 17.837360023867646,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 17.837360023867646,
+            "host_physical_size_at_enclosure_um": 2564.903914650944,
+            "guest_positive_core_um": 75.90261331011095,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 75.90261331011095,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:7:31",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:7:31",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 32,
+            "guest_mineral": "spodumene",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.071628015542885,
+            "size_ratio": 56.04121910248161,
+            "guest_recent_growth_um": 2.9882589651353326,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 56.164165573277685,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 56.164165573277685,
+            "host_physical_size_at_enclosure_um": 10370.719465052649,
+            "guest_positive_core_um": 185.05520813328297,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 185.05520813328297,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:2:32",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "spodumene",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "spodumene",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:32",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 18,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.8397388848916805,
+            "size_ratio": 18.344230940329076,
+            "guest_recent_growth_um": 2.659727804903151,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 15.954137087699598,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 15.954137087699598,
+            "host_physical_size_at_enclosure_um": 2580.8580517386436,
+            "guest_positive_core_um": 140.69044704756348,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 140.69044704756348,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:7:18",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 3,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 19,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 50.599351343596545,
+            "size_ratio": 287.52785009693963,
+            "guest_recent_growth_um": 2.588387547125179,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 366.4395664537353,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 366.4395664537353,
+            "host_physical_size_at_enclosure_um": 39020.249083413146,
+            "guest_positive_core_um": 135.7094593454426,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 135.7094593454426,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:3:19",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:3:19",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 27,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.8397388848916805,
+            "size_ratio": 28.610540103615715,
+            "guest_recent_growth_um": 2.425178404619006,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 15.954137087699598,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 15.954137087699598,
+            "host_physical_size_at_enclosure_um": 2580.8580517386436,
+            "guest_positive_core_um": 90.20654774051198,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 90.20654774051198,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:7:27",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:27",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 48,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 20,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.142943066527502,
+            "size_ratio": 29.71361451333248,
+            "guest_recent_growth_um": 2.965764082155085,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 39.62766253366917,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 39.62766253366917,
+            "host_physical_size_at_enclosure_um": 10459.86327878342,
+            "guest_positive_core_um": 352.0225812342718,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 352.0225812342718,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:48:2:20",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "sample_index": 47
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 48,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 22,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.142943066527502,
+            "size_ratio": 33.89863352517522,
+            "guest_recent_growth_um": 2.961194963896839,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 39.62766253366917,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 39.62766253366917,
+            "host_physical_size_at_enclosure_um": 10459.86327878342,
+            "guest_positive_core_um": 308.5629770596882,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 308.5629770596882,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:48:2:22",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:22",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "sample_index": 47
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 49,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 26,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.174018987007138,
+            "size_ratio": 46.558658597959685,
+            "guest_recent_growth_um": 2.8718771034414674,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 38.84490059954443,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 38.84490059954443,
+            "host_physical_size_at_enclosure_um": 10498.708179382964,
+            "guest_positive_core_um": 225.49421515857512,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 225.49421515857512,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:49:2:26",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 49,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:49:2:26",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 49
+                }
+              ]
+            },
+            "sample_index": 48
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 1,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 32.3067464460635,
+            "footprint_reach_mm": 66.23521146633887,
+            "size_ratio": 7.225902708365447,
+            "guest_recent_growth_um": -0.989848727708214,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6960.686811794191,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6940.686811794191,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 9,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 42.86808353610863,
+            "footprint_reach_mm": 66.23936129872452,
+            "size_ratio": 7.218709271958826,
+            "guest_recent_growth_um": -6.467737475501231,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6967.603199103603,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6947.603199103603,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 15,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 35.910647513916956,
+            "footprint_reach_mm": 65.8367330878024,
+            "size_ratio": 7.990484938839171,
+            "guest_recent_growth_um": -3.005497664146965,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6296.556180900078,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6276.556180900078,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          }
+        ],
+        "events": [
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 16,
+            "host_crystal_id": 5,
+            "host_mineral": "spodumene",
+            "guest_crystal_id": 8,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 9.223866628221108,
+            "guest_recent_growth_um": 2.2868020051417863,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 6.135762572894093,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 6.135762572894093,
+            "host_physical_size_at_enclosure_um": 349.6328238656374,
+            "guest_positive_core_um": 37.9052341017063,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 37.9052341017063,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:16:5:8",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 16,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:16:5:8",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 16
+                }
+              ]
+            },
+            "sample_index": 15
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 21,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 23,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 57.248059436415154,
+            "guest_recent_growth_um": 1.4968158824112727,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 62.61261889811302,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 62.61261889811302,
+            "host_physical_size_at_enclosure_um": 1257.1239623735808,
+            "guest_positive_core_um": 21.9592414965586,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 21.9592414965586,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:21:7:23",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 21,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:21:7:23",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 21
+                }
+              ]
+            },
+            "sample_index": 20
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 27,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 30,
+            "guest_mineral": "topaz",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.052151437061877,
+            "size_ratio": 291.7214586635373,
+            "guest_recent_growth_um": 2.1397661841437494,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 193.4741358371787,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 193.4741358371787,
+            "host_physical_size_at_enclosure_um": 7846.37374195139,
+            "guest_positive_core_um": 26.89680004308891,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 26.89680004308891,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:27:2:30",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "topaz",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 27,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:27:2:30",
+                  "mineral": "topaz",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 27
+                }
+              ]
+            },
+            "sample_index": 26
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 31,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 33,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.501012874688826,
+            "size_ratio": 204.07304745056746,
+            "guest_recent_growth_um": 2.629811966823093,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 132.81408408151287,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 132.81408408151287,
+            "host_physical_size_at_enclosure_um": 8407.450538985076,
+            "guest_positive_core_um": 41.19824074769898,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 41.19824074769898,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:31:2:33",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 31,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:31:2:33",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 31
+                }
+              ]
+            },
+            "sample_index": 30
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 35,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 36,
+            "guest_mineral": "topaz",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 10.9867879713067,
+            "size_ratio": 286.2080905062197,
+            "guest_recent_growth_um": 2.795464632579935,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 185.59678420614523,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 185.59678420614523,
+            "host_physical_size_at_enclosure_um": 9014.669409757418,
+            "guest_positive_core_um": 31.496906302729126,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 31.496906302729126,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:35:2:36",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "topaz",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 35,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:35:2:36",
+                  "mineral": "topaz",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 35
+                }
+              ]
+            },
+            "sample_index": 34
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 39,
+            "host_crystal_id": 5,
+            "host_mineral": "spodumene",
+            "guest_crystal_id": 38,
+            "guest_mineral": "lepidolite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.662578665251147,
+            "size_ratio": 11.846633013579094,
+            "guest_recent_growth_um": 2.056464081052879,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 1.9844597498921555,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 1.9844597498921555,
+            "host_physical_size_at_enclosure_um": 440.0364169549994,
+            "guest_positive_core_um": 37.14442883903061,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 37.14442883903061,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:39:5:38",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "lepidolite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 39,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:39:5:38",
+                  "mineral": "lepidolite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 39
+                }
+              ]
+            },
+            "sample_index": 38
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 5,
+            "guest_mineral": "spodumene",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.071628015542885,
+            "size_ratio": 23.06107342392418,
+            "guest_recent_growth_um": 2.8907342293013336,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 56.164165573277685,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 56.164165573277685,
+            "host_physical_size_at_enclosure_um": 10370.719465052649,
+            "guest_positive_core_um": 449.7067102823489,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 449.7067102823489,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:2:5",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "spodumene",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 3,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 21,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 50.159623863852055,
+            "size_ratio": 215.9606192841325,
+            "guest_recent_growth_um": 2.9456165971465267,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 341.25641555076976,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 341.25641555076976,
+            "host_physical_size_at_enclosure_um": 38653.80951695941,
+            "guest_positive_core_um": 178.9854541308933,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 178.9854541308933,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:3:21",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:3:21",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 31,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.82697557522152,
+            "size_ratio": 33.7920369641512,
+            "guest_recent_growth_um": 2.936577095586053,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 17.837360023867646,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 17.837360023867646,
+            "host_physical_size_at_enclosure_um": 2564.903914650944,
+            "guest_positive_core_um": 75.90261331011095,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 75.90261331011095,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:7:31",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:7:31",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 46,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 32,
+            "guest_mineral": "spodumene",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.071628015542885,
+            "size_ratio": 56.04121910248161,
+            "guest_recent_growth_um": 2.9882589651353326,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 56.164165573277685,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 56.164165573277685,
+            "host_physical_size_at_enclosure_um": 10370.719465052649,
+            "guest_positive_core_um": 185.05520813328297,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 185.05520813328297,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:46:2:32",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "spodumene",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "spodumene",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 46,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:5",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:46:2:32",
+                  "mineral": "spodumene",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 46
+                }
+              ]
+            },
+            "sample_index": 45
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 18,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.8397388848916805,
+            "size_ratio": 18.344230940329076,
+            "guest_recent_growth_um": 2.659727804903151,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 15.954137087699598,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 15.954137087699598,
+            "host_physical_size_at_enclosure_um": 2580.8580517386436,
+            "guest_positive_core_um": 140.69044704756348,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 140.69044704756348,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:7:18",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 3,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 19,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 50.599351343596545,
+            "size_ratio": 287.52785009693963,
+            "guest_recent_growth_um": 2.588387547125179,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 366.4395664537353,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 366.4395664537353,
+            "host_physical_size_at_enclosure_um": 39020.249083413146,
+            "guest_positive_core_um": 135.7094593454426,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 135.7094593454426,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:3:19",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:3:19",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 47,
+            "host_crystal_id": 7,
+            "host_mineral": "tourmaline",
+            "guest_crystal_id": 27,
+            "guest_mineral": "cassiterite",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 5.8397388848916805,
+            "size_ratio": 28.610540103615715,
+            "guest_recent_growth_um": 2.425178404619006,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 15.954137087699598,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 15.954137087699598,
+            "host_physical_size_at_enclosure_um": 2580.8580517386436,
+            "guest_positive_core_um": 90.20654774051198,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 90.20654774051198,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:47:7:27",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "cassiterite",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "cassiterite",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 47,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:18",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:47:7:27",
+                  "mineral": "cassiterite",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 47
+                }
+              ]
+            },
+            "sample_index": 46
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 48,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 20,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.142943066527502,
+            "size_ratio": 29.71361451333248,
+            "guest_recent_growth_um": 2.965764082155085,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 39.62766253366917,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 39.62766253366917,
+            "host_physical_size_at_enclosure_um": 10459.86327878342,
+            "guest_positive_core_um": 352.0225812342718,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 352.0225812342718,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:48:2:20",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "sample_index": 47
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 48,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 22,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.142943066527502,
+            "size_ratio": 33.89863352517522,
+            "guest_recent_growth_um": 2.961194963896839,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 39.62766253366917,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 39.62766253366917,
+            "host_physical_size_at_enclosure_um": 10459.86327878342,
+            "guest_positive_core_um": 308.5629770596882,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 308.5629770596882,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:48:2:22",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.3,
+              "phi_prism": 0,
+              "step": 48,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:20",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                },
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:48:2:22",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 48
+                }
+              ]
+            },
+            "sample_index": 47
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 49,
+            "host_crystal_id": 2,
+            "host_mineral": "quartz",
+            "guest_crystal_id": 26,
+            "guest_mineral": "tourmaline",
+            "route": "guest-on-host",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 12.174018987007138,
+            "size_ratio": 46.558658597959685,
+            "guest_recent_growth_um": 2.8718771034414674,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 38.84490059954443,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 38.84490059954443,
+            "host_physical_size_at_enclosure_um": 10498.708179382964,
+            "guest_positive_core_um": 225.49421515857512,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 225.49421515857512,
+            "guest_partially_dissolved": false,
+            "front_film_operation_id": "enclosure:49:2:26",
+            "front_film_nominal_contribution": 0.15,
+            "front_film_contribution": 0.15,
+            "front_film_prism_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": {
+              "mineral": "tourmaline",
+              "phi_term": 0.15,
+              "phi_prism": 0,
+              "step": 49,
+              "operations": [
+                {
+                  "kind": "enclosure-add",
+                  "source_id": "enclosure:49:2:26",
+                  "mineral": "tourmaline",
+                  "phi_term": 0.15,
+                  "phi_prism": 0,
+                  "step": 49
+                }
+              ]
+            },
+            "sample_index": 48
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 1,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 32.3067464460635,
+            "footprint_reach_mm": 66.23521146633887,
+            "size_ratio": 7.225902708365447,
+            "guest_recent_growth_um": -0.989848727708214,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6960.686811794191,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6940.686811794191,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 9,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 42.86808353610863,
+            "footprint_reach_mm": 66.23936129872452,
+            "size_ratio": 7.218709271958826,
+            "guest_recent_growth_um": -6.467737475501231,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6967.603199103603,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6947.603199103603,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          },
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 80,
+            "host_crystal_id": 10,
+            "host_mineral": "feldspar",
+            "guest_crystal_id": 15,
+            "guest_mineral": "uraninite",
+            "route": "geometric-overlap",
+            "adjacency_authority": "wall-anchor-footprint",
+            "anchor_distance_mm": 35.910647513916956,
+            "footprint_reach_mm": 65.8367330878024,
+            "size_ratio": 7.990484938839171,
+            "guest_recent_growth_um": -3.005497664146965,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 0.6014308854744854,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 0.6014308854744854,
+            "host_physical_size_at_enclosure_um": 50152.727631259986,
+            "guest_positive_core_um": 6296.556180900078,
+            "guest_loss_um": 20,
+            "guest_remaining_growth_um": 6276.556180900078,
+            "guest_partially_dissolved": true,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 79
+          }
+        ]
+      },
+      "crystal_layers": {
+        "source": "accepted growth-zone stack from the archived executed run",
+        "layer_count": 1520,
+        "formula_layers": [],
+        "solid_solution_layers": [],
+        "binding_competition_allocations": [],
+        "reactive_transformation_layers": [],
+        "masked_horizons": [
+          {
+            "step": 17,
+            "sample_index": 16,
+            "crystal_id": 5,
+            "mineral": "spodumene",
+            "zone_index": 16,
+            "thickness_um": 5.767109335082391,
+            "is_phantom": false,
+            "remaining_solid_um": 5.767109335082391,
+            "budget_inventory_per_um": {
+              "Li": 0.0005552000000005396,
+              "Al": 0.0021584000000001127,
+              "SiO2": 0.009612800000150827,
+              "Mn": 0.010000000000000014
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "lepidolite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 16,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 22,
+            "sample_index": 21,
+            "crystal_id": 7,
+            "mineral": "tourmaline",
+            "zone_index": 21,
+            "thickness_um": 46.628962119369916,
+            "is_phantom": false,
+            "remaining_solid_um": 46.628962119369916,
+            "budget_inventory_per_um": {
+              "Na": 0.0018392000000000404,
+              "Al": 0.01295039999999998,
+              "Fe": 0.013404000000000056,
+              "B": 0.002594400000000036,
+              "SiO2": 0.028838400000008663,
+              "Li": 0.010000000000000222
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "cassiterite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 21,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 28,
+            "sample_index": 27,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 27,
+            "thickness_um": 154.6235110890225,
+            "is_phantom": false,
+            "remaining_solid_um": 154.6235110890225,
+            "budget_inventory_per_um": {
+              "SiO2": 0.004806400000004478
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "topaz",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 27,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 32,
+            "sample_index": 31,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 31,
+            "thickness_um": 115.6309419623703,
+            "is_phantom": false,
+            "remaining_solid_um": 115.6309419623703,
+            "budget_inventory_per_um": {
+              "SiO2": 0.004806400000005322
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "lepidolite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 31,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 36,
+            "sample_index": 35,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 35,
+            "thickness_um": 169.25099356199868,
+            "is_phantom": false,
+            "remaining_solid_um": 169.25099356199868,
+            "budget_inventory_per_um": {
+              "SiO2": 0.00480639999999861
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "topaz",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 35,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 40,
+            "sample_index": 39,
+            "crystal_id": 5,
+            "mineral": "spodumene",
+            "zone_index": 39,
+            "thickness_um": 2.0538995866377876,
+            "is_phantom": false,
+            "remaining_solid_um": 2.0538995866377876,
+            "budget_inventory_per_um": {
+              "Li": 0.0005551999999992546,
+              "Al": 0.0021584000000002177,
+              "SiO2": 0.009612800000122042,
+              "Mn": 0.010000000000000047
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "lepidolite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 39,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 47,
+            "sample_index": 46,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 46,
+            "thickness_um": 49.5161511971017,
+            "is_phantom": false,
+            "remaining_solid_um": 49.5161511971017,
+            "budget_inventory_per_um": {
+              "SiO2": 0.004806399999991208
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "spodumene",
+            "masked_phi_term": 0.3,
+            "masked_phi_prism": 0,
+            "originating_film_step": 46,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 47,
+            "sample_index": 46,
+            "crystal_id": 3,
+            "mineral": "feldspar",
+            "zone_index": 46,
+            "thickness_um": 366.4395664537353,
+            "is_phantom": false,
+            "remaining_solid_um": 366.4395664537353,
+            "budget_inventory_per_um": {
+              "K": 0.003128000000000011,
+              "Al": 0.0021583999999999996,
+              "SiO2": 0.01441919999999793
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "tourmaline",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 46,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 47,
+            "sample_index": 46,
+            "crystal_id": 7,
+            "mineral": "tourmaline",
+            "zone_index": 46,
+            "thickness_um": 15.954137087699598,
+            "is_phantom": false,
+            "remaining_solid_um": 15.954137087699598,
+            "budget_inventory_per_um": {
+              "Na": 0.0018392000000000581,
+              "Al": 0.012950399999999937,
+              "Fe": 0.013404000000000114,
+              "B": 0.002594400000000019,
+              "SiO2": 0.02883840000001988,
+              "Li": 0.009999999999999872
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "cassiterite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 46,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 48,
+            "sample_index": 47,
+            "crystal_id": 3,
+            "mineral": "feldspar",
+            "zone_index": 47,
+            "thickness_um": 346.81084664301835,
+            "is_phantom": false,
+            "remaining_solid_um": 346.81084664301835,
+            "budget_inventory_per_um": {
+              "K": 0.0031280000000000023,
+              "Al": 0.0021584000000000004,
+              "SiO2": 0.014419199999998682
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "cassiterite",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 47,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 48,
+            "sample_index": 47,
+            "crystal_id": 7,
+            "mineral": "tourmaline",
+            "zone_index": 47,
+            "thickness_um": 9.735230868745356,
+            "is_phantom": false,
+            "remaining_solid_um": 9.735230868745356,
+            "budget_inventory_per_um": {
+              "Na": 0.0018392000000000725,
+              "Al": 0.012950400000000134,
+              "Fe": 0.013404000000000053,
+              "B": 0.0025943999999999286,
+              "SiO2": 0.028838400000068595,
+              "Li": 0.010000000000000151
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "cassiterite",
+            "masked_phi_term": 0.3,
+            "masked_phi_prism": 0,
+            "originating_film_step": 47,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 49,
+            "sample_index": 48,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 48,
+            "thickness_um": 38.84490059954443,
+            "is_phantom": false,
+            "remaining_solid_um": 38.84490059954443,
+            "budget_inventory_per_um": {
+              "SiO2": 0.00480639999998831
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "tourmaline",
+            "masked_phi_term": 0.3,
+            "masked_phi_prism": 0,
+            "originating_film_step": 48,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          },
+          {
+            "step": 50,
+            "sample_index": 49,
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "zone_index": 49,
+            "thickness_um": 101.36493848941507,
+            "is_phantom": false,
+            "remaining_solid_um": 101.36493848941507,
+            "budget_inventory_per_um": {
+              "SiO2": 0.004806399999995632
+            },
+            "returned_budget_inventory": null,
+            "formula_stoichiometry": null,
+            "solid_solution": null,
+            "competition_allocation": null,
+            "dissolution_mode": null,
+            "transformation_reactivity": null,
+            "masked_horizon": true,
+            "film_mineral": "tourmaline",
+            "masked_phi_term": 0.15,
+            "masked_phi_prism": 0,
+            "originating_film_step": 49,
+            "morphology": {
+              "status": null,
+              "unavailable_reason": null,
+              "sigma_basis": null,
+              "post_step_sigma": null,
+              "regime": null,
+              "form": null,
+              "surface_sigma": null
+            }
+          }
+        ],
+        "morphology": {
+          "source": "all positive layers for MORPH_TH-registered minerals; exact rows are authenticated by the strip SHA-256",
+          "tenant_minerals": [
+            "calcite",
+            "fluorite",
+            "halite",
+            "native_bismuth",
+            "native_copper",
+            "native_gold",
+            "pyrite",
+            "sylvite"
+          ],
+          "positive_layer_count": 0,
+          "classified_layer_count": 0,
+          "unavailable_layer_count": 0,
+          "terminal_depleted_layer_count": 0,
+          "regime_counts": {},
+          "basis_counts": {},
+          "terminal_depleted_layers": [],
+          "unavailable_layers": []
+        }
+      },
+      "habit_morphology": {
+        "source": "final physical crystal state from the archived executed run",
+        "crystals": [
+          {
+            "crystal_id": 1,
+            "mineral": "uraninite",
+            "habit": "pitchblende_massive",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal masses",
+              "colloform banding"
+            ],
+            "total_growth_um": 6940.686811794191,
+            "c_length_mm": 6.940686811794191,
+            "a_width_mm": 3.470343405897096,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 2,
+            "mineral": "quartz",
+            "habit": "Tessin",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "steep {40-41}/{30-31} rhombohedra dominant",
+              "subordinate m{10-10} prism",
+              "slender tapered termination"
+            ],
+            "total_growth_um": 11164.638886678233,
+            "c_length_mm": 11.164638886678233,
+            "a_width_mm": 4.88289116309087,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1200,
+              "record_cm": 600
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 3,
+            "mineral": "feldspar",
+            "habit": "prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{010} pinacoid",
+              "{001} pinacoid",
+              "{110} prism"
+            ],
+            "total_growth_um": 41563.26227295961,
+            "c_length_mm": 41.56326227295961,
+            "a_width_mm": 24.806428564167025,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 4,
+            "mineral": "albite",
+            "habit": "prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{001} cleavage",
+              "{010} face",
+              "{110} prism"
+            ],
+            "total_growth_um": 61397.94850950812,
+            "c_length_mm": 61.39794850950812,
+            "a_width_mm": 24.559179403803252,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 40,
+              "record_cm": 20
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 5,
+            "mineral": "spodumene",
+            "habit": "kunzite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "a{100} + b{010} pinacoids",
+              "{110}∧{1̄10} ≈87° cleavages",
+              "flattened tabular \"book\""
+            ],
+            "total_growth_um": 449.7067102823489,
+            "c_length_mm": 0.44970671028234893,
+            "a_width_mm": 0.22485335514117444,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 46
+          },
+          {
+            "crystal_id": 6,
+            "mineral": "morganite",
+            "habit": "tabular_hex",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} hex prism",
+              "c{0001} pinacoid",
+              "stubby tabular"
+            ],
+            "total_growth_um": 9271.53968489997,
+            "c_length_mm": 9.27153968489997,
+            "a_width_mm": 4.635769842449985,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 80,
+              "record_cm": 40
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 7,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 2602.445639022726,
+            "c_length_mm": 2.602445639022726,
+            "a_width_mm": 1.3012228195113629,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 49
+          },
+          {
+            "crystal_id": 8,
+            "mineral": "lepidolite",
+            "habit": "scaly_aggregate",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal cleavage",
+              "scaly aggregate",
+              "shimmering subparallel sheets"
+            ],
+            "total_growth_um": 37.9052341017063,
+            "c_length_mm": 0.0379052341017063,
+            "a_width_mm": 0.018952617050853146,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 16
+          },
+          {
+            "crystal_id": 9,
+            "mineral": "uraninite",
+            "habit": "pitchblende_massive",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal masses",
+              "colloform banding"
+            ],
+            "total_growth_um": 6947.603199103603,
+            "c_length_mm": 6.947603199103604,
+            "a_width_mm": 3.4738015995518015,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 10,
+            "mineral": "feldspar",
+            "habit": "prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{010} pinacoid",
+              "{001} pinacoid",
+              "{110} prism"
+            ],
+            "total_growth_um": 50152.727631259986,
+            "c_length_mm": 50.152727631259985,
+            "a_width_mm": 30.205023119952738,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 11,
+            "mineral": "albite",
+            "habit": "prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{001} cleavage",
+              "{010} face",
+              "{110} prism"
+            ],
+            "total_growth_um": 37144.723709725506,
+            "c_length_mm": 37.144723709725504,
+            "a_width_mm": 14.857889483890201,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 40,
+              "record_cm": 20
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 60
+          },
+          {
+            "crystal_id": 12,
+            "mineral": "spodumene",
+            "habit": "kunzite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "a{100} + b{010} pinacoids",
+              "{110}∧{1̄10} ≈87° cleavages",
+              "flattened tabular \"book\""
+            ],
+            "total_growth_um": 2011.1761131450205,
+            "c_length_mm": 2.0111761131450203,
+            "a_width_mm": 1.0055880565725102,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 48
+          },
+          {
+            "crystal_id": 13,
+            "mineral": "spodumene",
+            "habit": "kunzite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "a{100} + b{010} pinacoids",
+              "{110}∧{1̄10} ≈87° cleavages",
+              "flattened tabular \"book\""
+            ],
+            "total_growth_um": 1896.325843055477,
+            "c_length_mm": 1.896325843055477,
+            "a_width_mm": 0.9481629215277386,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 47
+          },
+          {
+            "crystal_id": 14,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 2426.2380826770905,
+            "c_length_mm": 2.4262380826770906,
+            "a_width_mm": 1.2131190413385453,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 47
+          },
+          {
+            "crystal_id": 15,
+            "mineral": "uraninite",
+            "habit": "pitchblende_massive",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal masses",
+              "colloform banding"
+            ],
+            "total_growth_um": 6276.556180900078,
+            "c_length_mm": 6.276556180900078,
+            "a_width_mm": 3.1382780904500387,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 58
+          },
+          {
+            "crystal_id": 16,
+            "mineral": "quartz",
+            "habit": "Tessin",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "steep {40-41}/{30-31} rhombohedra dominant",
+              "subordinate m{10-10} prism",
+              "slender tapered termination"
+            ],
+            "total_growth_um": 9431.825420630643,
+            "c_length_mm": 9.431825420630643,
+            "a_width_mm": 4.071736574241796,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1200,
+              "record_cm": 600
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 58
+          },
+          {
+            "crystal_id": 17,
+            "mineral": "quartz",
+            "habit": "Tessin",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "steep {40-41}/{30-31} rhombohedra dominant",
+              "subordinate m{10-10} prism",
+              "slender tapered termination"
+            ],
+            "total_growth_um": 9431.090314428979,
+            "c_length_mm": 9.431090314428978,
+            "a_width_mm": 4.067187025245417,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1200,
+              "record_cm": 600
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 56
+          },
+          {
+            "crystal_id": 18,
+            "mineral": "cassiterite",
+            "habit": "equant_octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{110} prism",
+              "{100} pinacoid",
+              "equant blocky"
+            ],
+            "total_growth_um": 140.69044704756348,
+            "c_length_mm": 0.14069044704756348,
+            "a_width_mm": 0.07034522352378174,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.44239781180684573,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3760.6029542011556,
+              "mean_thickness_um": 0.00009693374167394611,
+              "booked_volume_mm3": 0.0003645293153008134,
+              "wall_spread": 0.75,
+              "void_reach": 0.25,
+              "substrate": "on tourmaline #7",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 0,
+              "nucleation_step": 6,
+              "underlying_surface_crystal_ids": [],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 42
+          },
+          {
+            "crystal_id": 19,
+            "mineral": "cassiterite",
+            "habit": "equant_octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{110} prism",
+              "{100} pinacoid",
+              "equant blocky"
+            ],
+            "total_growth_um": 135.7094593454426,
+            "c_length_mm": 0.13570945934544262,
+            "a_width_mm": 0.0678547296727213,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.436207699968332,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3707.9839035515247,
+              "mean_thickness_um": 0.00008823302150255358,
+              "booked_volume_mm3": 0.00032716662349318426,
+              "wall_spread": 0.75,
+              "void_reach": 0.25,
+              "substrate": "on feldspar #3",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 1,
+              "nucleation_step": 8,
+              "underlying_surface_crystal_ids": [
+                18
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 40
+          },
+          {
+            "crystal_id": 20,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 352.0225812342718,
+            "c_length_mm": 0.35202258123427177,
+            "a_width_mm": 0.1760112906171359,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.4119404133363383,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3501.699814066547,
+              "mean_thickness_um": 0.0016306895466149738,
+              "booked_volume_mm3": 0.005710185282181915,
+              "wall_spread": 0.5,
+              "void_reach": 0.6,
+              "substrate": "on quartz #2",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 2,
+              "nucleation_step": 9,
+              "underlying_surface_crystal_ids": [
+                18,
+                19
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 40
+          },
+          {
+            "crystal_id": 21,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 178.9854541308933,
+            "c_length_mm": 0.17898545413089328,
+            "a_width_mm": 0.08949272706544661,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 37
+          },
+          {
+            "crystal_id": 22,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 308.5629770596882,
+            "c_length_mm": 0.3085629770596882,
+            "a_width_mm": 0.1542814885298441,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.395221130650641,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3359.5775381828475,
+              "mean_thickness_um": 0.0011446834666182055,
+              "booked_volume_mm3": 0.0038456528627797987,
+              "wall_spread": 0.5,
+              "void_reach": 0.6,
+              "substrate": "on quartz #2",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 3,
+              "nucleation_step": 12,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 37
+          },
+          {
+            "crystal_id": 23,
+            "mineral": "cassiterite",
+            "habit": "equant_octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{110} prism",
+              "{100} pinacoid",
+              "equant blocky"
+            ],
+            "total_growth_um": 21.9592414965586,
+            "c_length_mm": 0.0219592414965586,
+            "a_width_mm": 0.0109796207482793,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 24,
+            "mineral": "morganite",
+            "habit": "tabular_hex",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} hex prism",
+              "c{0001} pinacoid",
+              "stubby tabular"
+            ],
+            "total_growth_um": 10694.993011283304,
+            "c_length_mm": 10.694993011283305,
+            "a_width_mm": 5.347496505641653,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 80,
+              "record_cm": 40
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 47
+          },
+          {
+            "crystal_id": 25,
+            "mineral": "lepidolite",
+            "habit": "purple_book",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal pinacoid (perfect cleavage)",
+              "m{110} pseudohexagonal prism",
+              "flexible TOT sheets",
+              "book-shaped"
+            ],
+            "total_growth_um": 883.4352671177691,
+            "c_length_mm": 0.8834352671177691,
+            "a_width_mm": 0.4417176335588846,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 35
+          },
+          {
+            "crystal_id": 26,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 225.49421515857512,
+            "c_length_mm": 0.22549421515857512,
+            "a_width_mm": 0.11274710757928756,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.35392398004595926,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3008.5310763349253,
+              "mean_thickness_um": 0.0004988733954503827,
+              "booked_volume_mm3": 0.0015008761133691983,
+              "wall_spread": 0.5,
+              "void_reach": 0.6,
+              "substrate": "on quartz #2",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 4,
+              "nucleation_step": 17,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 33
+          },
+          {
+            "crystal_id": 27,
+            "mineral": "cassiterite",
+            "habit": "equant_octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{110} prism",
+              "{100} pinacoid",
+              "equant blocky"
+            ],
+            "total_growth_um": 90.20654774051198,
+            "c_length_mm": 0.09020654774051198,
+            "a_width_mm": 0.04510327387025599,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 30
+          },
+          {
+            "crystal_id": 28,
+            "mineral": "morganite",
+            "habit": "tabular_hex",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} hex prism",
+              "c{0001} pinacoid",
+              "stubby tabular"
+            ],
+            "total_growth_um": 14337.71313250804,
+            "c_length_mm": 14.337713132508041,
+            "a_width_mm": 7.16885656625402,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 80,
+              "record_cm": 40
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 43
+          },
+          {
+            "crystal_id": 29,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 593.1060623835267,
+            "c_length_mm": 0.5931060623835267,
+            "a_width_mm": 0.29655303119176335,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.46642842314904503,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3964.875185195351,
+              "mean_thickness_um": 0.0068882071659247725,
+              "booked_volume_mm3": 0.02731088166265993,
+              "wall_spread": 0.5,
+              "void_reach": 0.6,
+              "substrate": "on quartz #2",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 5,
+              "nucleation_step": 20,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22,
+                26
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 30
+          },
+          {
+            "crystal_id": 30,
+            "mineral": "topaz",
+            "habit": "columnar_f_rich",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "y{041} pyramid",
+              "{021} pyramid"
+            ],
+            "total_growth_um": 26.89680004308891,
+            "c_length_mm": 0.02689680004308891,
+            "a_width_mm": 0.013448400021544455,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 31,
+            "mineral": "cassiterite",
+            "habit": "equant_octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{110} prism",
+              "{100} pinacoid",
+              "equant blocky"
+            ],
+            "total_growth_um": 75.90261331011095,
+            "c_length_mm": 0.07590261331011094,
+            "a_width_mm": 0.03795130665505547,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 10,
+              "record_cm": 5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.3513998889742666,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 2987.075038154916,
+              "mean_thickness_um": 0.00001916296404741663,
+              "booked_volume_mm3": 0.000057241211563098315,
+              "wall_spread": 0.75,
+              "void_reach": 0.25,
+              "substrate": "on tourmaline #7",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 6,
+              "nucleation_step": 22,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22,
+                26,
+                29
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 25
+          },
+          {
+            "crystal_id": 32,
+            "mineral": "spodumene",
+            "habit": "kunzite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "a{100} + b{010} pinacoids",
+              "{110}∧{1̄10} ≈87° cleavages",
+              "flattened tabular \"book\""
+            ],
+            "total_growth_um": 185.05520813328297,
+            "c_length_mm": 0.18505520813328297,
+            "a_width_mm": 0.09252760406664147,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1400,
+              "record_cm": 700
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 23
+          },
+          {
+            "crystal_id": 33,
+            "mineral": "lepidolite",
+            "habit": "purple_book",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal pinacoid (perfect cleavage)",
+              "m{110} pseudohexagonal prism",
+              "flexible TOT sheets",
+              "book-shaped"
+            ],
+            "total_growth_um": 41.19824074769898,
+            "c_length_mm": 0.04119824074769898,
+            "a_width_mm": 0.020599120373849488,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 34,
+            "mineral": "morganite",
+            "habit": "tabular_hex",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} hex prism",
+              "c{0001} pinacoid",
+              "stubby tabular"
+            ],
+            "total_growth_um": 3908.8559465455273,
+            "c_length_mm": 3.9088559465455273,
+            "a_width_mm": 1.9544279732727632,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 80,
+              "record_cm": 40
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 35
+          },
+          {
+            "crystal_id": 35,
+            "mineral": "lepidolite",
+            "habit": "purple_book",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal pinacoid (perfect cleavage)",
+              "m{110} pseudohexagonal prism",
+              "flexible TOT sheets",
+              "book-shaped"
+            ],
+            "total_growth_um": 141.63645783022926,
+            "c_length_mm": 0.14163645783022927,
+            "a_width_mm": 0.07081822891511463,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.5027008712213157,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 4273.209159135179,
+              "mean_thickness_um": 0.0000870381499801823,
+              "booked_volume_mm3": 0.0003719322196894964,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "on spodumene #5",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 7,
+              "nucleation_step": 26,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22,
+                26,
+                29,
+                31
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 24
+          },
+          {
+            "crystal_id": 36,
+            "mineral": "topaz",
+            "habit": "stubby_equant",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "y{041} pyramid",
+              "{021} pyramid"
+            ],
+            "total_growth_um": 31.496906302729126,
+            "c_length_mm": 0.031496906302729125,
+            "a_width_mm": 0.015748453151364562,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 37,
+            "mineral": "tourmaline",
+            "habit": "indicolite",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{10̄10} prism",
+              "slightly rounded triangular cross-section",
+              "deep striations"
+            ],
+            "total_growth_um": 370.0364055959295,
+            "c_length_mm": 0.37003640559592954,
+            "a_width_mm": 0.18501820279796477,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 300,
+              "record_cm": 150
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.41806236500437366,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 3553.7394691323416,
+              "mean_thickness_um": 0.0018663212732617296,
+              "booked_volume_mm3": 0.006632419570871535,
+              "wall_spread": 0.5,
+              "void_reach": 0.6,
+              "substrate": "on quartz #2",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 8,
+              "nucleation_step": 29,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22,
+                26,
+                29,
+                31,
+                35
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 21
+          },
+          {
+            "crystal_id": 38,
+            "mineral": "lepidolite",
+            "habit": "purple_book",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal pinacoid (perfect cleavage)",
+              "m{110} pseudohexagonal prism",
+              "flexible TOT sheets",
+              "book-shaped"
+            ],
+            "total_growth_um": 37.14442883903061,
+            "c_length_mm": 0.03714442883903061,
+            "a_width_mm": 0.018572214419515305,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.3224969922887698,
+              "cavity_area_mm2": 8500.500802302937,
+              "covered_area_mm2": 2741.385941690972,
+              "mean_thickness_um": 0.0000024470875290232123,
+              "booked_volume_mm3": 0.0000067084113501515315,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "on spodumene #5",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 9,
+              "nucleation_step": 32,
+              "underlying_surface_crystal_ids": [
+                18,
+                19,
+                20,
+                22,
+                26,
+                29,
+                31,
+                35,
+                37
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 39,
+            "mineral": "topaz",
+            "habit": "default_prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{110} prism",
+              "y{041} pyramid",
+              "{021} pyramid"
+            ],
+            "total_growth_um": 174.8599419466029,
+            "c_length_mm": 0.1748599419466029,
+            "a_width_mm": 0.08742997097330145,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 14
+          },
+          {
+            "crystal_id": 40,
+            "mineral": "lepidolite",
+            "habit": "purple_book",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "c{001} basal pinacoid (perfect cleavage)",
+              "m{110} pseudohexagonal prism",
+              "flexible TOT sheets",
+              "book-shaped"
+            ],
+            "total_growth_um": 142.93600167589477,
+            "c_length_mm": 0.14293600167589476,
+            "a_width_mm": 0.07146800083794738,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 10
+          },
+          {
+            "crystal_id": 41,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 42,
+            "mineral": "opal",
+            "habit": "sinter_apron",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 43,
+            "mineral": "opal",
+            "habit": "reniform_layer",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 44,
+            "mineral": "opal",
+            "habit": "sinter_apron",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 45,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 46,
+            "mineral": "plumbogummite",
+            "habit": "botryoidal_mammillary",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 4,
+              "record_cm": 2
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          },
+          {
+            "crystal_id": 47,
+            "mineral": "plumbogummite",
+            "habit": "encrusting_pyromorphite",
+            "extent_kind": "individual",
+            "dominant_forms": [],
+            "total_growth_um": 0,
+            "c_length_mm": 0,
+            "a_width_mm": 0,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 4,
+              "record_cm": 2
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 0
+          }
+        ],
+        "surface_films": []
+      },
+      "transformation_reactivity_commissioning": {
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "artifact_schema": "vugg-mechanism-witnesses-v2",
+        "artifact_payload_sha256": "5577593478ad0f27fecb099927f62b455ec49d5ab0d37bc67af7800c7993ecb1",
+        "link_authority": "artifact-authored scenario route, verified against executed product or surviving parent",
+        "controls": []
+      }
+    }
+  }
+}
