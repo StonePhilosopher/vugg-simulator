@@ -38,6 +38,7 @@ declare const CALCITE_MORPH_TH: any;
 declare const _HELIX_CHEM_PARAMS: any;
 declare const calciteTerraceBands: any;
 declare const calciteMorphForm: any;
+declare const _habitGeomToken: any;
 
 function runScenario(name: string, seed = 42, steps?: number) {
   setSeed(seed);
@@ -316,8 +317,12 @@ describe('calcite morphology instruments (Phase 1)', () => {
     }
 
     // A pulse-driven Sabkha crystal that crosses hopper → dendritic retains
-    // both layers and terminates dendritic. Dendrite uses its own geometry;
-    // a sub-5% hopper core must not manufacture a terrace/hopper overlay.
+    // both layers and terminates dendritic. HMC's isolated RNG channel changes
+    // the individual grain realization without changing the calibrated
+    // classifier: the current seed-42 mixed grain has a material (>5%) hopper
+    // core, so the pure band-walk helper must preserve it. The renderer still
+    // routes the terminal dendritic_scalenohedral habit to its acicular
+    // primitive (99a/99c), not to the calcite terrace geometry path (99i).
     const sabkha = runScenario('sabkha_dolomitization');
     const sabCal = sabkha.crystals.find((c: any) => {
       if (c.mineral !== 'calcite' || c.dissolved || !(c.total_growth_um > 0)) return false;
@@ -329,14 +334,22 @@ describe('calcite morphology instruments (Phase 1)', () => {
     expect(sabCal).toBeTruthy();
     const sabTerr = calciteTerraceBands(sabCal);
     expect(sabCal.habit).toBe('dendritic_scalenohedral');
+    expect(_habitGeomToken(sabCal.habit)).toBe('spike');
     const mixedPositive = (sabCal.zones || []).filter((z: any) => Number(z.thickness_um) > 0);
     expect(mixedPositive[mixedPositive.length - 1].morph_regime).toBe('dendritic');
     const mixedTotal = mixedPositive.reduce((sum: number, z: any) => sum + Number(z.thickness_um), 0);
     const mixedHopper = mixedPositive
       .filter((z: any) => z.morph_regime === 'hopper_skeletal')
       .reduce((sum: number, z: any) => sum + Number(z.thickness_um), 0);
-    expect(mixedHopper / mixedTotal).toBeLessThan(0.05);
-    expect(sabTerr).toBeNull();
+    const mixedHopperShare = mixedHopper / mixedTotal;
+    expect(mixedHopperShare).toBeGreaterThanOrEqual(0.05);
+    expect(sabTerr).toBeTruthy();
+    expect(sabTerr.hopperTip).toBe(false);
+    expect(sabTerr.knots.map((k: any) => k.regime))
+      .toEqual(['hopper_skeletal', 'dendritic']);
+    expect(sabTerr.knots[0]).toMatchObject({ regime: 'hopper_skeletal' });
+    expect(sabTerr.knots[0].frac).toBeCloseTo(mixedHopperShare, 12);
+    expect(sabTerr.knots[sabTerr.knots.length - 1]).toEqual({ frac: 1, regime: 'dendritic' });
 
     // Paired geometry control: an early crystal that never crosses the
     // dendritic threshold ends honestly as a hopper with a hollow tip.
