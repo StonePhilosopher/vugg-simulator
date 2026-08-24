@@ -107,8 +107,59 @@ describe('archived strip testimony identity', () => {
           .toBeCloseTo(sample.solidPpm, 8);
       }
       if (scenario === 'supergene_oxidation') {
-        expect(sulfurLedger).toHaveLength(131);
-        expect(sulfurLedger[0]).toMatchObject({ step: 70, sample_index: 69, closed: true });
+        // The authored Tsumeb sulfur boundary starts at the first explicit
+        // sulfate pulse, not at the later dry-season recharge.  Keep this
+        // chronology aligned with data/scenarios.json5, 70i-supergene.ts, and
+        // the claim-card sulfur ledger rather than pinning the retired
+        // hard-coded step-70-only implementation.
+        expect(sulfurLedger[0]).toMatchObject({
+          step: 5,
+          sample_index: 4,
+          activation: {
+            step: 5,
+            kind: 'legacy_combined_to_explicit_reservoirs',
+            closed: true,
+          },
+          closed: true,
+        });
+        expect(sulfurLedger.map((sample: any) => sample.sample_index))
+          .toEqual(Array.from({ length: strip.steps - 4 }, (_, i) => i + 4));
+        expect(sulfurLedger.every((sample: any) => sample.step === sample.sample_index + 1))
+          .toBe(true);
+
+        const authoredSulfurAdditions = SCENARIOS[scenario]._json5_spec.events
+          .filter((event: any) => event.sulfur_boundary?.kind === 'addition')
+          .map((event: any) => {
+            const pools = event.sulfur_boundary.pools;
+            expect(Object.keys(pools), `supergene step ${event.step} sulfur valence`).toEqual(['sulfate']);
+            return {
+              step: event.step,
+              ppmPerFluid: Object.values(pools)
+                .reduce((sum: number, value: any) => sum + Number(value), 0),
+            };
+          });
+        const voxelCount = sulfurLedger[0].activation.beforeCount;
+        expect(Number.isSafeInteger(voxelCount) && voxelCount > 0).toBe(true);
+        const importChanges = sulfurLedger
+          .map((sample: any, index: number) => ({
+            step: sample.step,
+            deltaPpm: sample.importsPpm - (index ? sulfurLedger[index - 1].importsPpm : 0),
+          }))
+          .filter((row: any) => Math.abs(row.deltaPpm) > 1e-9);
+        expect(importChanges.map((row: any) => row.step))
+          .toEqual(authoredSulfurAdditions.map((row: any) => row.step));
+        for (let i = 0; i < importChanges.length; i++) {
+          expect(importChanges[i].deltaPpm, `supergene step ${importChanges[i].step} sulfur import`)
+            .toBeCloseTo(authoredSulfurAdditions[i].ppmPerFluid * voxelCount, 8);
+        }
+        expect(sulfurLedger.find((sample: any) => sample.step === 55)?.importsPpm)
+          .toBe(sulfurLedger.find((sample: any) => sample.step === 54)?.importsPpm);
+        expect(sulfurLedger.every((sample: any) => (
+          sample.exportsPpm === 0
+          && sample.propagationViolations === 0
+          && sample.testimonyClosed === true
+          && sample.closed === true
+        ))).toBe(true);
       }
       for (const event of strip.executed_testimony?.stress_events || []) {
         expect(event.event_id, `${file} stress id`).toMatch(/^stress-\d+-\d+$/);
