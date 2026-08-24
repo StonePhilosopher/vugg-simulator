@@ -43,6 +43,7 @@ declare const carbonateSaturationIndex: (m: string, f: any, T: number, mg_conten
 declare const HMCRate: (f: any, T: number, mg_content: number) => number;
 declare const pwpRateToSimMicronsPerStep: (m: string, mol: number) => number;
 declare const hmcCompositionFromFluid: (fluid: any, T: number) => any;
+declare const _scenarioPositiveLicenseBlock: (sim: any, mineral: string) => string | null;
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC mineral add + SI promotion (v146)', () => {
   it('HMC is wired into MINERAL_ENGINES', () => {
@@ -178,7 +179,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC PWP rate sanity', () => {
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — scenario firings', () => {
   function runScenario(name: string): any {
     const scn = SCENARIOS && SCENARIOS[name];
-    if (!scn) return null;
+    if (typeof scn !== 'function') throw new Error(`missing required scenario fixture: ${name}`);
     setSeed(42);
     const { conditions, events, defaultSteps } = scn();
     const sim = new VugSimulator(conditions, events);
@@ -213,17 +214,18 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — scenario firings', () => {
       .toBe('standard_ratio_but_nonseawater_salinity_unresolved');
   });
 
-  it('zoned_dripstone_cave records an unsupported HMC parent-fluid domain, not an absence verdict', () => {
+  it('does not probe HMC composition in an unlicensed zoned-dripstone locality', () => {
     // This scenario is authored for calcite/aragonite spatial sorting and does
-    // not list HMC in expects_species. Its bulk broth mass Mg/Ca looked high to
-    // the retired proxy. At low molar Mg/Ca, D_Mg is composition-dependent,
-    // so the bounded model must say "unresolved," not "low-Mg calcite."
+    // not positively license HMC. Locality authority runs before the HMC
+    // composition probe, so this is an explicit "not evaluated here" result;
+    // the direct-fluid controls above own the separate low-Mg unresolved-domain
+    // contract. See 85j _runNuc -> 82-nucleation-carbonate.
     const sim = runScenario('zoned_dripstone_cave');
-    if (!sim) return;
     const { active, total } = HMCCount(sim);
-    expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(false);
-    expect(sim._hmc_composition_coverage.validHMCComposition).toBeNull();
-    expect(sim._last_hmc_coverage_log).toContain('low_MgCa_composition_dependent_DMg_unresolved');
+    expect(_scenarioPositiveLicenseBlock(sim, 'HMC'))
+      .toContain('no positive four-tier locality license');
+    expect(sim._hmc_composition_coverage).toBeUndefined();
+    expect(sim._last_hmc_coverage_log).toBeUndefined();
     expect(active).toBe(0);
     expect(total).toBe(0);
   });
@@ -238,12 +240,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — scenario firings', () => {
     expect(layers.some((zone: any) => zone.solid_solution)).toBe(true);
   });
 
-  it('unsupported low-Mg scenarios do not fabricate an HMC composition', () => {
+  it('unlicensed low-Mg scenarios do not evaluate or fabricate an HMC composition', () => {
     for (const name of ['tutorial_travertine', 'tutorial_mn_calcite', 'cooling']) {
       const sim = runScenario(name);
-      if (!sim) continue;
       const { active, total } = HMCCount(sim);
-      expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(false);
+      expect(_scenarioPositiveLicenseBlock(sim, 'HMC'), name)
+        .toContain('no positive four-tier locality license');
+      expect(sim._hmc_composition_coverage, name).toBeUndefined();
+      expect(sim._last_hmc_coverage_log, name).toBeUndefined();
       expect(active).toBe(0);
       expect(total).toBe(0);
     }
