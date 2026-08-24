@@ -590,9 +590,21 @@ _propagateGlobalDelta(snap, options: any = {}) {
   delete this.conditions._pending_sulfur_boundary_declarations;
   delete this.conditions._pending_carbon_ledger_declarations;
   delete this.conditions._pending_fluid_boundary_declarations;
-  const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
+  const pendingReplaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
     ? this.conditions._pending_fluid_replace_fields.slice()
     : [];
+  // A declaration of `replacement` is physical authority, not prose. Route
+  // those coordinates through the same exact-set path as Creative Replenish;
+  // otherwise a heterogeneous voxel field receives only the bulk delta and
+  // can never close against the declared endmember. 70* authors the event,
+  // 85g records the resulting receipt, and review-claim-card verifies it.
+  const declaredReplacementFields = fluidBoundaryDeclarations
+    .filter((declaration: any) => declaration?.kind === 'replacement')
+    .flatMap((declaration: any) => Object.keys(declaration?.fields || {}));
+  const replaceFields = Array.from(new Set([
+    ...pendingReplaceFields,
+    ...declaredReplacementFields,
+  ]));
   delete this.conditions._pending_fluid_replace_fields;
   const equator = Math.floor(this.wall_state.ring_count / 2);
   const equatorFluid = this.ring_fluids[equator];  // = conditions.fluid (aliased)

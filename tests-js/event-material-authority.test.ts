@@ -1,8 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
 declare const EVENT_REGISTRY: Record<string, Function>;
+declare const VugSimulator: any;
+declare const setSeed: any;
 
 describe('material-bearing generic events require authored locality payloads', () => {
+  it('executes an authored replacement as an exact heterogeneous-voxel endmember', () => {
+    setSeed(42);
+    const scenario = (globalThis as any).SCENARIOS.asbestos_hills_crack_seal();
+    const sim = new VugSimulator(scenario.conditions, scenario.events);
+    const grid = sim.wall_state.voxelGridFor(sim);
+    grid.voxels.at(-1).fluid.O2 = 0.123;
+    const before = sim._snapshotGlobal();
+    EVENT_REGISTRY.asbestos_hills_crack_seal_oxidation(sim.conditions);
+    sim._propagateGlobalDelta(before);
+
+    expect(grid.voxels.every((voxel: any) => voxel.fluid.O2 === 0.78)).toBe(true);
+    expect(sim._fluidBoundaryTransactions.at(-1)).toMatchObject({
+      schema: 'fluid-boundary-v1',
+      step: 0,
+      declarations: [{
+        kind: 'replacement',
+        source: 'Asbestos Hills oxidizing meteoric-water replacement',
+        fields: { O2: 0.78 },
+      }],
+      testimony: [expect.objectContaining({
+        field: 'O2',
+        declaredReplacementTarget: 0.78,
+        spatial: expect.objectContaining({ closed: true }),
+        closed: true,
+      })],
+      closed: true,
+    });
+  });
+
   it('fails closed without a material authority', () => {
     const conditions = { fluid: { SiO2: 100, Fe: 10, Mn: 2, pH: 7 }, flow_rate: 1 };
     expect(() => EVENT_REGISTRY.fluid_pulse(conditions, {})).toThrow(/fluid_transform and material_authority/);

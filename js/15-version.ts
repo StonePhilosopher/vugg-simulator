@@ -13102,7 +13102,7 @@ const MODEL_DIGEST = [
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6',
-  'fluid-boundary:declared-addition+replacement+automatic-exact-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v6',
+  'fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',

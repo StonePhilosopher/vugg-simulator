@@ -87,7 +87,10 @@ and the exact-execution evidence receipt.
   their one-to-one declarations by the claim-card producer. Tsumeb's declared
   scales/sources are additionally checked against the authored scenario rows;
   a bulk-only, coerced, missing/skipped-voxel, or coordinated rehash cannot
-  publish as closed.
+  publish as closed. An authored `replacement` is now physical authority too:
+  Asbestos Hills oxidizing-water events set the exact O₂ endmember in every
+  heterogeneous voxel instead of broadcasting a bulk delta while claiming a
+  replacement.
 - Locality expectation tiers were reconciled to the complete SIM 272
   three-seed census: 3/3 products are deterministic, 1–2/3 products are
   statistical, and 0/3 documented possibilities remain positively licensed
