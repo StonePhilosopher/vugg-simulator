@@ -19892,7 +19892,7 @@ const MODEL_DIGEST = [
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
     'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6',
-    'fluid-boundary:declared-addition+replacement+automatic-exact-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v6',
+    'fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7',
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
     'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
     'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
@@ -76197,9 +76197,21 @@ Object.assign(VugSimulator.prototype, {
         delete this.conditions._pending_sulfur_boundary_declarations;
         delete this.conditions._pending_carbon_ledger_declarations;
         delete this.conditions._pending_fluid_boundary_declarations;
-        const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
+        const pendingReplaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
             ? this.conditions._pending_fluid_replace_fields.slice()
             : [];
+        // A declaration of `replacement` is physical authority, not prose. Route
+        // those coordinates through the same exact-set path as Creative Replenish;
+        // otherwise a heterogeneous voxel field receives only the bulk delta and
+        // can never close against the declared endmember. 70* authors the event,
+        // 85g records the resulting receipt, and review-claim-card verifies it.
+        const declaredReplacementFields = fluidBoundaryDeclarations
+            .filter((declaration) => declaration?.kind === 'replacement')
+            .flatMap((declaration) => Object.keys(declaration?.fields || {}));
+        const replaceFields = Array.from(new Set([
+            ...pendingReplaceFields,
+            ...declaredReplacementFields,
+        ]));
         delete this.conditions._pending_fluid_replace_fields;
         const equator = Math.floor(this.wall_state.ring_count / 2);
         const equatorFluid = this.ring_fluids[equator]; // = conditions.fluid (aliased)

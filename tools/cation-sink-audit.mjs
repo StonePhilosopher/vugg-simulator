@@ -76,7 +76,7 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // Schneeberg replay; the independently observed trajectory remains exact.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
   sim_version: 279,
-  model_digest_sha256: '0e11c032b1dd52b67012105c96073d6dfcb4b013843e8190964ac3fb3b4227f7',
+  model_digest_sha256: '60d3ee31f959bc37252c18eaae4d9304d5a96e74a1addb69acd9458969fe508c',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
