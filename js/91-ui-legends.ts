@@ -17,6 +17,53 @@ let _simulationPromptCleanup: (() => void) | null = null;
 let _activeSimulationCommandRuntime: any = null;
 let legendsSimulationCheckpoint: any = null;
 
+interface SimulationLaunchAuthority {
+  run_launch_token: number;
+  tutorial_run_owned: boolean;
+  command_controls: Readonly<Record<string, string>>;
+}
+
+function _simulationCommandControlSnapshot(): Readonly<Record<string, string>> {
+  const value = (id: string): string => {
+    const node = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+    return node && typeof node.value === 'string' ? node.value : '';
+  };
+  return Object.freeze({
+    scenario: value('scenario'),
+    seed: value('seed'),
+    steps: value('steps'),
+    shape_seed: value('shape-seed'),
+    cavity_size: value('cavity-size'),
+  });
+}
+
+function _claimSimulationLaunch(): SimulationLaunchAuthority {
+  const runLaunchToken = _runLaunchClaim();
+  return Object.freeze({
+    run_launch_token: runLaunchToken,
+    tutorial_run_owned: typeof _tutorialRunBoundaryForAction === 'function'
+      ? _tutorialRunBoundaryForAction('#btn-grow', runLaunchToken)
+      : false,
+    command_controls: _simulationCommandControlSnapshot(),
+  });
+}
+
+function _simulationLaunchAuthorityCurrent(authority): boolean {
+  return !!(authority && typeof authority === 'object'
+    && Number.isSafeInteger(authority.run_launch_token)
+    && typeof authority.tutorial_run_owned === 'boolean'
+    && authority.command_controls && typeof authority.command_controls === 'object'
+    && JSON.stringify(authority.command_controls)
+      === JSON.stringify(_simulationCommandControlSnapshot())
+    && _runLaunchTokenCurrent(authority.run_launch_token));
+}
+
+function _validateSimulationLaunchAfterNarratives(authority): boolean {
+  if (_simulationLaunchAuthorityCurrent(authority)) return true;
+  if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
+  return false;
+}
+
 // Explicit lifecycle boundary for long computation and paced narrative.
 // Navigation calls this before hiding a mode so a stale timer or capture-
 // phase keyboard handler can never continue mutating a hidden screen.
@@ -83,7 +130,26 @@ let grooveModalCrystal = null;
 
 async function runSimulation() {
   if (running) return;
-  await waitForNarrativesReady();
+  // Claim the launch before yielding. Two rapid Grow clicks can otherwise
+  // both pass the old pre-await guard and construct two histories when the
+  // narratives promise settles in the same microtask turn.
+  running = true;
+  const launchAuthority = _claimSimulationLaunch();
+  // The delegated tutorial click listener advances on a timer. Claim this
+  // exact Grow in the click task, before narratives can keep us suspended;
+  // startup carries the immutable one-use authorization rather than
+  // re-deriving it from a later tutorial step.
+  try {
+    await waitForNarrativesReady();
+  } catch (error) {
+    running = false;
+    if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
+    throw error;
+  }
+  if (!_validateSimulationLaunchAfterNarratives(launchAuthority)) {
+    running = false;
+    return;
+  }
   const scenarioName = document.getElementById('scenario').value;
   // Tier 1 B: scenario data lives in data/scenarios.json5 and is
   // fetched asynchronously by _loadScenariosJSON5() at boot. If the
@@ -114,6 +180,8 @@ async function runSimulation() {
       line.style.color = '#c47';
       outputEl.appendChild(line);
     }
+    running = false;
+    if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
     return;
   }
   const seedInput = document.getElementById('seed').value;
@@ -172,6 +240,8 @@ async function runSimulation() {
     const outputEl = document.getElementById('output');
     if (outputEl) outputEl.textContent = `Scenario “${scenarioName}” could not be initialized.`;
     console.error('Scenario initialization failed:', error);
+    running = false;
+    if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
     return;
   }
   const { conditions, events, defaultSteps } = scenarioData;
@@ -241,7 +311,6 @@ async function runSimulation() {
   // RNG consumption, or scientific state; it only lets the browser paint,
   // accept navigation, and cancel a long scenario between engine steps.
   const computationGeneration = ++_simulationPlaybackGeneration;
-  running = true;
   const growButton = document.getElementById('btn-grow') as HTMLButtonElement | null;
   const randomButton = document.getElementById('btn-random') as HTMLButtonElement | null;
   if (growButton) growButton.disabled = true;

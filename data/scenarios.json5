@@ -2248,27 +2248,38 @@
       // js/70a-tutorial-overlay.ts). Rides THIS scenario rather than a
       // tutorial_* twin: the pocket is real science and the tutorial is a
       // guest on it. mode 'legends' boots Simulation mode and presets the
-      // setup row; seed 42 makes every player's pocket match this script
-      // (SIM 241 mole-correct ledger: 6 species, 5 aquamarines — a ~38 mm
-      // etched star down to a ~0.9 mm post-etch companion — stature pinned
-      // in tests-js/shigar-pegmatite.test.ts). `step: N` fires on the
+      // setup row; seed 42 makes every player's pocket match this script.
+      // The current authenticated run produces quartz, feldspar, albite,
+      // tourmaline, and four late topazes. Documented aquamarine remains an
+      // admitted locality possibility, but this deterministic lesson does not
+      // pretend that a possibility is an executed crystal. `step: N` fires on the
       // NARRATIVE PLAYBACK position; allowModes lets the tour walk to the
       // Library without the mode-switch teardown ending it.
       "tutorial": {
         "mode": "legends",
-        "preset": { "seed": 42, "steps": 70 },
+        // The lesson owns the complete Simulation command. A shape seed or
+        // cavity override left behind by Random/manual setup would change the
+        // crystal census while the lesson still narrated the canonical run.
+        "preset": { "seed": 42, "steps": 70, "shapeSeed": "", "cavitySize": "any" },
         "unlock": [],
         "steps": [
           { "anchor": "#legends-controls", "side": "bottom",
-            "text": "Welcome to Simulation mode — the observatory. Creative mode hands you the verbs; here you choose a story and deep time runs it without you. This tutorial grows a real Pakistani aquamarine pocket, and teaches you how to KEEP what it makes.",
+            "text": "Welcome to Simulation mode — the observatory. Creative mode hands you the verbs; here you choose a story and deep time runs it without you. This tutorial grows a cited Pakistani pegmatite pocket, and teaches you how to KEEP what it actually makes.",
             "hint": "press Enter or Space (or click Continue) to step through" },
           { "anchor": "#scenario", "side": "bottom",
-            "text": "The scenario picker. Every entry is a real place with cited chemistry — mines, caves, hot springs. We've set it to the Shigar Valley, Pakistan: miarolitic pockets in the Karakoram at four thousand meters, the world's finest aquamarine." },
+            "text": "The scenario picker. Entries are locality-anchored or explicitly labeled teaching and testing analogues, with their chemistry sources beside them. We've set it to the Shigar Valley, Pakistan: miarolitic pockets in the Karakoram at four thousand meters, documented for aquamarine, tourmaline, topaz, and other pegmatite minerals." },
           { "anchor": "#seed", "side": "bottom",
             "text": "Seeds. The same seed always grows the same pocket — that's how you re-visit a story or share one. We've set 42, so your pocket will match this tutorial crystal for crystal." },
           { "anchor": "#steps", "side": "bottom",
             "text": "Time steps: 70, each ~50,000 years — about 3.5 million years of pocket life. These dikes are barely Pliocene; it's enough." },
-          { "action": { "event": "click", "selector": "#btn-grow" },
+          { "action": { "event": "click", "selector": "#btn-grow",
+                          "context": [
+                            { "selector": "#scenario", "valueNormalized": "shigar_pegmatite" },
+                            { "selector": "#seed", "valueNormalized": "42" },
+                            { "selector": "#steps", "valueNormalized": "70" },
+                            { "selector": "#shape-seed", "valueExact": "" },
+                            { "selector": "#cavity-size", "valueExact": "any" }
+                          ] },
             "anchor": "#btn-grow", "side": "bottom", "unlock": ["#btn-grow"],
             "text": "Press Grow. The whole story computes at once, then plays back at reading pace.",
             "hint": "click the highlighted Grow button" },
@@ -2279,15 +2290,16 @@
           { "step": 24, "anchor": "#topo-panel", "side": "top",
             "text": "The pocket just vented and re-sheeted itself in platy white cleavelandite — the shelf every great Shigar specimen stands on." },
           { "step": 33, "anchor": "#topo-panel", "side": "top",
-            "text": "There it is. Beryllium finally crossed and the beryl growing on that cleavelandite is BLUE — ferrous iron in a reducing fluid. Aquamarine. In an oxidized pocket the same iron would have made golden heliodor." },
+            "text": "The documented aquamarine boundary is open now: beryllium and reduced iron have entered the blue-beryl window. A window is permission, not a promise. Seed 42 forms no beryl here, so the lesson keeps that absence visible instead of inventing a crystal." },
           { "step": 59, "anchor": "#output", "side": "left",
-            "text": "Now the pocket turns on its own children: the late fluid is beryllium-poor and hydrofluoric-acid-rich, and it's ETCHING the aquamarines it grew. This is why real Shigar crystals come sculpted, pitted, frosted into steps. Half their character is what the acid took back." },
+            "text": "The late F-rich stage has produced topaz, while the authored HF etch finds no aquamarine to sculpt in this seed. Real Shigar beryl can be etched; this run instead records the scientifically useful negative: an admitted process does not prove that its target formed." },
           { "step": 70, "anchor": "#legends-inventory", "side": "left",
             "text": "The pocket is quiet. Every crystal that grew has a card in the Crystal Inventory — species, size, habit, zones. Time to go collecting." },
-          { "action": { "event": "click", "selector": ".inv-collect-btn" },
+          { "action": { "event": "vugg:crystal-collected", "selector": ".inv-collect-btn",
+                          "within": { "selector": ".inv-crystal", "dataset": { "mineral": "topaz" } } },
             "anchor": "#legends-inventory", "side": "left",
-            "text": "Pick your favorite aquamarine and press 💎 Collect. You'll be asked to name it — collectors name their best pieces (the 2019 giant from this valley is called the King of Kashmir).",
-            "hint": "click a 💎 Collect button on any crystal card" },
+            "text": "Pick one of the topazes that this seed actually grew and press 💎 Collect. You'll be asked to name it — a collection should preserve what the run made, not what its locality merely permits.",
+            "hint": "click 💎 Collect on a topaz card" },
           { "anchor": "#legends-inventory", "side": "left",
             "text": "That crystal is now in your permanent collection — SAVED. It survives closing the game (it lives in your browser's storage), and the collection is the game's save file: 'Load Game' on the title screen opens it. '💎 Collect all' grabs an entire pocket at once." },
           { "action": { "event": "click", "selector": "#mode-library" },
@@ -2296,15 +2308,15 @@
             "text": "Now let's visit where collections live. Click 📚 Library in the quick-nav bar.",
             "hint": "click the highlighted Library button" },
           { "anchor": "#library-progress", "side": "bottom",
-            "text": "The Library — the field guide to every species the simulator knows, and your collection's home. This banner is the score: species collected out of 180. It just went up." },
-          { "action": { "event": "input", "selector": "#lib-search" },
+            "text": "The Library — the field guide to every species the simulator knows, and your collection's home. This banner is the score: species collected out of the current 184-mineral catalog. It just went up." },
+          { "action": { "event": "input", "selector": "#lib-search", "valueNormalized": "topaz" },
             "anchor": "#lib-search", "side": "bottom",
-            "text": "Find your mineral — type 'aqua' in the search box.",
-            "hint": "start typing in the search field" },
+            "text": "Find your mineral — type 'topaz' in the search box.",
+            "hint": "type the complete word topaz" },
           { "anchor": "#library-grid", "side": "top",
-            "text": "The aquamarine card: chemistry, habits, temperature window, competitiveness — and at the bottom, YOUR specimen, with a 📦 count badge. ▶ Play spins it on the Record Player and reads its growth zones back as music. ✎ renames it. Every mineral card works this way." },
+            "text": "The topaz card: chemistry, habits, temperature window, competitiveness — and at the bottom, YOUR specimen, with a 📦 count badge. ▶ Play spins it on the Record Player and reads its growth zones back as music. ✎ renames it. Every mineral card works this way." },
           { "anchor": "#library-grid", "side": "top", "buttonLabel": "Finish tutorial",
-            "text": "That's the loop: grow, collect, catalog. 180 species are out there — scenario broths, creative experiments, random vugs. The vug remembers what you keep." }
+            "text": "That's the loop: grow, collect, catalog. 184 species are out there — scenario broths, creative experiments, random vugs. The vug remembers what you keep." }
         ]
       },
       "sources": [
@@ -3402,17 +3414,20 @@
             "text": "Slices. The cavity is read in horizontal rings — ◀ and ▶ page through them one at a time, or show all at once. Useful when a crust hides what's underneath." },
           { "anchor": ".topo-camera-ctrls", "side": "right",
             "text": "Camera. ↻ makes dragging orbit, ✥ makes dragging pan, ⊙ recenters everything. The last two buttons — ⬚ and ⌇ — switch viewers. Let's try them." },
-          { "action": { "event": "click", "selector": "#topo-three-btn" },
+          { "action": { "event": "vugg:tutorial-view-state-committed", "selector": "#topo-three-btn",
+                          "productState": { "control": "topo-three-renderer", "beforeEnabled": true, "afterEnabled": false } },
             "anchor": "#topo-three-btn", "side": "right",
             "text": "Click ⬚ to switch to the flat viewer.",
             "hint": "click the highlighted ⬚ button" },
           { "anchor": "#topo-canvas", "side": "top",
             "text": "The unwrapped wall: the whole cavity surface peeled flat into one map. Amber is bare rock; colors are crystal classes. When a run finishes, a ▶ appears here to replay the wall's entire history like a film." },
-          { "action": { "event": "click", "selector": "#topo-three-btn" },
+          { "action": { "event": "vugg:tutorial-view-state-committed", "selector": "#topo-three-btn",
+                          "productState": { "control": "topo-three-renderer", "beforeEnabled": false, "afterEnabled": true } },
             "anchor": "#topo-three-btn", "side": "right",
             "text": "Click ⬚ again to return to the 3D model.",
             "hint": "click the highlighted ⬚ button" },
-          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+          { "action": { "event": "vugg:tutorial-view-state-committed", "selector": "#helix-overlay-btn",
+                          "productState": { "control": "helix-overlay", "beforeEnabled": false, "afterEnabled": true } },
             "anchor": "#helix-overlay-btn", "side": "right",
             "text": "Now the strangest instrument on the panel. Click ⌇ to open the Helicoid Manifold.",
             "hint": "click the highlighted ⌇ button" },
@@ -3420,7 +3435,8 @@
             "text": "The Helicoid Manifold. A radar sweeps through the vug — one full rotation is one moment of time, advancing as it turns. The spiral trails it leaves are the vug's parameters traced through space: a shape you read the way you'd read an instrument, not a picture." },
           { "anchor": "#helix-legend", "side": "bottom",
             "text": "The banner above the vug decodes it. Each row is one parameter the radar listens to — temperature, pH, saturation — with its live value each revolution. Toggle rows on and off to choose what the trails trace. More information lives up here than anywhere else on the screen; come back to it when a run confuses you." },
-          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+          { "action": { "event": "vugg:tutorial-view-state-committed", "selector": "#helix-overlay-btn",
+                          "productState": { "control": "helix-overlay", "beforeEnabled": true, "afterEnabled": false } },
             "anchor": "#helix-overlay-btn", "side": "right",
             "text": "Click ⌇ again to put the radar away — it'll be here when you're ready for it.",
             "hint": "click the highlighted ⌇ button" },
@@ -3463,7 +3479,8 @@
             "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. At about 220°C the broth is above the chalcedony field and carries more silica than quartz equilibrium can keep dissolved." },
           { "step": 9,  "anchor": "#f-stat-temp", "side": "bottom",
             "text": "A much hotter recharge just arrived. Hot water can hold more dissolved silica, so the same 600-ppm supply is now below quartz equilibrium. Watch the growth record reverse as you keep pressing Advance." },
-          { "action": { "event": "click", "selector": ".inv-crystal" },
+          { "action": { "event": "click", "selector": ".inv-crystal",
+                          "dataset": { "mineral": "quartz" } },
             "anchor": "#fortress-inventory", "side": "left",
             "text": "Your quartz has a card in the inventory now. Tap it.",
             "hint": "tap the quartz card (if there's no card yet, Advance a few more steps first)" },
@@ -3573,7 +3590,8 @@
           // ---- The payoff: read the record back ----
           { "step": 22, "anchor": "#fortress-inventory", "side": "left",
             "text": "Your calcite now holds three stripes it grew in order: dim early growth, loaded-but-quenched middle, bright rim. A fluid history written radially, oldest at the core. Time to read it back." },
-          { "action": { "event": "click", "selector": ".inv-crystal" },
+          { "action": { "event": "click", "selector": ".inv-crystal",
+                          "dataset": { "mineral": "calcite" } },
             "anchor": "#fortress-inventory", "side": "left",
             "text": "Tap your calcite's card in the inventory.",
             "hint": "tap the calcite card (no card yet? Advance a few more steps first)" },
@@ -3719,7 +3737,7 @@
             "text": "Look at the wall — crusted. At Mammoth Hot Springs the active vents plate travertine at millimeters a DAY, geologically explosive, and the result is terraces, rimstone pools, whole petrified waterfalls. Pamukkale in Turkey is this same cascade; so is the flowstone in every limestone cave, just colder and slower." },
 
           // ---- The inverse experiment: run the cascade backwards ----
-          { "action": { "event": "click", "selector": ".act-acid" }, "unlock": [".act-acid"],
+          { "action": { "event": "vugg:fortress-fluid-action-committed", "selector": ".action-grid", "productAction": "carbonate-acid-titration" }, "unlock": [".act-acid"],
             "anchor": ".action-grid", "side": "top",
             "text": "You've watched degassing run this cascade forward. Now run it backwards yourself. The 🧪 acid verbs are unlocked — Tweak ↓pH nudges pH down a third of a unit, Shift ↓pH slams it down two. Press one.",
             "hint": "click a highlighted 🧪 acid button" },
@@ -4953,7 +4971,7 @@
       // Library walk.
       "tutorial": {
         "mode": "legends",
-        "preset": { "seed": 42, "steps": 110 },
+        "preset": { "seed": 42, "steps": 110, "shapeSeed": "", "cavitySize": "any" },
         "unlock": [],
         "steps": [
           { "anchor": "#legends-controls", "side": "bottom",
@@ -4961,7 +4979,14 @@
             "hint": "press Enter or Space (or click Continue) to step through" },
           { "anchor": "#scenario", "side": "bottom",
             "text": "The setup row, preset like Collecting taught you: the Cumbrian cavity, seed 42, 110 steps — five and a half million years of episodic ore brine." },
-          { "action": { "event": "click", "selector": "#btn-grow" },
+          { "action": { "event": "click", "selector": "#btn-grow",
+                          "context": [
+                            { "selector": "#scenario", "valueNormalized": "tn457_barite_pulses" },
+                            { "selector": "#seed", "valueNormalized": "42" },
+                            { "selector": "#steps", "valueNormalized": "110" },
+                            { "selector": "#shape-seed", "valueExact": "" },
+                            { "selector": "#cavity-size", "valueExact": "any" }
+                          ] },
             "anchor": "#btn-grow", "side": "bottom", "unlock": ["#btn-grow"],
             "text": "Press Grow.",
             "hint": "click the highlighted Grow button" },
@@ -4980,11 +5005,15 @@
             "hint": "click the highlighted Record Player button" },
           { "anchor": "#groove-canvas", "side": "right",
             "text": "The turntable. A crystal rendered as vinyl: every growth zone is one groove of the spiral, oldest at the center, rim at the edge. The needle reads chemistry the way a stylus reads sound — this is not a metaphor the game invented; it is what growth zoning IS." },
-          { "action": { "event": "change", "selector": "#groove-crystal-select" },
+          { "action": { "event": "change", "selector": "#groove-crystal-select",
+                          "selectedDataset": { "mineral": "barite" } },
             "anchor": "#groove-crystal-select", "side": "bottom",
             "text": "The platter list carries whatever run is live — your Cumbrian pocket. Put a BARITE on the turntable; the one with the most zones is the star of this collection.",
             "hint": "pick a crystal in the dropdown" },
-          { "action": { "event": "click", "selector": "#groove-play-btn" },
+          { "action": { "event": "click", "selector": "#groove-play-btn",
+                          "context": [
+                            { "selector": "#groove-crystal-select", "selectedDataset": { "mineral": "barite" } }
+                          ] },
             "anchor": "#groove-play-btn", "side": "bottom",
             "text": "Drop the needle — press ▶ Play.",
             "hint": "click the highlighted Play button" },
@@ -4997,7 +5026,9 @@
             "anchor": "#mode-stripview", "side": "bottom",
             "text": "One crystal read in depth. Now the whole run read in breadth — click 📼 Strip View.",
             "hint": "click the highlighted Strip View button" },
-          { "action": { "event": "click", "selector": ".strip-view-datasetrow" },
+          { "action": { "event": "vugg:strip-opened", "selector": ".strip-view-datasetrow",
+                          "dataset": { "scenarioId": "tn457_barite_pulses", "seed": "42" },
+                          "latestStoredStrip": true },
             "anchor": "#strip-view-body", "side": "top",
             "text": "The flight recorder. Every run you complete records a strip dataset automatically; the five most recent are kept, and ⬇ Download preserves one forever as a file. Open the newest — your Cumbrian run.",
             "hint": "click the top dataset row" },

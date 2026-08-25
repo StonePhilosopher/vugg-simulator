@@ -81,6 +81,7 @@ function openNewGameMenu() {
   // hiding panels so no invisible run can keep mutating geology or leave its
   // controls disabled behind the menu.
   if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
+  if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
   hideAllMenuAndModePanels();
   document.body.classList.add('title-on');
   const panel = document.getElementById('new-game-panel');
@@ -109,12 +110,20 @@ function menuGo(modeName) { switchMode(modeName); }
 // step numbers as the sim advances. Optional seed threads through to the
 // seed-first begin (2026-07-08) — callers like the agent API get fully
 // deterministic runs, wall geometry included.
-async function startScenarioInCreative(scenarioName, seedOverride?) {
+async function startScenarioInCreative(scenarioName, seedOverride?, tutorialBootToken?) {
   const make = SCENARIOS[scenarioName];
   if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
+  const runLaunchToken = _runLaunchClaim();
   await waitForNarrativesReady();
+  // Reset/Home/New Game may have won while the await yielded. Reject the
+  // pending tutorial before mode switch, simulation construction, or save
+  // opening—not merely before the overlay would be installed (70a).
+  if (!_runLaunchTokenCurrent(runLaunchToken)
+      || (tutorialBootToken != null
+      && (typeof _tutorialBootTokenCurrent !== 'function'
+        || !_tutorialBootTokenCurrent(tutorialBootToken)))) return;
   switchMode('fortress');
-  fortressBeginFromScenario(scenarioName, seedOverride);
+  fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken);
 }
 
 // Take a FLUID_PRESETS[id] starter fluid and run it inside Creative as a
@@ -124,9 +133,11 @@ async function startScenarioInCreative(scenarioName, seedOverride?) {
 async function startStarterFluidInCreative(presetId) {
   const preset = FLUID_PRESETS[presetId];
   if (!preset) { alert('Unknown starter fluid: ' + presetId); return; }
+  const runLaunchToken = _runLaunchClaim();
   await waitForNarrativesReady();
+  if (!_runLaunchTokenCurrent(runLaunchToken)) return;
   switchMode('fortress');
-  fortressBeginFromStarterFluid(presetId);
+  fortressBeginFromStarterFluid(presetId, undefined, runLaunchToken);
 }
 
 // Parallel to fortressBeginFromScenario but uses a FLUID_PRESETS entry
@@ -140,9 +151,15 @@ async function startStarterFluidInCreative(presetId) {
 // reproduces the whole run, geometry included (the seed-first order
 // legends uses; 99z's startScenario comment documents why seeding after
 // construction leaves wall geometry unreproducible).
-function fortressBeginFromStarterFluid(presetId, seedOverride?) {
+function fortressBeginFromStarterFluid(presetId, seedOverride?, runLaunchToken?) {
   const preset = FLUID_PRESETS[presetId];
   if (!preset) return;
+  // Run replacement owns tutorial teardown. startTutorial deliberately boots
+  // before installing its new state; ordinary New Game/save paths therefore
+  // cannot inherit the prior run's locks or progress (70a, 97).
+  if (typeof _tutorialRunBoundary === 'function') {
+    _tutorialRunBoundary(undefined, runLaunchToken);
+  }
 
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
   rng = new SeededRandom(seed);
@@ -211,9 +228,14 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
 // baselines prove reproduces a run from the seed alone. Seeding after
 // make() (the pre-save-system order) left anything the factory drew
 // unreproducible.
-function fortressBeginFromScenario(scenarioName, seedOverride?) {
+function fortressBeginFromScenario(
+  scenarioName, seedOverride?, tutorialBootToken?, runLaunchToken?,
+) {
   const make = SCENARIOS[scenarioName];
   if (!make) return;
+  if (typeof _tutorialRunBoundary === 'function') {
+    _tutorialRunBoundary(tutorialBootToken, runLaunchToken);
+  }
 
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
   rng = new SeededRandom(seed);

@@ -20,7 +20,7 @@ function showTitleScreen() {
   if (typeof grooveStop === 'function' && groovePlaying) grooveStop();
   // Going Home tears down any active tutorial overlay + restores
   // hidden Creative-mode controls. No-op if no tutorial running.
-  if (typeof endTutorial === 'function') endTutorial();
+  if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
   currentGameMode = null;
   // Title family → title theme ('Vugg Simulator.mp3'). See js/08-music.ts.
   if (typeof musicSetContext === 'function') musicSetContext('title');

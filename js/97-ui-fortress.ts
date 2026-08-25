@@ -984,7 +984,9 @@ function selectPreset(preset) {
 }
 
 async function fortressBegin() {
+  const runLaunchToken = _runLaunchClaim();
   await waitForNarrativesReady();
+  if (!_runLaunchTokenCurrent(runLaunchToken)) return;
   // Resolution phase: read every setup control into plain params, then
   // hand off to _fortressBeginCustomFromParams. The split exists for the
   // save system (93a-ui-saves.ts): a save stores the RESOLVED params, and
@@ -1040,7 +1042,7 @@ async function fortressBegin() {
     scenarioOpts: geological.scenarioOpts,
     initialWaterTablePct: geological.initialWaterTablePct,
     presetLabel: presetData.label,
-  });
+  }, undefined, runLaunchToken);
 }
 
 // Construction phase of a custom Creative run. `params` is a plain
@@ -1049,7 +1051,13 @@ async function fortressBegin() {
 // seeded BEFORE any construction — the same seed-first order legends
 // uses (91-ui-legends.ts runSimulation), which the seed-42 baselines
 // prove reproduces a whole run from the seed alone.
-function _fortressBeginCustomFromParams(params, seedOverride?) {
+function _fortressBeginCustomFromParams(params, seedOverride?, runLaunchToken?) {
+  // A tutorial belongs to one run. Replacing that run must release its locks,
+  // callout, listeners, and progress before the new simulation is installed
+  // (70a owns teardown; 94's Scenario/Starter constructors mirror this).
+  if (typeof _tutorialRunBoundary === 'function') {
+    _tutorialRunBoundary(undefined, runLaunchToken);
+  }
   const { temp, pressure, wallOpts } = params;
   const fluidParams = Object.assign({}, params.fluidParams);
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
@@ -1457,6 +1465,17 @@ function _fortressApplyPlayerTemperature(targetC: number): any {
   return Object.freeze({ before, after, delta: after - before });
 }
 
+function _dispatchFortressFluidActionProduct(receipt: any): boolean {
+  if (!receipt) return false;
+  const target = document.querySelector('.action-grid');
+  if (!target || typeof target.dispatchEvent !== 'function') return false;
+  target.dispatchEvent(new CustomEvent('vugg:fortress-fluid-action-committed', {
+    bubbles: true,
+    detail: receipt,
+  }));
+  return true;
+}
+
 function fortressStep(action, payload) {
   if (!fortressSim || !fortressActive) return;
 
@@ -1468,6 +1487,11 @@ function fortressStep(action, payload) {
     : null;
   let fluidActionAccepted = !!fluidActionSnapshot;
   const fluidActionExcludedFields = new Set<string>();
+  const fluidPHBefore = Number(c.fluid.pH);
+  const carbonateTransactionCountBefore = Array.isArray(fortressSim._carbonateBoundaryState?.transactions)
+    ? fortressSim._carbonateBoundaryState.transactions.length : -1;
+  let carbonateActionTransaction: any = null;
+  let fluidActionProductReceipt: any = null;
 
   // Broth inputs write through on their own input events. Never treat a
   // synchronized slider echo as authority over geological state.
@@ -1600,6 +1624,7 @@ function fortressStep(action, payload) {
     case 'tweak_acidify':
       if (fortressSim._carbonateBoundaryState) {
         const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 0.3, 2), 'Creative gentle acid titration');
+        carbonateActionTransaction = tx;
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
@@ -1611,6 +1636,7 @@ function fortressStep(action, payload) {
     case 'acidify': // legacy alias — fortressStep('acidify') still works
       if (fortressSim._carbonateBoundaryState) {
         const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 2, 2), 'Creative strong acid titration');
+        carbonateActionTransaction = tx;
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
@@ -1950,6 +1976,37 @@ function fortressStep(action, payload) {
       excludedFields: Array.from(fluidActionExcludedFields),
     })
     : {};
+  const pHAuthority = fluidSpatialAuthorities?.['fluid.pH'];
+  const carbonateTransactions = fortressSim._carbonateBoundaryState?.transactions;
+  const carbonateTransactionIndex = Array.isArray(carbonateTransactions)
+    ? carbonateTransactions.indexOf(carbonateActionTransaction) : -1;
+  if (['tweak_acidify', 'shift_acidify', 'acidify'].includes(String(action))
+      && fluidActionAccepted
+      && typeof fluidPHBefore === 'number' && Number.isFinite(fluidPHBefore)
+      && typeof c.fluid.pH === 'number' && Number.isFinite(c.fluid.pH)
+      && c.fluid.pH < fluidPHBefore
+      && pHAuthority?.schema === 'player-fluid-spatial-intervention-v1'
+      && pHAuthority?.scope === 'canonical-nonvadose-voxel-volume'
+      && pHAuthority?.closed === true
+      && Number.isSafeInteger(pHAuthority?.count) && pHAuthority.count > 0
+      && carbonateActionTransaction?.ok === true
+      && carbonateActionTransaction?.kind === 'ph_titration'
+      && carbonateTransactionIndex === carbonateTransactionCountBefore) {
+    fluidActionProductReceipt = Object.freeze({
+      schema: 'fortress-fluid-action-product-v1',
+      product: 'carbonate-acid-titration',
+      action: String(action),
+      accepted_at_step: fortressSim.step,
+      before_pH: fluidPHBefore,
+      after_pH: Number(c.fluid.pH),
+      spatial_authority_schema: pHAuthority.schema,
+      spatial_authority_scope: pHAuthority.scope,
+      spatial_authority_count: pHAuthority.count,
+      spatial_authority_closed: true,
+      carbonate_transaction_kind: carbonateActionTransaction.kind,
+      carbonate_transaction_index: carbonateTransactionIndex,
+    });
+  }
   _fortressReconcilePlayerMovementDeltas(
     movementFieldBefore, String(action || 'unknown'), fluidSpatialAuthorities,
   );
@@ -1993,6 +2050,7 @@ function fortressStep(action, payload) {
   // Non-time actions: modify conditions but DON'T advance time.
   _fortressAdvancePlayerActionCursor();
   if (typeof _saveCommitAction === 'function') _saveCommitAction();
+  _dispatchFortressFluidActionProduct(fluidActionProductReceipt);
   // Log what changed so the player can stack multiple changes. No
   // tempo needed — the user already saw the result; just emit one
   // line.
@@ -2303,6 +2361,10 @@ function fortressFinish() {
 }
 
 function fortressReset() {
+  // Reset is a run-lifecycle boundary, not merely a panel repaint. End the
+  // lexical tutorial state first so its CSS allow-list and delegated listeners
+  // cannot survive over setup or the next run (70a-tutorial-overlay.ts).
+  if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
   fortressSim = null;
   fortressActive = false;
   fortressLogLines = [];

@@ -17,7 +17,13 @@
 //                                 to actually do a thing. Shape:
 //                                   { event: 'click'|'change',   // default 'click'
 //                                     selector: '#some-el',      // matched via closest()
-//                                     checked: true|false }      // optional checkbox state
+//                                     checked: true|false,       // optional checkbox state
+//                                     dataset: {mineral:'quartz'},
+//                                     within: { selector: '.inv-crystal',
+//                                               dataset: {mineral:'topaz'} },
+//                                     valueNormalized: 'topaz',
+//                                     selectedDataset: {mineral:'barite'} }
+//                                                               // optional exact target authority
 //   (neither)                   — CONTINUE trigger: advances on the
 //                                 callout's Continue button, Enter,
 //                                 or Space.
@@ -86,10 +92,155 @@
 // continue-trigger tutorial step that would sit on screen while a pill
 // is armed; use playback-step or action triggers around those beats.
 //
-// Control locking is CSS-driven off body.tutorial-active (see
-// index.html): action buttons are now VISIBLE-BUT-INERT (dimmed,
-// pointer-events none) rather than display:none — a newcomer should
-// see that the instrument panel exists before earning it.
+// Control locking is visible in CSS and enforced here in the capture phase.
+// Pointer-events alone does not stop keyboard/programmatic activation, so
+// locked controls also receive accessible state + a semantic input gate.
+
+// Async tutorial boots wait for narratives. Reset/New Game during that wait
+// must invalidate the pending lesson so its state cannot reappear over the
+// replacement run after the await resumes.
+let _tutorialStartEpoch = 0;
+// Every async run launcher (Scenario, Starter, Custom, tutorial boot) claims
+// this shared generation before awaiting narratives. Home/Reset/New Game and
+// every synchronous constructor advance it, so a stale continuation cannot
+// resurrect geology or a save after a newer boundary has won.
+let _runLaunchEpoch = 0;
+const _tutorialControlLockState = new Map<any, any>();
+let _tutorialViewerCommissioningReceipt: any = null;
+
+function _runLaunchClaim(): number {
+  return ++_runLaunchEpoch;
+}
+
+function _runLaunchTokenCurrent(token): boolean {
+  return Number.isSafeInteger(token) && token === _runLaunchEpoch;
+}
+
+function _tutorialLockableControl(target) {
+  if (!target || typeof target.closest !== 'function') return null;
+  try {
+    return target.closest(
+      '.action-btn, #btn-grow, #btn-random, #topo-three-btn, #helix-overlay-btn',
+    );
+  } catch (_) { return null; }
+}
+
+function _tutorialRestoreControlAttributes(control, prior) {
+  if (!control || !prior) return;
+  if (prior.hadAriaDisabled) control.setAttribute('aria-disabled', prior.ariaDisabled);
+  else control.removeAttribute('aria-disabled');
+  if (prior.hadTabIndex) control.setAttribute('tabindex', prior.tabIndex);
+  else control.removeAttribute('tabindex');
+  if (prior.hasDisabledProperty) control.disabled = prior.disabled;
+  delete control.dataset.tutorialLocked;
+}
+
+function _tutorialSyncControlLocks() {
+  const controls = document.querySelectorAll(
+    '.action-btn, #btn-grow, #btn-random, #topo-three-btn, #helix-overlay-btn',
+  );
+  controls.forEach((control: any) => {
+    if (!_tutorialControlLockState.has(control)) {
+      _tutorialControlLockState.set(control, {
+        hadAriaDisabled: control.hasAttribute('aria-disabled'),
+        ariaDisabled: control.getAttribute('aria-disabled'),
+        hadTabIndex: control.hasAttribute('tabindex'),
+        tabIndex: control.getAttribute('tabindex'),
+        hasDisabledProperty: 'disabled' in control,
+        disabled: 'disabled' in control ? control.disabled : false,
+      });
+    }
+    const prior = _tutorialControlLockState.get(control);
+    if (control.classList.contains('tutorial-allow')) {
+      _tutorialRestoreControlAttributes(control, prior);
+      return;
+    }
+    control.setAttribute('aria-disabled', 'true');
+    control.setAttribute('tabindex', '-1');
+    if ('disabled' in control) control.disabled = true;
+    control.dataset.tutorialLocked = 'true';
+  });
+}
+
+function _tutorialGrantPermanentAllow(selector) {
+  document.querySelectorAll(selector).forEach((control: any) => {
+    control.classList.add('tutorial-allow', 'tutorial-permanent-allow');
+  });
+}
+
+function _tutorialClearStepAllows() {
+  document.querySelectorAll('.tutorial-step-allow').forEach((control: any) => {
+    control.classList.remove('tutorial-step-allow');
+    if (!control.classList.contains('tutorial-permanent-allow')) {
+      control.classList.remove('tutorial-allow');
+    }
+  });
+}
+
+function _tutorialRestoreControlLocks() {
+  for (const [control, prior] of _tutorialControlLockState.entries()) {
+    _tutorialRestoreControlAttributes(control, prior);
+  }
+  _tutorialControlLockState.clear();
+}
+
+function _tutorialLockedControlEvent(event) {
+  if (!_tutorialState || !document.body.classList.contains('tutorial-active')) return;
+  const control = _tutorialLockableControl(event.target);
+  if (!control || control.classList.contains('tutorial-allow')) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  event.stopPropagation();
+  if (typeof control.blur === 'function') control.blur();
+}
+
+function _dispatchTutorialViewStateProduct(target, control, beforeEnabled, afterEnabled): boolean {
+  if (!target || typeof target.dispatchEvent !== 'function'
+      || typeof control !== 'string' || !control
+      || typeof beforeEnabled !== 'boolean' || typeof afterEnabled !== 'boolean'
+      || beforeEnabled === afterEnabled) return false;
+  target.dispatchEvent(new CustomEvent('vugg:tutorial-view-state-committed', {
+    bubbles: true,
+    detail: Object.freeze({
+      schema: 'tutorial-view-state-product-v1',
+      control,
+      before_enabled: beforeEnabled,
+      after_enabled: afterEnabled,
+    }),
+  }));
+  return true;
+}
+
+// One commissioner is shared by live tutorial boot and the controlled
+// mechanism witness. This makes the persistent prior-run state and the exact
+// post-boot product visible without emitting a player-action receipt.
+function _tutorialCanonicalizeViewerState() {
+  const before = Object.freeze({
+    topo_three_renderer_enabled: typeof topoThreeRendererEnabled === 'function'
+      ? topoThreeRendererEnabled() : null,
+    helix_overlay_enabled: typeof helixOverlayEnabled === 'function'
+      ? helixOverlayEnabled() : null,
+  });
+  if (typeof topoSetThreeRendererEnabled !== 'function'
+      || typeof helixSetOverlayEnabled !== 'function') {
+    throw new Error('Guided tutorial viewer authority is unavailable');
+  }
+  topoSetThreeRendererEnabled(true, false);
+  helixSetOverlayEnabled(false, false);
+  _tutorialViewerCommissioningReceipt = Object.freeze({
+    schema: 'tutorial-viewer-commissioning-v1',
+    before,
+    after: Object.freeze({
+      topo_three_renderer_enabled: topoThreeRendererEnabled(),
+      helix_overlay_enabled: helixOverlayEnabled(),
+    }),
+  });
+  return _tutorialViewerCommissioningReceipt;
+}
+
+function tutorialViewerCommissioningReceipt() {
+  return _tutorialViewerCommissioningReceipt;
+}
 
 
 function showCallout(opts) {
@@ -258,11 +409,17 @@ function _positionCallout(anchorEl, tooltipEl, arrowEl, side) {
   arrowEl.className = 'tutorial-callout-arrow ' + arrowClass;
 }
 
-function startTutorial(scenarioName) {
+async function startTutorial(scenarioName) {
   const make = (typeof SCENARIOS !== 'undefined') ? SCENARIOS[scenarioName] : null;
   const spec = make && make._json5_spec;
   const tut = spec && spec.tutorial;
   const tutMode = (tut && tut.mode) || 'fortress';
+
+  // A second lesson is a run boundary too. Clear the old lexical state before
+  // booting; fortress constructors also call endTutorial so ordinary New Game
+  // paths get the same ownership rule.
+  const startEpoch = ++_tutorialStartEpoch;
+  endTutorial();
 
   // Boot the stage. Both boot paths run BEFORE _tutorialState is set,
   // so their internal endTutorial() calls are no-ops.
@@ -285,6 +442,17 @@ function startTutorial(scenarioName) {
       const stepsEl = document.getElementById('steps');
       if (stepsEl) stepsEl.value = String(preset.steps);
     }
+    // Shape/cavity are part of the scientific command, not presentation.
+    // Write even an authored empty shape seed so Random's previous setup
+    // cannot silently change the controlled pocket this lesson narrates.
+    if (Object.prototype.hasOwnProperty.call(preset, 'shapeSeed')) {
+      const shapeSeedEl = document.getElementById('shape-seed');
+      if (shapeSeedEl) shapeSeedEl.value = String(preset.shapeSeed);
+    }
+    if (Object.prototype.hasOwnProperty.call(preset, 'cavitySize')) {
+      const cavitySizeEl = document.getElementById('cavity-size');
+      if (cavitySizeEl) cavitySizeEl.value = String(preset.cavitySize);
+    }
     _legendsPlaybackStep = 0;
   } else {
     // Legacy path — boot the underlying scenario in Creative Mode.
@@ -292,22 +460,37 @@ function startTutorial(scenarioName) {
       console.error('startTutorial: startScenarioInCreative not available');
       return;
     }
-    startScenarioInCreative(scenarioName);
+    await startScenarioInCreative(scenarioName, undefined, startEpoch);
   }
+
+  // A newer Reset/New Game won while this async boot waited. Fail closed
+  // instead of reinstalling its stale locks and progress over that run.
+  if (_tutorialStartEpoch !== startEpoch) return;
 
   if (!tut || !Array.isArray(tut.steps) || !tut.steps.length) {
     console.warn('startTutorial: scenario has no tutorial.steps:', scenarioName);
     return; // scenario still runs, just without overlay
   }
-  _tutorialState = { steps: tut.steps.slice(), stepIdx: 0, renderedIdx: -1, pausedAt: -1, mode: tutMode };
+  // The Grand Tour teaches transitions, so its persistent viewer controls
+  // start from one commissioned state rather than whatever the previous run
+  // left behind. These silent setters change presentation only; the player's
+  // later accepted toggles emit the product receipts that advance the lesson.
+  if (scenarioName === 'tutorial_first_crystal') {
+    _tutorialCanonicalizeViewerState();
+  }
+  _tutorialState = {
+    steps: tut.steps.slice(), stepIdx: 0, renderedIdx: -1, pausedAt: -1,
+    mode: tutMode, legendsRunClaimed: false,
+  };
   document.body.classList.add('tutorial-active');
 
   // Starting whitelist. Legacy tutorials (no tutorial.unlock field) keep
   // their Advance button; the Grand Tour passes [] and unlocks per-step.
   const startAllow = Array.isArray(tut.unlock) ? tut.unlock : ['#f-advance'];
   for (const sel of startAllow) {
-    document.querySelectorAll(sel).forEach(el => el.classList.add('tutorial-allow'));
+    _tutorialGrantPermanentAllow(sel);
   }
+  _tutorialSyncControlLocks();
 
   // Engine-v2/v3 listeners: Enter/Space for continue steps; delegated
   // click/change/input for action steps, on the CAPTURE phase so the
@@ -317,10 +500,16 @@ function startTutorial(scenarioName) {
   // itself is DEFERRED one tick so the game handler still runs first
   // (e.g. the ⌇ toggle creates #helix-legend before the next step
   // anchors to it).
+  document.addEventListener('keydown', _tutorialLockedControlEvent, true);
+  document.addEventListener('click', _tutorialLockedControlEvent, true);
   document.addEventListener('keydown', _tutorialKeydown, true);
   document.addEventListener('click', _tutorialActionEvent, true);
   document.addEventListener('change', _tutorialActionEvent, true);
   document.addEventListener('input', _tutorialActionEvent, true);
+  document.addEventListener('vugg:crystal-collected', _tutorialActionEvent, true);
+  document.addEventListener('vugg:strip-opened', _tutorialActionEvent, true);
+  document.addEventListener('vugg:fortress-fluid-action-committed', _tutorialActionEvent, true);
+  document.addEventListener('vugg:tutorial-view-state-committed', _tutorialActionEvent, true);
 
   // Fire any steps whose trigger is already satisfied (typically the
   // welcome step, or step:0 in the legacy tutorials).
@@ -329,14 +518,59 @@ function startTutorial(scenarioName) {
 
 function endTutorial() {
   _tutorialState = null;
+  _tutorialViewerCommissioningReceipt = null;
   document.body.classList.remove('tutorial-active');
-  document.querySelectorAll('.tutorial-allow').forEach(el => el.classList.remove('tutorial-allow'));
+  document.querySelectorAll('.tutorial-allow, .tutorial-permanent-allow, .tutorial-step-allow')
+    .forEach(el => el.classList.remove(
+      'tutorial-allow', 'tutorial-permanent-allow', 'tutorial-step-allow',
+    ));
   document.querySelectorAll('.tutorial-spotlight').forEach(el => el.classList.remove('tutorial-spotlight'));
+  _tutorialRestoreControlLocks();
+  document.removeEventListener('keydown', _tutorialLockedControlEvent, true);
+  document.removeEventListener('click', _tutorialLockedControlEvent, true);
   document.removeEventListener('keydown', _tutorialKeydown, true);
   document.removeEventListener('click', _tutorialActionEvent, true);
   document.removeEventListener('change', _tutorialActionEvent, true);
   document.removeEventListener('input', _tutorialActionEvent, true);
+  document.removeEventListener('vugg:crystal-collected', _tutorialActionEvent, true);
+  document.removeEventListener('vugg:strip-opened', _tutorialActionEvent, true);
+  document.removeEventListener('vugg:fortress-fluid-action-committed', _tutorialActionEvent, true);
+  document.removeEventListener('vugg:tutorial-view-state-committed', _tutorialActionEvent, true);
   hideCallout();
+}
+
+// Shared by 94/97 run constructors and Reset. Only the exact pending token
+// supplied by startTutorial may complete that boot; ordinary boundaries
+// invalidate all pending work before clearing the live lesson.
+function _tutorialRunBoundary(tutorialBootToken?, runLaunchToken?) {
+  const ownsPendingLaunch = _runLaunchTokenCurrent(runLaunchToken);
+  if (!ownsPendingLaunch) _runLaunchEpoch++;
+  const ownsPendingBoot = Number.isSafeInteger(tutorialBootToken)
+    && tutorialBootToken === _tutorialStartEpoch;
+  if (!ownsPendingBoot) _tutorialStartEpoch++;
+  endTutorial();
+  return ownsPendingBoot;
+}
+
+function _tutorialBootTokenCurrent(tutorialBootToken) {
+  return Number.isSafeInteger(tutorialBootToken)
+    && tutorialBootToken === _tutorialStartEpoch;
+}
+
+// Read-only lifecycle breadcrumb for tests, browser QA, and durable tutorial
+// testimony. The overlay state itself remains lexical so callers cannot forge
+// progress; this projection intentionally exposes no mutable step objects.
+function tutorialStateSnapshot() {
+  const s = _tutorialState;
+  if (!s) return null;
+  return Object.freeze({
+    mode: String(s.mode || 'fortress'),
+    step_index: Number(s.stepIdx),
+    step_count: Array.isArray(s.steps) ? s.steps.length : 0,
+    rendered_index: Number(s.renderedIdx),
+    paused_at: Number(s.pausedAt),
+    current_trigger: _tutCurrentTrigger(),
+  });
 }
 
 // ENGINE v3 — consulted by switchMode() (js/94-ui-menu.ts) before it
@@ -458,10 +692,21 @@ function _renderTutorialStep(idx, trig) {
   s.renderedIdx = idx;
   const st = s.steps[idx];
 
-  // Progressive unlock — accumulates until endTutorial clears it.
+  // The previous action target loses its temporary authority as soon as the
+  // lesson advances. Authored `unlock` entries remain cumulative; the current
+  // action target is independently enabled only for this exact step.
+  _tutorialClearStepAllows();
   for (const sel of (st.unlock || [])) {
-    document.querySelectorAll(sel).forEach(el => el.classList.add('tutorial-allow'));
+    _tutorialGrantPermanentAllow(sel);
   }
+  if (trig === 'action' && typeof st.action?.selector === 'string') {
+    document.querySelectorAll(st.action.selector).forEach((control: any) => {
+      if (_tutorialLockableControl(control) === control) {
+        control.classList.add('tutorial-allow', 'tutorial-step-allow');
+      }
+    });
+  }
+  _tutorialSyncControlLocks();
   // Spotlight — exclusive to the showing step.
   document.querySelectorAll('.tutorial-spotlight').forEach(el => el.classList.remove('tutorial-spotlight'));
   if (st.spotlight) {
@@ -519,6 +764,194 @@ function _tutorialKeydown(e) {
   _tutorialAdvance();
 }
 
+function _tutorialDatasetMatches(node, expected) {
+  if (!node || !expected || typeof expected !== 'object' || Array.isArray(expected)) return false;
+  const keys = Object.keys(expected);
+  if (!keys.length) return false;
+  for (const key of keys) {
+    if (!/^[A-Za-z][A-Za-z0-9]*$/.test(key) || typeof expected[key] !== 'string') return false;
+    if (!node.dataset || typeof node.dataset[key] !== 'string'
+        || node.dataset[key] !== expected[key]) return false;
+  }
+  return true;
+}
+
+function _tutorialStripReceiptMatches(hit, receipt) {
+  if (!receipt || !_tutorialDatasetMatches(hit, {
+    scenarioId: receipt.scenario_id,
+    seed: String(receipt.seed),
+    simVersion: String(receipt.sim_version),
+    modelDigest: receipt.model_digest,
+    scenarioSpecHash: receipt.scenario_spec_hash,
+    storageKey: receipt.key,
+    recordedAt: String(receipt.recorded_at),
+    manifestDigestSha256: receipt.manifest_digest_sha256,
+    datasetDigestSha256: receipt.dataset_digest_sha256,
+  })) return false;
+  return receipt.sim_version === SIM_VERSION && receipt.model_digest === MODEL_DIGEST;
+}
+
+// A CSS selector identifies the control shape; these optional predicates bind
+// a lesson to the scientific/product object its prose describes. This keeps a
+// quartz card from satisfying a calcite lesson, a random dataset from
+// satisfying a TN457 lesson, or the first keystroke from satisfying a named
+// Library search. Data attributes are installed by 97c, 98, and 99k—the three
+// UI producers this state-machine consumer depends on.
+function _tutorialActionTargetMatches(action, hit) {
+  if (!action || !hit) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'dataset')
+      && !_tutorialDatasetMatches(hit, action.dataset)) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'within')) {
+    const within = action.within;
+    if (!within || typeof within !== 'object' || Array.isArray(within)
+        || typeof within.selector !== 'string' || !within.selector.trim()
+        || typeof hit.closest !== 'function') return false;
+    let owner = null;
+    try { owner = hit.closest(within.selector); } catch (_error) { return false; }
+    if (!owner || !_tutorialDatasetMatches(owner, within.dataset)) return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'valueNormalized')) {
+    if (typeof action.valueNormalized !== 'string' || !action.valueNormalized.trim()
+        || typeof hit.value !== 'string'
+        || hit.value.trim().toLowerCase() !== action.valueNormalized.trim().toLowerCase()) {
+      return false;
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'valueExact')) {
+    // Empty is meaningful here: it commissions the scenario-defined shape
+    // instead of accepting a shape seed retained from an earlier run.
+    if (typeof action.valueExact !== 'string'
+        || typeof hit.value !== 'string'
+        || hit.value !== action.valueExact) return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'selectedDataset')) {
+    // Read by selectedIndex from the owning select. selectedOptions can be a
+    // live cross-realm collection in embedded browsers; the index is the
+    // stable product state grooveSelectCrystal consumes too (98-ui-groove).
+    const selected = hit.options && typeof hit.selectedIndex === 'number'
+      && Number.isSafeInteger(hit.selectedIndex) && hit.selectedIndex >= 0
+      ? hit.options[hit.selectedIndex] : null;
+    if (!_tutorialDatasetMatches(selected, action.selectedDataset)) return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'context')) {
+    if (!Array.isArray(action.context) || !action.context.length) return false;
+    for (const condition of action.context) {
+      if (!condition || typeof condition !== 'object' || Array.isArray(condition)
+          || typeof condition.selector !== 'string' || !condition.selector.trim()
+          || Object.prototype.hasOwnProperty.call(condition, 'context')) return false;
+      let node = null;
+      try { node = document.querySelector(condition.selector); } catch (_error) { return false; }
+      if (!node || !_tutorialActionTargetMatches(condition, node)) return false;
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'latestStoredStrip')) {
+    if (action.latestStoredStrip !== true
+        || typeof stripLatestDurableRunReceipt !== 'function') return false;
+    const receipt = stripLatestDurableRunReceipt();
+    if (!_tutorialStripReceiptMatches(hit, receipt)) return false;
+  }
+  return true;
+}
+
+// Simulation-mode tutorials boot the setup panel first and let the player
+// press Grow. The exact current Grow action may commission that one run; a
+// second Grow, or a Grow after editing the preset away from its authored
+// scenario/seed/steps, is an ordinary replacement and clears the lesson.
+function _tutorialRunBoundaryForAction(selector, runLaunchToken?) {
+  const s = _tutorialState;
+  const st = _tutCurrentStep();
+  const action = st && st.action;
+  let target = null;
+  try { target = document.querySelector(selector); } catch (_error) { target = null; }
+  const exactTutorialRun = !!(s && s.mode === 'legends'
+    && _tutStepTrigger(st) === 'action' && action.selector === selector
+    && target && _tutorialActionTargetMatches(action, target));
+  if (exactTutorialRun && !s.legendsRunClaimed) {
+    // Claim synchronously. The action event advances on a timer, and two fast
+    // clicks must not both commission the tutorial's one geological run.
+    s.legendsRunClaimed = true;
+    return true;
+  }
+  if (!exactTutorialRun) _tutorialRunBoundary(undefined, runLaunchToken);
+  return false;
+}
+
+function _tutorialProductEventMatches(event, action, hit) {
+  if (event.type === 'vugg:crystal-collected') {
+    const detail = event.detail;
+    const owner = typeof hit.closest === 'function' && action.within?.selector
+      ? hit.closest(action.within.selector) : null;
+    return !!(detail && typeof detail === 'object' && !Array.isArray(detail)
+      && typeof detail.mineral === 'string' && detail.mineral.length > 0
+      && typeof detail.crystal_id === 'number' && Number.isSafeInteger(detail.crystal_id)
+      && typeof detail.record_id === 'string' && detail.record_id.length > 0
+      && owner && owner.dataset?.mineral === detail.mineral
+      && owner.dataset?.crystalId === String(detail.crystal_id)
+      && owner.dataset?.collectedRecordId === detail.record_id);
+  }
+  if (event.type === 'vugg:strip-opened') {
+    return _tutorialStripReceiptMatches(hit, event.detail);
+  }
+  if (event.type === 'vugg:fortress-fluid-action-committed') {
+    const detail = event.detail;
+    const keys = detail && typeof detail === 'object' && !Array.isArray(detail)
+      ? Object.keys(detail).sort() : [];
+    const expectedKeys = [
+      'schema', 'product', 'action', 'accepted_at_step', 'before_pH', 'after_pH',
+      'spatial_authority_schema', 'spatial_authority_scope',
+      'spatial_authority_count', 'spatial_authority_closed',
+      'carbonate_transaction_kind', 'carbonate_transaction_index',
+    ].sort();
+    return action.productAction === 'carbonate-acid-titration'
+      && JSON.stringify(keys) === JSON.stringify(expectedKeys)
+      && detail.schema === 'fortress-fluid-action-product-v1'
+      && detail.product === 'carbonate-acid-titration'
+      && ['tweak_acidify', 'shift_acidify', 'acidify'].includes(detail.action)
+      && Number.isSafeInteger(detail.accepted_at_step) && detail.accepted_at_step >= 0
+      && typeof detail.before_pH === 'number' && Number.isFinite(detail.before_pH)
+      && typeof detail.after_pH === 'number' && Number.isFinite(detail.after_pH)
+      && detail.after_pH < detail.before_pH
+      && detail.spatial_authority_schema === 'player-fluid-spatial-intervention-v1'
+      && detail.spatial_authority_scope === 'canonical-nonvadose-voxel-volume'
+      && Number.isSafeInteger(detail.spatial_authority_count)
+      && detail.spatial_authority_count > 0
+      && detail.spatial_authority_closed === true
+      && detail.carbonate_transaction_kind === 'ph_titration'
+      && Number.isSafeInteger(detail.carbonate_transaction_index)
+      && detail.carbonate_transaction_index >= 0;
+  }
+  if (event.type === 'vugg:tutorial-view-state-committed') {
+    const detail = event.detail;
+    const authority = action.productState;
+    const keys = detail && typeof detail === 'object' && !Array.isArray(detail)
+      ? Object.keys(detail).sort() : [];
+    const authorityKeys = authority && typeof authority === 'object' && !Array.isArray(authority)
+      ? Object.keys(authority).sort() : [];
+    if (JSON.stringify(keys) !== JSON.stringify([
+      'schema', 'control', 'before_enabled', 'after_enabled',
+    ].sort())
+        || JSON.stringify(authorityKeys) !== JSON.stringify([
+          'control', 'beforeEnabled', 'afterEnabled',
+        ].sort())
+        || detail.schema !== 'tutorial-view-state-product-v1'
+        || !['topo-three-renderer', 'helix-overlay'].includes(detail.control)
+        || detail.control !== authority.control
+        || typeof detail.before_enabled !== 'boolean'
+        || typeof detail.after_enabled !== 'boolean'
+        || detail.before_enabled === detail.after_enabled
+        || detail.before_enabled !== authority.beforeEnabled
+        || detail.after_enabled !== authority.afterEnabled) return false;
+    if (detail.control === 'topo-three-renderer'
+        && typeof topoThreeRendererEnabled !== 'function') return false;
+    if (detail.control === 'helix-overlay'
+        && typeof helixOverlayEnabled !== 'function') return false;
+    const current = detail.control === 'topo-three-renderer'
+      ? topoThreeRendererEnabled() : helixOverlayEnabled();
+    return current === detail.after_enabled;
+  }
+  return true;
+}
+
 function _tutorialActionEvent(e) {
   const s = _tutorialState;
   if (!s) return;
@@ -530,13 +963,17 @@ function _tutorialActionEvent(e) {
   if (e.type !== wanted) return;
   const t = e.target;
   if (!t || typeof t.closest !== 'function') return;
-  const hit = t.closest(a.selector);
+  let hit = null;
+  try { hit = t.closest(a.selector); } catch (_error) { return; }
   if (!hit) return;
+  if (!_tutorialActionTargetMatches(a, hit)) return;
+  if (!_tutorialProductEventMatches(e, a, hit)) return;
   // Optional checkbox-state expectation (e.g. Dormant must be UNchecked).
   // On the 'input'/'change' events the value is already committed; on a
   // raw 'click' of a checkbox it may not be — but our checkbox actions
   // use 'change', so reading hit.checked here is correct.
-  if (typeof a.checked === 'boolean' && ('checked' in hit) && hit.checked !== a.checked) return;
+  if (typeof a.checked === 'boolean'
+      && (!('checked' in hit) || hit.checked !== a.checked)) return;
   // DEFER the advance one tick (capture phase — the target's own handler
   // hasn't run yet). This lets the game react first (create #helix-legend,
   // save the collected crystal + re-render the inventory, open the zone
