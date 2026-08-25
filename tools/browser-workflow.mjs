@@ -14,6 +14,14 @@ import {
   fileBundleAssetDigest,
   fileBundleAssetFiles,
 } from './file-bundle-assets.mjs';
+import {
+  buildGuidedTutorialBrowserReceipt,
+  writeGuidedTutorialBrowserReceipt,
+} from './guided-tutorial-browser-receipt.mjs';
+import {
+  attestOwnedDevToolsBrowserRuntime,
+  findOwnedBrowserExecutable,
+} from './owned-browser-runtime.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionMatch = /const SIM_VERSION = (\d+);/.exec(
@@ -25,6 +33,7 @@ const FILE_BUNDLE_ASSET_COUNT = fileBundleAssetFiles(ROOT).length;
 const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;
 const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
+const TUTORIAL_COLLECTION_NAME = 'Browser QA — Shigar topaz';
 const DEFAULT_TIMEOUT_MS = 20_000;
 // Full app navigation includes the canonical 7.99 MB bundle, 98 embedded
 // authored assets, WebGL commissioning, and scenario/narrative registration.
@@ -84,44 +93,6 @@ function ownedProcessFailure(child) {
     return new Error(`Owned process ${child.pid || '(unknown pid)'} exited with code ${child.exitCode}`);
   }
   return null;
-}
-
-function browserCandidates() {
-  const env = process.env.VUGG_BROWSER_BIN ? [process.env.VUGG_BROWSER_BIN] : [];
-  if (process.platform === 'win32') {
-    return [
-      ...env,
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-    ];
-  }
-  if (process.platform === 'darwin') {
-    return [
-      ...env,
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-      '/Applications/Chromium.app/Contents/MacOS/Chromium',
-    ];
-  }
-  return [
-    ...env,
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/microsoft-edge',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-  ];
-}
-
-function findBrowser() {
-  const browser = browserCandidates().find(candidate => candidate && existsSync(candidate));
-  if (!browser) {
-    throw new Error(
-      'No Chrome/Edge/Chromium executable found. Set VUGG_BROWSER_BIN to an installed browser.',
-    );
-  }
-  return browser;
 }
 
 async function freePort() {
@@ -249,6 +220,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text;
 public static class VuggProcessTree {
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
   private struct PROCESSENTRY32 {
@@ -263,6 +235,7 @@ public static class VuggProcessTree {
   [StructLayout(LayoutKind.Sequential)] private struct FILETIME { public uint low; public uint high; }
   [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenProcess(uint access, bool inherit, uint processId);
   [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetProcessTimes(IntPtr process, out FILETIME creation, out FILETIME exit, out FILETIME kernel, out FILETIME user);
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool QueryFullProcessImageName(IntPtr process, uint flags, StringBuilder path, ref int size);
   [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
   private enum TCP_TABLE_CLASS { TCP_TABLE_OWNER_PID_LISTENER = 3 }
   [StructLayout(LayoutKind.Sequential)] private struct MIB_TCPROW_OWNER_PID {
@@ -294,15 +267,20 @@ public static class VuggProcessTree {
     var entry = new PROCESSENTRY32(); entry.dwSize = (uint)Marshal.SizeOf(entry);
     if (Process32First(snapshot, ref entry)) do {
       ulong creationTicks = 0;
+      string executablePath = entry.szExeFile;
       IntPtr process = OpenProcess(0x1000, false, entry.th32ProcessID);
       if (process != IntPtr.Zero) {
         FILETIME creation, exit, kernel, user;
         if (GetProcessTimes(process, out creation, out exit, out kernel, out user)) {
           creationTicks = ((ulong)creation.high << 32) | creation.low;
         }
+        var imagePath = new StringBuilder(32768); int imagePathSize = imagePath.Capacity;
+        if (QueryFullProcessImageName(process, 0, imagePath, ref imagePathSize)) {
+          executablePath = imagePath.ToString();
+        }
         CloseHandle(process);
       }
-      rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + entry.szExeFile);
+      rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
       entry.dwSize = (uint)Marshal.SizeOf(entry);
     } while (Process32Next(snapshot, ref entry));
     CloseHandle(snapshot); return rows.ToArray();
@@ -849,6 +827,15 @@ function assertSafeBounds(rect, width, height, insets, label) {
 
 async function runWorkflow(driver, diagnostics) {
   const checks = [];
+  const guidedTutorialJourneys = {
+    schema: 'guided-tutorial-browser-journeys-v2',
+    trust: 'local-owned-browser-player-controls-not-independent-attestation',
+    sim_version: SIM_VERSION,
+    creative: null,
+    simulation: null,
+    save_load_policy: null,
+    skip_cleanup: null,
+  };
   async function check(name, task) {
     const started = performance.now();
     await task();
@@ -998,6 +985,384 @@ async function runWorkflow(driver, diagnostics) {
     assert.equal(titration.accepted?.product, 'carbonate-acid-titration');
     assert.equal(titration.accepted?.spatial_authority_closed, true);
     assert.ok(titration.accepted?.after_pH < titration.accepted?.before_pH);
+  });
+
+  await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=guided-journeys`);
+
+  await check('completes public-control guided tutorial journeys and lifecycle policy', async () => {
+    const openNewGamePublic = async () => {
+      const titleVisible = await driver.evaluate(
+        `getComputedStyle(document.querySelector('#title-screen')).display !== 'none'`,
+      );
+      if (titleVisible) {
+        await driver.clickExpression(
+          `Array.from(document.querySelectorAll('#title-screen .title-buttons button'))
+            .find(button => button.textContent.trim() === 'New Game')`,
+          'title-screen New Game button',
+        );
+      } else {
+        // The shipped N shortcut is the public New Game boundary between
+        // completed or skipped lessons; no internal mode helper is involved.
+        await driver.key('n', 'KeyN', 78);
+      }
+      await driver.waitFor(
+        `getComputedStyle(document.querySelector('#new-game-panel')).display !== 'none'`,
+        'Begin menu',
+      );
+    };
+    const clickBeginTutorial = async (number) => {
+      await driver.clickExpression(
+        `Array.from(document.querySelectorAll('#begin-tutorial-buttons button'))
+          .find(button => button.textContent.includes('Tutorial ${number}:'))`,
+        `Begin-menu Tutorial ${number} button`,
+      );
+      await driver.waitFor(
+        `tutorialStateSnapshot()?.step_index === 0
+          && document.body.classList.contains('tutorial-active')`,
+        `Tutorial ${number} public boot`,
+        BROWSER_NAVIGATION_TIMEOUT_MS,
+      );
+    };
+    const clickTutorialChrome = async (label) => {
+      await driver.waitFor(
+        `!!document.querySelector('.tutorial-callout-btn:not(:disabled)')`,
+        `${label} tutorial chrome`,
+      );
+      await driver.click('.tutorial-callout-btn');
+    };
+    const advanceContinueTo = async (targetIndex, label) => {
+      while ((await driver.evaluate(`tutorialStateSnapshot()?.step_index ?? -1`)) < targetIndex) {
+        const before = await driver.evaluate(`tutorialStateSnapshot()?.step_index ?? -1`);
+        await clickTutorialChrome(label);
+        await driver.waitFor(
+          `tutorialStateSnapshot() === null
+            || tutorialStateSnapshot().step_index > ${before}`,
+          `${label} progress after step ${before}`,
+        );
+      }
+    };
+    const assertTutorialCleanup = async (label, { requireNoSim = false } = {}) => {
+      const cleanup = await driver.evaluate(`(() => ({
+        tutorial: tutorialStateSnapshot(),
+        active_class: document.body.classList.contains('tutorial-active'),
+        callouts: document.querySelectorAll('.tutorial-callout, .tutorial-callout-arrow').length,
+        locks: document.querySelectorAll(
+          '.tutorial-allow, .tutorial-permanent-allow, .tutorial-step-allow, .tutorial-spotlight, [data-tutorial-locked="true"]',
+        ).length,
+        sim_present: !!window.vugg.fortressSim || !!window.vugg.legendsSim,
+      }))()`);
+      assert.equal(cleanup.tutorial, null, `${label} retained tutorial progress`);
+      assert.equal(cleanup.active_class, false, `${label} retained tutorial-active class`);
+      assert.equal(cleanup.callouts, 0, `${label} retained callout chrome`);
+      assert.equal(cleanup.locks, 0, `${label} retained control locks`);
+      if (requireNoSim) assert.equal(cleanup.sim_present, false, `${label} retained geology`);
+      return cleanup;
+    };
+    const captureFortressGeologyIdentity = async () => driver.evaluate(`(() => {
+      const sim = window.vugg.fortressSim;
+      const save = _liveSaveActiveRecord();
+      return {
+        runtime: 'fortress',
+        scenario: save?.origin?.scenario || null,
+        step: sim?.step ?? null,
+        fingerprint: sim ? simulationStateFingerprint(sim) : null,
+        run_id: save?.run_id || save?.id || null,
+      };
+    })()`);
+    const captureSimulationGeologyIdentity = async () => driver.evaluate(`(() => {
+      const sim = window.vugg.legendsSim;
+      const receipt = stripLatestDurableRunReceipt();
+      return {
+        runtime: 'simulation',
+        scenario: window.vugg._lastRunMeta?.scenario || null,
+        step: sim?.step ?? null,
+        fingerprint: sim ? simulationStateFingerprint(sim) : null,
+        run_id: receipt?.dataset_digest_sha256 || null,
+      };
+    })()`);
+    const closeGeologyPreservation = (before, after, label) => {
+      for (const [key, value] of Object.entries(before)) {
+        assert.notEqual(value, null, `${label} lacks before ${key}`);
+      }
+      assert.deepEqual(after, before, `${label} changed the geological run`);
+      return {
+        schema: 'guided-tutorial-geology-preservation-v1',
+        before,
+        after,
+      };
+    };
+
+    // Save/load policy: the rolling autosave owns geology, not tutorial UI.
+    // Leave the lesson through the visible Saves tab, then load that exact
+    // live autosave through its rendered row. Replay must preserve the
+    // scientific fingerprint while tutorial progress stays intentionally gone.
+    await openNewGamePublic();
+    await clickBeginTutorial(3);
+    await advanceContinueTo(5, 'travertine framing');
+    await driver.waitFor(`!document.querySelector('#f-advance')?.disabled`, 'travertine Advance');
+    await driver.click('#f-advance');
+    await driver.waitFor(`window.vugg.fortressSim?.step === 1`, 'travertine save-policy step');
+    const saveBefore = await captureFortressGeologyIdentity();
+    assert.equal(saveBefore.step, 1);
+    assert.ok(saveBefore.run_id);
+    assert.ok(await driver.evaluate(`tutorialStateSnapshot()`));
+    await driver.click('#mode-saves');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#saves-panel')).display !== 'none'
+        && tutorialStateSnapshot() === null`,
+      'Saves policy boundary',
+    );
+    await driver.clickExpression(
+      `(() => {
+        const row = Array.from(document.querySelectorAll('.save-row'))
+          .find(candidate => candidate.querySelector('.save-status')?.textContent.includes('live'));
+        return row && Array.from(row.querySelectorAll('button'))
+          .find(button => button.textContent.trim() === 'Load');
+      })()`,
+      'live tutorial autosave Load button',
+    );
+    await driver.waitFor(
+      `window.vugg.fortressSim?.step === 1 && tutorialStateSnapshot() === null`,
+      'tutorial autosave replay without overlay resurrection',
+      30_000,
+    );
+    const saveAfter = await captureFortressGeologyIdentity();
+    assert.equal(await driver.evaluate(`tutorialStateSnapshot()`), null);
+    guidedTutorialJourneys.save_load_policy = {
+      origin: 'tutorial_travertine',
+      autosave_step: saveBefore.step,
+      geology_preservation: closeGeologyPreservation(
+        saveBefore, saveAfter, 'tutorial save/load policy',
+      ),
+      tutorial_resurrected: false,
+      policy: 'geological-run-restored-tutorial-overlay-intentionally-not-restored',
+    };
+
+    // Full Creative journey: every transition uses the visible Continue,
+    // Advance, acid, and Finish controls. The final sim-step narration is a
+    // genuine pause junction before the inverse experiment.
+    await openNewGamePublic();
+    await clickBeginTutorial(3);
+    await advanceContinueTo(5, 'travertine full framing');
+    const creativeMilestones = [];
+    for (let expectedStep = 1; expectedStep <= 50; expectedStep++) {
+      await driver.waitFor(
+        `!document.querySelector('#f-advance')?.disabled`,
+        `travertine Advance ${expectedStep}`,
+      );
+      await driver.click('#f-advance');
+      await driver.waitFor(
+        `window.vugg.fortressSim?.step === ${expectedStep}`,
+        `travertine geological step ${expectedStep}`,
+      );
+      if (expectedStep === 1) {
+        await driver.waitFor(
+          `getComputedStyle(document.querySelector('#narrative-speed-cluster')).display !== 'none'`,
+          'travertine public speed controls',
+        );
+        await driver.click('#narrative-speed-cluster .speed-btn[data-speed="10"]');
+      }
+      if ([4, 11, 20, 26, 41, 50].includes(expectedStep)) {
+        creativeMilestones.push(await driver.evaluate(`({
+          geological_step: window.vugg.fortressSim.step,
+          tutorial: tutorialStateSnapshot(),
+        })`));
+      }
+    }
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.paused_at >= 0
+        && tutorialStateSnapshot()?.current_trigger === 'continue'`,
+      'travertine authored pause junction',
+    );
+    const pause = await driver.evaluate(`tutorialStateSnapshot()`);
+    await clickTutorialChrome('travertine pause junction');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'action'
+        && !!document.querySelector('.action-btn.act-acid:not(:disabled)')`,
+      'travertine inverse experiment',
+    );
+    await driver.evaluate(`(() => {
+      window.__guidedTutorialAcidProducts = [];
+      document.querySelector('.action-grid').addEventListener(
+        'vugg:fortress-fluid-action-committed',
+        event => window.__guidedTutorialAcidProducts.push(event.detail),
+      );
+    })()`);
+    const pHBefore = await driver.evaluate(`window.vugg.fortressSim.conditions.fluid.pH`);
+    await driver.click('.action-btn.act-acid:not(:disabled)');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'continue'
+        && window.vugg.fortressSim.conditions.fluid.pH < ${pHBefore}`,
+      'committed travertine acid product',
+    );
+    const pHAfter = await driver.evaluate(`window.vugg.fortressSim.conditions.fluid.pH`);
+    const acidProduct = await driver.evaluate(`window.__guidedTutorialAcidProducts.at(-1) || null`);
+    assert.equal(acidProduct?.before_pH, pHBefore);
+    assert.equal(acidProduct?.after_pH, pHAfter);
+    await clickTutorialChrome('travertine acid explanation');
+    const creativeGeologyBeforeCompletion = await captureFortressGeologyIdentity();
+    await clickTutorialChrome('travertine final completion');
+    const creativeCleanup = await assertTutorialCleanup('travertine final completion');
+    const creativeGeologyAfterCompletion = await captureFortressGeologyIdentity();
+    guidedTutorialJourneys.creative = {
+      scenario: 'tutorial_travertine',
+      entry: 'Begin menu Tutorial 3 button',
+      controls: ['Continue', 'Advance', '0.2s narrative speed', 'Tweak acid', 'Finish tutorial'],
+      geological_step: 50,
+      authored_milestones: creativeMilestones.map(row => row.geological_step),
+      pause: {
+        step_index: pause.step_index,
+        paused_at: pause.paused_at,
+        trigger: pause.current_trigger,
+      },
+      acid_product: acidProduct,
+      geology_preservation: closeGeologyPreservation(
+        creativeGeologyBeforeCompletion,
+        creativeGeologyAfterCompletion,
+        'travertine ordinary completion',
+      ),
+      teardown: {
+        tutorial_null: creativeCleanup.tutorial === null,
+        callouts: creativeCleanup.callouts,
+        locks: creativeCleanup.locks,
+      },
+    };
+
+    // Skip is a separate ordinary player exit. It keeps the geological run
+    // but removes every tutorial-owned surface.
+    await openNewGamePublic();
+    await clickBeginTutorial(2);
+    const skipBefore = await captureFortressGeologyIdentity();
+    await driver.click('.tutorial-callout-skip');
+    const skipCleanup = await assertTutorialCleanup('tutorial Skip');
+    const skipAfter = await captureFortressGeologyIdentity();
+    assert.equal(skipCleanup.sim_present, true, 'Skip destroyed the geological run');
+    guidedTutorialJourneys.skip_cleanup = {
+      scenario: skipBefore.scenario,
+      tutorial_removed: true,
+      geology_preservation: closeGeologyPreservation(
+        skipBefore, skipAfter, 'tutorial Skip',
+      ),
+      callouts: skipCleanup.callouts,
+      locks: skipCleanup.locks,
+    };
+
+    // Full Simulation journey: public Begin-menu entry, Continue chrome,
+    // Grow, public narrative speed + both narrative gates, committed topaz
+    // collection, Library navigation/search, and ordinary Finish teardown.
+    await openNewGamePublic();
+    await clickBeginTutorial(4);
+    await advanceContinueTo(4, 'Shigar setup framing');
+    await driver.waitFor(`!document.querySelector('#btn-grow')?.disabled`, 'Shigar Grow');
+    await driver.click('#btn-grow');
+    await driver.waitFor(
+      `!!document.querySelector('.narrative-continue-pill[data-position="prologue"]')
+        && getComputedStyle(document.querySelector('#narrative-speed-cluster')).display !== 'none'`,
+      'Shigar prologue gate and speed controls',
+      60_000,
+    );
+    await driver.click('#narrative-speed-cluster .speed-btn[data-speed="10"]');
+    await driver.click('.narrative-continue-pill[data-position="prologue"]');
+    await driver.waitFor(
+      `!!document.querySelector('.narrative-continue-pill[data-position="epilogue"]')`,
+      'Shigar epilogue gate',
+      180_000,
+    );
+    await driver.click('.narrative-continue-pill[data-position="epilogue"]');
+    await driver.waitFor(
+      `!document.body.classList.contains('legends-playing')
+        && tutorialStateSnapshot()?.current_trigger === 'continue'`,
+      'Shigar completed-pocket explanation',
+      180_000,
+    );
+    await clickTutorialChrome('Shigar completed pocket');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'action'
+        && !!document.querySelector('.inv-crystal[data-mineral="topaz"] .inv-collect-btn:not(:disabled)')`,
+      'Shigar collection product step',
+    );
+    diagnostics.dialog_expectations.push(
+      { type: 'prompt', message_prefix: 'Name this topaz:', prompt_text: TUTORIAL_COLLECTION_NAME },
+      { type: 'alert', message_prefix: `Collected "${TUTORIAL_COLLECTION_NAME}".` },
+    );
+    await driver.click('.inv-crystal[data-mineral="topaz"] .inv-collect-btn:not(:disabled)');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'continue'
+        && window.loadCrystals().some(record => record.name === ${JSON.stringify(TUTORIAL_COLLECTION_NAME)}
+          && record.mineral === 'topaz')`,
+      'durable Shigar topaz collection',
+    );
+    const collection = await driver.evaluate(`(() => {
+      const record = window.loadCrystals().find(item =>
+        item.name === ${JSON.stringify(TUTORIAL_COLLECTION_NAME)} && item.mineral === 'topaz');
+      return {
+        id: record?.id || null,
+        mineral: record?.mineral || null,
+        source_scenario: record?.source?.scenario || null,
+        source_seed: record?.source?.seed ?? null,
+      };
+    })()`);
+    assert.ok(collection.id);
+    assert.equal(collection.source_scenario, 'shigar_pegmatite');
+    assert.equal(collection.source_seed, 42);
+    await clickTutorialChrome('Shigar collection explanation');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'action'
+        && !document.querySelector('#mode-library')?.disabled`,
+      'Shigar Library action',
+    );
+    await driver.click('#mode-library');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#library-panel')).display !== 'none'
+        && tutorialStateSnapshot()?.current_trigger === 'continue'`,
+      'Shigar Library product',
+    );
+    await clickTutorialChrome('Shigar Library explanation');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'action'`,
+      'Shigar Library search action',
+    );
+    await driver.setValue('#lib-search', 'topaz');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.current_trigger === 'continue'
+        && !!document.querySelector('#library-grid .mineral-card[data-mineral="topaz"]')`,
+      'Shigar topaz Library result',
+    );
+    await clickTutorialChrome('Shigar topaz card explanation');
+    const simulationGeologyBeforeCompletion = await captureSimulationGeologyIdentity();
+    await clickTutorialChrome('Shigar final completion');
+    const simulationCleanup = await assertTutorialCleanup('Shigar final completion');
+    const simulationGeologyAfterCompletion = await captureSimulationGeologyIdentity();
+    guidedTutorialJourneys.simulation = {
+      scenario: 'shigar_pegmatite',
+      seed: 42,
+      steps: 70,
+      shape_seed_override: '',
+      cavity_size: 'any',
+      entry: 'Begin menu Tutorial 4 button',
+      controls: [
+        'Continue', 'Grow', '0.2s narrative speed', 'prologue gate', 'epilogue gate',
+        'Collect topaz', 'Library', 'search topaz', 'Finish tutorial',
+      ],
+      collected: {
+        record_id: collection.id,
+        name: TUTORIAL_COLLECTION_NAME,
+        mineral: collection.mineral,
+        source_scenario: collection.source_scenario,
+        source_seed: collection.source_seed,
+      },
+      library_result: 'topaz',
+      geology_preservation: closeGeologyPreservation(
+        simulationGeologyBeforeCompletion,
+        simulationGeologyAfterCompletion,
+        'Shigar ordinary completion',
+      ),
+      teardown: {
+        tutorial_null: simulationCleanup.tutorial === null,
+        callouts: simulationCleanup.callouts,
+        locks: simulationCleanup.locks,
+      },
+    };
   });
 
   await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=cancel`);
@@ -1250,7 +1615,9 @@ async function runWorkflow(driver, diagnostics) {
   });
 
   await check('manual-saves, recovers corruption, reloads, and restores Creative state', async () => {
-    diagnostics.dialog_prompt = MANUAL_SAVE_NAME;
+    diagnostics.dialog_expectations.push({
+      type: 'prompt', message_exact: 'Name this save:', prompt_text: MANUAL_SAVE_NAME,
+    });
     await driver.click('#mode-saves');
     await driver.waitFor(
       `getComputedStyle(document.querySelector('#saves-panel')).display !== 'none'`,
@@ -1554,11 +1921,11 @@ async function runWorkflow(driver, diagnostics) {
     assert.deepEqual(setup.undersized, [], 'Creative setup has touch targets below 44px');
   });
 
-  return checks;
+  return { checks, guidedTutorialJourneys };
 }
 
 async function main() {
-  const browserPath = findBrowser();
+  const browserPath = findOwnedBrowserExecutable();
   const serverPort = await freePort();
   const profileDir = await mkdtemp(path.join(os.tmpdir(), 'vugg-browser-qa-'));
   const serverNonce = randomUUID();
@@ -1573,8 +1940,9 @@ async function main() {
     sim_version: SIM_VERSION,
     seed: TEST_SEED,
     browser_path: browserPath,
+    browser_runtime: null,
     base_url: `http://127.0.0.1:${serverPort}`,
-    dialog_prompt: null,
+    dialog_expectations: [],
     dialogs: [],
     runtime_exceptions: [],
     severe_log_entries: [],
@@ -1637,6 +2005,17 @@ async function main() {
     browserProcessReceipts = ownedBrowser.receipts;
     diagnostics.browser_product = version.Browser;
     diagnostics.protocol_version = version['Protocol-Version'];
+    const devToolsOwnerReceipt = browserProcessReceipts
+      .find(receipt => receipt.pid === browserRootPid);
+    if (!devToolsOwnerReceipt?.executable_path) {
+      throw new Error('DevTools port owner lacks a full executable-path receipt');
+    }
+    diagnostics.browser_runtime = attestOwnedDevToolsBrowserRuntime({
+      configuredExecutable: browserPath,
+      devToolsOwnerExecutable: devToolsOwnerReceipt.executable_path,
+      browserProduct: diagnostics.browser_product,
+      protocolVersion: diagnostics.protocol_version,
+    });
     client = new CdpClient(version.webSocketDebuggerUrl);
     await client.open();
     const targets = await fetchWithDeadline(`http://127.0.0.1:${devTools.port}/json/list`, {
@@ -1694,9 +2073,11 @@ async function main() {
       }
     });
     session.on('Page.javascriptDialogOpening', event => {
-      const expected = event.type === 'prompt'
-        && event.message === 'Name this save:'
-        && diagnostics.dialog_prompt === MANUAL_SAVE_NAME;
+      const planned = diagnostics.dialog_expectations[0] || null;
+      const expected = !!planned
+        && event.type === planned.type
+        && (planned.message_exact == null || event.message === planned.message_exact)
+        && (planned.message_prefix == null || event.message.startsWith(planned.message_prefix));
       diagnostics.dialogs.push({
         type: event.type,
         message: event.message,
@@ -1705,13 +2086,27 @@ async function main() {
       });
       void session.send('Page.handleJavaScriptDialog', {
         accept: expected,
-        promptText: expected ? MANUAL_SAVE_NAME : '',
+        promptText: expected ? (planned.prompt_text || '') : '',
       });
-      diagnostics.dialog_prompt = null;
+      if (expected) diagnostics.dialog_expectations.shift();
     });
     await session.send('Page.addScriptToEvaluateOnNewDocument', {
       source: `
         Object.defineProperty(Date, 'now', { value: () => ${TEST_SEED}, configurable: true });
+        // Browser QA owns a reproducible UI-identity stream. Scientific RNG
+        // uses SeededRandom; this controls otherwise nondeterministic save and
+        // specimen record IDs so the durable receipt can bind exact products.
+        let __vuggQaRandomState = 0x6d2b79f5;
+        Object.defineProperty(Math, 'random', {
+          value: () => {
+            __vuggQaRandomState = (__vuggQaRandomState + 0x6d2b79f5) >>> 0;
+            let value = __vuggQaRandomState;
+            value = Math.imul(value ^ (value >>> 15), value | 1);
+            value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+            return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+          },
+          configurable: true,
+        });
         Object.defineProperty(HTMLMediaElement.prototype, 'play', {
           value: function () { return Promise.resolve(); }, configurable: true,
         });
@@ -1719,26 +2114,37 @@ async function main() {
     });
 
     const driver = new BrowserDriver(session);
-    const checks = await runWorkflow(driver, diagnostics);
+    const workflow = await runWorkflow(driver, diagnostics);
     assert.deepEqual(diagnostics.runtime_exceptions, [], 'uncaught browser exceptions were recorded');
     assert.deepEqual(diagnostics.severe_log_entries, [], 'severe browser log entries were recorded');
     assert.deepEqual(diagnostics.http_errors, [], 'HTTP resource errors were recorded');
+    assert.equal(diagnostics.dialog_expectations.length, 0, 'expected browser dialogs were not observed');
+    assert.equal(diagnostics.dialogs.length, 3, 'unexpected or missing browser dialog count');
     assert.deepEqual(
-      diagnostics.dialogs.map(dialog => ({
-        type: dialog.type,
-        message: dialog.message,
-        expected: dialog.expected,
-      })),
-      [{ type: 'prompt', message: 'Name this save:', expected: true }],
-      'unexpected or missing browser dialog',
+      diagnostics.dialogs.map(dialog => ({ type: dialog.type, expected: dialog.expected })),
+      [
+        { type: 'prompt', expected: true },
+        { type: 'alert', expected: true },
+        { type: 'prompt', expected: true },
+      ],
+      'unexpected browser dialog sequence',
     );
+    if (process.argv.includes('--write-guided-receipt')) {
+      const receipt = buildGuidedTutorialBrowserReceipt(
+        ROOT, SIM_VERSION, workflow.guidedTutorialJourneys, diagnostics.browser_runtime,
+      );
+      const output = writeGuidedTutorialBrowserReceipt(ROOT, receipt);
+      process.stdout.write(`[browser-workflow] wrote ${path.relative(ROOT, output).replaceAll('\\', '/')}\n`);
+    }
     process.stdout.write(`${JSON.stringify({
       ok: true,
       schema: diagnostics.schema,
       sim_version: diagnostics.sim_version,
       seed: diagnostics.seed,
       browser: diagnostics.browser_product,
-      checks,
+      browser_runtime: diagnostics.browser_runtime,
+      checks: workflow.checks,
+      guided_tutorial_journeys: workflow.guidedTutorialJourneys,
     }, null, 2)}\n`);
   } finally {
     let receiptCaptureFailure = null;

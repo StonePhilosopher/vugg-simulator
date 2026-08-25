@@ -163,6 +163,15 @@ and the exact-execution evidence receipt.
   transfers that the carbonate boundary must flush immediately before
   titration instead of falsely requiring the titration to occupy the stale
   pre-action transaction index.
+  The finishing acceptance tranche drives only public player controls through
+  all 50 Travertine Advances, its authored pause and committed acid experiment,
+  ordinary completion teardown, a separate Skip, and the complete Shigar Grow
+  -> narrative gates -> topaz collection -> Library search loop. It also proves
+  the explicit save policy: an autosave restores the exact geological
+  fingerprint without resurrecting tutorial progress. The durable local-owned-
+  browser receipt binds those journeys to the exact browser bundle, execution
+  set, Node runtime, evidence producer, and actual DevTools port-owner binary;
+  it is intentionally not described as independent attestation.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and

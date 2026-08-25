@@ -123,6 +123,10 @@ const PRODUCER_ENTRIES = Object.freeze({
   'locality-frequency': ['tools/gen-locality-frequency-baseline.mjs'],
   'strip-digest': ['tools/gen-strip-digest.mjs'],
   'mechanism-witnesses': ['tools/gen-mechanism-witnesses.mjs'],
+  'guided-tutorial-browser': [
+    'tools/browser-workflow.mjs',
+    'tools/guided-tutorial-browser-receipt.mjs',
+  ],
   // review-claim-card loads _harness through a computed file URL, which a
   // static import-closure walker cannot discover.
   'claim-cards': ['tools/review-claim-card.mjs', 'tools/_harness.mjs'],
