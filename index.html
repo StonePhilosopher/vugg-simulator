@@ -19858,7 +19858,23 @@ function scenarioSpecHash(spec) {
 // longer inherit a hidden Custom recipe across Home/New Game, and save replay
 // deterministically reconstructs the same future input from its recorded
 // origin before applying actions.
-const SIM_VERSION = 279;
+// v280 (August 2026): visible player controls can no longer be accepted and
+// then erased by an authored absolute movement before geology reads them. The
+// authored curve remains the geological baseline; the player's actual clamped
+// delta is a persistent, replay-bound field offset applied after authored
+// texture/clamps and carried across overlapping movement-owner handoffs.
+// An explicit recipe-action cursor keeps same-step slider coalescing replay-
+// exact, base-less windows capture their baseline net of the offset, and the
+// field authority survives dynamically appended or rebuilt controllers.
+// Every non-sulfur coordinate changed by a visible fluid action crosses the
+// bulk-to-voxel boundary over an authenticated water-state scope (ordinary
+// source-fluid edits target non-vadose voxels; Drain/Evaporate oxygen targets
+// vadose voxels). The completed recipe cursor is sealed before the autosave
+// fingerprints that state.
+// Strip/claim testimony records the choice, and a controlled Herkimer branch
+// proves Heat diverges from wait-only geology. Simulation Random now derives
+// its candidates from the complete populated non-tutorial scenario registry.
+const SIM_VERSION = 280;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19923,7 +19939,7 @@ const MODEL_DIGEST = [
     'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
     'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
     'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-    'run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v7',
+    'run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v8',
     'morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2',
     'locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1',
     'crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1',
@@ -19933,9 +19949,10 @@ const MODEL_DIGEST = [
     'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
-    'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
-    'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts-v2',
-    'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v10',
+    'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+aggregate-artifact-sha256-v4',
+    'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3',
+    'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
+    'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -75674,23 +75691,534 @@ function _replayStride(step) {
         return 243;
     return 729;
 }
-function _canonicalSpatialFluids(sim) {
+function _canonicalSpatialFluidEntries(sim) {
     const grid = sim?.wall_state?.voxelGridFor?.(sim);
     if (grid?.voxels)
         return grid.voxels.map((voxel, index) => {
             if (!voxel || !voxel.fluid) {
                 throw new Error(`canonical voxel ${index} has no fluid authority`);
             }
-            return voxel.fluid;
+            const ringIdx = voxel.ringIdx;
+            if (!Number.isSafeInteger(ringIdx)
+                || ringIdx < 0 || ringIdx >= sim.wall_state.ring_count) {
+                throw new Error(`canonical voxel ${index} has no ring authority`);
+            }
+            return Object.freeze({ fluid: voxel.fluid, ringIdx });
         });
     const mesh = sim?.wall_state?.meshFor?.(sim);
+    const cellsPerRing = sim?.wall_state?.cells_per_ring;
+    if (mesh?.cells?.length && (!Number.isSafeInteger(cellsPerRing) || cellsPerRing <= 0)) {
+        throw new Error('canonical wall mesh has no cells-per-ring authority');
+    }
     return (mesh?.cells || []).map((cell, index) => {
         if (!cell || !cell.fluid) {
             throw new Error(`canonical wall cell ${index} has no fluid authority`);
         }
-        return cell.fluid;
+        return Object.freeze({ fluid: cell.fluid, ringIdx: Math.floor(index / cellsPerRing) });
     });
 }
+function _canonicalSpatialFluids(sim) {
+    return _canonicalSpatialFluidEntries(sim).map((entry) => entry.fluid);
+}
+const _playerFluidWaterScopeForAction = (action, leaf) => ((action === 'drain' || action === 'evaporate') && leaf === 'O2'
+    ? 'vadose' : 'nonvadose');
+const _playerFluidAffine = (application, basis, scale, offset, min = null, max = null) => Object.freeze({ application, basis, scale, offset, min, max });
+// GAME-02 transform authority. This table is deliberately beside the opaque
+// spatial bridge rather than inferred from one bulk before/after pair. Once a
+// cavity contains different wet and vadose compositions, `x *= 0.6` and
+// `x += bulkAfter-bulkBefore` are not the same operation. 97 supplies only the
+// action identity/payload; this physics module declares the actual per-fluid
+// transform. review-claim-card carries an independent fail-closed projection
+// for the movement-owned subset published as claim testimony.
+const _playerFluidTransformForAction = (sim, action, payload, leaf, after) => {
+    const concentrationMin = leaf === 'pH' || leaf === 'Eh' ? null : 0;
+    const add = (amount, basis = `${action}:${leaf}:add`) => _playerFluidAffine('uniform-delta', basis, 1, amount, concentrationMin, null);
+    const scale = (factor, basis = `${action}:${leaf}:scale`) => _playerFluidAffine('uniform-scale', basis, factor, 0, concentrationMin, null);
+    const exact = (basis = `${action}:${leaf}:exact`) => _playerFluidAffine('exact-replacement', basis, 0, after, null, null);
+    const bounded = (offset, min, max) => _playerFluidAffine('bounded-affine', `${action}:${leaf}:bounded-affine`, 1, offset, min, max);
+    const reactiveSilica = (amount) => Object.freeze({
+        application: 'linked-reactive-silica-addition',
+        basis: `${action}:reactive-silica-addition`,
+        scale: 1,
+        offset: 0,
+        min: 0,
+        max: 1,
+        linkedAmount: amount,
+    });
+    const carbonateExact = !!sim?._carbonateBoundaryState;
+    switch (action) {
+        case 'seep':
+            if (leaf === 'SiO2')
+                return scale(0.85);
+            if (leaf === 'Ca')
+                return scale(1.10);
+            if (leaf === 'CO3')
+                return carbonateExact ? exact('seep:carbonate-boundary-exact') : scale(1.08);
+            if (leaf === 'pH')
+                return carbonateExact ? exact('seep:carbonate-boundary-exact') : bounded(0.1, null, 10);
+            return null;
+        case 'flood':
+            if (leaf === 'SiO2')
+                return scale(0.6);
+            if (leaf === 'Ca')
+                return scale(1.3);
+            if (leaf === 'CO3')
+                return carbonateExact ? exact('flood:carbonate-boundary-exact') : scale(1.2);
+            if (leaf === 'pH')
+                return carbonateExact ? exact('flood:carbonate-boundary-exact') : bounded(0.3, null, 10);
+            return null;
+        case 'drain':
+            return leaf === 'O2' ? bounded(0, 0.6, null) : null;
+        case 'evaporate':
+            if (leaf === 'O2')
+                return bounded(0, 1.5, null);
+            if (['Ca', 'Mg', 'Na', 'K', 'Cl', 'B', 'F', 'Sr'].includes(leaf))
+                return scale(1.4);
+            if (leaf === 'CO3' && !carbonateExact)
+                return scale(1.4);
+            return null;
+        case 'tweak_acidify':
+            if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+                return exact('acid:carbonate-boundary-exact');
+            }
+            return leaf === 'pH' ? bounded(-0.3, 2, null) : null;
+        case 'shift_acidify':
+        case 'acidify':
+            if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+                return exact('acid:carbonate-boundary-exact');
+            }
+            return leaf === 'pH' ? bounded(-2, 2, null) : null;
+        case 'tweak_alkalinize':
+            if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+                return exact('base:carbonate-boundary-exact');
+            }
+            return leaf === 'pH' ? bounded(0.3, null, 10) : null;
+        case 'shift_alkalinize':
+        case 'alkalinize':
+            if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+                return exact('base:carbonate-boundary-exact');
+            }
+            return leaf === 'pH' ? bounded(2, null, 10) : null;
+        case 'replenish':
+            return exact('replenish:starting-fluid-exact');
+        case 'inject_species': {
+            const species = typeof payload?.species === 'string' ? payload.species : '';
+            const amount = Number(payload?.ppm) || 50;
+            if (leaf === species)
+                return add(amount, `inject_species:${leaf}:add`);
+            if (species === 'SiO2' && leaf === 'reactiveSilicaFraction')
+                return reactiveSilica(amount);
+            return null;
+        }
+        case 'silica':
+            if (leaf === 'SiO2')
+                return add(400);
+            if (leaf === 'reactiveSilicaFraction')
+                return reactiveSilica(400);
+            if (leaf === 'Al')
+                return add(2);
+            if (leaf === 'Ti')
+                return add(0.3);
+            return null;
+        case 'metals':
+            if (leaf === 'Fe')
+                return add(40);
+            if (leaf === 'Mn')
+                return add(15);
+            return null;
+        case 'brine':
+            return leaf === 'Zn' ? add(150) : null;
+        case 'fluorine':
+            if (leaf === 'F')
+                return add(25);
+            if (leaf === 'Ca')
+                return add(80);
+            return null;
+        case 'copper':
+            if (leaf === 'Cu' || leaf === 'O2')
+                return exact();
+            if (leaf === 'Fe')
+                return add(40);
+            if (leaf === 'SiO2')
+                return add(200);
+            if (leaf === 'reactiveSilicaFraction')
+                return reactiveSilica(200);
+            return null;
+        case 'oxidize':
+            return leaf === 'O2' ? exact() : null;
+        default:
+            return null;
+    }
+};
+const _playerFluidSelectedIndices = (sim, entries, waterScope) => {
+    const ringCount = sim?.wall_state?.ring_count;
+    if (!Number.isSafeInteger(ringCount) || ringCount <= 0
+        || typeof sim?.conditions?.ringWaterState !== 'function') {
+        throw new Error('Player fluid intervention lacks cavity water-state authority');
+    }
+    const states = new Map();
+    const selected = [];
+    for (let index = 0; index < entries.length; index++) {
+        const ringIdx = entries[index].ringIdx;
+        let state = states.get(ringIdx);
+        if (state == null) {
+            state = sim.conditions.ringWaterState(ringIdx, ringCount);
+            if (!['submerged', 'meniscus', 'vadose'].includes(state)) {
+                throw new Error(`Player fluid intervention found unknown water state ${state}`);
+            }
+            states.set(ringIdx, state);
+        }
+        if ((waterScope === 'vadose' && state === 'vadose')
+            || (waterScope === 'nonvadose' && state !== 'vadose'))
+            selected.push(index);
+    }
+    if (!selected.length) {
+        throw new Error(`Player fluid intervention has no ${waterScope} canonical pore fluid`);
+    }
+    return selected;
+};
+// GAME-02 breadcrumb: visible global-fluid controls and the chemistry engines
+// live on opposite sides of a real storage boundary. 97/97a mutate the bulk
+// `conditions.fluid` handle, while growth consumes the independent canonical
+// voxel fluids. A movement offset alone therefore preserves only the number
+// on screen. These opaque one-shot snapshots let the UI ask this physics
+// module to apply and receipt the same accepted coordinate change without
+// exposing the mutable voxel array or duplicating voxel-layout knowledge in
+// the UI. 85j embeds the resulting closure in the player-action receipt;
+// 85g/85h and review-claim-card carry it into authenticated evidence.
+const _PLAYER_FLUID_SPATIAL_SNAPSHOTS = new WeakMap();
+const _PLAYER_FLUID_ACTION_SNAPSHOTS = new WeakMap();
+const _PLAYER_FLUID_SULFUR_FIELDS = new Set([
+    'S', 'S_sulfide', 'S_sulfate', 'S_elemental',
+]);
+const _playerFluidJsonClone = (value) => JSON.parse(JSON.stringify(value));
+const _playerFluidLeaf = (sim, field) => {
+    if (typeof field !== 'string' || !field.startsWith('fluid.'))
+        return null;
+    const leaf = field.slice('fluid.'.length);
+    if (!leaf || _PLAYER_FLUID_SULFUR_FIELDS.has(leaf)
+        || !Array.isArray(sim?._fluidFieldNames)
+        || !sim._fluidFieldNames.includes(leaf))
+        return null;
+    return leaf;
+};
+const _capturePlayerFluidSpatialSnapshotInternal = (sim, field) => {
+    const leaf = _playerFluidLeaf(sim, field);
+    if (!leaf)
+        return null;
+    const entries = _canonicalSpatialFluidEntries(sim);
+    if (!entries.length) {
+        throw new Error(`Player fluid intervention ${field} has no canonical spatial authority`);
+    }
+    const values = entries.map((entry, index) => {
+        const fluid = entry.fluid;
+        const value = fluid?.[leaf];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`Player fluid intervention ${field} found nonfinite voxel ${index}`);
+        }
+        return value;
+    });
+    const token = Object.freeze({});
+    _PLAYER_FLUID_SPATIAL_SNAPSHOTS.set(token, Object.freeze({
+        sim,
+        field,
+        leaf,
+        values: Object.freeze(values.slice()),
+    }));
+    return token;
+};
+// Fortress buttons often change several coordinates at once (the legacy
+// Silica button also carries Al/Ti; Inject is species-selectable). Capture the
+// whole non-sulfur numeric fluid authority once, then reconcile only the
+// coordinates the action actually changed. This keeps save replay from
+// manufacturing a different pre-Replenish spatial state when a prior button
+// edit was recorded as a broth delta. Sulfur remains on its dedicated
+// valence-aware boundary/ledger path and is deliberately excluded here.
+const _capturePlayerFluidActionSnapshotInternal = (sim, action, payload = null) => {
+    const entries = _canonicalSpatialFluidEntries(sim);
+    if (!entries.length)
+        throw new Error('Player fluid action has no canonical spatial authority');
+    const fields = {};
+    for (const leaf of (sim?._fluidFieldNames || [])) {
+        const field = `fluid.${leaf}`;
+        if (!_playerFluidLeaf(sim, field))
+            continue;
+        const before = sim.conditions?.fluid?.[leaf];
+        if (typeof before !== 'number' || !Number.isFinite(before))
+            continue;
+        const values = entries.map((entry, index) => {
+            const fluid = entry.fluid;
+            const value = fluid?.[leaf];
+            if (typeof value !== 'number' || !Number.isFinite(value)) {
+                throw new Error(`Player fluid action ${field} found nonfinite voxel ${index}`);
+            }
+            return value;
+        });
+        const ringValues = (sim.ring_fluids || []).map((fluid, index) => {
+            const value = fluid?.[leaf];
+            if (typeof value !== 'number' || !Number.isFinite(value)) {
+                throw new Error(`Player fluid action ${field} found nonfinite ring fluid ${index}`);
+            }
+            return value;
+        });
+        fields[field] = Object.freeze({
+            leaf,
+            before,
+            values: Object.freeze(values),
+            // Carbonate replacement also writes the ring-level fallback fluids.
+            // They are replay-authenticated and can feed chemistry when no exact
+            // cell is available, so an action rollback must restore them alongside
+            // the canonical voxel population rather than leaving a hidden residue.
+            ringValues: Object.freeze(ringValues),
+        });
+    }
+    const token = Object.freeze({});
+    _PLAYER_FLUID_ACTION_SNAPSHOTS.set(token, Object.freeze({
+        sim,
+        action: String(action || ''),
+        payload: payload && typeof payload === 'object' ? Object.freeze({ ...payload }) : null,
+        fields: Object.freeze(fields),
+        // Carbonate titration is one coupled mutation: 97 changes the solver's
+        // acid/base capacity, DIC/pH bookkeeping, and append-only transaction at
+        // the same time that it replaces pore-fluid CO3/pH. A later generic
+        // spatial rejection must restore that authority as well as the fluid
+        // bytes, or the next Advance sees a poisoned unreceipted-DIC residual.
+        carbonateBoundaryState: sim?._carbonateBoundaryState
+            ? _playerFluidJsonClone(sim._carbonateBoundaryState) : null,
+    }));
+    return token;
+};
+const _reconcilePlayerFluidActionSnapshotInternal = (sim, token, execution = null) => {
+    if (!token)
+        return Object.freeze({});
+    const snapshot = _PLAYER_FLUID_ACTION_SNAPSHOTS.get(token);
+    _PLAYER_FLUID_ACTION_SNAPSHOTS.delete(token);
+    if (!snapshot || snapshot.sim !== sim) {
+        throw new Error('Player fluid action lacks an exact one-shot spatial snapshot');
+    }
+    const authorities = {};
+    const rollbackSnapshot = (restoreCoupledAuthority = true) => {
+        const entries = _canonicalSpatialFluidEntries(sim);
+        for (const rollback of Object.values(snapshot.fields)) {
+            if (entries.length !== rollback.values.length) {
+                throw new Error('Player fluid action changed canonical voxel ownership during rollback');
+            }
+            for (let index = 0; index < entries.length; index++) {
+                entries[index].fluid[rollback.leaf] = rollback.values[index];
+            }
+            const ringFluids = sim.ring_fluids || [];
+            if (ringFluids.length !== rollback.ringValues.length) {
+                throw new Error('Player fluid action changed ring-fluid ownership during rollback');
+            }
+            for (let index = 0; index < ringFluids.length; index++) {
+                ringFluids[index][rollback.leaf] = rollback.ringValues[index];
+            }
+            sim.conditions.fluid[rollback.leaf] = rollback.before;
+        }
+        if (restoreCoupledAuthority && snapshot.carbonateBoundaryState) {
+            const restored = _playerFluidJsonClone(snapshot.carbonateBoundaryState);
+            const current = sim._carbonateBoundaryState;
+            if (current && typeof current === 'object') {
+                for (const key of Object.keys(current))
+                    delete current[key];
+                Object.assign(current, restored);
+                sim.conditions._carbonateBoundaryState = current;
+            }
+            else {
+                sim._carbonateBoundaryState = restored;
+                sim.conditions._carbonateBoundaryState = restored;
+            }
+        }
+    };
+    const accepted = execution?.accepted !== false;
+    const excludedFields = new Set(Array.isArray(execution?.excludedFields)
+        ? execution.excludedFields.filter((field) => typeof field === 'string')
+        : []);
+    if (!accepted) {
+        // A UI branch can reject an authored boundary (for example, partial-volume
+        // Replenish) after the before-image was captured. Preserve that explicit
+        // refusal: do not turn a zero bulk delta into an exact spatial set.
+        // Preserve an explicitly authored refusal row (partial-volume Replenish,
+        // unavailable carbonate boundary, etc.). Only an exception after a
+        // nominally accepted action invokes the coupled-authority rollback below.
+        rollbackSnapshot(false);
+        return Object.freeze({});
+    }
+    const changed = [];
+    for (const [field, state] of Object.entries(snapshot.fields)) {
+        const after = sim.conditions?.fluid?.[state.leaf];
+        if (typeof after !== 'number' || !Number.isFinite(after))
+            continue;
+        const transform = _playerFluidTransformForAction(sim, snapshot.action, snapshot.payload, state.leaf, after);
+        if (excludedFields.has(field)) {
+            if (after !== state.before) {
+                rollbackSnapshot();
+                throw new Error(`Player fluid action ${snapshot.action} changed rejected field ${field}`);
+            }
+            continue;
+        }
+        if (!transform) {
+            if (after === state.before)
+                continue;
+            rollbackSnapshot();
+            throw new Error(`Player fluid action ${snapshot.action} changed undeclared field ${field}`);
+        }
+        // Execute the declared law even when the bulk display scalar did not move.
+        // max/set laws can still alter a heterogeneous selected population; the
+        // bulk equality shortcut was the GAME-02 evaporate-after-flood defect.
+        changed.push({ field, state, after, transform });
+    }
+    try {
+        for (const { field, state, after, transform } of changed) {
+            const fieldToken = Object.freeze({});
+            _PLAYER_FLUID_SPATIAL_SNAPSHOTS.set(fieldToken, Object.freeze({
+                sim,
+                field,
+                leaf: state.leaf,
+                values: state.values,
+            }));
+            authorities[field] = _reconcilePlayerFluidSpatialSnapshotInternal(sim, fieldToken, state.before, after, 'auto', _playerFluidWaterScopeForAction(snapshot.action, state.leaf), transform, snapshot.fields);
+        }
+    }
+    catch (error) {
+        // A Fortress verb is one geological choice even when it touches several
+        // fluid coordinates. Never leave the first coordinates installed when a
+        // later coordinate fails its declared spatial transform. 97 records the
+        // action only after this bridge returns, so the physical state and recipe
+        // either advance together or both retain the exact before-image.
+        rollbackSnapshot();
+        throw error;
+    }
+    return Object.freeze(authorities);
+};
+const _playerFluidValuesClose = (a, b, tolerance = 1e-12) => (a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) <= tolerance));
+const _reconcilePlayerFluidSpatialSnapshotInternal = (sim, token, before, after, requestedApplication = 'auto', waterScope = 'nonvadose', declaredTransform = null, actionFields = null) => {
+    if (!token)
+        return null;
+    const snapshot = _PLAYER_FLUID_SPATIAL_SNAPSHOTS.get(token);
+    _PLAYER_FLUID_SPATIAL_SNAPSHOTS.delete(token);
+    if (!snapshot || snapshot.sim !== sim
+        || typeof before !== 'number' || !Number.isFinite(before)
+        || typeof after !== 'number' || !Number.isFinite(after)
+        || (before === after && !declaredTransform)) {
+        throw new Error('Player fluid intervention lacks an exact one-shot spatial snapshot');
+    }
+    const { field, leaf, values: allBeforeValues } = snapshot;
+    const entries = _canonicalSpatialFluidEntries(sim);
+    const fluids = entries.map((entry) => entry.fluid);
+    if (fluids.length !== allBeforeValues.length || !fluids.length) {
+        throw new Error(`Player fluid intervention ${field} changed canonical voxel ownership`);
+    }
+    const readAllValues = () => fluids.map((fluid, index) => {
+        const value = fluid?.[leaf];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`Player fluid intervention ${field} found nonfinite voxel ${index}`);
+        }
+        return value;
+    });
+    const selectedIndices = _playerFluidSelectedIndices(sim, entries, waterScope);
+    const selected = new Set(selectedIndices);
+    const excludedIndices = fluids.map((_, index) => index)
+        .filter((index) => !selected.has(index));
+    const beforeValues = selectedIndices.map((index) => allBeforeValues[index]);
+    const excludedBeforeValues = excludedIndices.map((index) => allBeforeValues[index]);
+    const selectValues = (values) => selectedIndices.map(index => values[index]);
+    const excludedValues = (values) => excludedIndices.map(index => values[index]);
+    const delta = after - before;
+    const signed = leaf === 'pH' || leaf === 'Eh';
+    const transform = declaredTransform || (requestedApplication === 'exact-replacement'
+        ? _playerFluidAffine('exact-replacement', 'broth:absolute-control', 0, after, null, null)
+        : _playerFluidAffine('uniform-delta', 'visible-control:bulk-delta', 1, delta, signed ? null : 0, null));
+    let clampedCount = 0;
+    let clampAdjustmentTotal = 0;
+    const expectedValues = beforeValues.map((value, offset) => {
+        if (transform.application === 'linked-reactive-silica-addition') {
+            const silicaState = actionFields?.['fluid.SiO2'];
+            const totalBefore = silicaState?.values?.[selectedIndices[offset]];
+            if (typeof totalBefore !== 'number' || !Number.isFinite(totalBefore)
+                || typeof transform.linkedAmount !== 'number' || transform.linkedAmount < 0) {
+                throw new Error('Player reactive-silica transform lacks linked total-silica authority');
+            }
+            const totalAfter = totalBefore + transform.linkedAmount;
+            return totalAfter > 0
+                ? (totalBefore * value + transform.linkedAmount) / totalAfter
+                : 0;
+        }
+        const raw = value * transform.scale + transform.offset;
+        let next = raw;
+        if (transform.min != null && next < transform.min)
+            next = transform.min;
+        if (transform.max != null && next > transform.max)
+            next = transform.max;
+        if (next !== raw) {
+            clampedCount++;
+            clampAdjustmentTotal += next - raw;
+        }
+        return next;
+    });
+    let allCurrentValues = readAllValues();
+    let currentValues = selectValues(allCurrentValues);
+    if (!_playerFluidValuesClose(excludedValues(allCurrentValues), excludedBeforeValues)) {
+        for (let index = 0; index < fluids.length; index++)
+            fluids[index][leaf] = allBeforeValues[index];
+        sim.conditions.fluid[leaf] = before;
+        throw new Error(`Player fluid intervention ${field} changed excluded ${waterScope} authority`);
+    }
+    if (!_playerFluidValuesClose(currentValues, expectedValues)) {
+        if (!_playerFluidValuesClose(currentValues, beforeValues)) {
+            throw new Error(`Player fluid intervention ${field} found an unauthenticated partial spatial write`);
+        }
+        for (let offset = 0; offset < selectedIndices.length; offset++) {
+            fluids[selectedIndices[offset]][leaf] = expectedValues[offset];
+        }
+        allCurrentValues = readAllValues();
+        currentValues = selectValues(allCurrentValues);
+    }
+    const beforeTotal = beforeValues.reduce((sum, value) => sum + value, 0);
+    const expectedAfterTotal = expectedValues.reduce((sum, value) => sum + value, 0);
+    const afterTotal = currentValues.reduce((sum, value) => sum + value, 0);
+    const error = afterTotal - expectedAfterTotal;
+    const tolerance = _ledgerTolerance(Math.max(Math.abs(beforeTotal), Math.abs(afterTotal)));
+    if (!_playerFluidValuesClose(currentValues, expectedValues, tolerance)
+        || Math.abs(error) > tolerance) {
+        // Restore the exact prior physical and visible coordinate before failing.
+        for (let index = 0; index < fluids.length; index++)
+            fluids[index][leaf] = allBeforeValues[index];
+        sim.conditions.fluid[leaf] = before;
+        throw new Error(`Player fluid intervention ${field} failed canonical spatial closure`);
+    }
+    return Object.freeze({
+        schema: 'player-fluid-spatial-intervention-v1',
+        field,
+        application: transform.application,
+        transformation_basis: transform.basis,
+        transform_scale: transform.scale,
+        transform_offset: transform.offset,
+        transform_min: transform.min,
+        transform_max: transform.max,
+        scope: waterScope === 'vadose'
+            ? 'canonical-vadose-voxel-volume'
+            : 'canonical-nonvadose-voxel-volume',
+        water_state_basis: 'authenticated-cavity-ring-water-state',
+        water_state_scope: waterScope,
+        canonical_count: fluids.length,
+        count: selectedIndices.length,
+        excluded_count: excludedIndices.length,
+        before_finite_count: selectedIndices.length,
+        after_finite_count: selectedIndices.length,
+        value_before: before,
+        value_after: after,
+        applied_delta: delta,
+        before_total: beforeTotal,
+        clamped_count: clampedCount,
+        clamp_adjustment_total: clampAdjustmentTotal,
+        expected_after_total: expectedAfterTotal,
+        after_total: afterTotal,
+        error,
+        tolerance,
+        closed: true,
+    });
+};
 function _spatialSulfurState(sim) {
     const fluids = _canonicalSpatialFluids(sim);
     const totals = fluids.map((fluid) => sulfurSystemTotalPpm(fluid));
@@ -78704,6 +79232,7 @@ async function stripSerialize(ds, gzip = true) {
         sulfur_ledger_testimony: ds.sulfur_ledger_testimony || [],
         fluid_boundary_testimony: ds.fluid_boundary_testimony || [],
         enclosure_testimony: ds.enclosure_testimony || [],
+        player_action_testimony: ds.player_action_testimony || [],
         layer_growth_testimony: ds.layer_growth_testimony || [],
         habit_morphology_testimony: ds.habit_morphology_testimony || [],
     })) : null;
@@ -78790,6 +79319,7 @@ async function stripDeserialize(input) {
     let sulfur_ledger_testimony;
     let fluid_boundary_testimony;
     let enclosure_testimony;
+    let player_action_testimony;
     let layer_growth_testimony;
     let habit_morphology_testimony;
     if ((manifest.format_version || 0) >= 4) {
@@ -78811,6 +79341,8 @@ async function stripDeserialize(input) {
             ? testimony.fluid_boundary_testimony : [];
         enclosure_testimony = Array.isArray(testimony.enclosure_testimony)
             ? testimony.enclosure_testimony : [];
+        player_action_testimony = Array.isArray(testimony.player_action_testimony)
+            ? testimony.player_action_testimony : [];
         layer_growth_testimony = Array.isArray(testimony.layer_growth_testimony)
             ? testimony.layer_growth_testimony : [];
         habit_morphology_testimony = Array.isArray(testimony.habit_morphology_testimony)
@@ -78827,6 +79359,7 @@ async function stripDeserialize(input) {
         ...(sulfur_ledger_testimony ? { sulfur_ledger_testimony } : {}),
         ...(fluid_boundary_testimony ? { fluid_boundary_testimony } : {}),
         ...(enclosure_testimony ? { enclosure_testimony } : {}),
+        ...(player_action_testimony ? { player_action_testimony } : {}),
         ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
         ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
     };
@@ -78988,6 +79521,8 @@ class StripRecorder {
         this.lastSeenFluidBoundaryTransactionCount = 0;
         this.enclosureTestimony = [];
         this.lastSeenEnclosureReceiptCount = 0;
+        this.playerActionTestimony = [];
+        this.lastSeenPlayerActionReceiptCount = 0;
         this.layerGrowthTestimony = [];
         this.lastSeenZoneCounts = new Map();
         this.latestHabitMorphology = new Map();
@@ -79370,6 +79905,15 @@ class StripRecorder {
             })));
         }
         this.lastSeenEnclosureReceiptCount = enclosureReceipts.length;
+        const playerActionReceipts = Array.isArray(sim?._playerActionReceipts)
+            ? sim._playerActionReceipts : [];
+        for (let i = this.lastSeenPlayerActionReceiptCount; i < playerActionReceipts.length; i++) {
+            this.playerActionTestimony.push(JSON.parse(JSON.stringify({
+                ...playerActionReceipts[i],
+                sample_index: step,
+            })));
+        }
+        this.lastSeenPlayerActionReceiptCount = playerActionReceipts.length;
         const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
         for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
             // Clone so later mutations cannot rewrite archived testimony.
@@ -79416,6 +79960,7 @@ class StripRecorder {
             sulfur_ledger_testimony: this.sulfurLedgerTestimony,
             fluid_boundary_testimony: this.fluidBoundaryTestimony,
             enclosure_testimony: this.enclosureTestimony,
+            player_action_testimony: this.playerActionTestimony,
             layer_growth_testimony: this.layerGrowthTestimony,
             habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
         };
@@ -79511,6 +80056,7 @@ function stripStoredRecordFromDataset(ds) {
         ...(ds.sulfur_ledger_testimony ? { sulfur_ledger_testimony: ds.sulfur_ledger_testimony } : {}),
         ...(ds.fluid_boundary_testimony ? { fluid_boundary_testimony: ds.fluid_boundary_testimony } : {}),
         ...(ds.enclosure_testimony ? { enclosure_testimony: ds.enclosure_testimony } : {}),
+        ...(ds.player_action_testimony ? { player_action_testimony: ds.player_action_testimony } : {}),
         ...(ds.layer_growth_testimony ? { layer_growth_testimony: ds.layer_growth_testimony } : {}),
         ...(ds.habit_morphology_testimony ? { habit_morphology_testimony: ds.habit_morphology_testimony } : {}),
     };
@@ -79528,6 +80074,7 @@ function stripDatasetFromStoredRecord(rec) {
         ...(rec.sulfur_ledger_testimony ? { sulfur_ledger_testimony: rec.sulfur_ledger_testimony } : {}),
         ...(rec.fluid_boundary_testimony ? { fluid_boundary_testimony: rec.fluid_boundary_testimony } : {}),
         ...(rec.enclosure_testimony ? { enclosure_testimony: rec.enclosure_testimony } : {}),
+        ...(rec.player_action_testimony ? { player_action_testimony: rec.player_action_testimony } : {}),
         ...(rec.layer_growth_testimony ? { layer_growth_testimony: rec.layer_growth_testimony } : {}),
         ...(rec.habit_morphology_testimony ? { habit_morphology_testimony: rec.habit_morphology_testimony } : {}),
     };
@@ -81460,28 +82007,119 @@ function _movementSetField(conditions, path, value) {
             : value;
     }
 }
+function _movementFieldsMatch(left, right) {
+    return left === right || left === 'fluid.' + right || 'fluid.' + left === right;
+}
+function _movementFieldKey(field) {
+    return field.startsWith('fluid.') ? field.slice('fluid.'.length) : field;
+}
 // The controller holds the parsed movements + the dedicated rng + per-movement
 // state (captured base + the OU texture value). An EMPTY controller is a total
 // no-op: applyStep returns before touching `conditions` or drawing any random
 // number — this is what keeps the dark scaffold byte-identical.
 class MovementController {
-    constructor(movements, vuggSeed) {
+    constructor(movements, vuggSeed, inheritedPlayerOffsets) {
         // Own the list. Creative mode can append a trajectory while older ones are
         // already active; sharing the scenario array would make a push happen
         // twice when the controller is updated explicitly.
         this.movements = Array.isArray(movements) ? movements.slice() : [];
+        this._movementSources = this.movements.map(() => 'authored-scenario');
         this.rng = _makeMovementRng(vuggSeed);
+        this._playerOffsets = new Map();
+        for (const [field, value] of Object.entries(inheritedPlayerOffsets || {})) {
+            if (typeof field === 'string' && field && Number.isFinite(value)) {
+                this._playerOffsets.set(_movementFieldKey(field), value);
+            }
+        }
         // originCell -1 = unresolved; resolved once at first window activation for
         // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
-        this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false, originCell: -1 }));
+        this._state = this.movements.map(movement => ({
+            base: 0, ou: 0, started: false, originCell: -1,
+            playerOffset: movement.origin === 'cell'
+                ? 0 : (this._playerOffsets.get(_movementFieldKey(movement.field)) || 0),
+        }));
     }
     get isEmpty() { return this.movements.length === 0; }
+    playerOffsetsSnapshot() {
+        return Object.freeze(Object.fromEntries(Array.from(this._playerOffsets.entries()).sort(([a], [b]) => a.localeCompare(b))));
+    }
     // Append without rebuilding the controller. Rebuilding would restart the
     // dedicated RNG stream and discard captured baselines / OU texture for every
     // trajectory that was already under way.
     addMovement(movement) {
+        const playerOffset = movement.origin === 'cell'
+            ? 0 : (this._playerOffsets.get(_movementFieldKey(movement.field)) || 0);
         this.movements.push(movement);
-        this._state.push({ base: 0, ou: 0, started: false, originCell: -1 });
+        this._movementSources.push('player-scheduled');
+        this._state.push({
+            base: 0, ou: 0, started: false, originCell: -1, playerOffset,
+        });
+    }
+    // GAME-02 — an authored absolute movement is the geological curve, not a
+    // licence to erase a visible player control. Fortress applies an
+    // intervention immediately, then calls this method with the ACTUAL applied
+    // delta. The delta becomes an additive offset on the effective movement
+    // that will own the next geological step. It therefore survives into the
+    // engines while retaining the authored curve's shape and dedicated RNG.
+    //
+    // Overlapping movements are applied in array order, so the last active
+    // movement is the effective owner named by the receipt. The intervention
+    // itself is field-level: apply it to every authored GLOBAL movement for the
+    // field. Each movement still adds it only once to its own setpoint, so this
+    // does not multiply the action, and the choice survives an overlap handoff
+    // or a later authored window. Cell-origin movements are feeders, not bulk
+    // controls; they never erased the visible global value and are excluded.
+    applyPlayerDelta(field, step, delta) {
+        if (typeof field !== 'string' || !field || !Number.isSafeInteger(step)
+            || !Number.isFinite(delta) || delta === 0)
+            return null;
+        let ownerIndex = -1;
+        for (let i = this.movements.length - 1; i >= 0; i--) {
+            const movement = this.movements[i];
+            const sameField = _movementFieldsMatch(movement.field, field);
+            if (!sameField || movement.origin === 'cell'
+                || step < movement.startStep || step >= movement.endStep)
+                continue;
+            ownerIndex = i;
+            break;
+        }
+        if (ownerIndex < 0)
+            return null;
+        const owner = this.movements[ownerIndex];
+        const ownerState = this._state[ownerIndex];
+        const offsetKey = _movementFieldKey(owner.field);
+        const before = this._playerOffsets.get(offsetKey)
+            ?? (Number.isFinite(ownerState.playerOffset) ? ownerState.playerOffset : 0);
+        const after = before + delta;
+        if (!Number.isFinite(after))
+            return null;
+        const updates = [];
+        for (let i = 0; i < this.movements.length; i++) {
+            const movement = this.movements[i];
+            const sameField = _movementFieldsMatch(movement.field, owner.field);
+            if (!sameField || movement.origin === 'cell')
+                continue;
+            const current = Number.isFinite(this._state[i].playerOffset)
+                ? this._state[i].playerOffset : 0;
+            const next = current + delta;
+            if (!Number.isFinite(next))
+                return null;
+            updates.push({ index: i, value: next });
+        }
+        this._playerOffsets.set(offsetKey, after);
+        for (const update of updates)
+            this._state[update.index].playerOffset = update.value;
+        return Object.freeze({
+            schema: 'movement-player-offset-v2',
+            movement_index: ownerIndex,
+            movement_source: this._movementSources[ownerIndex] || 'authored-scenario',
+            field: owner.field,
+            first_geology_step: step,
+            applied_delta: delta,
+            offset_before: before,
+            offset_after: after,
+            offset_application: 'after-authored-texture-and-clamp',
+        });
     }
     // Phase 4c.3a — is any movement driving `field` active at this step? Used by
     // the sim's _syncRedoxEh to flip the redox sync to Eh-CANONICAL (Eh→O2) for
@@ -81515,7 +82153,14 @@ class MovementController {
                 continue;
             // Capture the baseline the first time this window is active.
             if (!st.started) {
-                st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
+                const current = _movementGetField(conditions, m.field);
+                // A base-less global movement may first activate after the visible
+                // control has already changed `conditions`. Remove the persistent
+                // player offset from that captured baseline or the same intervention
+                // would be counted once in `current` and again below.
+                st.base = (typeof m.base === 'number')
+                    ? m.base
+                    : current - (m.origin === 'cell' ? 0 : (Number.isFinite(st.playerOffset) ? st.playerOffset : 0));
                 st.started = true;
                 // SPATIAL origin (Phase 2c): resolve + pin the injection cell ONCE,
                 // here at first activation, so it's stable and the (single) movement-
@@ -81548,6 +82193,13 @@ class MovementController {
                 value = Math.max(m.clampMin, value);
             if (typeof m.clampMax === 'number')
                 value = Math.min(m.clampMax, value);
+            // Translate the FINAL authored global curve. Applying the player's
+            // accepted delta after authored texture/clamps prevents those baseline
+            // constraints from silently erasing the visible intervention. Cell
+            // feeders remain an independent spatial boundary and are never shifted.
+            if (m.origin !== 'cell') {
+                value += Number.isFinite(st.playerOffset) ? st.playerOffset : 0;
+            }
             if (conditions?._carbonateBoundaryState
                 && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
                 conditions._pending_carbonate_boundary_violation = {
@@ -81644,7 +82296,82 @@ function _createMovementController(sim) {
         ? sim.conditions._scenario.movements : undefined;
     const wall = sim && sim.conditions ? sim.conditions.wall : null;
     const vuggSeed = (((wall && wall.shape_seed) || (sim && sim._seed) || 0) | 0);
-    return new MovementController(spec, vuggSeed);
+    const inheritedOffsets = sim?._movements?.playerOffsetsSnapshot?.() || null;
+    return new MovementController(spec, vuggSeed, inheritedOffsets);
+}
+// Canonical cross-boundary receipt for one visible control accepted against
+// an authored movement. UI, save replay, strip evidence, and controlled
+// witnesses all use this constructor so their testimony cannot drift apart.
+function movementPlayerInterventionReceipt(action, field, acceptedStep, actionCursor, before, after, authority, prior, fluidSpatialAuthority) {
+    if (typeof action !== 'string' || !action || typeof field !== 'string' || !field
+        || !Number.isSafeInteger(acceptedStep)
+        || !Number.isSafeInteger(actionCursor) || actionCursor < 0
+        || !Number.isFinite(before) || !Number.isFinite(after)
+        || authority?.schema !== 'movement-player-offset-v2'
+        || !['authored-scenario', 'player-scheduled'].includes(authority.movement_source)
+        || authority.offset_application !== 'after-authored-texture-and-clamp')
+        return null;
+    const canCoalesce = prior?.schema === 'player-movement-intervention-v1'
+        && prior.action === action && prior.field === field
+        && prior.accepted_at_step === acceptedStep
+        && prior.action_cursor === actionCursor;
+    const valueBefore = canCoalesce ? prior.value_before : before;
+    const offsetBefore = canCoalesce
+        ? prior.movement_authority.offset_before
+        : authority.offset_before;
+    let spatialAuthority = fluidSpatialAuthority || null;
+    const priorSpatialAuthority = canCoalesce
+        ? prior.fluid_spatial_authority || null : null;
+    if (canCoalesce && priorSpatialAuthority) {
+        if (!spatialAuthority
+            || priorSpatialAuthority.schema !== 'player-fluid-spatial-intervention-v1'
+            || spatialAuthority.schema !== 'player-fluid-spatial-intervention-v1'
+            || priorSpatialAuthority.field !== field || spatialAuthority.field !== field
+            || priorSpatialAuthority.application !== 'exact-replacement'
+            || spatialAuthority.application !== 'exact-replacement'
+            || priorSpatialAuthority.scope !== spatialAuthority.scope
+            || priorSpatialAuthority.water_state_basis !== spatialAuthority.water_state_basis
+            || priorSpatialAuthority.water_state_scope !== spatialAuthority.water_state_scope
+            || priorSpatialAuthority.canonical_count !== spatialAuthority.canonical_count
+            || priorSpatialAuthority.count !== spatialAuthority.count
+            || priorSpatialAuthority.excluded_count !== spatialAuthority.excluded_count)
+            return null;
+        // Broth sliders are absolute composition controls. Live drags may emit
+        // many DOM input events, while the save recipe retains only the final
+        // value. Exact replacement makes that compression physical: preserve
+        // the first spatial before-total and the final fully mixed target.
+        spatialAuthority = Object.freeze({
+            ...spatialAuthority,
+            value_before: priorSpatialAuthority.value_before,
+            applied_delta: spatialAuthority.value_after - priorSpatialAuthority.value_before,
+            before_total: priorSpatialAuthority.before_total,
+            expected_after_total: spatialAuthority.after_total,
+            error: 0,
+            tolerance: Math.max(1e-7, Math.max(Math.abs(priorSpatialAuthority.before_total), Math.abs(spatialAuthority.after_total)) * 1e-9),
+        });
+    }
+    else if (canCoalesce && spatialAuthority) {
+        // A spatially receipted coalesced edit cannot be joined to a prior
+        // bulk-only row without inventing the missing pore-fluid history.
+        return null;
+    }
+    return Object.freeze({
+        schema: 'player-movement-intervention-v1',
+        action,
+        field,
+        accepted_at_step: acceptedStep,
+        action_cursor: actionCursor,
+        first_geology_step: acceptedStep + 1,
+        value_before: valueBefore,
+        value_after: after,
+        applied_delta: after - valueBefore,
+        fluid_spatial_authority: spatialAuthority,
+        movement_authority: Object.freeze({
+            ...authority,
+            applied_delta: after - valueBefore,
+            offset_before: offsetBefore,
+        }),
+    });
 }
 
 // ── 85k-fluid-spots.js ──
@@ -82289,8 +83016,13 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         movementController: sim?._movements ? {
             rngState: Number(sim._movements.rng?.state) >>> 0,
             movements: _simulationCanonicalProjection(sim._movements.movements || []),
+            movementSources: _simulationCanonicalProjection(sim._movements._movementSources || []),
             state: _simulationCanonicalProjection(sim._movements._state || []),
+            playerOffsets: _simulationCanonicalProjection(sim._movements.playerOffsetsSnapshot?.() || {}),
         } : null,
+        playerActionReceipts: _simulationCanonicalProjection(sim?._playerActionReceipts || []),
+        playerActionCursor: Number.isSafeInteger(sim?._playerActionCursor)
+            ? sim._playerActionCursor : 0,
         temperatureC: Number(sim?.conditions?.temperature) || 0,
         pressureKbar: Number(sim?.conditions?.pressure) || 0,
         flowRate: Number(sim?.conditions?.flow_rate) || 0,
@@ -86506,8 +87238,24 @@ async function runSimulation() {
     // narrative finishes scrolling. Same for topoRender(final): the
     // cleanup-tail path inside displayLines handles it.
 }
+// One source for every Simulation-mode random picker. The populated dropdown
+// is the product's playable scenario registry; deriving from it prevents a
+// second four-item list from making 34 authored scenarios unreachable.
+function _simulationPlayableScenarioIds() {
+    const select = document.getElementById('scenario');
+    if (select) {
+        const options = Array.from(select.options)
+            .map(option => option.value)
+            .filter(id => id && !id.startsWith('tutorial_') && !!SCENARIOS[id]);
+        if (options.length)
+            return options;
+    }
+    return Object.keys(SCENARIOS).filter(id => !id.startsWith('tutorial_'));
+}
 function runRandom() {
-    const scenarios = ['cooling', 'pulse', 'mvt', 'porphyry'];
+    const scenarios = _simulationPlayableScenarioIds();
+    if (!scenarios.length)
+        return;
     const pick = scenarios[Math.floor(Math.random() * scenarios.length)];
     document.getElementById('scenario').value = pick;
     const seed = Math.floor(Math.random() * 2147483647);
@@ -91865,8 +92613,14 @@ function _saveApplyBroth(broth, writeState = false) {
             const valid = (typeof _isBrothValueValid === 'function')
                 ? _isBrothValueValid(BROTH_MAP[key], value)
                 : Number.isFinite(value);
-            if (valid)
-                BROTH_MAP[key].set(value);
+            if (valid) {
+                if (typeof _applyBrothMappedValue === 'function') {
+                    _applyBrothMappedValue(key, BROTH_MAP[key], value);
+                }
+                else {
+                    BROTH_MAP[key].set(value);
+                }
+            }
         }
     }
 }
@@ -92976,9 +93730,11 @@ function titleQuickPlay() {
     const scenarioEl = document.getElementById('scenario');
     if (!scenarioEl)
         return; // fail open — user is in legends, can pick manually
-    const options = Array.from(scenarioEl.options)
-        .map(o => o.value)
-        .filter(v => v && !v.startsWith('tutorial_'));
+    const options = (typeof _simulationPlayableScenarioIds === 'function')
+        ? _simulationPlayableScenarioIds()
+        : Array.from(scenarioEl.options)
+            .map(o => o.value)
+            .filter(v => v && !v.startsWith('tutorial_'));
     if (!options.length)
         return;
     const pick = options[Math.floor(Math.random() * options.length)];
@@ -95605,11 +96361,140 @@ function _fortressCarbonateTitrate(targetPH, note) {
         fortressSim._replaceFullyMixedCarbonateFluid();
     return tx;
 }
+// Bind a visible control to the authored movement that would otherwise erase
+// it on the next Advance. Broth sliders coalesce repeated input events at one
+// recipe cursor so live drag history and the replayed final value authenticate
+// as the same intervention.
+function _fortressApplyPlayerMovementDelta(field, before, after, action, coalesce = false, spatialSnapshot = null, spatialApplication = 'auto', preclosedFluidSpatialAuthority = null) {
+    if (!fortressSim)
+        return null;
+    const normalizedField = field.startsWith('fluid.') ? field : `fluid.${field}`;
+    if (fortressSim._carbonateBoundaryState
+        && (normalizedField === 'fluid.pH' || normalizedField === 'fluid.CO3')) {
+        // Carbonate-bound pH/DIC movements are already refused by applyStep; they
+        // cannot erase this control and must not mint false intervention evidence.
+        return null;
+    }
+    const delta = after - before;
+    const fluidSpatialAuthority = preclosedFluidSpatialAuthority || (spatialSnapshot && delta !== 0
+        ? _reconcilePlayerFluidSpatialSnapshotInternal(fortressSim, spatialSnapshot, before, after, spatialApplication)
+        : null);
+    const authoredMovements = fortressSim.conditions?._scenario?.movements;
+    if (!fortressSim._movements && Array.isArray(authoredMovements) && authoredMovements.length) {
+        // run_step normally creates this controller lazily. A visible intervention
+        // happens before run_step, so commission the same deterministic controller
+        // now or the first authored absolute sample would erase the action.
+        fortressSim._movements = _createMovementController(fortressSim);
+    }
+    const movement = fortressSim._movements?.applyPlayerDelta?.(field, fortressSim.step + 1, delta) || null;
+    if (!movement)
+        return null;
+    fortressSim._playerActionReceipts ||= [];
+    const actionCursor = Number.isSafeInteger(fortressSim._playerActionCursor)
+        && fortressSim._playerActionCursor >= 0
+        ? fortressSim._playerActionCursor : 0;
+    // Broth's pending recipe is a per-control map. Find the corresponding
+    // receipt anywhere in the current cursor rather than only at the tail, so
+    // an interleaved A -> B -> A drag has the same canonical [A, B] testimony
+    // when it is replayed from the final A/B values.
+    const priorIndex = coalesce
+        ? fortressSim._playerActionReceipts.findIndex((candidate) => (candidate?.schema === 'player-movement-intervention-v1'
+            && candidate.action === action
+            && candidate.field === field
+            && candidate.accepted_at_step === fortressSim.step
+            && candidate.action_cursor === actionCursor))
+        : -1;
+    const prior = priorIndex >= 0
+        ? fortressSim._playerActionReceipts[priorIndex]
+        : null;
+    const receipt = movementPlayerInterventionReceipt(action, field, fortressSim.step, actionCursor, before, after, movement, prior, fluidSpatialAuthority);
+    if (!receipt)
+        return null;
+    if (priorIndex >= 0)
+        fortressSim._playerActionReceipts[priorIndex] = receipt;
+    else
+        fortressSim._playerActionReceipts.push(receipt);
+    return receipt;
+}
+function _fortressAdvancePlayerActionCursor() {
+    if (!fortressSim)
+        return;
+    const current = Number.isSafeInteger(fortressSim._playerActionCursor)
+        && fortressSim._playerActionCursor >= 0
+        ? fortressSim._playerActionCursor : 0;
+    fortressSim._playerActionCursor = current + 1;
+}
+// Snapshot every active global movement-owned coordinate before a visible
+// Fortress action. The post-switch reconciliation below is deliberately
+// generic: pH, pressure, silica, redox, and future controls deserve the same
+// protection as the Heat repro that exposed GAME-02. Cell-origin movements
+// are spatial feeders and never overwrite the visible bulk coordinate.
+function _fortressMovementFieldSnapshot() {
+    const snapshot = new Map();
+    if (!fortressSim)
+        return snapshot;
+    const nextStep = fortressSim.step + 1;
+    const movements = fortressSim.conditions?._scenario?.movements;
+    if (!Array.isArray(movements))
+        return snapshot;
+    for (const movement of movements) {
+        if (!movement || movement.origin === 'cell'
+            || nextStep < movement.startStep || nextStep >= movement.endStep
+            || typeof movement.field !== 'string' || !movement.field)
+            continue;
+        const value = Number(_movementGetField(fortressSim.conditions, movement.field));
+        if (Number.isFinite(value) && !snapshot.has(movement.field)) {
+            snapshot.set(movement.field, Object.freeze({
+                value,
+            }));
+        }
+    }
+    return snapshot;
+}
+function _fortressReconcilePlayerMovementDeltas(before, action, fluidSpatialAuthorities = {}) {
+    if (!fortressSim)
+        return;
+    for (const [field, snapshot] of before.entries()) {
+        const valueBefore = Number(snapshot?.value);
+        const valueAfter = Number(_movementGetField(fortressSim.conditions, field));
+        if (!Number.isFinite(valueAfter) || valueAfter === valueBefore)
+            continue;
+        _fortressApplyPlayerMovementDelta(field, valueBefore, valueAfter, action, false, null, 'auto', fluidSpatialAuthorities[field] || null);
+    }
+}
+// These verbs mutate global fluid coordinates directly. 85c owns the actual
+// pore-fluid layout; this registry only says which visible UI verbs need one
+// opaque before/after reconciliation. It is intentionally adjacent to the
+// generic movement snapshot so a new chemistry button has one obvious place
+// to declare both what it touches and what touches it.
+const _FORTRESS_GLOBAL_FLUID_ACTIONS = new Set([
+    'seep', 'flood', 'drain', 'evaporate',
+    'tweak_acidify', 'shift_acidify', 'acidify',
+    'tweak_alkalinize', 'shift_alkalinize', 'alkalinize',
+    'replenish', 'inject_species',
+    'silica', 'metals', 'brine', 'fluorine', 'copper', 'oxidize',
+]);
+// Apply a visible player temperature control immediately. The generic
+// movement-field reconciliation records its actual clamped delta after the
+// action switch, alongside every other movement-owned coordinate.
+function _fortressApplyPlayerTemperature(targetC) {
+    if (!fortressSim)
+        return null;
+    const before = Number(fortressSim.conditions.temperature);
+    const after = Number(fortressSim.setGlobalTemperature(targetC));
+    return Object.freeze({ before, after, delta: after - before });
+}
 function fortressStep(action, payload) {
     if (!fortressSim || !fortressActive)
         return;
     const c = fortressSim.conditions;
     let actionDesc = '';
+    const movementFieldBefore = _fortressMovementFieldSnapshot();
+    const fluidActionSnapshot = _FORTRESS_GLOBAL_FLUID_ACTIONS.has(String(action))
+        ? _capturePlayerFluidActionSnapshotInternal(fortressSim, String(action), payload)
+        : null;
+    let fluidActionAccepted = !!fluidActionSnapshot;
+    const fluidActionExcludedFields = new Set();
     // Broth inputs write through on their own input events. Never treat a
     // synchronized slider echo as authority over geological state.
     // Save system (93a-ui-saves.ts): record the verb + any broth-slider
@@ -95631,19 +96516,19 @@ function fortressStep(action, payload) {
             break;
         // ── 2. TEMPERATURE — gentle/large pairs ──
         case 'warm':
-            fortressSim.setGlobalTemperature(Math.min(c.temperature + 5, 900));
+            _fortressApplyPlayerTemperature(Math.min(c.temperature + 5, 900));
             actionDesc = '🌤️ Warm +5°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'heat':
-            fortressSim.setGlobalTemperature(Math.min(c.temperature + 25, 900));
+            _fortressApplyPlayerTemperature(Math.min(c.temperature + 25, 900));
             actionDesc = '🔥 Heat +25°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'cool':
-            fortressSim.setGlobalTemperature(Math.max(c.temperature - 5, 0));
+            _fortressApplyPlayerTemperature(Math.max(c.temperature - 5, 0));
             actionDesc = '🌬️ Cool −5°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'quench':
-            fortressSim.setGlobalTemperature(Math.max(c.temperature - 25, 0));
+            _fortressApplyPlayerTemperature(Math.max(c.temperature - 25, 0));
             actionDesc = '❄️ Quench −25°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         // ── 3. WATER — seep/flood (in) and drain/evaporate (out) ──
@@ -95659,6 +96544,10 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? 'Seep executed as 10% replacement-water recharge with separate carbon import/export.'
                     : `Seep carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok) {
+                    fluidActionExcludedFields.add('fluid.CO3');
+                    fluidActionExcludedFields.add('fluid.pH');
+                }
             }
             else {
                 c.fluid.CO3 *= 1.08;
@@ -95678,6 +96567,10 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? 'Flood executed as 30% replacement-water recharge with separate carbon import/export.'
                     : `Flood carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok) {
+                    fluidActionExcludedFields.add('fluid.CO3');
+                    fluidActionExcludedFields.add('fluid.pH');
+                }
             }
             else {
                 c.fluid.CO3 *= 1.2;
@@ -95702,14 +96595,18 @@ function fortressStep(action, payload) {
             c.flow_rate = Math.max(c.flow_rate * 0.2, 0.05);
             c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
             // Concentrate solubles (skip pH; that's set by speciation, not bulk).
-            const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'B', 'F', 'Sr'];
+            // Do not multiply the legacy combined-S proxy here. Sulfur valence is a
+            // conserved, independently receipted authority, and this one-kg control
+            // volume does not yet model the water-mass export needed to concentrate
+            // its reservoirs honestly. This mirrors the carbonate hold just below.
+            const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'B', 'F', 'Sr'];
             if (!fortressSim._carbonateBoundaryState)
                 concSpecies.push('CO3');
             for (const sp of concSpecies) {
                 if (typeof c.fluid[sp] === 'number')
                     c.fluid[sp] *= 1.4;
             }
-            fortressSim.setGlobalTemperature(Math.max(c.temperature - 10, 25));
+            _fortressApplyPlayerTemperature(Math.max(c.temperature - 10, 25));
             if (fortressSim._carbonateBoundaryState) {
                 const state = fortressSim._carbonateBoundaryState;
                 if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
@@ -95717,7 +96614,7 @@ function fortressStep(action, payload) {
                 }
                 _carbonateBoundaryControlNotice = 'Evaporation held the conserved carbonate inventory fixed because changing the one-kg-water control-volume basis is not yet supported.';
             }
-            actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, brine concentrates ×1.4, sulfides oxidize`;
+            actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, modeled nonsulfur solutes concentrate ×1.4; sulfur reservoirs stay conserved and exposed sulfides may become unstable`;
             break;
         }
         // ── 4. pH — tweak/shift pairs in both directions ──
@@ -95727,6 +96624,8 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
                     : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok)
+                    fluidActionAccepted = false;
             }
             else
                 c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
@@ -95739,6 +96638,8 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
                     : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok)
+                    fluidActionAccepted = false;
                 actionDesc = tx?.ok ? `🧪 Acid titration → pH ${c.fluid.pH.toFixed(2)}` : '🧪 Acid titration rejected';
             }
             else
@@ -95750,6 +96651,8 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
                     : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok)
+                    fluidActionAccepted = false;
             }
             else
                 c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
@@ -95762,6 +96665,8 @@ function fortressStep(action, payload) {
                 _carbonateBoundaryControlNotice = tx?.ok
                     ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
                     : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+                if (!tx?.ok)
+                    fluidActionAccepted = false;
                 actionDesc = tx?.ok ? `⚗️ Base titration → pH ${c.fluid.pH.toFixed(2)}` : '⚗️ Base titration rejected';
             }
             else
@@ -95779,7 +96684,30 @@ function fortressStep(action, payload) {
         case 'replenish': {
             const initialFluidRecipe = _fortressInitialFluidRecipeFor(fortressSim);
             if (!initialFluidRecipe) {
+                fluidActionAccepted = false;
                 actionDesc = '🥣 Replenish — no starting recipe is bound to this Creative run';
+                break;
+            }
+            // The v1 replacement boundary is an equal-volume fully mixed model.
+            // Applying it to every stored voxel after Drain would inject source
+            // water into vadose pores, while applying it only below the water line
+            // would require a different gross import/export and sulfur-volume law.
+            // Fail before any boundary mutation until that partial-volume model is
+            // explicitly commissioned. Carbonate scenarios additionally retain the
+            // established structured refusal row for evidence/replay diagnosis.
+            let fullySubmerged = false;
+            try {
+                fullySubmerged = CavityWaterAppearance.create(fortressSim.wall_state, fortressSim.conditions, { sim: fortressSim }).receipt.fully_submerged === true;
+            }
+            catch (_) {
+                fullySubmerged = false;
+            }
+            if (!fullySubmerged) {
+                fluidActionAccepted = false;
+                if (fortressSim._carbonateBoundaryState) {
+                    fortressSim._prepareCarbonateBoundarySpatialState();
+                }
+                actionDesc = '🥣 Replenish rejected — partial flooding needs a separately authored replacement-volume boundary';
                 break;
             }
             let carbonateTx = null;
@@ -95792,10 +96720,13 @@ function fortressStep(action, payload) {
                     : `Replenish carbonate recharge rejected: ${carbonateTx?.error || 'unknown error'}.`;
             }
             if (fortressSim._carbonateBoundaryState && !carbonateTx?.ok) {
+                fluidActionAccepted = false;
                 actionDesc = '🥣 Replenish rejected — carbonate boundary could not authenticate the incoming fluid';
                 break;
             }
             const boundary = fortressSim.replaceFullyMixedFluidBoundary(initialFluidRecipe, 'Creative starting-fluid replenish', { preserveCarbonate: !!fortressSim._carbonateBoundaryState });
+            if (!boundary.ok)
+                fluidActionAccepted = false;
             actionDesc = boundary.ok
                 ? `🥣 Replenish — ${boundary.handlesReplaced} wet-fluid handles replaced from this run's starting recipe; pH → ${c.fluid.pH.toFixed(1)}`
                 : '🥣 Replenish failed its fluid-boundary closure audit';
@@ -95807,17 +96738,20 @@ function fortressStep(action, payload) {
         // underlying action stays for non-UI callers.
         case 'inject_species': {
             if (!payload || !payload.species) {
+                fluidActionAccepted = false;
                 actionDesc = '💉 inject_species — no species/ppm payload, ignored';
                 break;
             }
             const sp = String(payload.species);
             const amount = Number(payload.ppm) || 50;
             if (sp === 'CO3' && fortressSim._carbonateBoundaryState) {
+                fluidActionAccepted = false;
                 actionDesc = 'DIC injection refused: choose pure CO2 charge or replacement-water recharge so alkalinity and the carbon boundary are explicit.';
                 _carbonateBoundaryControlNotice = actionDesc;
                 break;
             }
             if (typeof c.fluid[sp] !== 'number') {
+                fluidActionAccepted = false;
                 actionDesc = `💉 Unknown species '${sp}' — no change`;
             }
             else {
@@ -95850,9 +96784,8 @@ function fortressStep(action, payload) {
             break;
         case 'brine':
             c.fluid.Zn += 150;
-            c.fluid.S += 120;
-            fortressSim.setGlobalTemperature(c.temperature - 10);
-            actionDesc = '⚗️ Brine mixed — Zn +150, S +120 ppm, T −10°C (mixing)';
+            _fortressApplyPlayerTemperature(c.temperature - 10);
+            actionDesc = '⚗️ Zn-rich brine mixed — Zn +150 ppm, T −10°C; sulfur reservoirs unchanged (no authored valence/source)';
             break;
         case 'fluorine':
             c.fluid.F += 25;
@@ -95862,22 +96795,20 @@ function fortressStep(action, payload) {
         case 'copper':
             c.fluid.Cu = 120.0;
             c.fluid.Fe += 40;
-            c.fluid.S += 80;
             if (typeof c.fluid.addReactiveSilica === 'function')
                 c.fluid.addReactiveSilica(200);
             else
                 c.fluid.SiO2 += 200;
             c.fluid.O2 = 0.3;
-            fortressSim.setGlobalTemperature(Math.min(c.temperature + 30, 600));
+            _fortressApplyPlayerTemperature(Math.min(c.temperature + 30, 600));
             c.flow_rate = 4.0;
-            actionDesc = `🟠 Copper injection — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, S +80, reducing. T → ${c.temperature.toFixed(0)}°C`;
+            actionDesc = `🟠 Copper-bearing fluid — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, reactive silica +200, reducing; sulfur reservoirs unchanged. T → ${c.temperature.toFixed(0)}°C`;
             break;
         case 'oxidize': // legacy alias — same intent as drain
             c.fluid.O2 = 1.8;
-            c.fluid.S *= 0.3;
-            fortressSim.setGlobalTemperature(Math.max(c.temperature - 40, 25));
+            _fortressApplyPlayerTemperature(Math.max(c.temperature - 40, 25));
             _lowerWaterLevel(2);
-            actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
+            actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}; sulfur reservoirs remain conserved until an executed redox/solid reaction transfers them. T → ${c.temperature.toFixed(0)}°C. Sulfides may become unstable!`;
             break;
         // ── 6. SEISMIC — differential stress, never isotropic pressure ──
         case 'tap': {
@@ -95887,7 +96818,7 @@ function fortressStep(action, payload) {
         }
         case 'shock':
         case 'tectonic': { // legacy alias
-            fortressSim.setGlobalTemperature(c.temperature + 15);
+            _fortressApplyPlayerTemperature(c.temperature + 15);
             const stress = applyDifferentialStressPulse(fortressSim, 50);
             actionDesc = `⚡ Shock — 50 MPa differential-stress pulse, T +15°C; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
             break;
@@ -95922,13 +96853,14 @@ function fortressStep(action, payload) {
             }
             c._scenario ||= {};
             c._scenario.movements ||= [];
-            c._scenario.movements.push(spec);
-            if (fortressSim._movements && typeof fortressSim._movements.addMovement === 'function') {
-                fortressSim._movements.addMovement(spec);
-            }
-            else {
+            // Commission the canonical authored rows BEFORE appending the visible
+            // Creative schedule. Otherwise a first-action schedule is already in
+            // the constructor input and is falsely labelled authored-scenario.
+            if (!fortressSim._movements) {
                 fortressSim._movements = _createMovementController(fortressSim);
             }
+            c._scenario.movements.push(spec);
+            fortressSim._movements.addMovement(spec);
             actionDesc = `Trajectory scheduled — ${spec.field}, steps ${spec.startStep}–${spec.endStep - 1}, ${spec.origin}`;
             break;
         }
@@ -96034,6 +96966,13 @@ function fortressStep(action, payload) {
             break;
         }
     }
+    const fluidSpatialAuthorities = fluidActionSnapshot
+        ? _reconcilePlayerFluidActionSnapshotInternal(fortressSim, fluidActionSnapshot, {
+            accepted: fluidActionAccepted,
+            excludedFields: Array.from(fluidActionExcludedFields),
+        })
+        : {};
+    _fortressReconcilePlayerMovementDeltas(movementFieldBefore, String(action || 'unknown'), fluidSpatialAuthorities);
     const logEl = document.getElementById('fortress-log');
     if (advanceSteps > 0) {
         // Narrative-tempo Phase 3: action results play out at narrative
@@ -96058,6 +96997,7 @@ function fortressStep(action, payload) {
             for (const l of stepLines)
                 lines.push(l);
         }
+        _fortressAdvancePlayerActionCursor();
         if (typeof _saveCommitAction === 'function')
             _saveCommitAction();
         _fortressPaceLines(lines, lineToStep, stepLineCounts, () => {
@@ -96072,6 +97012,7 @@ function fortressStep(action, payload) {
         return;
     }
     // Non-time actions: modify conditions but DON'T advance time.
+    _fortressAdvancePlayerActionCursor();
     if (typeof _saveCommitAction === 'function')
         _saveCommitAction();
     // Log what changed so the player can stack multiple changes. No
@@ -97145,6 +98086,19 @@ function _peekBrothPlayerChanges() {
 function _clearBrothPlayerChanges() {
     _brothPendingPlayerChanges = {};
 }
+// One canonical write path for live controls and save replay. Movement-owned
+// fields must rebuild the same offset/receipt whether a person moves the
+// slider or 93a replays its coalesced final value.
+function _applyBrothMappedValue(key, m, realVal) {
+    const movementBefore = Number(m.get());
+    const spatialSnapshot = _capturePlayerFluidSpatialSnapshotInternal(fortressSim, String(m.path || key));
+    const applied = m.set(realVal);
+    if (applied === false)
+        return false;
+    const movementAfter = Number(m.get());
+    _fortressApplyPlayerMovementDelta(String(m.path || key), movementBefore, movementAfter, `broth-${key}`, true, spatialSnapshot, 'exact-replacement');
+    return applied;
+}
 function setBrothValue(key, sliderVal) {
     if (!fortressSim || !fortressActive)
         return;
@@ -97154,7 +98108,7 @@ function setBrothValue(key, sliderVal) {
     const realVal = m.parse(sliderVal);
     if (!_isBrothValueValid(m, realVal))
         return;
-    const applied = m.set(realVal);
+    const applied = _applyBrothMappedValue(key, m, realVal);
     if (applied === false) {
         updateCarbonateBoundaryReadout();
         syncBrothSliders();
