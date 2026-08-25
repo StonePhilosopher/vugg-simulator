@@ -99,6 +99,10 @@ function groovePopulateCrystals() {
     const c = data.crystals[i];
     const opt = document.createElement('option');
     opt.value = String(i);
+    // Consumed by the tutorial action authority in 70a. Keep the machine
+    // identity beside the human label rather than parsing display prose.
+    opt.dataset.mineral = String(c.mineral || '');
+    opt.dataset.crystalId = String(c.crystal_id);
     let label = `${capitalize(c.mineral)} #${c.crystal_id} — ${c.c_length_mm.toFixed(1)}mm, ${c.zones.length} zones`;
     if (c.twinned) label += ' ⟁';
     opt.textContent = label;

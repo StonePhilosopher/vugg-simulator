@@ -58,6 +58,11 @@ const _STRIP_STORE = 'datasets';
 
 interface StripStoredRecord {
   key: string;
+  // SHA-256 of stripSerialize(dataset, false). This binds the manifest,
+  // tensors, events, and every testimony channel—not merely the list-row
+  // header. Older records may omit it and remain readable, but can never
+  // commission a guided tutorial product receipt.
+  dataset_digest_sha256?: string;
   manifest: StripManifest;
   chip_data: Uint8Array;
   nucleation_events: StripNucleationEvent[];
@@ -77,6 +82,80 @@ interface StripStoredRecord {
 interface StripListEntry {
   key: string;
   manifest: StripManifest;
+  dataset_digest_sha256?: string;
+}
+
+interface StripDurableRunReceipt {
+  key: string;
+  scenario_id: string;
+  seed: number;
+  recorded_at: number;
+  sim_version: number;
+  model_digest: string;
+  scenario_spec_hash: string;
+  manifest_digest_sha256: string;
+  dataset_digest_sha256: string;
+}
+
+// 70a/99k use this lexical receipt to distinguish the recording produced by
+// the current Simulation run from an older or uploaded look-alike. It is set
+// only after the IndexedDB transaction commits, never on request.onsuccess.
+let _stripLatestDurableRunReceipt: StripDurableRunReceipt | null = null;
+
+function stripDurableManifestDigest(manifest: StripManifest): string {
+  return sha256HexUtf8(JSON.stringify(manifest));
+}
+
+async function stripDurableDatasetDigest(ds: StripDataset): Promise<string> {
+  return sha256HexBytes(await stripSerialize(ds, false));
+}
+
+function _stripDurableRunReceipt(
+  key: string,
+  manifest: StripManifest,
+  datasetDigestSha256: string,
+): StripDurableRunReceipt {
+  if (!/^[0-9a-f]{64}$/.test(datasetDigestSha256)) {
+    throw new Error('strip: invalid durable dataset digest');
+  }
+  return Object.freeze({
+    key: String(key),
+    scenario_id: String(manifest.scenario_id || ''),
+    seed: Number(manifest.seed),
+    recorded_at: Number(manifest.recorded_at),
+    sim_version: Number(manifest.sim_version),
+    model_digest: String(manifest.model_digest || ''),
+    scenario_spec_hash: String((manifest as any).scenario_spec_hash || ''),
+    manifest_digest_sha256: stripDurableManifestDigest(manifest),
+    dataset_digest_sha256: datasetDigestSha256,
+  });
+}
+
+async function stripDatasetMatchesDurableRunReceipt(
+  key: string,
+  ds: StripDataset,
+  receipt: StripDurableRunReceipt | null,
+): Promise<boolean> {
+  if (!receipt || key !== receipt.key
+      || stripStorageKey(ds.manifest) !== receipt.key
+      || String(ds.manifest.scenario_id || '') !== receipt.scenario_id
+      || Number(ds.manifest.seed) !== receipt.seed
+      || Number(ds.manifest.recorded_at) !== receipt.recorded_at
+      || Number(ds.manifest.sim_version) !== receipt.sim_version
+      || String(ds.manifest.model_digest || '') !== receipt.model_digest
+      || String((ds.manifest as any).scenario_spec_hash || '') !== receipt.scenario_spec_hash
+      || stripDurableManifestDigest(ds.manifest) !== receipt.manifest_digest_sha256) return false;
+  return await stripDurableDatasetDigest(ds) === receipt.dataset_digest_sha256;
+}
+
+function stripLatestDurableRunReceipt(): StripDurableRunReceipt | null {
+  return _stripLatestDurableRunReceipt
+    ? Object.freeze({ ..._stripLatestDurableRunReceipt })
+    : null;
+}
+
+function stripStorageOriginEligible(origin: string): boolean {
+  return origin === 'production-run';
 }
 
 // Build a deterministic key for a dataset. recorded_at provides uniqueness.
@@ -166,9 +245,17 @@ const _STRIP_IDB_MAX_DATASETS = 5;
 
 // Save a dataset. Returns the stored key. Evicts oldest datasets
 // when the count cap is exceeded.
-async function stripStorageSave(ds: StripDataset): Promise<string> {
+async function stripStorageSave(
+  ds: StripDataset,
+  origin: 'production-run' | 'imported-file' = 'production-run',
+): Promise<string> {
+  const canonicalKey = stripStorageKey(ds.manifest);
+  // Uploaded files live in a separate key namespace. A file can have the
+  // same manifest timestamp as the current production run; it must never
+  // overwrite those commissioned bytes or inherit that run's receipt.
+  const key = origin === 'imported-file' ? `imported:${canonicalKey}` : canonicalKey;
+  const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
   const db = await _stripOpenDB();
-  const key = stripStorageKey(ds.manifest);
   // Eviction pass: walk existing keys, sort by recorded_at ascending
   // (OLDEST first), and delete the oldest until count = cap - 1 (one
   // free slot for the new save). If the new key already exists (re-
@@ -202,13 +289,24 @@ async function stripStorageSave(ds: StripDataset): Promise<string> {
   });
 
   const record = stripStoredRecordFromDataset(ds);
+  record.key = key;
+  record.dataset_digest_sha256 = datasetDigestSha256;
   return new Promise<string>((resolve, reject) => {
     const tx = db.transaction(_STRIP_STORE, 'readwrite');
     const store = tx.objectStore(_STRIP_STORE);
     const req = store.put(record);
-    req.onsuccess = () => resolve(key);
     req.onerror = () => reject(req.error || new Error('strip: save failed'));
-    tx.oncomplete = () => db.close();
+    tx.onerror = () => reject(tx.error || new Error('strip: save transaction failed'));
+    tx.onabort = () => reject(tx.error || new Error('strip: save transaction aborted'));
+    tx.oncomplete = () => {
+      if (stripStorageOriginEligible(origin)) {
+        _stripLatestDurableRunReceipt = _stripDurableRunReceipt(
+          key, ds.manifest, datasetDigestSha256,
+        );
+      }
+      db.close();
+      resolve(key);
+    };
   });
 }
 
@@ -239,7 +337,13 @@ async function stripStorageList(scenarioId?: string): Promise<StripListEntry[]> 
     const req = store.getAll();
     req.onsuccess = () => {
       const all = (req.result || []) as StripStoredRecord[];
-      let entries = all.map(rec => ({ key: rec.key, manifest: rec.manifest }));
+      let entries = all.map(rec => ({
+        key: rec.key,
+        manifest: rec.manifest,
+        ...(rec.dataset_digest_sha256
+          ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
+          : {}),
+      }));
       if (scenarioId) {
         entries = entries.filter(e => e.manifest.scenario_id === scenarioId);
       }
@@ -260,7 +364,10 @@ async function stripStorageDelete(key: string): Promise<void> {
     const req = store.delete(key);
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error || new Error('strip: delete failed'));
-    tx.oncomplete = () => db.close();
+    tx.oncomplete = () => {
+      if (_stripLatestDurableRunReceipt?.key === key) _stripLatestDurableRunReceipt = null;
+      db.close();
+    };
   });
 }
 
@@ -273,7 +380,10 @@ async function stripStorageClear(): Promise<void> {
     const req = store.clear();
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error || new Error('strip: clear failed'));
-    tx.oncomplete = () => db.close();
+    tx.oncomplete = () => {
+      _stripLatestDurableRunReceipt = null;
+      db.close();
+    };
   });
 }
 

@@ -124,6 +124,10 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep?: number) {
 
   const el = document.createElement('div');
   el.className = 'inv-crystal';
+  // Tutorial target authority (70a): the row carries the exact live crystal
+  // identity so mineral-specific lessons do not advance on a look-alike card.
+  el.dataset.mineral = String(crystal.mineral || '');
+  el.dataset.crystalId = String(crystal.crystal_id);
   // Click-for-zones always reads the LIVE crystal — the user is inspecting
   // the full history regardless of where the narrative tempo is paused.
   el.onclick = () => showZoneHistory(crystal);

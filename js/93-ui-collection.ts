@@ -314,17 +314,44 @@ function refreshTitleLoadButton() {
 // Called by the per-crystal Collect button in each mode's inventory.
 // The button stops propagation so the parent row's click (zone history
 // modal) doesn't also fire.
+function _dispatchCollectedProductEvent(ev, crystal) {
+  const button = ev && ev.currentTarget instanceof Element
+    ? ev.currentTarget
+    : ev && ev.target instanceof Element
+      ? ev.target.closest('.inv-collect-btn')
+      : null;
+  if (!button) return;
+  const owner = button.closest('.inv-crystal') as HTMLElement | null;
+  if (owner) owner.dataset.collectedRecordId = String(crystal?._collectedRecordId || '');
+  button.dispatchEvent(new CustomEvent('vugg:crystal-collected', {
+    bubbles: true,
+    detail: Object.freeze({
+      mineral: String(crystal?.mineral || ''),
+      crystal_id: Number(crystal?.crystal_id),
+      record_id: String(crystal?._collectedRecordId || ''),
+    }),
+  }));
+}
+
+function _collectCrystalWithProductReceipt(crystal, meta, ev) {
+  // 70a listens for this committed-product event. A raw click, cancelled
+  // naming prompt, or persistence failure never advances the lesson.
+  if (!collectCrystal(crystal, meta)) return false;
+  _dispatchCollectedProductEvent(ev, crystal);
+  return true;
+}
+
 function collectFromLegends(crystalIdx, ev) {
   if (ev) ev.stopPropagation();
   if (!legendsSim) return;
   const crystal = legendsSim.crystals[crystalIdx];
   const scenario = document.getElementById('scenario').value;
   const seedInput = document.getElementById('seed').value;
-  if (collectCrystal(crystal, {
+  if (_collectCrystalWithProductReceipt(crystal, {
     mode: 'simulation',
     scenario,
     seed: seedInput ? parseInt(seedInput, 10) : null,
-  })) {
+  }, ev)) {
     updateLegendsInventory(legendsSim);
   }
 }
@@ -335,21 +362,23 @@ function collectFromFortress(crystalIdx, ev) {
   const runId = (typeof _liveSaveActiveRecord === 'function')
     ? (_liveSaveActiveRecord()?.run_id || _liveSaveActiveRecord()?.id)
     : null;
-  if (collectCrystal(crystal, {
+  if (_collectCrystalWithProductReceipt(crystal, {
     mode: 'creative',
     run_id: runId,
     crystal_index: crystalIdx,
-  })) updateFortressInventory();
+  }, ev)) {
+    updateFortressInventory();
+  }
 }
 function collectFromRandom(crystalIdx, ev) {
   if (ev) ev.stopPropagation();
   if (!randomSim) return;
   const crystal = randomSim.crystals[crystalIdx];
-  if (collectCrystal(crystal, {
+  if (_collectCrystalWithProductReceipt(crystal, {
     mode: 'random',
     archetype: randomSimArchetype,
     seed: randomSimSeed,
-  })) {
+  }, ev)) {
     renderRandomInventory();
   }
 }

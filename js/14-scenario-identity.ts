@@ -31,8 +31,7 @@ function _scenarioRotr(value: number, count: number): number {
   return (value >>> count) | (value << (32 - count));
 }
 
-function sha256HexUtf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
+function sha256HexBytes(bytes: Uint8Array): string {
   const paddedLength = Math.ceil((bytes.length + 9) / 64) * 64;
   const padded = new Uint8Array(paddedLength);
   padded.set(bytes);
@@ -75,6 +74,10 @@ function sha256HexUtf8(value: string): string {
     hash[6] = (hash[6] + g) >>> 0; hash[7] = (hash[7] + h) >>> 0;
   }
   return Array.from(hash, n => n.toString(16).padStart(8, '0')).join('');
+}
+
+function sha256HexUtf8(value: string): string {
+  return sha256HexBytes(new TextEncoder().encode(value));
 }
 
 function scenarioSpecHash(spec: any): string {

@@ -739,6 +739,32 @@ function _stripBuildRadialContainer(ds: StripDataset, step: number, _width: numb
   return container;
 }
 
+async function _stripOpenStoredRow(
+  bodyEl: HTMLElement,
+  row: HTMLElement,
+  key: string,
+  loader: (storedKey: string) => Promise<StripDataset | null> = stripStorageLoad,
+  renderer: (body: HTMLElement, dataset: StripDataset) => void = _stripRenderDataset,
+): Promise<boolean> {
+  const ds = await loader(key);
+  if (!ds) return false;
+  // 70a advances the reading lesson only after the bytes loaded from IDB
+  // still match both the visible row and the receipt commissioned at the
+  // production transaction's commit. This closes the list→click TOCTOU seam:
+  // imported/old rows still open normally, but cannot narrate themselves as
+  // the just-recorded TN457 run.
+  const receipt = stripLatestDurableRunReceipt();
+  if (_tutorialStripReceiptMatches(row, receipt)
+      && await stripDatasetMatchesDurableRunReceipt(key, ds, receipt)) {
+    row.dispatchEvent(new CustomEvent('vugg:strip-opened', {
+      bubbles: true,
+      detail: receipt,
+    }));
+  }
+  renderer(bodyEl, ds);
+  return true;
+}
+
 // Build / refresh the dataset list view.
 async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
   bodyEl.innerHTML = '';
@@ -774,6 +800,17 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
   for (const e of entries) {
     const row = document.createElement('div');
     row.className = 'strip-view-datasetrow';
+    // 70a's guided-reading lesson authenticates the chosen recording from
+    // these semantic fields; visible row order is not a scientific identity.
+    row.dataset.scenarioId = String(e.manifest.scenario_id || '');
+    row.dataset.seed = String(e.manifest.seed);
+    row.dataset.simVersion = String(e.manifest.sim_version);
+    row.dataset.modelDigest = String(e.manifest.model_digest || '');
+    row.dataset.scenarioSpecHash = String((e.manifest as any).scenario_spec_hash || '');
+    row.dataset.storageKey = String(e.key);
+    row.dataset.recordedAt = String(e.manifest.recorded_at);
+    row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
+    row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
     const date = new Date(e.manifest.recorded_at);
     row.innerHTML = `
       <div class="ds-name">${e.manifest.scenario_id}</div>
@@ -789,8 +826,7 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
         return;
       }
       try {
-        const ds = await stripStorageLoad(e.key);
-        if (ds) _stripRenderDataset(bodyEl, ds);
+        await _stripOpenStoredRow(bodyEl, row, e.key);
       } catch (err) {
         bodyEl.innerHTML = '<div class="strip-view-empty">Load failed: ' + (err as Error).message + '</div>';
       }
@@ -1172,7 +1208,7 @@ function initStripView(): void {
           // Stash to IDB so it persists across page reloads + appears in
           // the dataset list. Safe to fail silently if IDB unavailable.
           if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
-            stripStorageSave(ds).catch(() => { /* silent */ });
+            stripStorageSave(ds, 'imported-file').catch(() => { /* silent */ });
           }
           const body = panel.querySelector('#strip-view-body') as HTMLElement;
           _stripRenderDataset(body, ds);
