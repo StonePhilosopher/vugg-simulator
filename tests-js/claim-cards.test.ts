@@ -22,6 +22,239 @@ const MORPHOLOGY_REGIMES = new Set([
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('adversarial claim-card fleet', () => {
+  it('authenticates player movement choices and rejects rehashed authority drift', () => {
+    // Execute the CLI module with native Node. Vite cannot transform an ESM
+    // shebang, and using Node here also exercises the exact producer runtime.
+    const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
+    const script = `
+      import { buildPlayerActionTestimony } from ${JSON.stringify(moduleUrl)};
+      const spec = { movements: [{
+        field: 'temperature', startStep: 0, endStep: 100, base: 180,
+        ops: [{ kind: 'trend', amp: -20, ease: true }]
+      }] };
+      const valid = {
+        schema: 'player-movement-intervention-v1',
+        action: 'heat', field: 'temperature', accepted_at_step: 0, action_cursor: 0,
+        first_geology_step: 1, value_before: 180, value_after: 205,
+        applied_delta: 25, sample_index: 0,
+        fluid_spatial_authority: null,
+        movement_authority: {
+          schema: 'movement-player-offset-v2', movement_index: 0,
+          movement_source: 'authored-scenario',
+          field: 'temperature', first_geology_step: 1, applied_delta: 25,
+          offset_before: 0, offset_after: 25,
+          offset_application: 'after-authored-texture-and-clamp'
+        }
+      };
+      const summary = buildPlayerActionTestimony([valid], spec);
+      if (summary.action_count !== 1 || JSON.stringify(summary.actions) !== JSON.stringify([valid])) {
+        throw new Error('valid player testimony did not round-trip');
+      }
+      const cursorSequence = [
+        {
+          ...valid, action: 'broth-temp', value_after: 190, applied_delta: 10,
+          movement_authority: {
+            ...valid.movement_authority, applied_delta: 10, offset_after: 10
+          }
+        },
+        {
+          ...valid, value_before: 190, value_after: 215, applied_delta: 25,
+          movement_authority: {
+            ...valid.movement_authority, applied_delta: 25,
+            offset_before: 10, offset_after: 35
+          }
+        },
+        {
+          ...valid, action: 'broth-temp', action_cursor: 1,
+          value_before: 215, value_after: 205, applied_delta: -10,
+          movement_authority: {
+            ...valid.movement_authority, applied_delta: -10,
+            offset_before: 35, offset_after: 25
+          }
+        }
+      ];
+      if (buildPlayerActionTestimony(cursorSequence, spec).action_count !== 3) {
+        throw new Error('cursor-separated player testimony did not close');
+      }
+      const silicaSpec = { movements: [{
+        field: 'fluid.SiO2', startStep: 0, endStep: 18, base: 320, ops: []
+      }] };
+      const spatial = {
+        schema: 'player-fluid-spatial-intervention-v1', field: 'fluid.SiO2',
+        application: 'uniform-delta', scope: 'canonical-nonvadose-voxel-volume',
+        transformation_basis: 'silica:SiO2:add',
+        transform_scale: 1, transform_offset: 400, transform_min: 0, transform_max: null,
+        water_state_basis: 'authenticated-cavity-ring-water-state',
+        water_state_scope: 'nonvadose', canonical_count: 2, excluded_count: 0,
+        count: 2, before_finite_count: 2, after_finite_count: 2,
+        value_before: 320, value_after: 720, applied_delta: 400,
+        before_total: 640, clamped_count: 0, clamp_adjustment_total: 0,
+        expected_after_total: 1440, after_total: 1440,
+        error: 0, tolerance: Math.max(1e-7, 1440 * 1e-9), closed: true
+      };
+      const silica = {
+        ...valid, action: 'silica', field: 'fluid.SiO2',
+        value_before: 320, value_after: 720, applied_delta: 400,
+        fluid_spatial_authority: spatial,
+        movement_authority: {
+          ...valid.movement_authority, field: 'fluid.SiO2', applied_delta: 400,
+          offset_before: 0, offset_after: 400
+        }
+      };
+      if (buildPlayerActionTestimony([silica], silicaSpec).action_count !== 1) {
+        throw new Error('spatial player testimony did not close');
+      }
+      const exactSpatial = {
+        ...spatial, application: 'exact-replacement',
+        transformation_basis: 'broth:absolute-control',
+        transform_scale: 0, transform_offset: 200, transform_min: null, transform_max: null,
+        value_after: 200, applied_delta: -120,
+        clamped_count: 0, clamp_adjustment_total: 0,
+        expected_after_total: 400, after_total: 400,
+        tolerance: Math.max(1e-7, 640 * 1e-9)
+      };
+      const exactSilica = {
+        ...silica, action: 'broth-sio2', value_after: 200, applied_delta: -120,
+        fluid_spatial_authority: exactSpatial,
+        movement_authority: {
+          ...silica.movement_authority, applied_delta: -120,
+          offset_before: 0, offset_after: -120
+        }
+      };
+      if (buildPlayerActionTestimony([exactSilica], silicaSpec).action_count !== 1) {
+        throw new Error('exact-replacement player testimony did not close');
+      }
+      const vadoseSpatial = {
+        ...spatial,
+        field: 'fluid.O2', scope: 'canonical-vadose-voxel-volume',
+        application: 'bounded-affine', transformation_basis: 'drain:O2:bounded-affine',
+        transform_scale: 1, transform_offset: 0, transform_min: 0.6, transform_max: null,
+        water_state_scope: 'vadose', canonical_count: 4, count: 1, excluded_count: 3,
+        before_finite_count: 1, after_finite_count: 1,
+        value_before: 0.2, value_after: 0.6, applied_delta: 0.4,
+        before_total: 0.2, clamped_count: 1, clamp_adjustment_total: 0.4,
+        expected_after_total: 0.6, after_total: 0.6,
+        tolerance: 1e-7
+      };
+      const vadoseOxygen = {
+        ...silica, action: 'drain', field: 'fluid.O2',
+        value_before: 0.2, value_after: 0.6, applied_delta: 0.4,
+        fluid_spatial_authority: vadoseSpatial,
+        movement_authority: {
+          ...silica.movement_authority, field: 'fluid.O2', applied_delta: 0.4,
+          offset_before: 0, offset_after: 0.4
+        }
+      };
+      const oxygenSpec = { movements: [{
+        field: 'fluid.O2', startStep: 0, endStep: 18, base: 0.2, ops: []
+      }] };
+      if (buildPlayerActionTestimony([vadoseOxygen], oxygenSpec).action_count !== 1) {
+        throw new Error('vadose player testimony did not close');
+      }
+      const floodSpatial = {
+        ...spatial,
+        application: 'uniform-scale', transformation_basis: 'flood:SiO2:scale',
+        transform_scale: 0.6, transform_offset: 0,
+        value_before: 720, value_after: 432, applied_delta: -288,
+        before_total: 1040, expected_after_total: 624, after_total: 624,
+        tolerance: Math.max(1e-7, 1040 * 1e-9)
+      };
+      const floodSilica = {
+        ...silica, action: 'flood',
+        value_before: 720, value_after: 432, applied_delta: -288,
+        fluid_spatial_authority: floodSpatial,
+        movement_authority: {
+          ...silica.movement_authority, applied_delta: -288,
+          offset_before: 0, offset_after: -288
+        }
+      };
+      if (buildPlayerActionTestimony([floodSilica], silicaSpec).action_count !== 1) {
+        throw new Error('pointwise Flood scale testimony did not close');
+      }
+      const carbonateSpec = {
+        carbonate_boundary: { spatial_model: 'equal_volume_fully_mixed' },
+        movements: [{
+          field: 'fluid.CO3', startStep: 0, endStep: 18, base: 500, ops: []
+        }]
+      };
+      const acidDICSpatial = {
+        ...exactSpatial,
+        field: 'fluid.CO3', transformation_basis: 'acid:carbonate-boundary-exact',
+        transform_offset: 400,
+        value_before: 500, value_after: 400, applied_delta: -100,
+        before_total: 1000, expected_after_total: 800, after_total: 800,
+        tolerance: Math.max(1e-7, 1000 * 1e-9)
+      };
+      const acidDIC = {
+        ...silica, action: 'tweak_acidify', field: 'fluid.CO3',
+        value_before: 500, value_after: 400, applied_delta: -100,
+        fluid_spatial_authority: acidDICSpatial,
+        movement_authority: {
+          ...silica.movement_authority, field: 'fluid.CO3', applied_delta: -100,
+          offset_before: 0, offset_after: -100
+        }
+      };
+      if (buildPlayerActionTestimony([acidDIC], carbonateSpec).action_count !== 1) {
+        throw new Error('coupled carbonate DIC testimony did not close');
+      }
+      const forgeries = [
+        { ...valid, applied_delta: 24 },
+        { ...valid, action_cursor: -1 },
+        { ...valid, sample_index: 1 },
+        { ...valid, field: 'pressure' },
+        { ...valid, movement_authority: { ...valid.movement_authority, movement_source: 'player-scheduled' } },
+        { ...valid, movement_authority: { ...valid.movement_authority, offset_after: 24 } },
+        { ...valid, movement_authority: { ...valid.movement_authority, movement_index: 1 } }
+      ];
+      const spatialForgeries = [
+        [{ ...silica, fluid_spatial_authority: null }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: { ...spatial, count: 1 } }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: { ...spatial, excluded_count: 1 } }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: { ...spatial, water_state_scope: 'vadose' } }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: {
+          ...spatial,
+          scope: 'canonical-vadose-voxel-volume', water_state_scope: 'vadose',
+        } }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: { ...spatial, after_total: 640 } }, silicaSpec],
+        [{ ...silica, fluid_spatial_authority: { ...spatial, application: 'exact-replacement' } }, silicaSpec],
+        [{ ...exactSilica, fluid_spatial_authority: { ...exactSpatial, tolerance: 4e-7 } }, silicaSpec],
+        [{ ...valid, fluid_spatial_authority: spatial }, spec],
+        // Self-consistent arithmetic is not authority for the physical law.
+        // This forged Flood row changes the scale into a uniform subtraction,
+        // recomputes every total, and must still be rejected by the independent
+        // action/field transform projection in review-claim-card.
+        [{
+          ...floodSilica,
+          fluid_spatial_authority: {
+            ...floodSpatial,
+            application: 'uniform-delta',
+            transformation_basis: 'flood:SiO2:add',
+            transform_scale: 1,
+            transform_offset: -288,
+            expected_after_total: 464,
+            after_total: 464,
+          }
+        }, silicaSpec]
+      ];
+      for (const [forged, forgedSpec] of [
+        ...forgeries.map(row => [row, spec]),
+        ...spatialForgeries,
+      ]) {
+        let rejected = false;
+        try { buildPlayerActionTestimony([forged], forgedSpec); } catch (error) {
+          rejected = /player action/.test(String(error?.message || error));
+        }
+        if (!rejected) throw new Error('forged player testimony was accepted');
+      }
+      console.log('PLAYER_ACTION_TESTIMONY_OK');
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+      cwd: ROOT, encoding: 'utf8', timeout: 20_000,
+    });
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+    expect(result.stdout).toContain('PLAYER_ACTION_TESTIMONY_OK');
+  });
+
   it('rejects bulk-only or open generic fluid-boundary testimony', () => {
     const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
     const script = `
@@ -513,6 +746,11 @@ describe('adversarial claim-card fleet', () => {
         .toBe(fluidBoundarySamples.filter((sample: any) => sample.closed).length);
       expect(executed.fluid_boundary.all_closed, `${scenario}: fluid-boundary closure`)
         .toBe(fluidBoundarySamples.length ? true : null);
+      const playerActionSamples = strip.executed_testimony?.player_actions || [];
+      expect(executed.player_actions.actions, `${scenario}: player-action testimony`)
+        .toEqual(playerActionSamples);
+      expect(executed.player_actions.action_count, `${scenario}: player-action count`)
+        .toBe(playerActionSamples.length);
       const enclosureSamples = strip.executed_testimony?.enclosures || [];
       expect(executed.enclosures.events, `${scenario}: enclosure testimony`)
         .toEqual(enclosureSamples);
@@ -745,6 +983,17 @@ describe('adversarial claim-card fleet', () => {
         controls: expectedControls,
       });
       reactivityControlCount += expectedControls.length;
+      if (scenario === mechanismArtifact.payload.player_movement_choice.scenario) {
+        expect(executed.player_choice_commissioning,
+          `${scenario}: controlled divergent player branch`).toMatchObject({
+          role: 'controlled production GAME-02 branch; not a locality trajectory claim',
+          artifact_schema: mechanismArtifact.schema,
+          artifact_payload_sha256: mechanismArtifact.payload_sha256,
+          control: mechanismArtifact.payload.player_movement_choice,
+        });
+      } else {
+        expect(executed.player_choice_commissioning).toBeNull();
+      }
       if (sulfurSamples.length) {
         expect(executed.sulfur_ledger.activation, `${scenario}: sulfur-ledger activation`)
           .toEqual(sulfurSamples[0].activation);

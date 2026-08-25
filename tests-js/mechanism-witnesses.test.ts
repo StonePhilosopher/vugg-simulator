@@ -94,6 +94,52 @@ describe('authenticated production mechanism witnesses', () => {
     });
   });
 
+  it('publishes a receipted Herkimer player choice with divergent geology', () => {
+    const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
+    const artifact = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const choice = artifact.payload.player_movement_choice;
+    expect(choice).toMatchObject({
+      role: 'controlled production GAME-02 branch; not a locality trajectory claim',
+      scenario: 'cooling', seed: 42,
+      authored_movement: { field: 'temperature', startStep: 0, endStep: 100, base: 180 },
+      divergence: {
+        crystal_summary_changed: true,
+        state_fingerprint_changed: true,
+      },
+    });
+    expect(choice.wait_only.player_actions).toEqual([]);
+    expect(choice.wait_only.crystal_summary).toEqual([
+      expect.objectContaining({ mineral: 'quartz', total_growth_um: expect.any(Number) }),
+    ]);
+    expect(choice.heat_choice.crystal_summary).toEqual([]);
+    expect(choice.heat_choice.final_temperature_C - choice.wait_only.final_temperature_C)
+      .toBeCloseTo(25, 10);
+    expect(choice.heat_choice.player_actions).toEqual([
+      expect.objectContaining({
+        schema: 'player-movement-intervention-v1', action: 'heat',
+        field: 'temperature', value_before: 180, value_after: 205,
+        applied_delta: 25, sample_index: 0,
+      }),
+    ]);
+  });
+
+  it('rejects a self-rehashed player-choice branch with a rewritten intervention', () => {
+    const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
+    const original = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const forged = structuredClone(original);
+    const choice = forged.payload.player_movement_choice;
+    const action = choice.heat_choice.player_actions[0];
+    action.value_after = 204;
+    action.applied_delta = 24;
+    action.movement_authority.applied_delta = 24;
+    action.movement_authority.offset_after = 24;
+    choice.heat_choice.final_temperature_C = choice.wait_only.final_temperature_C + 24;
+    choice.divergence.final_temperature_delta_C = 24;
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forged), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/player movement-choice witness/);
+  });
+
   it('rejects self-rehashed forged chalcanthite quantities, pools, closure, and enclosure', () => {
     const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
     const original = JSON.parse(fs.readFileSync(file, 'utf8'));

@@ -178,6 +178,7 @@ interface StripDataset {
   sulfur_ledger_testimony?: any[];
   fluid_boundary_testimony?: any[];
   enclosure_testimony?: any[];
+  player_action_testimony?: any[];
   layer_growth_testimony?: any[];
   habit_morphology_testimony?: any[];
 }
@@ -302,6 +303,7 @@ async function stripSerialize(
     sulfur_ledger_testimony: ds.sulfur_ledger_testimony || [],
     fluid_boundary_testimony: ds.fluid_boundary_testimony || [],
     enclosure_testimony: ds.enclosure_testimony || [],
+    player_action_testimony: ds.player_action_testimony || [],
     layer_growth_testimony: ds.layer_growth_testimony || [],
     habit_morphology_testimony: ds.habit_morphology_testimony || [],
   })) : null;
@@ -376,6 +378,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let sulfur_ledger_testimony: any[] | undefined;
   let fluid_boundary_testimony: any[] | undefined;
   let enclosure_testimony: any[] | undefined;
+  let player_action_testimony: any[] | undefined;
   let layer_growth_testimony: any[] | undefined;
   let habit_morphology_testimony: any[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
@@ -398,6 +401,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.fluid_boundary_testimony : [];
     enclosure_testimony = Array.isArray(testimony.enclosure_testimony)
       ? testimony.enclosure_testimony : [];
+    player_action_testimony = Array.isArray(testimony.player_action_testimony)
+      ? testimony.player_action_testimony : [];
     layer_growth_testimony = Array.isArray(testimony.layer_growth_testimony)
       ? testimony.layer_growth_testimony : [];
     habit_morphology_testimony = Array.isArray(testimony.habit_morphology_testimony)
@@ -414,6 +419,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(sulfur_ledger_testimony ? { sulfur_ledger_testimony } : {}),
     ...(fluid_boundary_testimony ? { fluid_boundary_testimony } : {}),
     ...(enclosure_testimony ? { enclosure_testimony } : {}),
+    ...(player_action_testimony ? { player_action_testimony } : {}),
     ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
     ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
   };

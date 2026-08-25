@@ -358,8 +358,23 @@ async function runSimulation() {
   // cleanup-tail path inside displayLines handles it.
 }
 
+// One source for every Simulation-mode random picker. The populated dropdown
+// is the product's playable scenario registry; deriving from it prevents a
+// second four-item list from making 34 authored scenarios unreachable.
+function _simulationPlayableScenarioIds(): string[] {
+  const select = document.getElementById('scenario') as HTMLSelectElement | null;
+  if (select) {
+    const options = Array.from(select.options)
+      .map(option => option.value)
+      .filter(id => id && !id.startsWith('tutorial_') && !!SCENARIOS[id]);
+    if (options.length) return options;
+  }
+  return Object.keys(SCENARIOS).filter(id => !id.startsWith('tutorial_'));
+}
+
 function runRandom() {
-  const scenarios = ['cooling', 'pulse', 'mvt', 'porphyry'];
+  const scenarios = _simulationPlayableScenarioIds();
+  if (!scenarios.length) return;
   const pick = scenarios[Math.floor(Math.random() * scenarios.length)];
   document.getElementById('scenario').value = pick;
   const seed = Math.floor(Math.random() * 2147483647);

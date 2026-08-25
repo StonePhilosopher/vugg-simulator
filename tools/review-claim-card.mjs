@@ -264,6 +264,296 @@ const hasExactKeys = (value, expected) => {
   return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
 };
 
+const movementFieldsMatch = (a, b) => a === b
+  || a === `fluid.${b}`
+  || `fluid.${a}` === b;
+
+// GAME-02 evidence breadcrumb: the browser applies these pointwise laws in
+// js/85c-simulator-state.ts. Do not infer them here from before/after totals:
+// on a partly drained cavity, `x *= 0.6` is observably different from adding
+// one bulk delta to every wet voxel. This deliberately independent projection
+// lets the card producer reject a coordinated/self-rehashed transform claim.
+// When a Fortress chemistry verb changes, its physical declaration in 85c,
+// this evidence projection, and the hostile matrix in claim-cards.test.ts are
+// the three places that must agree.
+const expectedPlayerFluidTransform = (row, scenarioSpec) => {
+  if (typeof row?.field !== 'string' || !row.field.startsWith('fluid.')) return null;
+  const leaf = row.field.slice('fluid.'.length);
+  const action = row.action;
+  const concentrationMin = leaf === 'pH' || leaf === 'Eh' ? null : 0;
+  const affine = (application, basis, scale, offset, min = null, max = null) => ({
+    application, basis, scale, offset, min, max,
+  });
+  const add = amount => affine('uniform-delta', `${action}:${leaf}:add`, 1, amount, concentrationMin, null);
+  const scale = factor => affine('uniform-scale', `${action}:${leaf}:scale`, factor, 0, concentrationMin, null);
+  const exact = (basis = `${action}:${leaf}:exact`, value = row.value_after) =>
+    affine('exact-replacement', basis, 0, value, null, null);
+  const bounded = (offset, min, max) =>
+    affine('bounded-affine', `${action}:${leaf}:bounded-affine`, 1, offset, min, max);
+  const carbonateExact = !!scenarioSpec?.carbonate_boundary;
+
+  if (typeof action === 'string' && action.startsWith('broth-')) {
+    return exact('broth:absolute-control');
+  }
+  switch (action) {
+    case 'seep':
+      if (leaf === 'SiO2') return scale(0.85);
+      if (leaf === 'Ca') return scale(1.10);
+      if (leaf === 'CO3') return carbonateExact ? exact('seep:carbonate-boundary-exact') : scale(1.08);
+      if (leaf === 'pH') return carbonateExact ? exact('seep:carbonate-boundary-exact') : bounded(0.1, null, 10);
+      return null;
+    case 'flood':
+      if (leaf === 'SiO2') return scale(0.6);
+      if (leaf === 'Ca') return scale(1.3);
+      if (leaf === 'CO3') return carbonateExact ? exact('flood:carbonate-boundary-exact') : scale(1.2);
+      if (leaf === 'pH') return carbonateExact ? exact('flood:carbonate-boundary-exact') : bounded(0.3, null, 10);
+      return null;
+    case 'drain':
+      return leaf === 'O2' ? bounded(0, 0.6, null) : null;
+    case 'evaporate':
+      if (leaf === 'O2') return bounded(0, 1.5, null);
+      if (['Ca', 'Mg', 'Na', 'K', 'Cl', 'B', 'F', 'Sr'].includes(leaf)) return scale(1.4);
+      if (leaf === 'CO3' && !carbonateExact) return scale(1.4);
+      return null;
+    case 'tweak_acidify':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('acid:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(-0.3, 2, null) : null;
+    case 'shift_acidify':
+    case 'acidify':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('acid:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(-2, 2, null) : null;
+    case 'tweak_alkalinize':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('base:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(0.3, null, 10) : null;
+    case 'shift_alkalinize':
+    case 'alkalinize':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('base:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(2, null, 10) : null;
+    case 'replenish':
+      return exact(
+        'replenish:starting-fluid-exact',
+        typeof scenarioSpec?.initial?.fluid?.[leaf] === 'number'
+          && Number.isFinite(scenarioSpec.initial.fluid[leaf])
+          ? scenarioSpec.initial.fluid[leaf]
+          : row.value_after,
+      );
+    case 'silica':
+      if (leaf === 'SiO2') return add(400);
+      if (leaf === 'Al') return add(2);
+      if (leaf === 'Ti') return add(0.3);
+      return null;
+    case 'metals':
+      if (leaf === 'Fe') return add(40);
+      if (leaf === 'Mn') return add(15);
+      return null;
+    case 'brine':
+      return leaf === 'Zn' ? add(150) : null;
+    case 'fluorine':
+      if (leaf === 'F') return add(25);
+      if (leaf === 'Ca') return add(80);
+      return null;
+    case 'copper':
+      if (leaf === 'Cu') return exact(undefined, 120);
+      if (leaf === 'O2') return exact(undefined, 0.3);
+      if (leaf === 'Fe') return add(40);
+      if (leaf === 'SiO2') return add(200);
+      return null;
+    case 'oxidize':
+      return leaf === 'O2' ? exact(undefined, 1.8) : null;
+    default:
+      return null;
+  }
+};
+
+const assertPlayerFluidTransform = (row, spatial, scenarioSpec, index) => {
+  const expected = expectedPlayerFluidTransform(row, scenarioSpec);
+  const leaf = row.field.slice('fluid.'.length);
+  const expectedWaterScope = (row.action === 'drain' || row.action === 'evaporate')
+    && leaf === 'O2' ? 'vadose' : 'nonvadose';
+  if (!expected
+      || spatial.application !== expected.application
+      || spatial.transformation_basis !== expected.basis
+      || spatial.transform_scale !== expected.scale
+      || spatial.transform_offset !== expected.offset
+      || spatial.transform_min !== expected.min
+      || spatial.transform_max !== expected.max
+      || spatial.water_state_scope !== expectedWaterScope
+      || spatial.scope !== (expectedWaterScope === 'vadose'
+        ? 'canonical-vadose-voxel-volume'
+        : 'canonical-nonvadose-voxel-volume')) {
+    throw new Error(`[card] player action ${index} contradicts its declared pointwise fluid transform`);
+  }
+};
+
+export function buildPlayerActionTestimony(samples, scenarioSpec = null) {
+  const actions = Array.isArray(samples) ? samples : [];
+  const movements = Array.isArray(scenarioSpec?.movements) ? scenarioSpec.movements : [];
+  const offsets = new Map();
+  let previousSample = -1;
+  let previousActionCursor = -1;
+  for (const [index, row] of actions.entries()) {
+      if (!hasExactKeys(row, [
+        'schema', 'action', 'field', 'accepted_at_step', 'action_cursor', 'first_geology_step',
+        'value_before', 'value_after', 'applied_delta', 'fluid_spatial_authority',
+        'movement_authority', 'sample_index',
+      ])
+        || row.schema !== 'player-movement-intervention-v1'
+        || typeof row.action !== 'string' || !row.action.trim()
+        || typeof row.field !== 'string' || !row.field.trim()
+        || !Number.isSafeInteger(row.accepted_at_step) || row.accepted_at_step < 0
+        || !Number.isSafeInteger(row.action_cursor) || row.action_cursor < 0
+        || row.action_cursor < previousActionCursor
+        || !Number.isSafeInteger(row.first_geology_step)
+        || row.first_geology_step !== row.accepted_at_step + 1
+        || !Number.isSafeInteger(row.sample_index) || row.sample_index < 0
+        || row.sample_index !== row.accepted_at_step
+        || row.sample_index < previousSample
+        || ![row.value_before, row.value_after, row.applied_delta].every(
+          value => typeof value === 'number' && Number.isFinite(value)
+        )
+        || Math.abs((row.value_after - row.value_before) - row.applied_delta) > 1e-12) {
+        throw new Error(`[card] player action ${index} has malformed or nonclosing testimony`);
+      }
+      const spatial = row.fluid_spatial_authority;
+      if (row.field.startsWith('fluid.')) {
+        const numericKeys = [
+          'value_before', 'value_after', 'applied_delta', 'before_total',
+          'transform_scale', 'transform_offset', 'clamp_adjustment_total',
+          'expected_after_total', 'after_total', 'error', 'tolerance',
+        ];
+        if (!hasExactKeys(spatial, [
+          'schema', 'field', 'application', 'transformation_basis',
+          'transform_scale', 'transform_offset', 'transform_min', 'transform_max', 'scope',
+          'water_state_basis', 'water_state_scope',
+          'canonical_count', 'count', 'excluded_count',
+          'before_finite_count', 'after_finite_count',
+          'value_before', 'value_after', 'applied_delta', 'before_total',
+          'clamped_count', 'clamp_adjustment_total', 'expected_after_total',
+          'after_total', 'error', 'tolerance', 'closed',
+        ])
+            || spatial.schema !== 'player-fluid-spatial-intervention-v1'
+            || spatial.field !== row.field
+            || !['uniform-delta', 'uniform-scale', 'exact-replacement', 'bounded-affine']
+              .includes(spatial.application)
+            || typeof spatial.transformation_basis !== 'string'
+            || !spatial.transformation_basis.trim()
+            || (spatial.transform_min !== null
+              && (typeof spatial.transform_min !== 'number' || !Number.isFinite(spatial.transform_min)))
+            || (spatial.transform_max !== null
+              && (typeof spatial.transform_max !== 'number' || !Number.isFinite(spatial.transform_max)))
+            || (spatial.transform_min !== null && spatial.transform_max !== null
+              && spatial.transform_min > spatial.transform_max)
+            || !['canonical-nonvadose-voxel-volume', 'canonical-vadose-voxel-volume']
+              .includes(spatial.scope)
+            || spatial.water_state_basis !== 'authenticated-cavity-ring-water-state'
+            || !['nonvadose', 'vadose'].includes(spatial.water_state_scope)
+            || spatial.scope !== (spatial.water_state_scope === 'vadose'
+              ? 'canonical-vadose-voxel-volume'
+              : 'canonical-nonvadose-voxel-volume')
+            || !Number.isSafeInteger(spatial.canonical_count)
+            || spatial.canonical_count <= 0
+            || !Number.isSafeInteger(spatial.count) || spatial.count <= 0
+            || !Number.isSafeInteger(spatial.excluded_count) || spatial.excluded_count < 0
+            || spatial.count + spatial.excluded_count !== spatial.canonical_count
+            || spatial.before_finite_count !== spatial.count
+            || spatial.after_finite_count !== spatial.count
+            || !Number.isSafeInteger(spatial.clamped_count)
+            || spatial.clamped_count < 0 || spatial.clamped_count > spatial.count
+            || numericKeys.some(key => typeof spatial[key] !== 'number'
+              || !Number.isFinite(spatial[key]))
+            || spatial.value_before !== row.value_before
+            || spatial.value_after !== row.value_after
+            || spatial.applied_delta !== row.applied_delta
+            || spatial.closed !== true) {
+          throw new Error(`[card] player action ${index} lacks canonical pore-fluid authority`);
+        }
+        const tolerance = Math.max(
+          1e-7,
+          Math.max(Math.abs(spatial.before_total), Math.abs(spatial.after_total)) * 1e-9,
+        );
+        const clampValue = value => Math.max(
+          spatial.transform_min == null ? -Infinity : spatial.transform_min,
+          Math.min(spatial.transform_max == null ? Infinity : spatial.transform_max, value),
+        );
+        const expectedBulkAfter = clampValue(
+          spatial.value_before * spatial.transform_scale + spatial.transform_offset,
+        );
+        const expectedAfter = spatial.before_total * spatial.transform_scale
+          + spatial.transform_offset * spatial.count
+          + spatial.clamp_adjustment_total;
+        const error = spatial.after_total - expectedAfter;
+        if (spatial.tolerance !== tolerance
+            || Math.abs(spatial.value_after - expectedBulkAfter) > 1e-12
+            || Math.abs(spatial.expected_after_total - expectedAfter) > tolerance
+            || Math.abs(spatial.error - error) > tolerance
+            || Math.abs(error) > tolerance
+            || (spatial.clamped_count === 0 && spatial.clamp_adjustment_total !== 0)
+            || (spatial.application === 'exact-replacement'
+              && (spatial.transform_scale !== 0
+                || spatial.transform_offset !== spatial.value_after
+                || spatial.transform_min !== null || spatial.transform_max !== null
+                || spatial.clamped_count !== 0 || spatial.clamp_adjustment_total !== 0))) {
+          throw new Error(`[card] player action ${index} has nonclosing pore-fluid authority`);
+        }
+        assertPlayerFluidTransform(row, spatial, scenarioSpec, index);
+      } else if (spatial !== null) {
+        throw new Error(`[card] player action ${index} invents pore-fluid authority for ${row.field}`);
+      }
+      const authority = row.movement_authority;
+    if (!hasExactKeys(authority, [
+      'schema', 'movement_index', 'movement_source', 'field', 'first_geology_step',
+      'applied_delta', 'offset_before', 'offset_after', 'offset_application',
+    ])
+        || authority.schema !== 'movement-player-offset-v2'
+        // The generated scenario card has independent access only to the
+        // canonical authored spec. Player-scheduled trajectories remain in
+        // strip/save testimony but fail closed here until the card pipeline
+        // also authenticates the action recipe that created them.
+        || authority.movement_source !== 'authored-scenario'
+        || authority.offset_application !== 'after-authored-texture-and-clamp'
+        || !Number.isSafeInteger(authority.movement_index) || authority.movement_index < 0
+        || typeof authority.field !== 'string' || !authority.field
+        || authority.first_geology_step !== row.first_geology_step
+        || !movementFieldsMatch(row.field, authority.field)
+        || ![authority.applied_delta, authority.offset_before, authority.offset_after].every(
+          value => typeof value === 'number' && Number.isFinite(value)
+        )
+        || Math.abs(authority.applied_delta - row.applied_delta) > 1e-12
+        || Math.abs((authority.offset_after - authority.offset_before) - row.applied_delta) > 1e-12) {
+      throw new Error(`[card] player action ${index} lacks exact movement authority`);
+    }
+    const authored = movements[authority.movement_index];
+    if (!authored || authored.origin === 'cell'
+        || !movementFieldsMatch(authored.field, authority.field)
+        || row.first_geology_step < authored.startStep
+        || row.first_geology_step >= authored.endStep) {
+      throw new Error(`[card] player action ${index} is not owned by an active authored movement`);
+    }
+    const offsetKey = authority.field.startsWith('fluid.')
+      ? authority.field.slice('fluid.'.length) : authority.field;
+    const expectedOffset = offsets.has(offsetKey) ? offsets.get(offsetKey) : 0;
+    if (Math.abs(authority.offset_before - expectedOffset) > 1e-12) {
+      throw new Error(`[card] player action ${index} breaks the movement offset chain`);
+    }
+    offsets.set(offsetKey, authority.offset_after);
+    previousSample = row.sample_index;
+    previousActionCursor = row.action_cursor;
+  }
+  return {
+    source: 'visible player interventions accepted against active authored absolute movements; exact rows are authenticated by the strip SHA-256',
+    action_count: actions.length,
+    actions,
+  };
+}
+
 const assertFluidAuthorityProjection = (value, label) => {
   if (!hasExactKeys(value, [
     'sulfurPoolsExplicit', 'sulfateInherited', 'nativeSulfurPathway',
@@ -841,6 +1131,7 @@ function buildExecutedScienceTestimony(strip, science, spec) {
   const sulfurLedger = strip.executed_testimony?.sulfur_ledger || [];
   const fluidBoundary = strip.executed_testimony?.fluid_boundary || [];
   const enclosures = strip.executed_testimony?.enclosures || [];
+  const playerActions = strip.executed_testimony?.player_actions || [];
   const layerGrowth = strip.executed_testimony?.layer_growth || [];
   const habitMorphology = strip.executed_testimony?.habit_morphology || [];
   const enclosureLifecycle = reduceEnclosureLifecycle(enclosures);
@@ -881,6 +1172,7 @@ function buildExecutedScienceTestimony(strip, science, spec) {
     },
     sulfur_ledger: buildSulfurLedgerTestimony(sulfurLedger),
     fluid_boundary: buildFluidBoundaryTestimony(fluidBoundary, spec),
+    player_actions: buildPlayerActionTestimony(playerActions, spec),
     enclosures: {
       source: 'accepted host-over-guest and later liberation events from the archived executed run',
       event_count: enclosures.length,
@@ -934,6 +1226,18 @@ function transformationReactivityCommissioning(scenario, strip, artifact) {
     artifact_payload_sha256: artifact.payload_sha256,
     link_authority: 'artifact-authored scenario route, verified against executed product or surviving parent',
     controls,
+  };
+}
+
+function playerChoiceCommissioning(scenario, artifact) {
+  const control = artifact?.payload?.player_movement_choice;
+  if (!control || control.scenario !== scenario) return null;
+  return {
+    role: control.role,
+    artifact_schema: artifact.schema,
+    artifact_payload_sha256: artifact.payload_sha256,
+    link_authority: 'controlled branch uses this scenario exact authored movement; automatic reference strip remains wait-only',
+    control,
   };
 }
 
@@ -1041,6 +1345,8 @@ export function buildCard(name, spec, strip, science, {
         ...buildExecutedScienceTestimony(strip, science, spec),
         transformation_reactivity_commissioning:
           transformationReactivityCommissioning(name, strip, mechanismWitnessArtifact),
+        player_choice_commissioning:
+          playerChoiceCommissioning(name, mechanismWitnessArtifact),
       },
     },
   };
@@ -1171,6 +1477,18 @@ export function renderMarkdown(card) {
       L.push('    - No controlled reactivity witness is applicable to a transformation product in this locality run.');
     }
   }
+  const playerChoice = ex.player_choice_commissioning;
+  if (playerChoice) {
+    const control = playerChoice.control;
+    L.push(`  - Player-choice commissioning: ${playerChoice.role}; artifact `
+      + `${playerChoice.artifact_schema}/${playerChoice.artifact_payload_sha256}.`);
+    L.push(`    - ${control.scenario} seed ${control.seed}: wait-only final T=`
+      + `${control.wait_only.final_temperature_C}°C with ${control.wait_only.crystal_summary.length} crystals; `
+      + `Heat final T=${control.heat_choice.final_temperature_C}°C with `
+      + `${control.heat_choice.crystal_summary.length} crystals; `
+      + `ΔT=${control.divergence.final_temperature_delta_C}°C; `
+      + `geology changed=${control.divergence.crystal_summary_changed}.`);
+  }
   if (ex.carbonate_boundary.sample_count) {
     const first = ex.carbonate_boundary.first;
     const last = ex.carbonate_boundary.last;
@@ -1195,6 +1513,20 @@ export function renderMarkdown(card) {
     }
   } else {
     L.push('  - No declared non-sulfur fluid-boundary transaction was executed.');
+  }
+  const playerActions = ex.player_actions;
+  L.push('');
+  L.push('## Player interventions against authored movements (archived run)');
+  L.push(`**Source:** ${playerActions.source}`);
+  if (playerActions.action_count) {
+    for (const action of playerActions.actions) {
+      L.push(`  - Accepted at step ${action.accepted_at_step}: ${action.action} changed `
+        + `${action.field} ${action.value_before}→${action.value_after}; `
+        + `authored movement offset ${action.movement_authority.offset_before}→`
+        + `${action.movement_authority.offset_after}; first geology step ${action.first_geology_step}.`);
+    }
+  } else {
+    L.push('  - No player intervention was applied in this automatic reference run.');
   }
   const enclosures = ex.enclosures;
   L.push('');

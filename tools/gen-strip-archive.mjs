@@ -219,6 +219,7 @@ function archiveScenario(name, seed = 42) {
       sulfur_ledger: ds.sulfur_ledger_testimony || [],
       fluid_boundary: ds.fluid_boundary_testimony || [],
       enclosures: ds.enclosure_testimony || [],
+      player_actions: ds.player_action_testimony || [],
       layer_growth: ds.layer_growth_testimony || [],
       habit_morphology: ds.habit_morphology_testimony || [],
     },

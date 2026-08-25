@@ -234,6 +234,7 @@ describe('strip dataset — serialization round-trip', () => {
       sulfur_ledger_testimony: [{ step: 0, closed: true, phaseIdentity: [{ mineral: 'pyrite', reservoir: 'sulfide' }] }],
       fluid_boundary_testimony: [{ step: 0, closed: true, testimony: [{ field: 'Ba', before: 4, after: 28 }] }],
       enclosure_testimony: [{ step: 0, host_crystal_id: 3, guest_crystal_id: 7, route: 'geometric-overlap', host_same_step_net_growth_um: 2 }],
+      player_action_testimony: [{ schema: 'player-movement-intervention-v1', action: 'heat', field: 'temperature', accepted_at_step: 0, action_cursor: 0, first_geology_step: 1, value_before: 180, value_after: 205, applied_delta: 25, sample_index: 0 }],
       layer_growth_testimony: [{ step: 0, crystal_id: 7, formula_stoichiometry: { Fe: 1, S: 2 }, competition_allocation: { scaling: 0.6 }, masked_horizon: true, film_mineral: 'clay', originating_film_step: -1 }],
       habit_morphology_testimony: [{ crystal_id: 7, mineral: 'pyrite', habit: 'cube', extent_kind: 'individual', surface_film: { mineral: 'clay', step: 0 } }],
     };
@@ -248,6 +249,7 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.sulfur_ledger_testimony).toEqual(ds.sulfur_ledger_testimony);
     expect(reload.fluid_boundary_testimony).toEqual(ds.fluid_boundary_testimony);
     expect(reload.enclosure_testimony).toEqual(ds.enclosure_testimony);
+    expect(reload.player_action_testimony).toEqual(ds.player_action_testimony);
     expect(reload.layer_growth_testimony).toEqual(ds.layer_growth_testimony);
     expect(reload.habit_morphology_testimony).toEqual(ds.habit_morphology_testimony);
   });
@@ -272,6 +274,7 @@ describe('strip dataset — serialization round-trip', () => {
       sulfur_ledger_testimony: [{ step: 1, sample_index: 0, closed: true }],
       fluid_boundary_testimony: [{ step: 1, sample_index: 0, closed: true }],
       enclosure_testimony: [{ step: 1, sample_index: 0, host_crystal_id: 2, guest_crystal_id: 7 }],
+      player_action_testimony: [{ schema: 'player-movement-intervention-v1', action: 'heat', field: 'temperature', accepted_at_step: 0, action_cursor: 0, first_geology_step: 1, value_before: 180, value_after: 205, applied_delta: 25, sample_index: 0 }],
       layer_growth_testimony: [{ step: 1, sample_index: 0, crystal_id: 7, solid_solution: { mgMoleFraction: 0.2 } }],
       habit_morphology_testimony: [{ crystal_id: 7, mineral: 'HMC', habit: 'rhombohedral' }],
     };
@@ -283,6 +286,7 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.sulfur_ledger_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, closed: true });
     expect(reload.fluid_boundary_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, closed: true });
     expect(reload.enclosure_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, host_crystal_id: 2 });
+    expect(reload.player_action_testimony?.[0]).toMatchObject({ action: 'heat', field: 'temperature', sample_index: 0 });
     expect(reload.layer_growth_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, crystal_id: 7 });
     expect(reload.habit_morphology_testimony?.[0]).toMatchObject({ crystal_id: 7, mineral: 'HMC' });
   });
@@ -304,6 +308,7 @@ describe('strip dataset — serialization round-trip', () => {
     ds.sulfur_ledger_testimony = [{ step: 0, closed: true, fluidReservoirPpm: { sulfide: 10, sulfate: 20, elemental: 0 } }];
     ds.fluid_boundary_testimony = [{ step: 0, closed: true, testimony: [{ field: 'Ba', before: 4, after: 28 }] }];
     ds.enclosure_testimony = [{ step: 0, host_crystal_id: 1, guest_crystal_id: 8, host_same_step_net_growth_um: 1 }];
+    ds.player_action_testimony = [{ schema: 'player-movement-intervention-v1', action: 'heat', field: 'temperature', accepted_at_step: 0, action_cursor: 0, first_geology_step: 1, value_before: 180, value_after: 205, applied_delta: 25, sample_index: 0 }];
     ds.layer_growth_testimony = [{ step: 0, crystal_id: 8, formula_stoichiometry: { Ca: 1, As: 1 } }];
     ds.habit_morphology_testimony = [{ crystal_id: 8, mineral: 'haidingerite', habit: 'pseudomorph' }];
     const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
@@ -314,6 +319,7 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.sulfur_ledger_testimony).toEqual(ds.sulfur_ledger_testimony);
     expect(reload.fluid_boundary_testimony).toEqual(ds.fluid_boundary_testimony);
     expect(reload.enclosure_testimony).toEqual(ds.enclosure_testimony);
+    expect(reload.player_action_testimony).toEqual(ds.player_action_testimony);
     expect(reload.layer_growth_testimony).toEqual(ds.layer_growth_testimony);
     expect(reload.habit_morphology_testimony).toEqual(ds.habit_morphology_testimony);
     expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);

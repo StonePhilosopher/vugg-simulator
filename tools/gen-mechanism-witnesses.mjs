@@ -23,7 +23,7 @@ import {
 import { writeJsonAtomic } from './scenario-evidence-checkpoint.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v2';
+export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v3';
 
 const canonicalJson = value => {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -104,6 +104,9 @@ const CHALCANTHITE_CONTROLS = Object.freeze([
     mode: 'water_solubility_low_salinity_high_pH' }),
   Object.freeze({ name: 'neither', salinity: 10, pH: 3, mode: null }),
 ]);
+const PLAYER_CHOICE_CONTROL = Object.freeze({
+  scenario: 'cooling', seed: 42, action: 'heat', appliedDelta: 25,
+});
 
 const TRANSFORMATION_CASES = Object.freeze([
   Object.freeze({
@@ -381,6 +384,65 @@ function chalcanthiteEnclosureWitness(science) {
   };
 }
 
+function playerMovementChoiceWitness(science) {
+  const run = (intervene) => {
+    science.setSeed(PLAYER_CHOICE_CONTROL.seed);
+    const { conditions, events, defaultSteps } = science.SCENARIOS[PLAYER_CHOICE_CONTROL.scenario]();
+    const sim = new science.VugSimulator(conditions, events);
+    const recorder = new science.StripRecorder(sim, {
+      duration_steps: defaultSteps,
+      notes: `controlled ${intervene ? 'Heat' : 'wait-only'} player-choice branch`,
+    });
+    sim._stripRecorder = recorder;
+    const initialTemperature = Number(sim.conditions.temperature);
+    if (intervene) {
+      const after = Number(sim.setGlobalTemperature(
+        initialTemperature + PLAYER_CHOICE_CONTROL.appliedDelta,
+      ));
+      sim._movements = science._createMovementController(sim);
+      const authority = sim._movements.applyPlayerDelta(
+        'temperature', 1, after - initialTemperature,
+      );
+      const receipt = science.movementPlayerInterventionReceipt(
+        PLAYER_CHOICE_CONTROL.action, 'temperature', 0, 0,
+        initialTemperature, after, authority,
+      );
+      if (!receipt) throw new Error('controlled player Heat choice was not accepted');
+      sim._playerActionReceipts = [receipt];
+    }
+    for (let step = 0; step < defaultSteps; step++) sim.run_step();
+    const dataset = recorder.finalize();
+    return {
+      initial_temperature_C: initialTemperature,
+      final_temperature_C: Number(sim.conditions.temperature),
+      player_actions: copy(dataset.player_action_testimony || []),
+      crystal_summary: sim.crystals.map(crystal => ({
+        mineral: String(crystal.mineral),
+        total_growth_um: Number(crystal.total_growth_um),
+        positive_layer_count: (crystal.zones || []).filter(zone => Number(zone.thickness_um) > 0).length,
+      })),
+      state_fingerprint: science.simulationStateFingerprint(sim),
+    };
+  };
+  const waitOnly = run(false);
+  const heated = run(true);
+  return {
+    role: 'controlled production GAME-02 branch; not a locality trajectory claim',
+    scenario: PLAYER_CHOICE_CONTROL.scenario,
+    seed: PLAYER_CHOICE_CONTROL.seed,
+    authored_movement: copy(
+      science.SCENARIOS[PLAYER_CHOICE_CONTROL.scenario]._json5_spec.movements[0],
+    ),
+    wait_only: waitOnly,
+    heat_choice: heated,
+    divergence: {
+      final_temperature_delta_C: heated.final_temperature_C - waitOnly.final_temperature_C,
+      crystal_summary_changed: canonicalJson(heated.crystal_summary) !== canonicalJson(waitOnly.crystal_summary),
+      state_fingerprint_changed: heated.state_fingerprint !== waitOnly.state_fingerprint,
+    },
+  };
+}
+
 export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
   if (artifact?.schema !== MECHANISM_WITNESS_SCHEMA) throw new Error('mechanism witness schema mismatch');
   if (expected.simVersion != null && artifact.sim_version !== Number(expected.simVersion)) {
@@ -522,6 +584,61 @@ export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
         !== canonicalJson(canonicalChalcanthiteEnclosureTopology())) {
     throw new Error('authenticated chalcanthite enclosure witness does not withhold decay');
   }
+  const choice = artifact.payload?.player_movement_choice;
+  const movement = choice?.authored_movement;
+  const waitOnly = choice?.wait_only;
+  const heated = choice?.heat_choice;
+  const action = heated?.player_actions?.[0];
+  if (choice?.role !== 'controlled production GAME-02 branch; not a locality trajectory claim'
+      || choice?.scenario !== PLAYER_CHOICE_CONTROL.scenario
+      || choice?.seed !== PLAYER_CHOICE_CONTROL.seed
+      || !exactKeys(movement, ['field', 'startStep', 'endStep', 'base', 'ops'])
+      || movement.field !== 'temperature' || movement.startStep !== 0
+      || movement.endStep !== 100 || movement.base !== 180
+      || !Array.isArray(waitOnly?.player_actions) || waitOnly.player_actions.length !== 0
+      || !Array.isArray(heated?.player_actions) || heated.player_actions.length !== 1
+      || !exactKeys(action, [
+        'schema', 'action', 'field', 'accepted_at_step', 'action_cursor',
+        'first_geology_step', 'value_before', 'value_after', 'applied_delta',
+        'fluid_spatial_authority', 'movement_authority', 'sample_index',
+      ])
+      || action?.schema !== 'player-movement-intervention-v1'
+      || action?.action !== PLAYER_CHOICE_CONTROL.action || action?.field !== 'temperature'
+      || action?.accepted_at_step !== 0 || action?.first_geology_step !== 1
+      || action?.action_cursor !== 0 || action?.sample_index !== 0
+      || action?.fluid_spatial_authority !== null
+      || action?.value_before !== 180 || action?.value_after !== 205
+      || action?.applied_delta !== PLAYER_CHOICE_CONTROL.appliedDelta
+      || !exactKeys(action?.movement_authority, [
+        'schema', 'movement_index', 'movement_source', 'field', 'first_geology_step',
+        'applied_delta', 'offset_before', 'offset_after', 'offset_application',
+      ])
+      || action?.movement_authority?.schema !== 'movement-player-offset-v2'
+      || action?.movement_authority?.movement_source !== 'authored-scenario'
+      || action?.movement_authority?.offset_application !== 'after-authored-texture-and-clamp'
+      || action?.movement_authority?.movement_index !== 0
+      || action?.movement_authority?.offset_before !== 0
+      || action?.movement_authority?.offset_after !== PLAYER_CHOICE_CONTROL.appliedDelta
+      || !finiteClose(
+        heated?.final_temperature_C - waitOnly?.final_temperature_C,
+        PLAYER_CHOICE_CONTROL.appliedDelta,
+      )
+      || !finiteClose(
+        choice?.divergence?.final_temperature_delta_C,
+        PLAYER_CHOICE_CONTROL.appliedDelta,
+      )
+      || choice?.divergence?.crystal_summary_changed !== true
+      || choice?.divergence?.state_fingerprint_changed !== true
+      || typeof waitOnly?.state_fingerprint !== 'string' || !/^[0-9a-f]{64}$/.test(waitOnly.state_fingerprint)
+      || typeof heated?.state_fingerprint !== 'string' || !/^[0-9a-f]{64}$/.test(heated.state_fingerprint)
+      || waitOnly.state_fingerprint === heated.state_fingerprint
+      || !Array.isArray(waitOnly?.crystal_summary) || waitOnly.crystal_summary.length === 0
+      || !waitOnly.crystal_summary.every(row => row?.mineral === 'quartz'
+        && Number(row.total_growth_um) > 0 && Number.isSafeInteger(row.positive_layer_count)
+        && row.positive_layer_count > 0)
+      || !Array.isArray(heated?.crystal_summary) || heated.crystal_summary.length !== 0) {
+    throw new Error('player movement-choice witness does not prove a receipted divergent geology branch');
+  }
   return true;
 }
 
@@ -533,6 +650,8 @@ export async function buildMechanismWitnessArtifact(root = ROOT) {
       'applyStoichiometricGrowthBudget', 'VugSimulator', 'SCENARIOS', 'setSeed',
       'StripRecorder', 'currentEnclosureAuthority',
       'stoichiometricBudgetDebitPpmPerUm',
+      '_createMovementController', 'movementPlayerInterventionReceipt',
+      'simulationStateFingerprint',
     ],
   });
   const payload = {
@@ -544,6 +663,7 @@ export async function buildMechanismWitnessArtifact(root = ROOT) {
         chalcanthiteWaterSolubilityWitness(science, spec, index)),
       enclosure_control: chalcanthiteEnclosureWitness(science),
     },
+    player_movement_choice: playerMovementChoiceWitness(science),
   };
   return {
     schema: MECHANISM_WITNESS_SCHEMA,
@@ -573,7 +693,7 @@ async function main() {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== encoded) {
       throw new Error(`stale mechanism witness artifact: ${path.relative(ROOT, output)}`);
     }
-    console.log(`[mechanism-witnesses] PASS: ${artifact.payload.transformation_reactivity.length} transformation + ${artifact.payload.chalcanthite_water_solubility.trigger_controls.length + 1} chalcanthite controls`);
+    console.log(`[mechanism-witnesses] PASS: ${artifact.payload.transformation_reactivity.length} transformation + ${artifact.payload.chalcanthite_water_solubility.trigger_controls.length + 1} chalcanthite + 1 player-choice control`);
   } else {
     writeJsonAtomic(output, artifact);
     console.log(`[mechanism-witnesses] wrote ${path.relative(ROOT, output)}`);

@@ -117,6 +117,8 @@ class StripRecorder {
   private lastSeenFluidBoundaryTransactionCount: number;
   private enclosureTestimony: any[];
   private lastSeenEnclosureReceiptCount: number;
+  private playerActionTestimony: any[];
+  private lastSeenPlayerActionReceiptCount: number;
   private layerGrowthTestimony: any[];
   private lastSeenZoneCounts: Map<number | string, number>;
   private latestHabitMorphology: Map<number | string, any>;
@@ -208,6 +210,8 @@ class StripRecorder {
     this.lastSeenFluidBoundaryTransactionCount = 0;
     this.enclosureTestimony = [];
     this.lastSeenEnclosureReceiptCount = 0;
+    this.playerActionTestimony = [];
+    this.lastSeenPlayerActionReceiptCount = 0;
     this.layerGrowthTestimony = [];
     this.lastSeenZoneCounts = new Map();
     this.latestHabitMorphology = new Map();
@@ -569,6 +573,15 @@ class StripRecorder {
       })));
     }
     this.lastSeenEnclosureReceiptCount = enclosureReceipts.length;
+    const playerActionReceipts = Array.isArray(sim?._playerActionReceipts)
+      ? sim._playerActionReceipts : [];
+    for (let i = this.lastSeenPlayerActionReceiptCount; i < playerActionReceipts.length; i++) {
+      this.playerActionTestimony.push(JSON.parse(JSON.stringify({
+        ...playerActionReceipts[i],
+        sample_index: step,
+      })));
+    }
+    this.lastSeenPlayerActionReceiptCount = playerActionReceipts.length;
     const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
     for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
       // Clone so later mutations cannot rewrite archived testimony.
@@ -618,6 +631,7 @@ class StripRecorder {
       sulfur_ledger_testimony: this.sulfurLedgerTestimony,
       fluid_boundary_testimony: this.fluidBoundaryTestimony,
       enclosure_testimony: this.enclosureTestimony,
+      player_action_testimony: this.playerActionTestimony,
       layer_growth_testimony: this.layerGrowthTestimony,
       habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
     };

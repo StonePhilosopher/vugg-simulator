@@ -69,6 +69,7 @@ interface StripStoredRecord {
   sulfur_ledger_testimony?: any[];
   fluid_boundary_testimony?: any[];
   enclosure_testimony?: any[];
+  player_action_testimony?: any[];
   layer_growth_testimony?: any[];
   habit_morphology_testimony?: any[];
 }
@@ -107,6 +108,7 @@ function stripStoredRecordFromDataset(ds: StripDataset): StripStoredRecord {
     ...(ds.sulfur_ledger_testimony ? { sulfur_ledger_testimony: ds.sulfur_ledger_testimony } : {}),
     ...(ds.fluid_boundary_testimony ? { fluid_boundary_testimony: ds.fluid_boundary_testimony } : {}),
     ...(ds.enclosure_testimony ? { enclosure_testimony: ds.enclosure_testimony } : {}),
+    ...(ds.player_action_testimony ? { player_action_testimony: ds.player_action_testimony } : {}),
     ...(ds.layer_growth_testimony ? { layer_growth_testimony: ds.layer_growth_testimony } : {}),
     ...(ds.habit_morphology_testimony ? { habit_morphology_testimony: ds.habit_morphology_testimony } : {}),
   };
@@ -125,6 +127,7 @@ function stripDatasetFromStoredRecord(rec: StripStoredRecord): StripDataset {
     ...(rec.sulfur_ledger_testimony ? { sulfur_ledger_testimony: rec.sulfur_ledger_testimony } : {}),
     ...(rec.fluid_boundary_testimony ? { fluid_boundary_testimony: rec.fluid_boundary_testimony } : {}),
     ...(rec.enclosure_testimony ? { enclosure_testimony: rec.enclosure_testimony } : {}),
+    ...(rec.player_action_testimony ? { player_action_testimony: rec.player_action_testimony } : {}),
     ...(rec.layer_growth_testimony ? { layer_growth_testimony: rec.layer_growth_testimony } : {}),
     ...(rec.habit_morphology_testimony ? { habit_morphology_testimony: rec.habit_morphology_testimony } : {}),
   };
