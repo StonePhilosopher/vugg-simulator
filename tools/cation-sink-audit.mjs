@@ -74,9 +74,20 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // fluid-boundary receipts now authenticate canonical voxel totals as well as
 // bulk deltas. Those evidence/source corrections cannot affect this
 // Schneeberg replay; the independently observed trajectory remains exact.
+// SIM 280 composes visible player controls with authored absolute movements
+// and expands Simulation Random's menu source. The final GAME-02 candidate
+// additionally declares each Fortress verb's pointwise pore-fluid law and
+// retires uncited combined-S mutations from legacy Creative shortcuts. The
+// commissioning replay emits no player action, so its Schneeberg chemistry
+// and exact cation proxy remain unchanged; this checkpoint binds the complete
+// replay/testimony identity rather than treating the old model hash as
+// interchangeable. The final v11 gameplay token additionally binds coupled
+// carbonate pH/DIC titration closure and action-wide bulk/voxel/ring/solver
+// rollback; Schneeberg still executes no Creative action, so the independently
+// rerun five-crystal/zero-Zn result is unchanged.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 279,
-  model_digest_sha256: '60d3ee31f959bc37252c18eaae4d9304d5a96e74a1addb69acd9458969fe508c',
+  sim_version: 280,
+  model_digest_sha256: '9cf867577711095399c7b97a5a2dd73cbc88fce5743ce2f0d2351c3a741abb7f',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,

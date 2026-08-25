@@ -35,6 +35,7 @@ declare function openNewGameMenu(): void;
 declare function setFortressInstantLines(v: boolean): void;
 declare function _liveFortressSim(): any;
 declare function _liveFortressActive(): boolean;
+declare function _fortressInitialFluidRecipeFor(sim: any): any;
 declare function loadSaves(): any[];
 declare function persistSaves(items: any[]): boolean;
 declare function _saveRecipeDigest(rec: any): string;
@@ -186,6 +187,20 @@ function grownCount(sim: any): number {
   return (sim.crystals || []).filter(
     (c: any) => (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0,
   ).length;
+}
+
+// Collection/WAL tests need a collectable scientific object, not a hidden
+// dependency on one locality's changing nucleation latency. The authored
+// first-crystal tutorial is the deliberately fast fixture: its seed-42 quartz
+// nucleates and grows on the first geological step. That keeps these tests
+// about save/Library transactions while the separate Herkimer suites own the
+// cooling trajectory.
+function beginFastCollectableRun(): any {
+  fortressBeginFromScenario('tutorial_first_crystal', 42);
+  fortressStep('wait');
+  const sim = _liveFortressSim();
+  expect(grownCount(sim)).toBeGreaterThan(0);
+  return sim;
 }
 
 function minimalSave(id: string, overrides: Record<string, any> = {}): any {
@@ -1120,8 +1135,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('rejects a rehashed staged-to-pre-collected forgery, then idempotently completes the authentic finish journal', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     const activeId = _liveSaveActiveRecord().id;
     const sim = _liveFortressSim();
     const grown = grownCount(sim);
@@ -1264,6 +1278,508 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(loadSaveById(manual.id)).toBe(true);
     const after = fingerprint(_liveFortressSim());
     expect(after).toEqual(before);
+  });
+
+  it('keeps a Herkimer Heat choice above the absolute cooling movement and replays it exactly', () => {
+    const seed = 26702;
+    fortressBeginFromScenario('cooling', seed);
+    const waitOnly = _liveFortressSim();
+    expect(waitOnly.conditions.temperature).toBe(180);
+    fortressStep('wait');
+    const waitOnlyTemperature = waitOnly.conditions.temperature;
+    const waitOnlyDigest = simulationStateFingerprint(waitOnly);
+
+    fortressReset();
+    fortressBeginFromScenario('cooling', seed);
+    const heated = _liveFortressSim();
+    expect(heated.conditions._scenario.movements).toEqual([
+      expect.objectContaining({ field: 'temperature', startStep: 0, endStep: 100, base: 180 }),
+    ]);
+    fortressStep('heat');
+    expect(heated.conditions.temperature).toBe(205);
+    expect(heated._playerActionReceipts).toHaveLength(1);
+    expect(heated._playerActionReceipts[0]).toMatchObject({
+      schema: 'player-movement-intervention-v1',
+      action: 'heat',
+      field: 'temperature',
+      accepted_at_step: 0,
+      action_cursor: 0,
+      first_geology_step: 1,
+      value_before: 180,
+      value_after: 205,
+      applied_delta: 25,
+      movement_authority: {
+        schema: 'movement-player-offset-v2',
+        field: 'temperature',
+        first_geology_step: 1,
+        offset_after: 25,
+        offset_application: 'after-authored-texture-and-clamp',
+      },
+    });
+    fortressStep('wait');
+    expect(heated.conditions.temperature - waitOnlyTemperature).toBeCloseTo(25, 9);
+    expect(simulationStateFingerprint(heated)).not.toBe(waitOnlyDigest);
+
+    const beforeReplay = simulationStateFingerprint(heated);
+    const manual = _saveManualNamed('GAME-02 Herkimer heat branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(heated._playerActionReceipts);
+  });
+
+  it('protects non-temperature controls through the generic movement-owned field boundary', () => {
+    const seed = 26705;
+    fortressBeginFromScenario('grimsel_alpine_cleft', seed);
+    const waitOnly = _liveFortressSim();
+    fortressStep('wait');
+    const waitOnlyPressure = waitOnly.conditions.pressure;
+
+    fortressReset();
+    fortressBeginFromScenario('grimsel_alpine_cleft', seed);
+    const decompressed = _liveFortressSim();
+    fortressStep('decompress', { deltaKbar: 0.4 });
+    expect(decompressed._playerActionReceipts).toHaveLength(1);
+    expect(decompressed._playerActionReceipts[0]).toMatchObject({
+      action: 'decompress', field: 'pressure',
+      movement_authority: expect.objectContaining({
+        schema: 'movement-player-offset-v2', movement_index: 1,
+        offset_application: 'after-authored-texture-and-clamp',
+      }),
+    });
+    expect(decompressed._playerActionReceipts[0].applied_delta).toBeCloseTo(-0.4, 12);
+    fortressStep('wait');
+    expect(decompressed.conditions.pressure - waitOnlyPressure).toBeCloseTo(-0.4, 10);
+  });
+
+  it('carries an accepted silica choice into every canonical pore-fluid voxel', () => {
+    const seed = 26709;
+    fortressBeginFromScenario('amethyst_geode', seed);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const silicaValues = () => grid.voxels.map((voxel: any) => voxel.fluid.SiO2);
+    const before = silicaValues();
+    expect(before.length).toBeGreaterThan(0);
+    expect(before.every((value: number) => value === 320)).toBe(true);
+
+    fortressStep('silica');
+    expect(sim.conditions.fluid.SiO2).toBe(720);
+    const after = silicaValues();
+    expect(after.every((value: number, index: number) => value === before[index] + 400)).toBe(true);
+    expect(sim._playerActionReceipts).toHaveLength(1);
+    expect(sim._playerActionReceipts[0]).toMatchObject({
+      action: 'silica', field: 'fluid.SiO2', applied_delta: 400,
+      fluid_spatial_authority: {
+        schema: 'player-fluid-spatial-intervention-v1',
+        field: 'fluid.SiO2', application: 'uniform-delta',
+        scope: 'canonical-nonvadose-voxel-volume',
+        water_state_basis: 'authenticated-cavity-ring-water-state',
+        water_state_scope: 'nonvadose',
+        canonical_count: before.length, count: before.length, excluded_count: 0,
+        before_finite_count: before.length, after_finite_count: before.length,
+        value_before: 320, value_after: 720, applied_delta: 400,
+        clamped_count: 0, clamp_adjustment_total: 0,
+        closed: true,
+      },
+    });
+    fortressStep('wait');
+    expect(sim.conditions.fluid.SiO2).toBeGreaterThan(700);
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 pore-fluid silica branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(sim._playerActionReceipts);
+  });
+
+  it('coalesces a downward-first silica broth drag as one exact spatial replacement', () => {
+    fortressBeginFromScenario('amethyst_geode', 26710);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    setBrothValue('sio2', '100');
+    setBrothValue('sio2', '200');
+    expect(sim.conditions.fluid.SiO2).toBe(200);
+    expect(grid.voxels.every((voxel: any) => voxel.fluid.SiO2 === 200)).toBe(true);
+    expect(sim._playerActionReceipts).toHaveLength(1);
+    expect(sim._playerActionReceipts[0]).toMatchObject({
+      action: 'broth-sio2', field: 'fluid.SiO2',
+      value_before: 320, value_after: 200, applied_delta: -120,
+      fluid_spatial_authority: {
+        schema: 'player-fluid-spatial-intervention-v1',
+        application: 'exact-replacement',
+        value_before: 320, value_after: 200, applied_delta: -120,
+        count: grid.voxels.length, closed: true,
+      },
+    });
+    fortressStep('wait');
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 exact silica broth branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(sim._playerActionReceipts);
+  });
+
+  it('targets drained silica and exact broth edits only to non-vadose pore fluid', () => {
+    fortressBeginFromScenario('amethyst_geode', 26712);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const initialOxygen = grid.voxels[0].fluid.O2;
+    expect(grid.voxels.every((voxel: any) => voxel.fluid.O2 === initialOxygen)).toBe(true);
+    fortressStep('drain');
+    const wet = grid.voxels.filter((voxel: any) =>
+      sim.conditions.ringWaterState(voxel.ringIdx, sim.wall_state.ring_count) !== 'vadose');
+    const vadose = grid.voxels.filter((voxel: any) =>
+      sim.conditions.ringWaterState(voxel.ringIdx, sim.wall_state.ring_count) === 'vadose');
+    expect(wet.length).toBeGreaterThan(0);
+    expect(vadose.length).toBeGreaterThan(0);
+    expect(wet.every((voxel: any) => voxel.fluid.O2 === initialOxygen)).toBe(true);
+    expect(vadose.every((voxel: any) => voxel.fluid.O2 === 0.6)).toBe(true);
+
+    fortressStep('silica');
+    expect(wet.every((voxel: any) => voxel.fluid.SiO2 === 720)).toBe(true);
+    expect(vadose.every((voxel: any) => voxel.fluid.SiO2 === 320)).toBe(true);
+    expect(sim._playerActionReceipts.at(-1)?.fluid_spatial_authority).toMatchObject({
+      scope: 'canonical-nonvadose-voxel-volume',
+      water_state_scope: 'nonvadose',
+      canonical_count: grid.voxels.length,
+      count: wet.length,
+      excluded_count: vadose.length,
+      value_before: 320,
+      value_after: 720,
+      closed: true,
+    });
+
+    setBrothValue('sio2', '200');
+    expect(wet.every((voxel: any) => voxel.fluid.SiO2 === 200)).toBe(true);
+    expect(vadose.every((voxel: any) => voxel.fluid.SiO2 === 320)).toBe(true);
+    expect(sim._playerActionReceipts.at(-1)?.fluid_spatial_authority).toMatchObject({
+      application: 'exact-replacement',
+      scope: 'canonical-nonvadose-voxel-volume',
+      canonical_count: grid.voxels.length,
+      count: wet.length,
+      excluded_count: vadose.length,
+      value_before: 720,
+      value_after: 200,
+      closed: true,
+    });
+    fortressStep('wait');
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 drained wet-fluid branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+  });
+
+  it('applies Flood dilution as a per-voxel scale across heterogeneous wet and former-vadose fluid', () => {
+    fortressBeginFromScenario('amethyst_geode', 26714);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    fortressStep('drain');
+    const preFloodWet = grid.voxels.filter((voxel: any) =>
+      sim.conditions.ringWaterState(voxel.ringIdx, sim.wall_state.ring_count) !== 'vadose');
+    const preFloodVadose = grid.voxels.filter((voxel: any) =>
+      sim.conditions.ringWaterState(voxel.ringIdx, sim.wall_state.ring_count) === 'vadose');
+    fortressStep('silica');
+    expect(preFloodWet.every((voxel: any) => voxel.fluid.SiO2 === 720)).toBe(true);
+    expect(preFloodVadose.every((voxel: any) => voxel.fluid.SiO2 === 320)).toBe(true);
+
+    fortressStep('flood');
+    expect(sim.conditions.fluid_surface_ring).toBe(sim.wall_state.ring_count);
+    expect(preFloodWet.every((voxel: any) => voxel.fluid.SiO2 === 432)).toBe(true);
+    expect(preFloodVadose.every((voxel: any) => voxel.fluid.SiO2 === 192)).toBe(true);
+    const authority = sim._playerActionReceipts.at(-1)?.fluid_spatial_authority;
+    expect(authority).toMatchObject({
+      application: 'uniform-scale',
+      transformation_basis: 'flood:SiO2:scale',
+      transform_scale: 0.6,
+      transform_offset: 0,
+      scope: 'canonical-nonvadose-voxel-volume',
+      canonical_count: grid.voxels.length,
+      count: grid.voxels.length,
+      excluded_count: 0,
+      value_before: 720,
+      value_after: 432,
+      closed: true,
+    });
+    const expectedTotal = preFloodWet.length * 432 + preFloodVadose.length * 192;
+    expect(authority.after_total).toBeCloseTo(expectedTotal, 8);
+    expect(authority.movement_authority).toBeUndefined();
+    expect(sim._playerActionReceipts.at(-1).movement_authority).toMatchObject({
+      offset_before: 400,
+      offset_after: 112,
+    });
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 heterogeneous flood scale');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+  });
+
+  it('executes a bounded vadose law even when its bulk scalar is already at the bound', () => {
+    fortressBeginFromScenario('amethyst_geode', 26716);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    fortressStep('drain');
+    setBrothValue('o2', '20'); // 2.0 ppm in the still-wet volume; dry pores retain 0.6.
+    fortressStep('flood');
+    expect(sim.conditions.fluid.O2).toBe(2);
+    expect(grid.voxels.some((voxel: any) => voxel.fluid.O2 === 0.6)).toBe(true);
+    expect(grid.voxels.some((voxel: any) => voxel.fluid.O2 === 2)).toBe(true);
+
+    fortressStep('evaporate');
+    const vadose = grid.voxels.filter((voxel: any) =>
+      sim.conditions.ringWaterState(voxel.ringIdx, sim.wall_state.ring_count) === 'vadose');
+    expect(vadose.length).toBeGreaterThan(0);
+    expect(vadose.every((voxel: any) => voxel.fluid.O2 >= 1.5)).toBe(true);
+    expect(vadose.some((voxel: any) => voxel.fluid.O2 === 1.5)).toBe(true);
+    expect(sim.conditions.fluid.O2).toBe(2);
+  });
+
+  it('does not invent, delete, or ambiguously re-valence sulfur in legacy Creative shortcuts', () => {
+    _fortressBeginCustomFromParams({
+      temp: 120,
+      pressure: 0.5,
+      fluidParams: {
+        S: 100,
+        S_sulfide: 30,
+        S_sulfate: 60,
+        S_elemental: 10,
+        sulfurPoolsExplicit: true,
+        sulfateInherited: true,
+        nativeSulfurPathway: 'oxidative_interface',
+        pH: 6.5,
+      },
+      wallOpts: {
+        composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
+        wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
+      },
+      conditionOpts: {}, scenarioOpts: {}, initialWaterTablePct: 100,
+      presetLabel: 'GAME-02 explicit sulfur shortcut control',
+    }, 26715);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const sulfurProjection = () => ({
+      bulk: ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'].map(
+        key => sim.conditions.fluid[key],
+      ),
+      authority: {
+        sulfurPoolsExplicit: sim.conditions.fluid.sulfurPoolsExplicit,
+        sulfateInherited: sim.conditions.fluid.sulfateInherited,
+        nativeSulfurPathway: sim.conditions.fluid.nativeSulfurPathway,
+      },
+      voxels: grid.voxels.map((voxel: any) => ({
+        values: ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'].map(
+          key => voxel.fluid[key],
+        ),
+        sulfurPoolsExplicit: voxel.fluid.sulfurPoolsExplicit,
+        sulfateInherited: voxel.fluid.sulfateInherited,
+        nativeSulfurPathway: voxel.fluid.nativeSulfurPathway,
+      })),
+    });
+    const initial = sulfurProjection();
+    for (const action of ['evaporate', 'brine', 'copper', 'oxidize']) {
+      fortressStep(action);
+      expect(sulfurProjection(), `${action} must not create an uncited sulfur boundary`).toEqual(initial);
+    }
+    expect(sim._sulfurBoundaryImportsPpm).toBe(0);
+    expect(sim._sulfurBoundaryExportsPpm).toBe(0);
+    expect(sim._sulfurBoundaryTransactions).toEqual([]);
+  });
+
+  it('rolls a multi-coordinate fluid action back when one coordinate lacks a declared law', () => {
+    fortressBeginFromScenario('amethyst_geode', 26716);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const fluid = sim.conditions.fluid;
+    const originalAddReactiveSilica = fluid.addReactiveSilica;
+    const beforeBulk = {
+      SiO2: fluid.SiO2, reactiveSilicaFraction: fluid.reactiveSilicaFraction,
+      Al: fluid.Al, Ti: fluid.Ti, Fe: fluid.Fe,
+    };
+    const beforeSpatial = grid.voxels.map((voxel: any) => ({
+      SiO2: voxel.fluid.SiO2,
+      reactiveSilicaFraction: voxel.fluid.reactiveSilicaFraction,
+      Al: voxel.fluid.Al, Ti: voxel.fluid.Ti, Fe: voxel.fluid.Fe,
+    }));
+    // Hostile substitute: the visible Silica verb is allowed to change its
+    // declared SiO2/reactive-silica/Al/Ti coordinates, not to smuggle Fe into
+    // the same action. Preflight must restore even the legitimate coordinates.
+    fluid.addReactiveSilica = function(amount: number) {
+      this.SiO2 += amount;
+      this.Fe += 1;
+    };
+    expect(() => fortressStep('silica')).toThrow(/changed undeclared field fluid\.Fe/);
+    fluid.addReactiveSilica = originalAddReactiveSilica;
+    expect({
+      SiO2: fluid.SiO2, reactiveSilicaFraction: fluid.reactiveSilicaFraction,
+      Al: fluid.Al, Ti: fluid.Ti, Fe: fluid.Fe,
+    }).toEqual(beforeBulk);
+    expect(grid.voxels.map((voxel: any) => ({
+      SiO2: voxel.fluid.SiO2,
+      reactiveSilicaFraction: voxel.fluid.reactiveSilicaFraction,
+      Al: voxel.fluid.Al, Ti: voxel.fluid.Ti, Fe: voxel.fluid.Fe,
+    }))).toEqual(beforeSpatial);
+    expect(_liveSaveActiveRecord().actions).toEqual([]);
+    expect(sim._playerActionReceipts ?? []).toEqual([]);
+  });
+
+  it('fails a partially drained carbonate Replenish atomically and replays the refusal', () => {
+    fortressBeginFromScenario('amethyst_geode', 26711);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    fortressStep('silica');
+    fortressStep('drain');
+    const drainedRing = sim.conditions.fluid_surface_ring;
+    expect(drainedRing).toBe(sim.wall_state.ring_count - 2);
+    expect(grid.voxels.every((voxel: any) => voxel.fluid.SiO2 === 720)).toBe(true);
+    expect(_fortressInitialFluidRecipeFor(sim).SiO2).toBe(320);
+
+    fortressStep('replenish');
+    expect(sim.conditions.fluid_surface_ring).toBe(drainedRing);
+    expect(sim.conditions.fluid.SiO2).toBe(720);
+    expect(grid.voxels.every((voxel: any) => voxel.fluid.SiO2 === 720)).toBe(true);
+    expect(sim._fluidBoundaryTransactions).toEqual([]);
+    expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+      ok: false,
+      kind: 'spatial_boundary_unsupported',
+      error: 'partially_flooded_boundary_deferred',
+    });
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 drained replenish branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+
+    // The same physical boundary applies without a carbonate ledger: a
+    // partially drained non-carbonate run must not replace hidden vadose
+    // stores merely because no carbonate authority was present to refuse it.
+    fortressReset();
+    fortressBeginFromScenario('cooling', 26713);
+    const nonCarbonate = _liveFortressSim();
+    const nonCarbonateGrid = nonCarbonate.wall_state.voxelGridFor(nonCarbonate);
+    fortressStep('drain');
+    const beforeFluids = nonCarbonateGrid.voxels.map((voxel: any) => voxel.fluid.SiO2);
+    fortressStep('replenish');
+    expect(nonCarbonateGrid.voxels.map((voxel: any) => voxel.fluid.SiO2)).toEqual(beforeFluids);
+    expect(nonCarbonate._fluidBoundaryTransactions).toEqual([]);
+  });
+
+  it('binds player-action testimony into deterministic replay identity', () => {
+    fortressBeginFromScenario('cooling', 26703);
+    fortressStep('heat');
+    const sim = _liveFortressSim();
+    const authentic = simulationStateFingerprint(sim);
+    sim._playerActionReceipts[0] = {
+      ...sim._playerActionReceipts[0],
+      applied_delta: 24,
+    };
+    expect(simulationStateFingerprint(sim)).not.toBe(authentic);
+  });
+
+  it('coalesces a dragged movement-owned broth control and replays its final choice', () => {
+    fortressBeginFromScenario('cooling', 26704);
+    const sim = _liveFortressSim();
+    setBrothValue('temp', '190');
+    setBrothValue('temp', '205');
+    expect(sim._playerActionReceipts).toEqual([
+      expect.objectContaining({
+        schema: 'player-movement-intervention-v1',
+        action: 'broth-temp',
+        field: 'temperature',
+        value_before: 180,
+        value_after: 205,
+        applied_delta: 25,
+        movement_authority: expect.objectContaining({
+          offset_before: 0,
+          offset_after: 25,
+        }),
+      }),
+    ]);
+    fortressStep('wait');
+    expect(sim.conditions.temperature).toBeGreaterThan(204);
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 coalesced temperature branch');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(sim._playerActionReceipts);
+  });
+
+  it('does not coalesce broth testimony across an intervening same-step action cursor', () => {
+    fortressBeginFromScenario('cooling', 26706);
+    const sim = _liveFortressSim();
+    setBrothValue('temp', '190');
+    fortressStep('heat');
+    setBrothValue('temp', '205');
+    expect(sim._playerActionReceipts.map((row: any) => ({
+      action: row.action,
+      cursor: row.action_cursor,
+      before: row.movement_authority.offset_before,
+      after: row.movement_authority.offset_after,
+    }))).toEqual([
+      { action: 'broth-temp', cursor: 0, before: 0, after: 10 },
+      { action: 'heat', cursor: 0, before: 10, after: 35 },
+      { action: 'broth-temp', cursor: 1, before: 35, after: 25 },
+    ]);
+    fortressStep('wait');
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 cursor-separated controls');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(sim._playerActionReceipts);
+  });
+
+  it('carries field authority through clear and newly scheduled same-field movements', () => {
+    fortressBeginFromScenario('cooling', 26707);
+    const sim = _liveFortressSim();
+    fortressStep('heat');
+    fortressStep('clear_movements');
+    fortressStep('schedule_movement', {
+      field: 'temperature', operator: 'trend', duration: 20, delay: 0,
+      value: 0, origin: 'global',
+    });
+    expect(sim._movements._state[0].playerOffset).toBe(25);
+    fortressStep('heat');
+    expect(sim._playerActionReceipts.map((row: any) => ({
+      cursor: row.action_cursor,
+      source: row.movement_authority.movement_source,
+      before: row.movement_authority.offset_before,
+      after: row.movement_authority.offset_after,
+    }))).toEqual([
+      { cursor: 0, source: 'authored-scenario', before: 0, after: 25 },
+      { cursor: 3, source: 'player-scheduled', before: 25, after: 50 },
+    ]);
+    fortressStep('wait');
+    expect(sim.conditions.temperature).toBeCloseTo(230, 10);
+    const beforeReplay = simulationStateFingerprint(sim);
+    const manual = _saveManualNamed('GAME-02 dynamic movement authority');
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(beforeReplay);
+    expect(_liveFortressSim()._playerActionReceipts).toEqual(sim._playerActionReceipts);
+  });
+
+  it('labels a first-action scheduled movement as player authority, not authored geology', () => {
+    fortressBeginFromScenario('cooling', 26708);
+    const sim = _liveFortressSim();
+    expect(sim._movements).toBeFalsy();
+    fortressStep('schedule_movement', {
+      field: 'temperature', operator: 'trend', duration: 20, delay: 0,
+      value: 0, origin: 'global',
+    });
+    expect(sim._movements._movementSources).toEqual([
+      'authored-scenario', 'player-scheduled',
+    ]);
+    fortressStep('heat');
+    expect(sim._playerActionReceipts.at(-1)?.movement_authority).toMatchObject({
+      movement_index: 1,
+      movement_source: 'player-scheduled',
+    });
+    const authentic = simulationStateFingerprint(sim);
+    sim._movements._movementSources[1] = 'authored-scenario';
+    expect(simulationStateFingerprint(sim)).not.toBe(authentic);
   });
 
   it('fails closed before replay when the saved scientific model digest is tampered', () => {
@@ -1480,15 +1996,60 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       fortressReset();
       fortressBeginFromScenario('tutorial_travertine', 42);
       const sim = _liveFortressSim();
+      const grid = sim.wall_state.voxelGridFor(sim);
+      const beforePH = sim.conditions.fluid.pH;
+      const beforeDIC = sim.conditions.fluid.CO3;
       fortressStep(action);
       expect(sim._carbonateBoundaryState.transactions.at(-1), action).toMatchObject({
         ok: true, kind: 'ph_titration',
       });
+      expect(sim.conditions.fluid.pH, action).not.toBe(beforePH);
+      expect(sim.conditions.fluid.CO3, action).not.toBe(beforeDIC);
+      // Breadcrumb: 97's carbonate titration replaces both coordinates in
+      // 85c before the generic GAME-02 action audit runs. The action contract
+      // must therefore declare and re-authenticate pH and DIC together; a
+      // pH-only declaration would make the fail-closed bridge reject CO3.
+      expect(grid.voxels.every((voxel: any) =>
+        voxel.fluid.pH === sim.conditions.fluid.pH), action).toBe(true);
+      expect(grid.voxels.every((voxel: any) =>
+        voxel.fluid.CO3 === sim.conditions.fluid.CO3), action).toBe(true);
       fortressStep('wait');
       expect(sim._carbonateBoundaryState.blocked, action).toBe(false);
       expect(sim._carbonateBoundaryState.transactions.some((tx: any) =>
         tx.error === 'unreceipted_DIC_change')).toBe(false);
     }
+  });
+
+  it('rolls back carbonate solver testimony when coupled pH/DIC spatial closure fails', () => {
+    ensureCarbonBoundaryControls();
+    fortressBeginFromScenario('tutorial_travertine', 26719);
+    const sim = _liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const beforeFingerprint = simulationStateFingerprint(sim);
+    const beforeBoundary = structuredClone(sim._carbonateBoundaryState);
+    const beforeRingFluids = structuredClone(sim.ring_fluids);
+    const originalReplace = sim._replaceFullyMixedCarbonateFluid;
+    sim._replaceFullyMixedCarbonateFluid = function() {
+      const oldCO3 = grid.voxels[0].fluid.CO3;
+      const result = originalReplace.call(this);
+      // Hostile partial-write substitute: production installed the coupled
+      // solution everywhere except one canonical pore-fluid address.
+      grid.voxels[0].fluid.CO3 = oldCO3;
+      return result;
+    };
+
+    expect(() => fortressStep('tweak_acidify')).toThrow(/unauthenticated partial spatial write/);
+    sim._replaceFullyMixedCarbonateFluid = originalReplace;
+    expect(simulationStateFingerprint(sim)).toBe(beforeFingerprint);
+    expect(sim._carbonateBoundaryState).toEqual(beforeBoundary);
+    expect(sim.ring_fluids).toEqual(beforeRingFluids);
+    expect(sim.conditions._carbonateBoundaryState).toBe(sim._carbonateBoundaryState);
+    expect(_liveSaveActiveRecord().actions).toEqual([]);
+
+    fortressStep('wait');
+    expect(sim._carbonateBoundaryState.blocked).toBe(false);
+    expect(sim._carbonateBoundaryState.transactions.some((tx: any) =>
+      tx.error === 'unreceipted_DIC_change')).toBe(false);
   });
 
   it('the rolling autosave updates in place on every action', () => {
@@ -1507,11 +2068,9 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('Narrate, Collect & Save: finish collects every crystal, seals the save, bumps lifetime counters — once', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
-    const sim = _liveFortressSim();
+    const sim = beginFastCollectableRun();
     const grown = grownCount(sim);
-    expect(grown).toBeGreaterThan(0); // commissioned Herkimer cooling grows one large quartz
+    expect(grown).toBeGreaterThan(0); // commissioned first-crystal tutorial grows quartz at step 1
     const grownCrystals = sim.crystals.filter((c: any) =>
       (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0);
 
@@ -1605,8 +2164,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('journals Creative Collect across save/stats denial and manual branching without duplicating specimen or score', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     const original = _liveSaveActiveRecord();
     const originalId = original.id;
     const runId = original.run_id;
@@ -1614,7 +2172,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       (crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0);
     expect(targetIdx).toBeGreaterThanOrEqual(0);
 
-    const prompt = vi.spyOn(window, 'prompt').mockReturnValue('Journaled Herkimer quartz');
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue('Journaled tutorial quartz');
     const nativeSetItem = Storage.prototype.setItem;
 
     // A denied save WAL must move neither Library nor lifetime state. The
@@ -1739,8 +2297,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('a finished save restores as a finished run (re-narrated, nothing re-collected or re-counted)', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     fortressFinish();
     const sealed = loadSaves()[0];
     const libBefore = loadCrystals().length;
@@ -1757,8 +2314,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('lifetime crystals_collected never decrements — deleting a specimen does not un-find it', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     const res = collectAllCrystals(_liveFortressSim().crystals, () => ({ mode: 'creative' }), { silent: true });
     expect(res.count).toBeGreaterThan(0);
     expect(loadLifetimeStats().crystals_collected).toBe(res.count);
@@ -1772,8 +2328,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   });
 
   it('collectAllCrystals returns {count,newSpecies}; a second silent batch is a clean zero', () => {
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     const res = collectAllCrystals(_liveFortressSim().crystals, () => ({ mode: 'creative' }), { silent: true });
     expect(typeof res.count).toBe('number');
     expect(Array.isArray(res.newSpecies)).toBe(true);
@@ -1796,8 +2351,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(strip(_libraryProgressHTML())).toContain('Empty — grow a vugg');
 
     // Collect a run → the total lands in both variants.
-    fortressBeginFromScenario('cooling', 424242);
-    for (let i = 0; i < 14; i++) fortressStep('wait');
+    beginFastCollectableRun();
     const res = collectAllCrystals(_liveFortressSim().crystals, () => ({ mode: 'creative' }), { silent: true });
     const after = strip(_libraryProgressHTML());
     expect(after).toContain(`${res.count} crystal${res.count === 1 ? '' : 's'} all-time`);

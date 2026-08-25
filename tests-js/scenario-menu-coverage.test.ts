@@ -26,6 +26,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+declare function _populateScenarioDropdowns(): void;
+declare function _simulationPlayableScenarioIds(): string[];
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function loadDoc(): any {
@@ -192,5 +195,23 @@ describe('Populator wiring: the generators exist and run at load', () => {
     const hasFilter = /Object\.keys\(SCENARIOS\)\.filter\([^)]*tutorial_/.test(src) ||
                       /startsWith\(['"]tutorial_['"]\)/.test(src);
     expect(hasFilter, "zen random pick must skip tutorial_* (boss directive 2026-05-20)").toBe(true);
+  });
+
+  it('Simulation Random draws from every populated non-tutorial scenario', () => {
+    document.querySelectorAll('#scenario').forEach(element => element.remove());
+    const select = document.createElement('select');
+    select.id = 'scenario';
+    document.body.appendChild(select);
+    try {
+      _populateScenarioDropdowns();
+      const playable = _simulationPlayableScenarioIds().sort();
+      expect(playable).toEqual(nonTutorial);
+      expect(playable).toHaveLength(38);
+      const legendsSrc = readFile('js', '91-ui-legends.ts');
+      expect(legendsSrc).not.toContain("['cooling', 'pulse', 'mvt', 'porphyry']");
+      expect(legendsSrc).toMatch(/function runRandom\(\)[\s\S]{0,180}_simulationPlayableScenarioIds\(\)/);
+    } finally {
+      select.remove();
+    }
   });
 });

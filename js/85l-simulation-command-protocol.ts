@@ -235,8 +235,15 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     movementController: sim?._movements ? {
       rngState: Number(sim._movements.rng?.state) >>> 0,
       movements: _simulationCanonicalProjection(sim._movements.movements || []),
+      movementSources: _simulationCanonicalProjection(sim._movements._movementSources || []),
       state: _simulationCanonicalProjection(sim._movements._state || []),
+      playerOffsets: _simulationCanonicalProjection(
+        sim._movements.playerOffsetsSnapshot?.() || {},
+      ),
     } : null,
+    playerActionReceipts: _simulationCanonicalProjection(sim?._playerActionReceipts || []),
+    playerActionCursor: Number.isSafeInteger(sim?._playerActionCursor)
+      ? sim._playerActionCursor : 0,
     temperatureC: Number(sim?.conditions?.temperature) || 0,
     pressureKbar: Number(sim?.conditions?.pressure) || 0,
     flowRate: Number(sim?.conditions?.flow_rate) || 0,

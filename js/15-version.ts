@@ -13067,7 +13067,23 @@
 // longer inherit a hidden Custom recipe across Home/New Game, and save replay
 // deterministically reconstructs the same future input from its recorded
 // origin before applying actions.
-const SIM_VERSION = 279;
+// v280 (August 2026): visible player controls can no longer be accepted and
+// then erased by an authored absolute movement before geology reads them. The
+// authored curve remains the geological baseline; the player's actual clamped
+// delta is a persistent, replay-bound field offset applied after authored
+// texture/clamps and carried across overlapping movement-owner handoffs.
+// An explicit recipe-action cursor keeps same-step slider coalescing replay-
+// exact, base-less windows capture their baseline net of the offset, and the
+// field authority survives dynamically appended or rebuilt controllers.
+// Every non-sulfur coordinate changed by a visible fluid action crosses the
+// bulk-to-voxel boundary over an authenticated water-state scope (ordinary
+// source-fluid edits target non-vadose voxels; Drain/Evaporate oxygen targets
+// vadose voxels). The completed recipe cursor is sealed before the autosave
+// fingerprints that state.
+// Strip/claim testimony records the choice, and a controlled Herkimer branch
+// proves Heat diverges from wait-only geology. Simulation Random now derives
+// its candidates from the complete populated non-tutorial scenario registry.
+const SIM_VERSION = 280;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -13133,7 +13149,7 @@ const MODEL_DIGEST = [
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
   'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-  'run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v7',
+  'run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v8',
   'morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2',
   'locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1',
   'crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1',
@@ -13143,8 +13159,9 @@ const MODEL_DIGEST = [
   'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
-  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
-  'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts-v2',
-  'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v10',
+  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+aggregate-artifact-sha256-v4',
+  'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3',
+  'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
+  'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
 ].join('|');
 

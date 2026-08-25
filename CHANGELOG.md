@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 279**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 280**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -71,6 +71,57 @@ and the exact-execution evidence receipt.
   the replacement before later growth reads a WallCell. Legacy one-pool sulfur
   is commissioned at construction too, so switching to explicit valence pools
   cannot rebase or erase earlier open-boundary history.
+- SIM 280 makes player intervention compose with authored geology instead of
+  disappearing underneath it. An absolute movement remains the cited baseline
+  curve, while any visible control that changes a global movement-owned field
+  contributes a persistent, receipted offset after authored texture/clamps and
+  across overlapping movement handoffs. Spatial cell feeders remain separate.
+  Base-less curves capture their baseline net of that offset, and an explicit
+  recipe-action cursor prevents same-step slider drags from coalescing across
+  an intervening action. Field authority survives Clear/Schedule controller
+  rebuilds; receipts distinguish canonical authored curves from later
+  player-scheduled trajectories. Save replay uses the same canonical write path,
+  strips and claim cards retain the accepted
+  action, and the controlled Herkimer witness compares a wait-only run with a
+  +25°C Heat branch that produces a different terminal temperature and crystal
+  outcome. Simulation Random also draws from every populated non-tutorial
+  scenario instead of a private four-scenario list.
+  Fluid choices cross the simulator's storage boundary as well: an accepted
+  bulk SiO2/Eh coordinate is applied to the authenticated non-vadose canonical
+  pore-fluid population and closed inside the same player-action receipt;
+  dry-ring stores remain unchanged. Drain/Evaporate oxygen instead targets the
+  authenticated vadose population. Absolute broth sliders use an exact
+  non-vadose replacement, so a coalesced drag and its saved final value
+  reconstruct the same spatial chemistry rather than only the same UI number.
+  Multi-field buttons reconcile every changed non-sulfur coordinate, and the
+  completed action cursor is sealed before the autosave fingerprints it.
+  Each verb now carries its actual pointwise pore-fluid law: additions remain
+  additions, Flood/Seep/Evaporate remain per-voxel scales, Drain/Oxidize use
+  their bounded or exact oxygen controls, and broth values remain exact sets.
+  This matters after partial drainage, where adding one bulk delta cannot
+  reproduce scaling a heterogeneous wet/vadose population. The action rolls
+  back as a unit if any changed coordinate fails that declared law, and the
+  claim-card producer independently checks the action/field/transform tuple.
+  Declared max/set laws still execute when the bulk display number is already
+  at its target, because newly wet or dry heterogeneous voxels may not be;
+  explicitly rejected carbonate, injection, and Replenish branches are marked
+  separately so a refusal can never manufacture that spatial write.
+  Carbonate-bound acid/base controls declare their solved pH and DIC as one
+  exact coupled replacement: the carbonate solver installs both coordinates,
+  and the generic action bridge independently verifies both over the canonical
+  non-vadose pore-fluid population before accepting the choice. If that
+  spatial closure fails, the same atomic before-image restores bulk, voxel,
+  ring-fallback, and carbonate solver/transaction authority; the next Advance
+  cannot inherit a rejected titration as an unreceipted DIC residual.
+  Legacy Brine, Copper, Oxidize, and Evaporate shortcuts no longer invent,
+  delete, or ambiguously re-valence combined sulfur: without an authored
+  sulfur source or executed redox/water-mass reaction, the explicit sulfur
+  reservoirs and their ledger remain unchanged.
+  Replenish's v1 equal-volume replacement now refuses partial flooding before
+  mutation rather than treating stored vadose chemistry as wet source water.
+  Breadcrumb:
+  97/97a visible action -> 85c opaque voxel closure -> 85j combined receipt ->
+  85g/85h strip transport -> review-claim-card independent validation.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and

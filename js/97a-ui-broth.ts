@@ -680,13 +680,31 @@ function _clearBrothPlayerChanges() {
   _brothPendingPlayerChanges = {};
 }
 
+// One canonical write path for live controls and save replay. Movement-owned
+// fields must rebuild the same offset/receipt whether a person moves the
+// slider or 93a replays its coalesced final value.
+function _applyBrothMappedValue(key: string, m: any, realVal: any): any {
+  const movementBefore = Number(m.get());
+  const spatialSnapshot = _capturePlayerFluidSpatialSnapshotInternal(
+    fortressSim, String(m.path || key),
+  );
+  const applied = m.set(realVal);
+  if (applied === false) return false;
+  const movementAfter = Number(m.get());
+  _fortressApplyPlayerMovementDelta(
+    String(m.path || key), movementBefore, movementAfter, `broth-${key}`, true,
+    spatialSnapshot, 'exact-replacement',
+  );
+  return applied;
+}
+
 function setBrothValue(key, sliderVal) {
   if (!fortressSim || !fortressActive) return;
   const m = BROTH_MAP[key];
   if (!m) return;
   const realVal = m.parse(sliderVal);
   if (!_isBrothValueValid(m, realVal)) return;
-  const applied = m.set(realVal);
+  const applied = _applyBrothMappedValue(key, m, realVal);
   if (applied === false) {
     updateCarbonateBoundaryReadout();
     syncBrothSliders();

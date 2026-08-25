@@ -1314,11 +1314,160 @@ function _fortressCarbonateTitrate(targetPH: number, note: string): any {
   return tx;
 }
 
+// Bind a visible control to the authored movement that would otherwise erase
+// it on the next Advance. Broth sliders coalesce repeated input events at one
+// recipe cursor so live drag history and the replayed final value authenticate
+// as the same intervention.
+function _fortressApplyPlayerMovementDelta(
+  field: string,
+  before: number,
+  after: number,
+  action: string,
+  coalesce = false,
+  spatialSnapshot: any = null,
+  spatialApplication: 'auto' | 'exact-replacement' = 'auto',
+  preclosedFluidSpatialAuthority: any = null,
+): any {
+  if (!fortressSim) return null;
+  const normalizedField = field.startsWith('fluid.') ? field : `fluid.${field}`;
+  if (fortressSim._carbonateBoundaryState
+      && (normalizedField === 'fluid.pH' || normalizedField === 'fluid.CO3')) {
+    // Carbonate-bound pH/DIC movements are already refused by applyStep; they
+    // cannot erase this control and must not mint false intervention evidence.
+    return null;
+  }
+  const delta = after - before;
+  const fluidSpatialAuthority = preclosedFluidSpatialAuthority || (spatialSnapshot && delta !== 0
+    ? _reconcilePlayerFluidSpatialSnapshotInternal(
+      fortressSim, spatialSnapshot, before, after, spatialApplication,
+    )
+    : null);
+  const authoredMovements = fortressSim.conditions?._scenario?.movements;
+  if (!fortressSim._movements && Array.isArray(authoredMovements) && authoredMovements.length) {
+    // run_step normally creates this controller lazily. A visible intervention
+    // happens before run_step, so commission the same deterministic controller
+    // now or the first authored absolute sample would erase the action.
+    fortressSim._movements = _createMovementController(fortressSim);
+  }
+  const movement = fortressSim._movements?.applyPlayerDelta?.(
+    field, fortressSim.step + 1, delta,
+  ) || null;
+  if (!movement) return null;
+
+  fortressSim._playerActionReceipts ||= [];
+  const actionCursor = Number.isSafeInteger(fortressSim._playerActionCursor)
+    && fortressSim._playerActionCursor >= 0
+    ? fortressSim._playerActionCursor : 0;
+  // Broth's pending recipe is a per-control map. Find the corresponding
+  // receipt anywhere in the current cursor rather than only at the tail, so
+  // an interleaved A -> B -> A drag has the same canonical [A, B] testimony
+  // when it is replayed from the final A/B values.
+  const priorIndex = coalesce
+    ? fortressSim._playerActionReceipts.findIndex((candidate: any) => (
+      candidate?.schema === 'player-movement-intervention-v1'
+      && candidate.action === action
+      && candidate.field === field
+      && candidate.accepted_at_step === fortressSim.step
+      && candidate.action_cursor === actionCursor
+    ))
+    : -1;
+  const prior = priorIndex >= 0
+    ? fortressSim._playerActionReceipts[priorIndex]
+    : null;
+  const receipt = movementPlayerInterventionReceipt(
+    action, field, fortressSim.step, actionCursor, before, after, movement,
+    prior, fluidSpatialAuthority,
+  );
+  if (!receipt) return null;
+  if (priorIndex >= 0) fortressSim._playerActionReceipts[priorIndex] = receipt;
+  else fortressSim._playerActionReceipts.push(receipt);
+  return receipt;
+}
+
+function _fortressAdvancePlayerActionCursor(): void {
+  if (!fortressSim) return;
+  const current = Number.isSafeInteger(fortressSim._playerActionCursor)
+    && fortressSim._playerActionCursor >= 0
+    ? fortressSim._playerActionCursor : 0;
+  fortressSim._playerActionCursor = current + 1;
+}
+
+// Snapshot every active global movement-owned coordinate before a visible
+// Fortress action. The post-switch reconciliation below is deliberately
+// generic: pH, pressure, silica, redox, and future controls deserve the same
+// protection as the Heat repro that exposed GAME-02. Cell-origin movements
+// are spatial feeders and never overwrite the visible bulk coordinate.
+function _fortressMovementFieldSnapshot(): Map<string, any> {
+  const snapshot = new Map<string, any>();
+  if (!fortressSim) return snapshot;
+  const nextStep = fortressSim.step + 1;
+  const movements = fortressSim.conditions?._scenario?.movements;
+  if (!Array.isArray(movements)) return snapshot;
+  for (const movement of movements) {
+    if (!movement || movement.origin === 'cell'
+        || nextStep < movement.startStep || nextStep >= movement.endStep
+        || typeof movement.field !== 'string' || !movement.field) continue;
+    const value = Number(_movementGetField(fortressSim.conditions, movement.field));
+    if (Number.isFinite(value) && !snapshot.has(movement.field)) {
+      snapshot.set(movement.field, Object.freeze({
+        value,
+      }));
+    }
+  }
+  return snapshot;
+}
+
+function _fortressReconcilePlayerMovementDeltas(
+  before: Map<string, any>,
+  action: string,
+  fluidSpatialAuthorities: Record<string, any> = {},
+): void {
+  if (!fortressSim) return;
+  for (const [field, snapshot] of before.entries()) {
+    const valueBefore = Number(snapshot?.value);
+    const valueAfter = Number(_movementGetField(fortressSim.conditions, field));
+    if (!Number.isFinite(valueAfter) || valueAfter === valueBefore) continue;
+    _fortressApplyPlayerMovementDelta(
+      field, valueBefore, valueAfter, action, false,
+      null, 'auto', fluidSpatialAuthorities[field] || null,
+    );
+  }
+}
+
+// These verbs mutate global fluid coordinates directly. 85c owns the actual
+// pore-fluid layout; this registry only says which visible UI verbs need one
+// opaque before/after reconciliation. It is intentionally adjacent to the
+// generic movement snapshot so a new chemistry button has one obvious place
+// to declare both what it touches and what touches it.
+const _FORTRESS_GLOBAL_FLUID_ACTIONS = new Set([
+  'seep', 'flood', 'drain', 'evaporate',
+  'tweak_acidify', 'shift_acidify', 'acidify',
+  'tweak_alkalinize', 'shift_alkalinize', 'alkalinize',
+  'replenish', 'inject_species',
+  'silica', 'metals', 'brine', 'fluorine', 'copper', 'oxidize',
+]);
+
+// Apply a visible player temperature control immediately. The generic
+// movement-field reconciliation records its actual clamped delta after the
+// action switch, alongside every other movement-owned coordinate.
+function _fortressApplyPlayerTemperature(targetC: number): any {
+  if (!fortressSim) return null;
+  const before = Number(fortressSim.conditions.temperature);
+  const after = Number(fortressSim.setGlobalTemperature(targetC));
+  return Object.freeze({ before, after, delta: after - before });
+}
+
 function fortressStep(action, payload) {
   if (!fortressSim || !fortressActive) return;
 
   const c = fortressSim.conditions;
   let actionDesc = '';
+  const movementFieldBefore = _fortressMovementFieldSnapshot();
+  const fluidActionSnapshot = _FORTRESS_GLOBAL_FLUID_ACTIONS.has(String(action))
+    ? _capturePlayerFluidActionSnapshotInternal(fortressSim, String(action), payload)
+    : null;
+  let fluidActionAccepted = !!fluidActionSnapshot;
+  const fluidActionExcludedFields = new Set<string>();
 
   // Broth inputs write through on their own input events. Never treat a
   // synchronized slider echo as authority over geological state.
@@ -1344,19 +1493,19 @@ function fortressStep(action, payload) {
 
     // ── 2. TEMPERATURE — gentle/large pairs ──
     case 'warm':
-      fortressSim.setGlobalTemperature(Math.min(c.temperature + 5, 900));
+      _fortressApplyPlayerTemperature(Math.min(c.temperature + 5, 900));
       actionDesc = '🌤️ Warm +5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'heat':
-      fortressSim.setGlobalTemperature(Math.min(c.temperature + 25, 900));
+      _fortressApplyPlayerTemperature(Math.min(c.temperature + 25, 900));
       actionDesc = '🔥 Heat +25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'cool':
-      fortressSim.setGlobalTemperature(Math.max(c.temperature - 5, 0));
+      _fortressApplyPlayerTemperature(Math.max(c.temperature - 5, 0));
       actionDesc = '🌬️ Cool −5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'quench':
-      fortressSim.setGlobalTemperature(Math.max(c.temperature - 25, 0));
+      _fortressApplyPlayerTemperature(Math.max(c.temperature - 25, 0));
       actionDesc = '❄️ Quench −25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
 
@@ -1375,6 +1524,10 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? 'Seep executed as 10% replacement-water recharge with separate carbon import/export.'
           : `Seep carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) {
+          fluidActionExcludedFields.add('fluid.CO3');
+          fluidActionExcludedFields.add('fluid.pH');
+        }
       } else {
         c.fluid.CO3 *= 1.08;
         c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
@@ -1395,6 +1548,10 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? 'Flood executed as 30% replacement-water recharge with separate carbon import/export.'
           : `Flood carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) {
+          fluidActionExcludedFields.add('fluid.CO3');
+          fluidActionExcludedFields.add('fluid.pH');
+        }
       } else {
         c.fluid.CO3 *= 1.2;
         c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
@@ -1418,12 +1575,16 @@ function fortressStep(action, payload) {
       c.flow_rate = Math.max(c.flow_rate * 0.2, 0.05);
       c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
       // Concentrate solubles (skip pH; that's set by speciation, not bulk).
-      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'B', 'F', 'Sr'];
+      // Do not multiply the legacy combined-S proxy here. Sulfur valence is a
+      // conserved, independently receipted authority, and this one-kg control
+      // volume does not yet model the water-mass export needed to concentrate
+      // its reservoirs honestly. This mirrors the carbonate hold just below.
+      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'B', 'F', 'Sr'];
       if (!fortressSim._carbonateBoundaryState) concSpecies.push('CO3');
       for (const sp of concSpecies) {
         if (typeof c.fluid[sp] === 'number') c.fluid[sp] *= 1.4;
       }
-      fortressSim.setGlobalTemperature(Math.max(c.temperature - 10, 25));
+      _fortressApplyPlayerTemperature(Math.max(c.temperature - 10, 25));
       if (fortressSim._carbonateBoundaryState) {
         const state = fortressSim._carbonateBoundaryState;
         if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
@@ -1431,7 +1592,7 @@ function fortressStep(action, payload) {
         }
         _carbonateBoundaryControlNotice = 'Evaporation held the conserved carbonate inventory fixed because changing the one-kg-water control-volume basis is not yet supported.';
       }
-      actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, brine concentrates ×1.4, sulfides oxidize`;
+      actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, modeled nonsulfur solutes concentrate ×1.4; sulfur reservoirs stay conserved and exposed sulfides may become unstable`;
       break;
     }
 
@@ -1442,6 +1603,7 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) fluidActionAccepted = false;
       } else c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
       actionDesc = `🧪 Tweak pH −0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
@@ -1452,6 +1614,7 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) fluidActionAccepted = false;
         actionDesc = tx?.ok ? `🧪 Acid titration → pH ${c.fluid.pH.toFixed(2)}` : '🧪 Acid titration rejected';
       } else actionDesc = '🧪 ' + event_acidify(c);
       break;
@@ -1461,6 +1624,7 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) fluidActionAccepted = false;
       } else c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
       actionDesc = `⚗️ Tweak pH +0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
@@ -1471,6 +1635,7 @@ function fortressStep(action, payload) {
         _carbonateBoundaryControlNotice = tx?.ok
           ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
           : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+        if (!tx?.ok) fluidActionAccepted = false;
         actionDesc = tx?.ok ? `⚗️ Base titration → pH ${c.fluid.pH.toFixed(2)}` : '⚗️ Base titration rejected';
       } else actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
@@ -1487,7 +1652,31 @@ function fortressStep(action, payload) {
     case 'replenish': {
       const initialFluidRecipe = _fortressInitialFluidRecipeFor(fortressSim);
       if (!initialFluidRecipe) {
+        fluidActionAccepted = false;
         actionDesc = '🥣 Replenish — no starting recipe is bound to this Creative run';
+        break;
+      }
+      // The v1 replacement boundary is an equal-volume fully mixed model.
+      // Applying it to every stored voxel after Drain would inject source
+      // water into vadose pores, while applying it only below the water line
+      // would require a different gross import/export and sulfur-volume law.
+      // Fail before any boundary mutation until that partial-volume model is
+      // explicitly commissioned. Carbonate scenarios additionally retain the
+      // established structured refusal row for evidence/replay diagnosis.
+      let fullySubmerged = false;
+      try {
+        fullySubmerged = CavityWaterAppearance.create(
+          fortressSim.wall_state, fortressSim.conditions, { sim: fortressSim },
+        ).receipt.fully_submerged === true;
+      } catch (_) {
+        fullySubmerged = false;
+      }
+      if (!fullySubmerged) {
+        fluidActionAccepted = false;
+        if (fortressSim._carbonateBoundaryState) {
+          fortressSim._prepareCarbonateBoundarySpatialState();
+        }
+        actionDesc = '🥣 Replenish rejected — partial flooding needs a separately authored replacement-volume boundary';
         break;
       }
       let carbonateTx: any = null;
@@ -1505,6 +1694,7 @@ function fortressStep(action, payload) {
           : `Replenish carbonate recharge rejected: ${carbonateTx?.error || 'unknown error'}.`;
       }
       if (fortressSim._carbonateBoundaryState && !carbonateTx?.ok) {
+        fluidActionAccepted = false;
         actionDesc = '🥣 Replenish rejected — carbonate boundary could not authenticate the incoming fluid';
         break;
       }
@@ -1513,6 +1703,7 @@ function fortressStep(action, payload) {
         'Creative starting-fluid replenish',
         { preserveCarbonate: !!fortressSim._carbonateBoundaryState },
       );
+      if (!boundary.ok) fluidActionAccepted = false;
       actionDesc = boundary.ok
         ? `🥣 Replenish — ${boundary.handlesReplaced} wet-fluid handles replaced from this run's starting recipe; pH → ${c.fluid.pH.toFixed(1)}`
         : '🥣 Replenish failed its fluid-boundary closure audit';
@@ -1525,17 +1716,20 @@ function fortressStep(action, payload) {
     // underlying action stays for non-UI callers.
     case 'inject_species': {
       if (!payload || !payload.species) {
+        fluidActionAccepted = false;
         actionDesc = '💉 inject_species — no species/ppm payload, ignored';
         break;
       }
       const sp = String(payload.species);
       const amount = Number(payload.ppm) || 50;
       if (sp === 'CO3' && fortressSim._carbonateBoundaryState) {
+        fluidActionAccepted = false;
         actionDesc = 'DIC injection refused: choose pure CO2 charge or replacement-water recharge so alkalinity and the carbon boundary are explicit.';
         _carbonateBoundaryControlNotice = actionDesc;
         break;
       }
       if (typeof c.fluid[sp] !== 'number') {
+        fluidActionAccepted = false;
         actionDesc = `💉 Unknown species '${sp}' — no change`;
       } else {
         if (sp === 'SiO2' && typeof c.fluid.addReactiveSilica === 'function') {
@@ -1565,9 +1759,8 @@ function fortressStep(action, payload) {
       break;
     case 'brine':
       c.fluid.Zn += 150;
-      c.fluid.S += 120;
-      fortressSim.setGlobalTemperature(c.temperature - 10);
-      actionDesc = '⚗️ Brine mixed — Zn +150, S +120 ppm, T −10°C (mixing)';
+      _fortressApplyPlayerTemperature(c.temperature - 10);
+      actionDesc = '⚗️ Zn-rich brine mixed — Zn +150 ppm, T −10°C; sulfur reservoirs unchanged (no authored valence/source)';
       break;
     case 'fluorine':
       c.fluid.F += 25;
@@ -1577,20 +1770,18 @@ function fortressStep(action, payload) {
     case 'copper':
       c.fluid.Cu = 120.0;
       c.fluid.Fe += 40;
-      c.fluid.S += 80;
       if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(200);
       else c.fluid.SiO2 += 200;
       c.fluid.O2 = 0.3;
-      fortressSim.setGlobalTemperature(Math.min(c.temperature + 30, 600));
+      _fortressApplyPlayerTemperature(Math.min(c.temperature + 30, 600));
       c.flow_rate = 4.0;
-      actionDesc = `🟠 Copper injection — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, S +80, reducing. T → ${c.temperature.toFixed(0)}°C`;
+      actionDesc = `🟠 Copper-bearing fluid — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, reactive silica +200, reducing; sulfur reservoirs unchanged. T → ${c.temperature.toFixed(0)}°C`;
       break;
     case 'oxidize': // legacy alias — same intent as drain
       c.fluid.O2 = 1.8;
-      c.fluid.S *= 0.3;
-      fortressSim.setGlobalTemperature(Math.max(c.temperature - 40, 25));
+      _fortressApplyPlayerTemperature(Math.max(c.temperature - 40, 25));
       _lowerWaterLevel(2);
-      actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
+      actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}; sulfur reservoirs remain conserved until an executed redox/solid reaction transfers them. T → ${c.temperature.toFixed(0)}°C. Sulfides may become unstable!`;
       break;
 
     // ── 6. SEISMIC — differential stress, never isotropic pressure ──
@@ -1601,7 +1792,7 @@ function fortressStep(action, payload) {
     }
     case 'shock':
     case 'tectonic': { // legacy alias
-      fortressSim.setGlobalTemperature(c.temperature + 15);
+      _fortressApplyPlayerTemperature(c.temperature + 15);
       const stress = applyDifferentialStressPulse(fortressSim, 50);
       actionDesc = `⚡ Shock — 50 MPa differential-stress pulse, T +15°C; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
       break;
@@ -1637,12 +1828,14 @@ function fortressStep(action, payload) {
       }
       c._scenario ||= {};
       c._scenario.movements ||= [];
-      c._scenario.movements.push(spec);
-      if (fortressSim._movements && typeof fortressSim._movements.addMovement === 'function') {
-        fortressSim._movements.addMovement(spec);
-      } else {
+      // Commission the canonical authored rows BEFORE appending the visible
+      // Creative schedule. Otherwise a first-action schedule is already in
+      // the constructor input and is falsely labelled authored-scenario.
+      if (!fortressSim._movements) {
         fortressSim._movements = _createMovementController(fortressSim);
       }
+      c._scenario.movements.push(spec);
+      fortressSim._movements.addMovement(spec);
       actionDesc = `Trajectory scheduled — ${spec.field}, steps ${spec.startStep}–${spec.endStep - 1}, ${spec.origin}`;
       break;
     }
@@ -1751,6 +1944,16 @@ function fortressStep(action, payload) {
     }
   }
 
+  const fluidSpatialAuthorities = fluidActionSnapshot
+    ? _reconcilePlayerFluidActionSnapshotInternal(fortressSim, fluidActionSnapshot, {
+      accepted: fluidActionAccepted,
+      excludedFields: Array.from(fluidActionExcludedFields),
+    })
+    : {};
+  _fortressReconcilePlayerMovementDeltas(
+    movementFieldBefore, String(action || 'unknown'), fluidSpatialAuthorities,
+  );
+
   const logEl = document.getElementById('fortress-log');
 
   if (advanceSteps > 0) {
@@ -1775,6 +1978,7 @@ function fortressStep(action, payload) {
       stepLineCounts[simStep] = stepLines.length;
       for (const l of stepLines) lines.push(l);
     }
+    _fortressAdvancePlayerActionCursor();
     if (typeof _saveCommitAction === 'function') _saveCommitAction();
     _fortressPaceLines(lines, lineToStep, stepLineCounts, () => {
       updateFortressInventory();
@@ -1787,6 +1991,7 @@ function fortressStep(action, payload) {
   }
 
   // Non-time actions: modify conditions but DON'T advance time.
+  _fortressAdvancePlayerActionCursor();
   if (typeof _saveCommitAction === 'function') _saveCommitAction();
   // Log what changed so the player can stack multiple changes. No
   // tempo needed — the user already saw the result; just emit one

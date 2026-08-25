@@ -24,22 +24,563 @@ function _replayStride(step: number): number {
   return 729;
 }
 
-function _canonicalSpatialFluids(sim: any): any[] {
+function _canonicalSpatialFluidEntries(sim: any): any[] {
   const grid = sim?.wall_state?.voxelGridFor?.(sim);
   if (grid?.voxels) return grid.voxels.map((voxel: any, index: number) => {
     if (!voxel || !voxel.fluid) {
       throw new Error(`canonical voxel ${index} has no fluid authority`);
     }
-    return voxel.fluid;
+    const ringIdx = voxel.ringIdx;
+    if (!Number.isSafeInteger(ringIdx)
+        || ringIdx < 0 || ringIdx >= sim.wall_state.ring_count) {
+      throw new Error(`canonical voxel ${index} has no ring authority`);
+    }
+    return Object.freeze({ fluid: voxel.fluid, ringIdx });
   });
   const mesh = sim?.wall_state?.meshFor?.(sim);
+  const cellsPerRing = sim?.wall_state?.cells_per_ring;
+  if (mesh?.cells?.length && (!Number.isSafeInteger(cellsPerRing) || cellsPerRing <= 0)) {
+    throw new Error('canonical wall mesh has no cells-per-ring authority');
+  }
   return (mesh?.cells || []).map((cell: any, index: number) => {
     if (!cell || !cell.fluid) {
       throw new Error(`canonical wall cell ${index} has no fluid authority`);
     }
-    return cell.fluid;
+    return Object.freeze({ fluid: cell.fluid, ringIdx: Math.floor(index / cellsPerRing) });
   });
 }
+
+function _canonicalSpatialFluids(sim: any): any[] {
+  return _canonicalSpatialFluidEntries(sim).map((entry: any) => entry.fluid);
+}
+
+type PlayerFluidWaterScope = 'nonvadose' | 'vadose';
+
+const _playerFluidWaterScopeForAction = (action: string, leaf: string): PlayerFluidWaterScope => (
+  (action === 'drain' || action === 'evaporate') && leaf === 'O2'
+    ? 'vadose' : 'nonvadose'
+);
+
+type PlayerFluidTransform = Readonly<{
+  application: 'uniform-delta' | 'uniform-scale' | 'exact-replacement'
+    | 'bounded-affine' | 'linked-reactive-silica-addition';
+  basis: string;
+  scale: number;
+  offset: number;
+  min: number | null;
+  max: number | null;
+  linkedAmount?: number;
+}>;
+
+const _playerFluidAffine = (
+  application: PlayerFluidTransform['application'],
+  basis: string,
+  scale: number,
+  offset: number,
+  min: number | null = null,
+  max: number | null = null,
+): PlayerFluidTransform => Object.freeze({ application, basis, scale, offset, min, max });
+
+// GAME-02 transform authority. This table is deliberately beside the opaque
+// spatial bridge rather than inferred from one bulk before/after pair. Once a
+// cavity contains different wet and vadose compositions, `x *= 0.6` and
+// `x += bulkAfter-bulkBefore` are not the same operation. 97 supplies only the
+// action identity/payload; this physics module declares the actual per-fluid
+// transform. review-claim-card carries an independent fail-closed projection
+// for the movement-owned subset published as claim testimony.
+const _playerFluidTransformForAction = (
+  sim: any,
+  action: string,
+  payload: any,
+  leaf: string,
+  after: number,
+): PlayerFluidTransform | null => {
+  const concentrationMin = leaf === 'pH' || leaf === 'Eh' ? null : 0;
+  const add = (amount: number, basis = `${action}:${leaf}:add`) =>
+    _playerFluidAffine('uniform-delta', basis, 1, amount, concentrationMin, null);
+  const scale = (factor: number, basis = `${action}:${leaf}:scale`) =>
+    _playerFluidAffine('uniform-scale', basis, factor, 0, concentrationMin, null);
+  const exact = (basis = `${action}:${leaf}:exact`) =>
+    _playerFluidAffine('exact-replacement', basis, 0, after, null, null);
+  const bounded = (offset: number, min: number | null, max: number | null) =>
+    _playerFluidAffine('bounded-affine', `${action}:${leaf}:bounded-affine`, 1, offset, min, max);
+  const reactiveSilica = (amount: number): PlayerFluidTransform => Object.freeze({
+    application: 'linked-reactive-silica-addition',
+    basis: `${action}:reactive-silica-addition`,
+    scale: 1,
+    offset: 0,
+    min: 0,
+    max: 1,
+    linkedAmount: amount,
+  });
+  const carbonateExact = !!sim?._carbonateBoundaryState;
+  switch (action) {
+    case 'seep':
+      if (leaf === 'SiO2') return scale(0.85);
+      if (leaf === 'Ca') return scale(1.10);
+      if (leaf === 'CO3') return carbonateExact ? exact('seep:carbonate-boundary-exact') : scale(1.08);
+      if (leaf === 'pH') return carbonateExact ? exact('seep:carbonate-boundary-exact') : bounded(0.1, null, 10);
+      return null;
+    case 'flood':
+      if (leaf === 'SiO2') return scale(0.6);
+      if (leaf === 'Ca') return scale(1.3);
+      if (leaf === 'CO3') return carbonateExact ? exact('flood:carbonate-boundary-exact') : scale(1.2);
+      if (leaf === 'pH') return carbonateExact ? exact('flood:carbonate-boundary-exact') : bounded(0.3, null, 10);
+      return null;
+    case 'drain':
+      return leaf === 'O2' ? bounded(0, 0.6, null) : null;
+    case 'evaporate':
+      if (leaf === 'O2') return bounded(0, 1.5, null);
+      if (['Ca', 'Mg', 'Na', 'K', 'Cl', 'B', 'F', 'Sr'].includes(leaf)) return scale(1.4);
+      if (leaf === 'CO3' && !carbonateExact) return scale(1.4);
+      return null;
+    case 'tweak_acidify':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('acid:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(-0.3, 2, null) : null;
+    case 'shift_acidify':
+    case 'acidify':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('acid:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(-2, 2, null) : null;
+    case 'tweak_alkalinize':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('base:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(0.3, null, 10) : null;
+    case 'shift_alkalinize':
+    case 'alkalinize':
+      if (carbonateExact && (leaf === 'pH' || leaf === 'CO3')) {
+        return exact('base:carbonate-boundary-exact');
+      }
+      return leaf === 'pH' ? bounded(2, null, 10) : null;
+    case 'replenish':
+      return exact('replenish:starting-fluid-exact');
+    case 'inject_species': {
+      const species = typeof payload?.species === 'string' ? payload.species : '';
+      const amount = Number(payload?.ppm) || 50;
+      if (leaf === species) return add(amount, `inject_species:${leaf}:add`);
+      if (species === 'SiO2' && leaf === 'reactiveSilicaFraction') return reactiveSilica(amount);
+      return null;
+    }
+    case 'silica':
+      if (leaf === 'SiO2') return add(400);
+      if (leaf === 'reactiveSilicaFraction') return reactiveSilica(400);
+      if (leaf === 'Al') return add(2);
+      if (leaf === 'Ti') return add(0.3);
+      return null;
+    case 'metals':
+      if (leaf === 'Fe') return add(40);
+      if (leaf === 'Mn') return add(15);
+      return null;
+    case 'brine':
+      return leaf === 'Zn' ? add(150) : null;
+    case 'fluorine':
+      if (leaf === 'F') return add(25);
+      if (leaf === 'Ca') return add(80);
+      return null;
+    case 'copper':
+      if (leaf === 'Cu' || leaf === 'O2') return exact();
+      if (leaf === 'Fe') return add(40);
+      if (leaf === 'SiO2') return add(200);
+      if (leaf === 'reactiveSilicaFraction') return reactiveSilica(200);
+      return null;
+    case 'oxidize':
+      return leaf === 'O2' ? exact() : null;
+    default:
+      return null;
+  }
+};
+
+const _playerFluidSelectedIndices = (
+  sim: any,
+  entries: any[],
+  waterScope: PlayerFluidWaterScope,
+): number[] => {
+  const ringCount = sim?.wall_state?.ring_count;
+  if (!Number.isSafeInteger(ringCount) || ringCount <= 0
+      || typeof sim?.conditions?.ringWaterState !== 'function') {
+    throw new Error('Player fluid intervention lacks cavity water-state authority');
+  }
+  const states = new Map<number, string>();
+  const selected: number[] = [];
+  for (let index = 0; index < entries.length; index++) {
+    const ringIdx = entries[index].ringIdx;
+    let state = states.get(ringIdx);
+    if (state == null) {
+      state = sim.conditions.ringWaterState(ringIdx, ringCount);
+      if (!['submerged', 'meniscus', 'vadose'].includes(state)) {
+        throw new Error(`Player fluid intervention found unknown water state ${state}`);
+      }
+      states.set(ringIdx, state);
+    }
+    if ((waterScope === 'vadose' && state === 'vadose')
+        || (waterScope === 'nonvadose' && state !== 'vadose')) selected.push(index);
+  }
+  if (!selected.length) {
+    throw new Error(`Player fluid intervention has no ${waterScope} canonical pore fluid`);
+  }
+  return selected;
+};
+
+// GAME-02 breadcrumb: visible global-fluid controls and the chemistry engines
+// live on opposite sides of a real storage boundary. 97/97a mutate the bulk
+// `conditions.fluid` handle, while growth consumes the independent canonical
+// voxel fluids. A movement offset alone therefore preserves only the number
+// on screen. These opaque one-shot snapshots let the UI ask this physics
+// module to apply and receipt the same accepted coordinate change without
+// exposing the mutable voxel array or duplicating voxel-layout knowledge in
+// the UI. 85j embeds the resulting closure in the player-action receipt;
+// 85g/85h and review-claim-card carry it into authenticated evidence.
+const _PLAYER_FLUID_SPATIAL_SNAPSHOTS = new WeakMap<object, any>();
+const _PLAYER_FLUID_ACTION_SNAPSHOTS = new WeakMap<object, any>();
+const _PLAYER_FLUID_SULFUR_FIELDS = new Set([
+  'S', 'S_sulfide', 'S_sulfate', 'S_elemental',
+]);
+
+const _playerFluidJsonClone = (value: any): any => JSON.parse(JSON.stringify(value));
+
+const _playerFluidLeaf = (sim: any, field: string): string | null => {
+  if (typeof field !== 'string' || !field.startsWith('fluid.')) return null;
+  const leaf = field.slice('fluid.'.length);
+  if (!leaf || _PLAYER_FLUID_SULFUR_FIELDS.has(leaf)
+      || !Array.isArray(sim?._fluidFieldNames)
+      || !sim._fluidFieldNames.includes(leaf)) return null;
+  return leaf;
+};
+
+const _capturePlayerFluidSpatialSnapshotInternal = (sim: any, field: string): any => {
+  const leaf = _playerFluidLeaf(sim, field);
+  if (!leaf) return null;
+  const entries = _canonicalSpatialFluidEntries(sim);
+  if (!entries.length) {
+    throw new Error(`Player fluid intervention ${field} has no canonical spatial authority`);
+  }
+  const values = entries.map((entry: any, index: number) => {
+    const fluid = entry.fluid;
+    const value = fluid?.[leaf];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error(`Player fluid intervention ${field} found nonfinite voxel ${index}`);
+    }
+    return value;
+  });
+  const token = Object.freeze({});
+  _PLAYER_FLUID_SPATIAL_SNAPSHOTS.set(token, Object.freeze({
+    sim,
+    field,
+    leaf,
+    values: Object.freeze(values.slice()),
+  }));
+  return token;
+};
+
+// Fortress buttons often change several coordinates at once (the legacy
+// Silica button also carries Al/Ti; Inject is species-selectable). Capture the
+// whole non-sulfur numeric fluid authority once, then reconcile only the
+// coordinates the action actually changed. This keeps save replay from
+// manufacturing a different pre-Replenish spatial state when a prior button
+// edit was recorded as a broth delta. Sulfur remains on its dedicated
+// valence-aware boundary/ledger path and is deliberately excluded here.
+const _capturePlayerFluidActionSnapshotInternal = (sim: any, action: string, payload: any = null): any => {
+  const entries = _canonicalSpatialFluidEntries(sim);
+  if (!entries.length) throw new Error('Player fluid action has no canonical spatial authority');
+  const fields: Record<string, any> = {};
+  for (const leaf of (sim?._fluidFieldNames || [])) {
+    const field = `fluid.${leaf}`;
+    if (!_playerFluidLeaf(sim, field)) continue;
+    const before = sim.conditions?.fluid?.[leaf];
+    if (typeof before !== 'number' || !Number.isFinite(before)) continue;
+    const values = entries.map((entry: any, index: number) => {
+      const fluid = entry.fluid;
+      const value = fluid?.[leaf];
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error(`Player fluid action ${field} found nonfinite voxel ${index}`);
+      }
+      return value;
+    });
+    const ringValues = (sim.ring_fluids || []).map((fluid: any, index: number) => {
+      const value = fluid?.[leaf];
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error(`Player fluid action ${field} found nonfinite ring fluid ${index}`);
+      }
+      return value;
+    });
+    fields[field] = Object.freeze({
+      leaf,
+      before,
+      values: Object.freeze(values),
+      // Carbonate replacement also writes the ring-level fallback fluids.
+      // They are replay-authenticated and can feed chemistry when no exact
+      // cell is available, so an action rollback must restore them alongside
+      // the canonical voxel population rather than leaving a hidden residue.
+      ringValues: Object.freeze(ringValues),
+    });
+  }
+  const token = Object.freeze({});
+  _PLAYER_FLUID_ACTION_SNAPSHOTS.set(token, Object.freeze({
+    sim,
+    action: String(action || ''),
+    payload: payload && typeof payload === 'object' ? Object.freeze({ ...payload }) : null,
+    fields: Object.freeze(fields),
+    // Carbonate titration is one coupled mutation: 97 changes the solver's
+    // acid/base capacity, DIC/pH bookkeeping, and append-only transaction at
+    // the same time that it replaces pore-fluid CO3/pH. A later generic
+    // spatial rejection must restore that authority as well as the fluid
+    // bytes, or the next Advance sees a poisoned unreceipted-DIC residual.
+    carbonateBoundaryState: sim?._carbonateBoundaryState
+      ? _playerFluidJsonClone(sim._carbonateBoundaryState) : null,
+  }));
+  return token;
+};
+
+const _reconcilePlayerFluidActionSnapshotInternal = (
+  sim: any,
+  token: any,
+  execution: any = null,
+): any => {
+  if (!token) return Object.freeze({});
+  const snapshot = _PLAYER_FLUID_ACTION_SNAPSHOTS.get(token);
+  _PLAYER_FLUID_ACTION_SNAPSHOTS.delete(token);
+  if (!snapshot || snapshot.sim !== sim) {
+    throw new Error('Player fluid action lacks an exact one-shot spatial snapshot');
+  }
+  const authorities: Record<string, any> = {};
+  const rollbackSnapshot = (restoreCoupledAuthority = true): void => {
+    const entries = _canonicalSpatialFluidEntries(sim);
+    for (const rollback of Object.values(snapshot.fields) as any[]) {
+      if (entries.length !== rollback.values.length) {
+        throw new Error('Player fluid action changed canonical voxel ownership during rollback');
+      }
+      for (let index = 0; index < entries.length; index++) {
+        entries[index].fluid[rollback.leaf] = rollback.values[index];
+      }
+      const ringFluids = sim.ring_fluids || [];
+      if (ringFluids.length !== rollback.ringValues.length) {
+        throw new Error('Player fluid action changed ring-fluid ownership during rollback');
+      }
+      for (let index = 0; index < ringFluids.length; index++) {
+        ringFluids[index][rollback.leaf] = rollback.ringValues[index];
+      }
+      sim.conditions.fluid[rollback.leaf] = rollback.before;
+    }
+    if (restoreCoupledAuthority && snapshot.carbonateBoundaryState) {
+      const restored = _playerFluidJsonClone(snapshot.carbonateBoundaryState);
+      const current = sim._carbonateBoundaryState;
+      if (current && typeof current === 'object') {
+        for (const key of Object.keys(current)) delete current[key];
+        Object.assign(current, restored);
+        sim.conditions._carbonateBoundaryState = current;
+      } else {
+        sim._carbonateBoundaryState = restored;
+        sim.conditions._carbonateBoundaryState = restored;
+      }
+    }
+  };
+  const accepted = execution?.accepted !== false;
+  const excludedFields = new Set(Array.isArray(execution?.excludedFields)
+    ? execution.excludedFields.filter((field: any) => typeof field === 'string')
+    : []);
+  if (!accepted) {
+    // A UI branch can reject an authored boundary (for example, partial-volume
+    // Replenish) after the before-image was captured. Preserve that explicit
+    // refusal: do not turn a zero bulk delta into an exact spatial set.
+    // Preserve an explicitly authored refusal row (partial-volume Replenish,
+    // unavailable carbonate boundary, etc.). Only an exception after a
+    // nominally accepted action invokes the coupled-authority rollback below.
+    rollbackSnapshot(false);
+    return Object.freeze({});
+  }
+  const changed: Array<{ field: string; state: any; after: number; transform: PlayerFluidTransform }> = [];
+  for (const [field, state] of Object.entries(snapshot.fields) as Array<[string, any]>) {
+    const after = sim.conditions?.fluid?.[state.leaf];
+    if (typeof after !== 'number' || !Number.isFinite(after)) continue;
+    const transform = _playerFluidTransformForAction(
+      sim, snapshot.action, snapshot.payload, state.leaf, after,
+    );
+    if (excludedFields.has(field)) {
+      if (after !== state.before) {
+        rollbackSnapshot();
+        throw new Error(`Player fluid action ${snapshot.action} changed rejected field ${field}`);
+      }
+      continue;
+    }
+    if (!transform) {
+      if (after === state.before) continue;
+      rollbackSnapshot();
+      throw new Error(`Player fluid action ${snapshot.action} changed undeclared field ${field}`);
+    }
+    // Execute the declared law even when the bulk display scalar did not move.
+    // max/set laws can still alter a heterogeneous selected population; the
+    // bulk equality shortcut was the GAME-02 evaporate-after-flood defect.
+    changed.push({ field, state, after, transform });
+  }
+  try {
+    for (const { field, state, after, transform } of changed) {
+      const fieldToken = Object.freeze({});
+      _PLAYER_FLUID_SPATIAL_SNAPSHOTS.set(fieldToken, Object.freeze({
+        sim,
+        field,
+        leaf: state.leaf,
+        values: state.values,
+      }));
+      authorities[field] = _reconcilePlayerFluidSpatialSnapshotInternal(
+        sim, fieldToken, state.before, after, 'auto',
+        _playerFluidWaterScopeForAction(snapshot.action, state.leaf),
+        transform,
+        snapshot.fields,
+      );
+    }
+  } catch (error) {
+    // A Fortress verb is one geological choice even when it touches several
+    // fluid coordinates. Never leave the first coordinates installed when a
+    // later coordinate fails its declared spatial transform. 97 records the
+    // action only after this bridge returns, so the physical state and recipe
+    // either advance together or both retain the exact before-image.
+    rollbackSnapshot();
+    throw error;
+  }
+  return Object.freeze(authorities);
+};
+
+const _playerFluidValuesClose = (a: number[], b: number[], tolerance = 1e-12): boolean => (
+  a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) <= tolerance)
+);
+
+const _reconcilePlayerFluidSpatialSnapshotInternal = (
+  sim: any,
+  token: any,
+  before: number,
+  after: number,
+  requestedApplication: 'auto' | 'exact-replacement' = 'auto',
+  waterScope: PlayerFluidWaterScope = 'nonvadose',
+  declaredTransform: PlayerFluidTransform | null = null,
+  actionFields: Record<string, any> | null = null,
+): any => {
+  if (!token) return null;
+  const snapshot = _PLAYER_FLUID_SPATIAL_SNAPSHOTS.get(token);
+  _PLAYER_FLUID_SPATIAL_SNAPSHOTS.delete(token);
+  if (!snapshot || snapshot.sim !== sim
+      || typeof before !== 'number' || !Number.isFinite(before)
+      || typeof after !== 'number' || !Number.isFinite(after)
+      || (before === after && !declaredTransform)) {
+    throw new Error('Player fluid intervention lacks an exact one-shot spatial snapshot');
+  }
+  const { field, leaf, values: allBeforeValues } = snapshot;
+  const entries = _canonicalSpatialFluidEntries(sim);
+  const fluids = entries.map((entry: any) => entry.fluid);
+  if (fluids.length !== allBeforeValues.length || !fluids.length) {
+    throw new Error(`Player fluid intervention ${field} changed canonical voxel ownership`);
+  }
+  const readAllValues = (): number[] => fluids.map((fluid: any, index: number) => {
+    const value = fluid?.[leaf];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error(`Player fluid intervention ${field} found nonfinite voxel ${index}`);
+    }
+    return value;
+  });
+  const selectedIndices = _playerFluidSelectedIndices(sim, entries, waterScope);
+  const selected = new Set(selectedIndices);
+  const excludedIndices = fluids.map((_: any, index: number) => index)
+    .filter((index: number) => !selected.has(index));
+  const beforeValues = selectedIndices.map((index: number) => allBeforeValues[index]);
+  const excludedBeforeValues = excludedIndices.map((index: number) => allBeforeValues[index]);
+  const selectValues = (values: number[]): number[] => selectedIndices.map(index => values[index]);
+  const excludedValues = (values: number[]): number[] => excludedIndices.map(index => values[index]);
+  const delta = after - before;
+  const signed = leaf === 'pH' || leaf === 'Eh';
+  const transform = declaredTransform || (requestedApplication === 'exact-replacement'
+    ? _playerFluidAffine('exact-replacement', 'broth:absolute-control', 0, after, null, null)
+    : _playerFluidAffine('uniform-delta', 'visible-control:bulk-delta', 1, delta,
+      signed ? null : 0, null));
+  let clampedCount = 0;
+  let clampAdjustmentTotal = 0;
+  const expectedValues = beforeValues.map((value: number, offset: number) => {
+    if (transform.application === 'linked-reactive-silica-addition') {
+      const silicaState = actionFields?.['fluid.SiO2'];
+      const totalBefore = silicaState?.values?.[selectedIndices[offset]];
+      if (typeof totalBefore !== 'number' || !Number.isFinite(totalBefore)
+          || typeof transform.linkedAmount !== 'number' || transform.linkedAmount < 0) {
+        throw new Error('Player reactive-silica transform lacks linked total-silica authority');
+      }
+      const totalAfter = totalBefore + transform.linkedAmount;
+      return totalAfter > 0
+        ? (totalBefore * value + transform.linkedAmount) / totalAfter
+        : 0;
+    }
+    const raw = value * transform.scale + transform.offset;
+    let next = raw;
+    if (transform.min != null && next < transform.min) next = transform.min;
+    if (transform.max != null && next > transform.max) next = transform.max;
+    if (next !== raw) {
+      clampedCount++;
+      clampAdjustmentTotal += next - raw;
+    }
+    return next;
+  });
+  let allCurrentValues = readAllValues();
+  let currentValues = selectValues(allCurrentValues);
+  if (!_playerFluidValuesClose(excludedValues(allCurrentValues), excludedBeforeValues)) {
+    for (let index = 0; index < fluids.length; index++) fluids[index][leaf] = allBeforeValues[index];
+    sim.conditions.fluid[leaf] = before;
+    throw new Error(`Player fluid intervention ${field} changed excluded ${waterScope} authority`);
+  }
+  if (!_playerFluidValuesClose(currentValues, expectedValues)) {
+    if (!_playerFluidValuesClose(currentValues, beforeValues)) {
+      throw new Error(`Player fluid intervention ${field} found an unauthenticated partial spatial write`);
+    }
+    for (let offset = 0; offset < selectedIndices.length; offset++) {
+      fluids[selectedIndices[offset]][leaf] = expectedValues[offset];
+    }
+    allCurrentValues = readAllValues();
+    currentValues = selectValues(allCurrentValues);
+  }
+
+  const beforeTotal = beforeValues.reduce((sum: number, value: number) => sum + value, 0);
+  const expectedAfterTotal = expectedValues.reduce((sum: number, value: number) => sum + value, 0);
+  const afterTotal = currentValues.reduce((sum: number, value: number) => sum + value, 0);
+  const error = afterTotal - expectedAfterTotal;
+  const tolerance = _ledgerTolerance(Math.max(Math.abs(beforeTotal), Math.abs(afterTotal)));
+  if (!_playerFluidValuesClose(currentValues, expectedValues, tolerance)
+      || Math.abs(error) > tolerance) {
+    // Restore the exact prior physical and visible coordinate before failing.
+    for (let index = 0; index < fluids.length; index++) fluids[index][leaf] = allBeforeValues[index];
+    sim.conditions.fluid[leaf] = before;
+    throw new Error(`Player fluid intervention ${field} failed canonical spatial closure`);
+  }
+  return Object.freeze({
+    schema: 'player-fluid-spatial-intervention-v1',
+    field,
+    application: transform.application,
+    transformation_basis: transform.basis,
+    transform_scale: transform.scale,
+    transform_offset: transform.offset,
+    transform_min: transform.min,
+    transform_max: transform.max,
+    scope: waterScope === 'vadose'
+      ? 'canonical-vadose-voxel-volume'
+      : 'canonical-nonvadose-voxel-volume',
+    water_state_basis: 'authenticated-cavity-ring-water-state',
+    water_state_scope: waterScope,
+    canonical_count: fluids.length,
+    count: selectedIndices.length,
+    excluded_count: excludedIndices.length,
+    before_finite_count: selectedIndices.length,
+    after_finite_count: selectedIndices.length,
+    value_before: before,
+    value_after: after,
+    applied_delta: delta,
+    before_total: beforeTotal,
+    clamped_count: clampedCount,
+    clamp_adjustment_total: clampAdjustmentTotal,
+    expected_after_total: expectedAfterTotal,
+    after_total: afterTotal,
+    error,
+    tolerance,
+    closed: true,
+  });
+};
 
 function _spatialSulfurState(sim: any): any {
   const fluids = _canonicalSpatialFluids(sim);

@@ -181,6 +181,108 @@ describe('movements — controller: active movement drives its field', () => {
     for (let s = 0; s < 5; s++) ctl.applyStep(c, s);
     expect(c.temperature).toBeGreaterThanOrEqual(25);  // floored
   });
+
+  it('carries a player Heat delta on top of an absolute authored temperature curve', () => {
+    const spec = [{
+      field: 'temperature', startStep: 0, endStep: 100, base: 180,
+      ops: [{ kind: 'trend', amp: -20 }],
+    }];
+    const waitOnly = new MovementController(spec, 58);
+    const intervened = new MovementController(spec, 58);
+    const baseline = conds();
+    const heated = conds();
+    baseline.temperature = 180;
+    heated.temperature = 205; // visible Heat result before Advance
+    const receipt = intervened.applyPlayerDelta('temperature', 1, 25);
+    expect(receipt).toMatchObject({
+      schema: 'movement-player-offset-v2',
+      movement_index: 0,
+      field: 'temperature',
+      first_geology_step: 1,
+      applied_delta: 25,
+      offset_before: 0,
+      offset_after: 25,
+      offset_application: 'after-authored-texture-and-clamp',
+    });
+    waitOnly.applyStep(baseline, 1);
+    intervened.applyStep(heated, 1);
+    expect(heated.temperature - baseline.temperature).toBeCloseTo(25, 12);
+    expect(heated.temperature).toBeGreaterThan(204.9);
+    // The offset remains part of the choice while the authored movement keeps
+    // its own cooling shape.
+    waitOnly.applyStep(baseline, 50);
+    intervened.applyStep(heated, 50);
+    expect(heated.temperature - baseline.temperature).toBeCloseTo(25, 12);
+  });
+
+  it('names the last overlapping owner while carrying the field choice across handoff', () => {
+    const ctl = new MovementController([
+      { field: 'temperature', startStep: 0, endStep: 20, base: 180 },
+      { field: 'temperature', startStep: 5, endStep: 10, base: 220 },
+    ], 58);
+    const receipt = ctl.applyPlayerDelta('temperature', 6, -5);
+    expect(receipt).toMatchObject({ movement_index: 1, offset_after: -5 });
+    expect(ctl._state[0].playerOffset).toBe(-5);
+    expect(ctl._state[1].playerOffset).toBe(-5);
+    const c = conds();
+    ctl.applyStep(c, 6);
+    expect(c.temperature).toBe(215); // later owner
+    ctl.applyStep(c, 12);
+    expect(c.temperature).toBe(175); // earlier owner resumes; choice survives
+    expect(ctl.applyPlayerDelta('fluid.pH', 6, 1)).toBeNull();
+    expect(ctl.applyPlayerDelta('temperature', 30, 1)).toBeNull();
+  });
+
+  it('applies a player choice after authored clamps instead of silently erasing it', () => {
+    const ctl = new MovementController([{
+      field: 'temperature', startStep: 0, endStep: 5, base: 20, clampMin: 25,
+    }], 58);
+    const c = conds();
+    expect(ctl.applyPlayerDelta('temperature', 1, 5)).toBeTruthy();
+    ctl.applyStep(c, 1);
+    expect(c.temperature).toBe(30);
+  });
+
+  it('does not reinterpret a cell-origin feeder as an erased global control', () => {
+    const ctl = new MovementController([{
+      field: 'fluid.B', origin: 'cell', startStep: 0, endStep: 10,
+      ops: [{ kind: 'trend', amp: 10 }],
+    }], 58);
+    expect(ctl.applyPlayerDelta('fluid.B', 1, 4)).toBeNull();
+    expect(ctl._state[0].playerOffset).toBe(0);
+  });
+
+  it('does not double-count an intervention when a base-less global window first activates', () => {
+    const ctl = new MovementController([{
+      field: 'temperature', startStep: 1, endStep: 5,
+      ops: [{ kind: 'trend', amp: -4, ease: false }],
+    }], 58);
+    const c = conds();
+    c.temperature = 205; // visible 180 -> 205 action already applied
+    expect(ctl.applyPlayerDelta('temperature', 1, 25)).toBeTruthy();
+    ctl.applyStep(c, 1);
+    expect(c.temperature).toBe(205); // 180 baseline + window-start 0 + 25 choice
+    expect(ctl._state[0].base).toBe(180);
+  });
+
+  it('carries field authority into appended movements and an empty-controller rebuild', () => {
+    const original = new MovementController([{
+      field: 'temperature', startStep: 0, endStep: 20, base: 180,
+    }], 58);
+    expect(original.applyPlayerDelta('temperature', 1, 25)).toBeTruthy();
+    original.addMovement({
+      field: 'temperature', startStep: 1, endStep: 20,
+      ops: [{ kind: 'trend', amp: 0 }],
+    });
+    expect(original._state[1].playerOffset).toBe(25);
+
+    const rebuilt = new MovementController([], 58, original.playerOffsetsSnapshot());
+    rebuilt.addMovement({ field: 'temperature', startStep: 1, endStep: 20 });
+    expect(rebuilt._state[0].playerOffset).toBe(25);
+    expect(rebuilt.applyPlayerDelta('temperature', 1, 5)).toMatchObject({
+      offset_before: 25, offset_after: 30,
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

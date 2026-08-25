@@ -1315,7 +1315,13 @@ function _saveApplyBroth(broth, writeState = false) {
       const valid = (typeof _isBrothValueValid === 'function')
         ? _isBrothValueValid(BROTH_MAP[key], value)
         : Number.isFinite(value);
-      if (valid) BROTH_MAP[key].set(value);
+      if (valid) {
+        if (typeof _applyBrothMappedValue === 'function') {
+          _applyBrothMappedValue(key, BROTH_MAP[key], value);
+        } else {
+          BROTH_MAP[key].set(value);
+        }
+      }
     }
   }
 }

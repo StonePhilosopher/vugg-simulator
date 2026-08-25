@@ -309,9 +309,11 @@ function titleQuickPlay() {
   switchMode('legends');
   const scenarioEl = document.getElementById('scenario') as HTMLSelectElement | null;
   if (!scenarioEl) return; // fail open — user is in legends, can pick manually
-  const options = Array.from(scenarioEl.options)
-    .map(o => o.value)
-    .filter(v => v && !v.startsWith('tutorial_'));
+  const options = (typeof _simulationPlayableScenarioIds === 'function')
+    ? _simulationPlayableScenarioIds()
+    : Array.from(scenarioEl.options)
+      .map(o => o.value)
+      .filter(v => v && !v.startsWith('tutorial_'));
   if (!options.length) return;
   const pick = options[Math.floor(Math.random() * options.length)];
   scenarioEl.value = pick;

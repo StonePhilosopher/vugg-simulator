@@ -641,6 +641,14 @@ function _movementSetField(conditions: any, path: string, value: number): void {
   }
 }
 
+function _movementFieldsMatch(left: string, right: string): boolean {
+  return left === right || left === 'fluid.' + right || 'fluid.' + left === right;
+}
+
+function _movementFieldKey(field: string): string {
+  return field.startsWith('fluid.') ? field.slice('fluid.'.length) : field;
+}
+
 // The controller holds the parsed movements + the dedicated rng + per-movement
 // state (captured base + the OU texture value). An EMPTY controller is a total
 // no-op: applyStep returns before touching `conditions` or drawing any random
@@ -648,27 +656,121 @@ function _movementSetField(conditions: any, path: string, value: number): void {
 class MovementController {
   movements: MovementSpec[];
   rng: StatefulRandom;
-  _state: { base: number; ou: number; started: boolean; originCell: number }[];
+  _playerOffsets: Map<string, number>;
+  _movementSources: ('authored-scenario' | 'player-scheduled')[];
+  _state: {
+    base: number;
+    ou: number;
+    started: boolean;
+    originCell: number;
+    playerOffset: number;
+  }[];
 
-  constructor(movements: MovementSpec[] | undefined, vuggSeed: number) {
+  constructor(
+    movements: MovementSpec[] | undefined,
+    vuggSeed: number,
+    inheritedPlayerOffsets?: Record<string, number> | null,
+  ) {
     // Own the list. Creative mode can append a trajectory while older ones are
     // already active; sharing the scenario array would make a push happen
     // twice when the controller is updated explicitly.
     this.movements = Array.isArray(movements) ? movements.slice() : [];
+    this._movementSources = this.movements.map(() => 'authored-scenario');
     this.rng = _makeMovementRng(vuggSeed);
+    this._playerOffsets = new Map();
+    for (const [field, value] of Object.entries(inheritedPlayerOffsets || {})) {
+      if (typeof field === 'string' && field && Number.isFinite(value)) {
+        this._playerOffsets.set(_movementFieldKey(field), value);
+      }
+    }
     // originCell -1 = unresolved; resolved once at first window activation for
     // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
-    this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false, originCell: -1 }));
+    this._state = this.movements.map(movement => ({
+      base: 0, ou: 0, started: false, originCell: -1,
+      playerOffset: movement.origin === 'cell'
+        ? 0 : (this._playerOffsets.get(_movementFieldKey(movement.field)) || 0),
+    }));
   }
 
   get isEmpty(): boolean { return this.movements.length === 0; }
+
+  playerOffsetsSnapshot(): Readonly<Record<string, number>> {
+    return Object.freeze(Object.fromEntries(
+      Array.from(this._playerOffsets.entries()).sort(([a], [b]) => a.localeCompare(b)),
+    ));
+  }
 
   // Append without rebuilding the controller. Rebuilding would restart the
   // dedicated RNG stream and discard captured baselines / OU texture for every
   // trajectory that was already under way.
   addMovement(movement: MovementSpec): void {
+    const playerOffset = movement.origin === 'cell'
+      ? 0 : (this._playerOffsets.get(_movementFieldKey(movement.field)) || 0);
     this.movements.push(movement);
-    this._state.push({ base: 0, ou: 0, started: false, originCell: -1 });
+    this._movementSources.push('player-scheduled');
+    this._state.push({
+      base: 0, ou: 0, started: false, originCell: -1, playerOffset,
+    });
+  }
+
+  // GAME-02 — an authored absolute movement is the geological curve, not a
+  // licence to erase a visible player control. Fortress applies an
+  // intervention immediately, then calls this method with the ACTUAL applied
+  // delta. The delta becomes an additive offset on the effective movement
+  // that will own the next geological step. It therefore survives into the
+  // engines while retaining the authored curve's shape and dedicated RNG.
+  //
+  // Overlapping movements are applied in array order, so the last active
+  // movement is the effective owner named by the receipt. The intervention
+  // itself is field-level: apply it to every authored GLOBAL movement for the
+  // field. Each movement still adds it only once to its own setpoint, so this
+  // does not multiply the action, and the choice survives an overlap handoff
+  // or a later authored window. Cell-origin movements are feeders, not bulk
+  // controls; they never erased the visible global value and are excluded.
+  applyPlayerDelta(field: string, step: number, delta: number): any {
+    if (typeof field !== 'string' || !field || !Number.isSafeInteger(step)
+        || !Number.isFinite(delta) || delta === 0) return null;
+    let ownerIndex = -1;
+    for (let i = this.movements.length - 1; i >= 0; i--) {
+      const movement = this.movements[i];
+      const sameField = _movementFieldsMatch(movement.field, field);
+      if (!sameField || movement.origin === 'cell'
+          || step < movement.startStep || step >= movement.endStep) continue;
+      ownerIndex = i;
+      break;
+    }
+    if (ownerIndex < 0) return null;
+    const owner = this.movements[ownerIndex];
+    const ownerState = this._state[ownerIndex];
+    const offsetKey = _movementFieldKey(owner.field);
+    const before = this._playerOffsets.get(offsetKey)
+      ?? (Number.isFinite(ownerState.playerOffset) ? ownerState.playerOffset : 0);
+    const after = before + delta;
+    if (!Number.isFinite(after)) return null;
+    const updates: { index: number; value: number }[] = [];
+    for (let i = 0; i < this.movements.length; i++) {
+      const movement = this.movements[i];
+      const sameField = _movementFieldsMatch(movement.field, owner.field);
+      if (!sameField || movement.origin === 'cell') continue;
+      const current = Number.isFinite(this._state[i].playerOffset)
+        ? this._state[i].playerOffset : 0;
+      const next = current + delta;
+      if (!Number.isFinite(next)) return null;
+      updates.push({ index: i, value: next });
+    }
+    this._playerOffsets.set(offsetKey, after);
+    for (const update of updates) this._state[update.index].playerOffset = update.value;
+    return Object.freeze({
+      schema: 'movement-player-offset-v2',
+      movement_index: ownerIndex,
+      movement_source: this._movementSources[ownerIndex] || 'authored-scenario',
+      field: owner.field,
+      first_geology_step: step,
+      applied_delta: delta,
+      offset_before: before,
+      offset_after: after,
+      offset_application: 'after-authored-texture-and-clamp',
+    });
   }
 
   // Phase 4c.3a — is any movement driving `field` active at this step? Used by
@@ -701,7 +803,14 @@ class MovementController {
       if (step < m.startStep || step >= m.endStep) continue;
       // Capture the baseline the first time this window is active.
       if (!st.started) {
-        st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
+        const current = _movementGetField(conditions, m.field);
+        // A base-less global movement may first activate after the visible
+        // control has already changed `conditions`. Remove the persistent
+        // player offset from that captured baseline or the same intervention
+        // would be counted once in `current` and again below.
+        st.base = (typeof m.base === 'number')
+          ? m.base
+          : current - (m.origin === 'cell' ? 0 : (Number.isFinite(st.playerOffset) ? st.playerOffset : 0));
         st.started = true;
         // SPATIAL origin (Phase 2c): resolve + pin the injection cell ONCE,
         // here at first activation, so it's stable and the (single) movement-
@@ -719,7 +828,6 @@ class MovementController {
         const f = _mvMixFraction(u, m.mix.ease !== false);
         setpoint = (1 - f) * setpoint + f * m.mix.to;
       }
-
       // OSCILLATION texture: Ornstein-Uhlenbeck mean-reversion around 0
       // (deviation from the setpoint). Mean-reverting per Holten 1997 — it
       // wobbles and returns, it does not wander. Draws from the DEDICATED
@@ -732,6 +840,13 @@ class MovementController {
       let value = setpoint + st.ou;
       if (typeof m.clampMin === 'number') value = Math.max(m.clampMin, value);
       if (typeof m.clampMax === 'number') value = Math.min(m.clampMax, value);
+      // Translate the FINAL authored global curve. Applying the player's
+      // accepted delta after authored texture/clamps prevents those baseline
+      // constraints from silently erasing the visible intervention. Cell
+      // feeders remain an independent spatial boundary and are never shifted.
+      if (m.origin !== 'cell') {
+        value += Number.isFinite(st.playerOffset) ? st.playerOffset : 0;
+      }
 
       if (conditions?._carbonateBoundaryState
           && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
@@ -826,5 +941,94 @@ function _createMovementController(sim: any): MovementController {
     ? sim.conditions._scenario.movements : undefined;
   const wall = sim && sim.conditions ? sim.conditions.wall : null;
   const vuggSeed = (((wall && wall.shape_seed) || (sim && sim._seed) || 0) | 0);
-  return new MovementController(spec, vuggSeed);
+  const inheritedOffsets = sim?._movements?.playerOffsetsSnapshot?.() || null;
+  return new MovementController(spec, vuggSeed, inheritedOffsets);
+}
+
+// Canonical cross-boundary receipt for one visible control accepted against
+// an authored movement. UI, save replay, strip evidence, and controlled
+// witnesses all use this constructor so their testimony cannot drift apart.
+function movementPlayerInterventionReceipt(
+  action: string,
+  field: string,
+  acceptedStep: number,
+  actionCursor: number,
+  before: number,
+  after: number,
+  authority: any,
+  prior?: any,
+  fluidSpatialAuthority?: any,
+): any {
+  if (typeof action !== 'string' || !action || typeof field !== 'string' || !field
+      || !Number.isSafeInteger(acceptedStep)
+      || !Number.isSafeInteger(actionCursor) || actionCursor < 0
+      || !Number.isFinite(before) || !Number.isFinite(after)
+      || authority?.schema !== 'movement-player-offset-v2'
+      || !['authored-scenario', 'player-scheduled'].includes(authority.movement_source)
+      || authority.offset_application !== 'after-authored-texture-and-clamp') return null;
+  const canCoalesce = prior?.schema === 'player-movement-intervention-v1'
+    && prior.action === action && prior.field === field
+    && prior.accepted_at_step === acceptedStep
+    && prior.action_cursor === actionCursor;
+    const valueBefore = canCoalesce ? prior.value_before : before;
+    const offsetBefore = canCoalesce
+      ? prior.movement_authority.offset_before
+      : authority.offset_before;
+    let spatialAuthority = fluidSpatialAuthority || null;
+    const priorSpatialAuthority = canCoalesce
+      ? prior.fluid_spatial_authority || null : null;
+    if (canCoalesce && priorSpatialAuthority) {
+      if (!spatialAuthority
+          || priorSpatialAuthority.schema !== 'player-fluid-spatial-intervention-v1'
+          || spatialAuthority.schema !== 'player-fluid-spatial-intervention-v1'
+          || priorSpatialAuthority.field !== field || spatialAuthority.field !== field
+          || priorSpatialAuthority.application !== 'exact-replacement'
+          || spatialAuthority.application !== 'exact-replacement'
+          || priorSpatialAuthority.scope !== spatialAuthority.scope
+          || priorSpatialAuthority.water_state_basis !== spatialAuthority.water_state_basis
+          || priorSpatialAuthority.water_state_scope !== spatialAuthority.water_state_scope
+          || priorSpatialAuthority.canonical_count !== spatialAuthority.canonical_count
+          || priorSpatialAuthority.count !== spatialAuthority.count
+          || priorSpatialAuthority.excluded_count !== spatialAuthority.excluded_count) return null;
+      // Broth sliders are absolute composition controls. Live drags may emit
+      // many DOM input events, while the save recipe retains only the final
+      // value. Exact replacement makes that compression physical: preserve
+      // the first spatial before-total and the final fully mixed target.
+      spatialAuthority = Object.freeze({
+        ...spatialAuthority,
+        value_before: priorSpatialAuthority.value_before,
+        applied_delta: spatialAuthority.value_after - priorSpatialAuthority.value_before,
+        before_total: priorSpatialAuthority.before_total,
+        expected_after_total: spatialAuthority.after_total,
+        error: 0,
+        tolerance: Math.max(
+          1e-7,
+          Math.max(
+            Math.abs(priorSpatialAuthority.before_total),
+            Math.abs(spatialAuthority.after_total),
+          ) * 1e-9,
+        ),
+      });
+    } else if (canCoalesce && spatialAuthority) {
+      // A spatially receipted coalesced edit cannot be joined to a prior
+      // bulk-only row without inventing the missing pore-fluid history.
+      return null;
+    }
+    return Object.freeze({
+    schema: 'player-movement-intervention-v1',
+    action,
+    field,
+    accepted_at_step: acceptedStep,
+    action_cursor: actionCursor,
+    first_geology_step: acceptedStep + 1,
+    value_before: valueBefore,
+    value_after: after,
+      applied_delta: after - valueBefore,
+      fluid_spatial_authority: spatialAuthority,
+      movement_authority: Object.freeze({
+      ...authority,
+      applied_delta: after - valueBefore,
+      offset_before: offsetBefore,
+    }),
+  });
 }
