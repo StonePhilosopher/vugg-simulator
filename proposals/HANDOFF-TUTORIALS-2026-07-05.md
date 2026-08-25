@@ -1,5 +1,11 @@
 # HANDOFF — The Tutorial Arc (engine v2 → v3, four tutorials, a new scenario)
 
+> **Historical four-tutorial handoff.** Tutorial 5 subsequently shipped and
+> the current five-lesson/Begin-menu/save-policy authority is
+> [`docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md`](../docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md).
+> “No fifth tutorial” and other open language below describe this handoff's
+> moment, not present work.
+
 **Sessions:** 2026-07-04 (Grand Tour rework, `7fd32d7`) + 2026-07-05 (Tutorial 4
 Collecting + engine v3 + shigar_pegmatite, `4d8feb7`, SIM 216). Both Pages-verified
 built==HEAD, both cold-ci stamped GREEN. This arc is orthogonal to the FOUNDATIONS /

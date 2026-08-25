@@ -1062,7 +1062,7 @@ Living list of open work items, captured from session conversations so context s
 > azimuth); celadonite primer TINT on vesicle walls (colour); 2 NO-VOID cases (colorado roll-front,
 > travertine crust) ride smooth/botryoidal. **LESSON: composition is a wall-rock proxy, NEVER genesis.**
 
-> ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
+> ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — HISTORICAL FOUR-TUTORIAL SNAPSHOT; CURRENT AUTHORITY IS FIVE BEGIN-MENU LESSONS IN `docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md` — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
 >
 > Boss: *"the game has expanded so much I think we really need to update it"* → then *"we
 > need a tutorial on collecting too… covers simulation mode, the library, and saving,"* on a

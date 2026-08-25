@@ -6,8 +6,9 @@ single execution ledger for the science-first AAA completion branch.
 
 ## Already delivered — do not reimplement
 
-- Creative mode exposes the full authored geological control surface; the audit
-  currently covers 50 fields rather than hiding “advanced” chemistry.
+- Creative mode exposes the full authored geological control surface; the
+  canonical registry and audit cover 48 chemistry levers rather than hiding
+  “advanced” chemistry. Boundary-authority toggles remain separately audited.
 - The nucleation hover explains saturation, limiting inventory, T/pH/redox gates,
   substrate, competition, and survival/dissolution reversal.
 - Scenario geometry uses each scenario's authored `shape_seed`; deterministic

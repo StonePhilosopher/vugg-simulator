@@ -2,7 +2,11 @@
 
 **Date:** 2026-05-02
 **Author:** 🪨✍️ (from Professor's concept)
-**Status:** Draft for builder review
+**Status:** Historical design draft — superseded by
+[`docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md`](../docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md).
+The executable system now has five Begin-menu tutorials implemented as overlays
+on real Creative/Simulation runs, not the separate three-lesson mode proposed
+below. Keep this document as design history, not current product authority.
 
 ---
 

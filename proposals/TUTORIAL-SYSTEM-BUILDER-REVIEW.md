@@ -1,5 +1,11 @@
 # Tutorial System — Builder-Side Review
 
+> **Historical builder review.** The current executable authority is
+> [`docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md`](../docs/GUIDED-TUTORIALS-AND-CREATIVE-AUTHORITY.md):
+> five tutorials at the top of Begin/New Game. Later placement/count decisions
+> supersede the conflicting three-lesson and Scenarios-panel notes retained
+> below for provenance.
+
 **Date:** 2026-05-02
 **Reviewer:** Syntaxswine builder agent (Claude)
 **Reviewing:** `proposals/TUTORIAL-SYSTEM.md` (canonical commit `524d6de`)
