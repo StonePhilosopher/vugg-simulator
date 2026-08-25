@@ -89,6 +89,9 @@ export async function loadSimBundle(opts = {}) {
   globalThis.HTMLInputElement = dom.window.HTMLInputElement;
   globalThis.HTMLSelectElement = dom.window.HTMLSelectElement;
   globalThis.Event = dom.window.Event;
+  globalThis.CustomEvent = dom.window.CustomEvent;
+  globalThis.requestAnimationFrame = callback => setTimeout(() => callback(Date.now()), 0);
+  globalThis.cancelAnimationFrame = handle => clearTimeout(handle);
 
   // 2. fetch mock — read from disk relative to the repo root
   globalThis.fetch = async (url) => {

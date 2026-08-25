@@ -123,6 +123,161 @@ describe('authenticated production mechanism witnesses', () => {
     ]);
   });
 
+  it('publishes executed Shigar products and exact success-only tutorial targets', () => {
+    const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
+    const artifact = JSON.parse(fs.readFileSync(file, 'utf8'));
+    expect(artifact.payload.guided_tutorial).toMatchObject({
+      role: 'controlled production GAME-03 guided-flow witness; browser workflow owns visible lifecycle',
+      shigar_execution: {
+        scenario: 'shigar_pegmatite', seed: 42, steps: 70,
+        command_authority: {
+          scenario: 'shigar_pegmatite', growth_seed: 42, steps: 70,
+          shape_seed_input: '', cavity_size_input: 'any',
+        },
+        resolved_cavity_authority: {
+          source: 'scenario-default', shape_seed: 1985, vug_diameter_mm: 220,
+        },
+        scenario_spec_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        positive_crystal_counts: { albite: 2, feldspar: 2, quartz: 3, topaz: 4, tourmaline: 7 },
+        topaz_present: true, beryl_absent: true,
+      },
+      interaction_products: {
+        source_authority: {
+          commissioned_viewer_boot_state: {
+            topo_three_renderer_enabled: true,
+            helix_overlay_enabled: false,
+          },
+          viewer_products: [
+            { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: true, afterEnabled: false },
+            { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: false, afterEnabled: true },
+            { selector: '#helix-overlay-btn', control: 'helix-overlay', beforeEnabled: false, afterEnabled: true },
+            { selector: '#helix-overlay-btn', control: 'helix-overlay', beforeEnabled: true, afterEnabled: false },
+          ],
+          carbonate_titration_product: {
+            event: 'vugg:fortress-fluid-action-committed',
+            selector: '.action-grid',
+            productAction: 'carbonate-acid-titration',
+          },
+        },
+        viewer_control: {
+          boot_state: {
+            mode: 'fortress', step_index: 0, current_trigger: 'continue',
+          },
+          commissioning: {
+            schema: 'tutorial-viewer-commissioning-v1',
+            before: { topo_three_renderer_enabled: false, helix_overlay_enabled: true },
+            after: { topo_three_renderer_enabled: true, helix_overlay_enabled: false },
+          },
+          emitted_products: [
+            { schema: 'tutorial-view-state-product-v1', control: 'topo-three-renderer', before_enabled: true, after_enabled: false },
+            { schema: 'tutorial-view-state-product-v1', control: 'topo-three-renderer', before_enabled: false, after_enabled: true },
+            { schema: 'tutorial-view-state-product-v1', control: 'helix-overlay', before_enabled: false, after_enabled: true },
+            { schema: 'tutorial-view-state-product-v1', control: 'helix-overlay', before_enabled: true, after_enabled: false },
+          ],
+        },
+        carbonate_titration_control: {
+          rejected: {
+            precursor: 'drain-to-partial-fluid-scope',
+            before_pH: 6.5, after_pH: 6.5,
+            last_transaction: { kind: 'spatial_boundary_unsupported', ok: false },
+            emitted_products: [],
+          },
+          accepted: {
+            precursor: 'fully-wet-authored-start',
+            before_pH: 6.5,
+            after_pH: expect.closeTo(6.2, 12),
+            last_transaction: { kind: 'ph_titration', ok: true },
+            emitted_products: [{
+              schema: 'fortress-fluid-action-product-v1',
+              product: 'carbonate-acid-titration',
+              action: 'tweak_acidify',
+              spatial_authority_scope: 'canonical-nonvadose-voxel-volume',
+              spatial_authority_count: 7680,
+              spatial_authority_closed: true,
+              carbonate_transaction_kind: 'ph_titration',
+            }],
+          },
+        },
+      },
+      collection_target: {
+        event: 'vugg:crystal-collected', selector: '.inv-collect-btn',
+        owner_mineral: 'topaz', accepts_executed_topaz: true,
+        rejects_wrong_quartz: true,
+      },
+      strip_target: {
+        event: 'vugg:strip-opened', selector: '.strip-view-datasetrow',
+        latest_stored_strip_required: true,
+        exact_current_receipt_accepted: true,
+        stale_or_uploaded_row_rejected: true,
+        production_run_can_commission_latest: true,
+        imported_file_cannot_commission_latest: true,
+      },
+    });
+  });
+
+  it('rejects self-rehashed false tutorial products and stale-target admission', () => {
+    const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
+    const original = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const forgedProduct = structuredClone(original);
+    forgedProduct.payload.guided_tutorial.shigar_execution.positive_crystal_counts.beryl = 1;
+    forgedProduct.payload.guided_tutorial.shigar_execution.beryl_absent = false;
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedProduct), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/guided tutorial witness/);
+
+    const forgedTarget = structuredClone(original);
+    forgedTarget.payload.guided_tutorial.collection_target.owner_mineral = 'quartz';
+    forgedTarget.payload.guided_tutorial.strip_target.stale_or_uploaded_row_rejected = false;
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedTarget), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/guided tutorial witness/);
+
+    const forgedReceipt = structuredClone(original);
+    forgedReceipt.payload.guided_tutorial.strip_target.receipt.scenario_spec_hash = '0'.repeat(64);
+    forgedReceipt.payload.guided_tutorial.strip_target.receipt.manifest_digest_sha256 = 'f'.repeat(64);
+    forgedReceipt.payload.guided_tutorial.strip_target.receipt.dataset_digest_sha256 = '1'.repeat(64);
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedReceipt), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/guided tutorial witness/);
+
+    const forgedCavity = structuredClone(original);
+    forgedCavity.payload.guided_tutorial.shigar_execution
+      .resolved_cavity_authority.shape_seed = 999;
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedCavity), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/guided tutorial witness/);
+
+    const forgedExtra = structuredClone(original);
+    forgedExtra.payload.guided_tutorial.shigar_execution.aquamarine_present = true;
+    forgedExtra.payload.guided_tutorial.strip_target.cavity_size = 'cave';
+    expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedExtra), {
+      simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+    })).toThrow(/guided tutorial witness/);
+
+    for (const mutate of [
+      (value: any) => { value.viewer_control.boot_state.step_index = 1; },
+      (value: any) => { value.viewer_control.emitted_products[0].after_enabled = true; },
+      (value: any) => {
+        value.carbonate_titration_control.accepted.emitted_products[0]
+          .spatial_authority_count = 1;
+      },
+      (value: any) => {
+        value.carbonate_titration_control.accepted.last_transaction.ok = false;
+      },
+      (value: any) => {
+        value.carbonate_titration_control.rejected.emitted_products.push(
+          structuredClone(value.carbonate_titration_control.accepted.emitted_products[0]),
+        );
+      },
+    ]) {
+      const forgedInteraction = structuredClone(original);
+      mutate(forgedInteraction.payload.guided_tutorial.interaction_products);
+      expect(() => verifyMechanismWitnessArtifact(ROOT, rehashPayload(forgedInteraction), {
+        simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST,
+      })).toThrow(/guided tutorial witness/);
+    }
+  });
+
   it('rejects a self-rehashed player-choice branch with a rewritten intervention', () => {
     const file = path.join(ROOT, 'archive', 'evidence', `mechanism-witnesses-v${SIM_VERSION}.json`);
     const original = JSON.parse(fs.readFileSync(file, 'utf8'));

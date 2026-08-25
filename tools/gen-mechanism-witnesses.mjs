@@ -21,9 +21,10 @@ import {
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
 import { writeJsonAtomic } from './scenario-evidence-checkpoint.mjs';
+import { parseScenarioDocument } from './scenario-authoring.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v3';
+export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v5';
 
 const canonicalJson = value => {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -107,6 +108,181 @@ const CHALCANTHITE_CONTROLS = Object.freeze([
 const PLAYER_CHOICE_CONTROL = Object.freeze({
   scenario: 'cooling', seed: 42, action: 'heat', appliedDelta: 25,
 });
+const GUIDED_TUTORIAL_CONTROL = Object.freeze({
+  scenario: 'shigar_pegmatite', seed: 42, steps: 70,
+  expectedPositiveMinerals: Object.freeze({
+    albite: 2, feldspar: 2, quartz: 3, topaz: 4, tourmaline: 7,
+  }),
+});
+const GUIDED_STRIP_RECORDED_AT = 281000042;
+
+// Reconstruct the complete controlled Simulation command from authored source.
+// Verification calls this independently: a witness cannot add a plausible-
+// looking cavity override, rehash itself, and turn it into authenticated prose.
+const guidedTutorialSourceAuthority = root => {
+  const doc = parseScenarioDocument(fs.readFileSync(path.join(root, 'data', 'scenarios.json5'), 'utf8'));
+  const spec = doc?.scenarios?.[GUIDED_TUTORIAL_CONTROL.scenario];
+  if (!spec) throw new Error('guided tutorial Shigar scenario source is absent');
+  const preset = spec?.tutorial?.preset;
+  const expectedPreset = {
+    seed: GUIDED_TUTORIAL_CONTROL.seed,
+    steps: GUIDED_TUTORIAL_CONTROL.steps,
+    shapeSeed: '',
+    cavitySize: 'any',
+  };
+  if (!exactKeys(preset, Object.keys(expectedPreset))
+      || canonicalJson(preset) !== canonicalJson(expectedPreset)) {
+    throw new Error('guided tutorial Shigar preset does not own the complete command');
+  }
+  const grow = spec.tutorial.steps.find(step => step?.action?.selector === '#btn-grow')?.action;
+  const expectedContext = [
+    { selector: '#scenario', valueNormalized: GUIDED_TUTORIAL_CONTROL.scenario },
+    { selector: '#seed', valueNormalized: String(GUIDED_TUTORIAL_CONTROL.seed) },
+    { selector: '#steps', valueNormalized: String(GUIDED_TUTORIAL_CONTROL.steps) },
+    { selector: '#shape-seed', valueExact: '' },
+    { selector: '#cavity-size', valueExact: 'any' },
+  ];
+  if (!grow || canonicalJson(grow.context) !== canonicalJson(expectedContext)) {
+    throw new Error('guided tutorial Shigar Grow does not bind the complete command');
+  }
+  const wall = spec?.initial?.wall;
+  if (!wall || typeof wall.shape_seed !== 'number' || !Number.isSafeInteger(wall.shape_seed)
+      || typeof wall.vug_diameter_mm !== 'number' || !Number.isFinite(wall.vug_diameter_mm)
+      || !(wall.vug_diameter_mm > 0)) {
+    throw new Error('guided tutorial Shigar resolved cavity source is invalid');
+  }
+  return {
+    scenario_spec_hash: sha256(JSON.stringify(spec)),
+    command_authority: {
+      scenario: GUIDED_TUTORIAL_CONTROL.scenario,
+      growth_seed: preset.seed,
+      steps: preset.steps,
+      shape_seed_input: preset.shapeSeed,
+      cavity_size_input: preset.cavitySize,
+    },
+    resolved_cavity_authority: {
+      source: 'scenario-default',
+      shape_seed: wall.shape_seed,
+      vug_diameter_mm: wall.vug_diameter_mm,
+    },
+  };
+};
+
+const guidedTutorialProductSourceAuthority = root => {
+  const doc = parseScenarioDocument(fs.readFileSync(path.join(root, 'data', 'scenarios.json5'), 'utf8'));
+  const tour = doc?.scenarios?.tutorial_first_crystal?.tutorial;
+  const travertine = doc?.scenarios?.tutorial_travertine?.tutorial;
+  if (!tour || !travertine) throw new Error('guided tutorial product source is absent');
+  const viewerProducts = tour.steps
+    .filter(step => step?.action?.event === 'vugg:tutorial-view-state-committed')
+    .map(step => ({ selector: step.action.selector, ...copy(step.action.productState) }));
+  const expectedViewerProducts = [
+    { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: true, afterEnabled: false },
+    { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: false, afterEnabled: true },
+    { selector: '#helix-overlay-btn', control: 'helix-overlay', beforeEnabled: false, afterEnabled: true },
+    { selector: '#helix-overlay-btn', control: 'helix-overlay', beforeEnabled: true, afterEnabled: false },
+  ];
+  if (canonicalJson(viewerProducts) !== canonicalJson(expectedViewerProducts)) {
+    throw new Error('guided tutorial viewer products do not bind the commissioned transitions');
+  }
+  const acid = travertine.steps.find(step =>
+    step?.action?.event === 'vugg:fortress-fluid-action-committed')?.action;
+  const expectedAcid = {
+    event: 'vugg:fortress-fluid-action-committed',
+    selector: '.action-grid',
+    productAction: 'carbonate-acid-titration',
+  };
+  if (canonicalJson(acid) !== canonicalJson(expectedAcid)) {
+    throw new Error('guided tutorial acid step does not bind committed titration product');
+  }
+  return {
+    commissioned_viewer_boot_state: {
+      topo_three_renderer_enabled: true,
+      helix_overlay_enabled: false,
+    },
+    viewer_products: expectedViewerProducts,
+    carbonate_titration_product: expectedAcid,
+  };
+};
+
+const guidedStripControlManifest = (root, simVersion, modelDigest) => {
+  const doc = parseScenarioDocument(fs.readFileSync(path.join(root, 'data', 'scenarios.json5'), 'utf8'));
+  const spec = doc?.scenarios?.tn457_barite_pulses;
+  if (!spec) throw new Error('guided tutorial TN457 scenario source is absent');
+  return {
+    format_version: 4,
+    sim_version: simVersion,
+    model_digest: modelDigest,
+    scenario_id: 'tn457_barite_pulses',
+    scenario_spec_hash: sha256(JSON.stringify(spec)),
+    seed: 42,
+    recorded_at: GUIDED_STRIP_RECORDED_AT,
+    duration_steps: 110,
+    axes: { steps: 110, angular_indices: 24, height_positions: 16 },
+    chips: [],
+  };
+};
+
+const guidedStripControlDataset = manifest => ({
+  manifest,
+  chip_data: new Uint8Array([0, 1, 2, 3]),
+  nucleation_events: [],
+  pressure_phase_testimony: [], stress_event_testimony: [],
+  transformation_event_testimony: [], carbonate_boundary_testimony: [],
+  sulfur_ledger_testimony: [], fluid_boundary_testimony: [],
+  enclosure_testimony: [], player_action_testimony: [],
+  layer_growth_testimony: [], habit_morphology_testimony: [],
+});
+
+// Independent Node reconstruction of stripSerialize(ds, false) for the
+// tiny controlled dataset. Verification never trusts the witness's own
+// receipt hashes or the browser helper that produced them.
+const serializeGuidedStripControl = dataset => {
+  const manifest = Buffer.from(JSON.stringify(dataset.manifest), 'utf8');
+  const events = Buffer.from(JSON.stringify(dataset.nucleation_events), 'utf8');
+  const testimony = Buffer.from(JSON.stringify({
+    pressure_phase_testimony: dataset.pressure_phase_testimony || [],
+    stress_event_testimony: dataset.stress_event_testimony || [],
+    transformation_event_testimony: dataset.transformation_event_testimony || [],
+    carbonate_boundary_testimony: dataset.carbonate_boundary_testimony || [],
+    sulfur_ledger_testimony: dataset.sulfur_ledger_testimony || [],
+    fluid_boundary_testimony: dataset.fluid_boundary_testimony || [],
+    enclosure_testimony: dataset.enclosure_testimony || [],
+    player_action_testimony: dataset.player_action_testimony || [],
+    layer_growth_testimony: dataset.layer_growth_testimony || [],
+    habit_morphology_testimony: dataset.habit_morphology_testimony || [],
+  }), 'utf8');
+  const u32 = value => {
+    const out = Buffer.alloc(4);
+    out.writeUInt32LE(value, 0);
+    return out;
+  };
+  return Buffer.concat([
+    u32(manifest.length), manifest,
+    u32(events.length), events,
+    u32(0), // format-v4 depletion floor is absent
+    u32(testimony.length), testimony,
+    Buffer.from(dataset.chip_data),
+  ]);
+};
+
+const guidedStripControlReceipt = (root, simVersion, modelDigest) => {
+  const manifest = guidedStripControlManifest(root, simVersion, modelDigest);
+  const key = `${manifest.scenario_id}@${manifest.seed}#${manifest.recorded_at}`;
+  return {
+    key,
+    scenario_id: manifest.scenario_id,
+    seed: manifest.seed,
+    recorded_at: manifest.recorded_at,
+    sim_version: manifest.sim_version,
+    model_digest: manifest.model_digest,
+    scenario_spec_hash: manifest.scenario_spec_hash,
+    manifest_digest_sha256: sha256(JSON.stringify(manifest)),
+    dataset_digest_sha256: sha256(serializeGuidedStripControl(
+      guidedStripControlDataset(manifest),
+    )),
+  };
+};
 
 const TRANSFORMATION_CASES = Object.freeze([
   Object.freeze({
@@ -443,6 +619,181 @@ function playerMovementChoiceWitness(science) {
   };
 }
 
+async function guidedTutorialInteractionProducts(science) {
+  const topo = document.createElement('button');
+  topo.id = 'topo-three-btn';
+  const helix = document.createElement('button');
+  helix.id = 'helix-overlay-btn';
+  document.body.append(topo, helix);
+  const viewerReceipts = [];
+  const recordViewer = event => viewerReceipts.push(copy(event.detail));
+  topo.addEventListener('vugg:tutorial-view-state-committed', recordViewer);
+  helix.addEventListener('vugg:tutorial-view-state-committed', recordViewer);
+  science.topoSetThreeRendererEnabled(false, false);
+  science.helixSetOverlayEnabled(true, false);
+  await science.startTutorial('tutorial_first_crystal');
+  const commissioning = copy(science.tutorialViewerCommissioningReceipt());
+  const bootState = copy(science.tutorialStateSnapshot());
+  if (!commissioning) throw new Error('guided tutorial boot emitted no viewer commissioning receipt');
+  science.topoSetThreeRendererEnabled(false, true);
+  science.topoSetThreeRendererEnabled(true, true);
+  science.helixSetOverlayEnabled(true, true);
+  science.helixSetOverlayEnabled(false, true);
+  topo.remove();
+  helix.remove();
+  science.fortressReset();
+
+  const grid = document.createElement('div');
+  grid.className = 'action-grid';
+  document.body.appendChild(grid);
+  const originalQuerySelector = document.querySelector;
+  document.querySelector = selector => selector === '.action-grid'
+    ? grid : originalQuerySelector.call(document, selector);
+  const runCarbonateControl = partialFlood => {
+    const products = [];
+    const listener = event => products.push(copy(event.detail));
+    grid.addEventListener('vugg:fortress-fluid-action-committed', listener);
+    science.fortressBeginFromScenario('tutorial_travertine', 42);
+    if (partialFlood) science.fortressStep('drain');
+    const sim = science._liveFortressSim();
+    const beforePH = Number(sim?.conditions?.fluid?.pH);
+    const beforeSurfaceRing = Number(sim?.conditions?.fluid_surface_ring);
+    const beforeTransactionCount = Array.isArray(sim?._carbonateBoundaryState?.transactions)
+      ? sim._carbonateBoundaryState.transactions.length : 0;
+    science.fortressStep('tweak_acidify');
+    const afterPH = Number(sim?.conditions?.fluid?.pH);
+    const transactions = Array.isArray(sim?._carbonateBoundaryState?.transactions)
+      ? sim._carbonateBoundaryState.transactions : [];
+    const last = transactions.length ? transactions[transactions.length - 1] : null;
+    const result = {
+      precursor: partialFlood ? 'drain-to-partial-fluid-scope' : 'fully-wet-authored-start',
+      action: 'tweak_acidify',
+      before_pH: beforePH,
+      after_pH: afterPH,
+      fluid_surface_ring: beforeSurfaceRing,
+      transaction_count_before: beforeTransactionCount,
+      transaction_count_after: transactions.length,
+      last_transaction: last ? {
+        kind: last.kind ?? null,
+        ok: last.ok === true,
+      } : null,
+      emitted_products: products,
+    };
+    grid.removeEventListener('vugg:fortress-fluid-action-committed', listener);
+    science.fortressReset();
+    return result;
+  };
+  let rejected;
+  let accepted;
+  try {
+    rejected = runCarbonateControl(true);
+    accepted = runCarbonateControl(false);
+  } finally {
+    document.querySelector = originalQuerySelector;
+    grid.remove();
+    science.fortressReset();
+  }
+  return {
+    source_authority: guidedTutorialProductSourceAuthority(ROOT),
+    viewer_control: {
+      boot_state: bootState,
+      commissioning,
+      emitted_products: viewerReceipts,
+    },
+    carbonate_titration_control: { rejected, accepted },
+  };
+}
+
+async function guidedTutorialWitness(science) {
+  const control = GUIDED_TUTORIAL_CONTROL;
+  const sourceAuthority = guidedTutorialSourceAuthority(ROOT);
+  const interactionProducts = await guidedTutorialInteractionProducts(science);
+  science.setSeed(control.seed);
+  const { conditions, events } = science.SCENARIOS[control.scenario]();
+  if (conditions?.wall?.shape_seed !== sourceAuthority.resolved_cavity_authority.shape_seed
+      || conditions?.wall?.vug_diameter_mm
+        !== sourceAuthority.resolved_cavity_authority.vug_diameter_mm) {
+    throw new Error('guided tutorial runtime cavity disagrees with authored source');
+  }
+  const sim = new science.VugSimulator(conditions, events);
+  for (let step = 0; step < control.steps; step++) sim.run_step();
+  const positiveCounts = {};
+  for (const crystal of sim.crystals) {
+    if (!(Number(crystal.total_growth_um) > 0)) continue;
+    const mineral = String(crystal.mineral);
+    positiveCounts[mineral] = Number(positiveCounts[mineral] || 0) + 1;
+  }
+  const tutorial = science.SCENARIOS[control.scenario]._json5_spec.tutorial;
+  const collectionAction = tutorial.steps.find(step => step?.action?.selector === '.inv-collect-btn')?.action;
+  if (!collectionAction) throw new Error('guided tutorial collection action is absent');
+  const collectButton = ownerMineral => ({
+    dataset: {},
+    closest: selector => selector === '.inv-crystal'
+      ? { dataset: { mineral: ownerMineral } }
+      : null,
+  });
+  const acceptsTopaz = science._tutorialActionTargetMatches(
+    collectionAction, collectButton('topaz'),
+  );
+  const rejectsQuartz = !science._tutorialActionTargetMatches(
+    collectionAction, collectButton('quartz'),
+  );
+
+  const manifest = guidedStripControlManifest(ROOT, science.SIM_VERSION, science.MODEL_DIGEST);
+  const dataset = guidedStripControlDataset(manifest);
+  const key = `${manifest.scenario_id}@${manifest.seed}#${manifest.recorded_at}`;
+  const datasetDigest = await science.stripDurableDatasetDigest(dataset);
+  const receipt = science._stripDurableRunReceipt(key, manifest, datasetDigest);
+  const exactRow = {
+    dataset: {
+      scenarioId: receipt.scenario_id,
+      seed: String(receipt.seed),
+      simVersion: String(receipt.sim_version),
+      modelDigest: receipt.model_digest,
+      scenarioSpecHash: receipt.scenario_spec_hash,
+      storageKey: receipt.key,
+      recordedAt: String(receipt.recorded_at),
+      manifestDigestSha256: receipt.manifest_digest_sha256,
+      datasetDigestSha256: receipt.dataset_digest_sha256,
+    },
+  };
+  const staleRow = copy(exactRow);
+  staleRow.dataset.storageKey += '-uploaded-old';
+  const stripAction = science.SCENARIOS.tn457_barite_pulses._json5_spec.tutorial.steps
+    .find(step => step?.action?.selector === '.strip-view-datasetrow')?.action;
+  if (!stripAction) throw new Error('guided tutorial strip action is absent');
+  return {
+    role: 'controlled production GAME-03 guided-flow witness; browser workflow owns visible lifecycle',
+    shigar_execution: {
+      scenario: control.scenario,
+      seed: control.seed,
+      steps: control.steps,
+      ...sourceAuthority,
+      positive_crystal_counts: positiveCounts,
+      topaz_present: Number(positiveCounts.topaz || 0) > 0,
+      beryl_absent: Number(positiveCounts.beryl || 0) === 0,
+    },
+    interaction_products: interactionProducts,
+    collection_target: {
+      event: collectionAction.event,
+      selector: collectionAction.selector,
+      owner_mineral: collectionAction.within?.dataset?.mineral || null,
+      accepts_executed_topaz: acceptsTopaz,
+      rejects_wrong_quartz: rejectsQuartz,
+    },
+    strip_target: {
+      event: stripAction.event,
+      selector: stripAction.selector,
+      latest_stored_strip_required: stripAction.latestStoredStrip === true,
+      exact_current_receipt_accepted: science._tutorialStripReceiptMatches(exactRow, receipt),
+      stale_or_uploaded_row_rejected: !science._tutorialStripReceiptMatches(staleRow, receipt),
+      production_run_can_commission_latest: science.stripStorageOriginEligible('production-run'),
+      imported_file_cannot_commission_latest: !science.stripStorageOriginEligible('imported-file'),
+      receipt: copy(receipt),
+    },
+  };
+}
+
 export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
   if (artifact?.schema !== MECHANISM_WITNESS_SCHEMA) throw new Error('mechanism witness schema mismatch');
   if (expected.simVersion != null && artifact.sim_version !== Number(expected.simVersion)) {
@@ -639,6 +990,135 @@ export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
       || !Array.isArray(heated?.crystal_summary) || heated.crystal_summary.length !== 0) {
     throw new Error('player movement-choice witness does not prove a receipted divergent geology branch');
   }
+  const guided = artifact.payload?.guided_tutorial;
+  const sourceAuthority = guidedTutorialSourceAuthority(root);
+  const productSourceAuthority = guidedTutorialProductSourceAuthority(root);
+  const interaction = guided?.interaction_products;
+  const viewer = interaction?.viewer_control;
+  const carbonate = interaction?.carbonate_titration_control;
+  const viewerReceiptKeys = [
+    'schema', 'control', 'before_enabled', 'after_enabled',
+  ];
+  const expectedViewerReceipts = productSourceAuthority.viewer_products.map(row => ({
+    schema: 'tutorial-view-state-product-v1',
+    control: row.control,
+    before_enabled: row.beforeEnabled,
+    after_enabled: row.afterEnabled,
+  }));
+  if (!exactKeys(interaction, [
+    'source_authority', 'viewer_control', 'carbonate_titration_control',
+  ])
+      || canonicalJson(interaction.source_authority) !== canonicalJson(productSourceAuthority)
+      || !exactKeys(viewer, ['boot_state', 'commissioning', 'emitted_products'])
+      || !exactKeys(viewer.boot_state, [
+        'mode', 'step_index', 'step_count', 'rendered_index', 'paused_at', 'current_trigger',
+      ])
+      || viewer.boot_state.mode !== 'fortress'
+      || viewer.boot_state.step_index !== 0
+      || !Number.isSafeInteger(viewer.boot_state.step_count) || viewer.boot_state.step_count <= 0
+      || viewer.boot_state.rendered_index !== 0
+      || viewer.boot_state.current_trigger !== 'continue'
+      || !exactKeys(viewer.commissioning, ['schema', 'before', 'after'])
+      || viewer.commissioning.schema !== 'tutorial-viewer-commissioning-v1'
+      || canonicalJson(viewer.commissioning.before) !== canonicalJson({
+        topo_three_renderer_enabled: false, helix_overlay_enabled: true,
+      })
+      || canonicalJson(viewer.commissioning.after) !== canonicalJson({
+        topo_three_renderer_enabled: true, helix_overlay_enabled: false,
+      })
+      || !Array.isArray(viewer.emitted_products)
+      || viewer.emitted_products.length !== expectedViewerReceipts.length
+      || !viewer.emitted_products.every(row => exactKeys(row, viewerReceiptKeys))
+      || canonicalJson(viewer.emitted_products) !== canonicalJson(expectedViewerReceipts)
+      || !exactKeys(carbonate, ['rejected', 'accepted'])) {
+    throw new Error('guided tutorial witness does not prove executed viewer products');
+  }
+  const rejected = carbonate.rejected;
+  const accepted = carbonate.accepted;
+  const carbonateControlKeys = [
+    'precursor', 'action', 'before_pH', 'after_pH', 'fluid_surface_ring',
+    'transaction_count_before', 'transaction_count_after',
+    'last_transaction', 'emitted_products',
+  ];
+  const acidReceiptKeys = [
+    'schema', 'product', 'action', 'accepted_at_step', 'before_pH', 'after_pH',
+    'spatial_authority_schema', 'spatial_authority_scope',
+    'spatial_authority_count', 'spatial_authority_closed',
+    'carbonate_transaction_kind', 'carbonate_transaction_index',
+  ];
+  const acidReceipt = Array.isArray(accepted?.emitted_products)
+    && accepted.emitted_products.length === 1 ? accepted.emitted_products[0] : null;
+  if (!exactKeys(rejected, carbonateControlKeys)
+      || rejected.precursor !== 'drain-to-partial-fluid-scope'
+      || rejected.action !== 'tweak_acidify'
+      || !finiteClose(rejected.before_pH, 6.5)
+      || !finiteClose(rejected.before_pH, rejected.after_pH)
+      || rejected.fluid_surface_ring !== 14
+      || !Array.isArray(rejected.emitted_products) || rejected.emitted_products.length !== 0
+      || !Number.isSafeInteger(rejected.transaction_count_before)
+      || !Number.isSafeInteger(rejected.transaction_count_after)
+      || rejected.transaction_count_after !== rejected.transaction_count_before + 1
+      || !exactKeys(rejected.last_transaction, ['kind', 'ok'])
+      || rejected.last_transaction.kind !== 'spatial_boundary_unsupported'
+      || rejected.last_transaction.ok !== false
+      || !exactKeys(accepted, carbonateControlKeys)
+      || accepted.precursor !== 'fully-wet-authored-start'
+      || accepted.action !== 'tweak_acidify'
+      || !finiteClose(accepted.before_pH, 6.5)
+      || !finiteClose(accepted.after_pH, 6.2)
+      || !finiteClose(accepted.before_pH, acidReceipt?.before_pH)
+      || !finiteClose(accepted.after_pH, acidReceipt?.after_pH)
+      || !(accepted.after_pH < accepted.before_pH)
+      || accepted.fluid_surface_ring !== 0
+      || !Number.isSafeInteger(accepted.transaction_count_before)
+      || !Number.isSafeInteger(accepted.transaction_count_after)
+      || accepted.transaction_count_after !== accepted.transaction_count_before + 1
+      || !exactKeys(accepted.last_transaction, ['kind', 'ok'])
+      || accepted.last_transaction.kind !== 'ph_titration'
+      || accepted.last_transaction.ok !== true
+      || !exactKeys(acidReceipt, acidReceiptKeys)
+      || acidReceipt.schema !== 'fortress-fluid-action-product-v1'
+      || acidReceipt.product !== 'carbonate-acid-titration'
+      || acidReceipt.action !== 'tweak_acidify'
+      || acidReceipt.accepted_at_step !== 0
+      || acidReceipt.spatial_authority_schema !== 'player-fluid-spatial-intervention-v1'
+      || acidReceipt.spatial_authority_scope !== 'canonical-nonvadose-voxel-volume'
+      || acidReceipt.spatial_authority_count !== 7680
+      || acidReceipt.spatial_authority_closed !== true
+      || acidReceipt.carbonate_transaction_kind !== 'ph_titration'
+      || acidReceipt.carbonate_transaction_index !== accepted.transaction_count_before) {
+    throw new Error('guided tutorial witness does not prove accepted/rejected carbonate products');
+  }
+  const expectedGuided = {
+    role: 'controlled production GAME-03 guided-flow witness; browser workflow owns visible lifecycle',
+    shigar_execution: {
+      scenario: GUIDED_TUTORIAL_CONTROL.scenario,
+      seed: GUIDED_TUTORIAL_CONTROL.seed,
+      steps: GUIDED_TUTORIAL_CONTROL.steps,
+      ...sourceAuthority,
+      positive_crystal_counts: GUIDED_TUTORIAL_CONTROL.expectedPositiveMinerals,
+      topaz_present: true,
+      beryl_absent: true,
+    },
+    interaction_products: interaction,
+    collection_target: {
+        event: 'vugg:crystal-collected', selector: '.inv-collect-btn',
+        owner_mineral: 'topaz', accepts_executed_topaz: true,
+        rejects_wrong_quartz: true,
+    },
+    strip_target: {
+      event: 'vugg:strip-opened', selector: '.strip-view-datasetrow',
+      latest_stored_strip_required: true,
+      exact_current_receipt_accepted: true,
+      stale_or_uploaded_row_rejected: true,
+      production_run_can_commission_latest: true,
+      imported_file_cannot_commission_latest: true,
+      receipt: guidedStripControlReceipt(root, artifact.sim_version, artifact.model_digest),
+    },
+  };
+  if (canonicalJson(guided) !== canonicalJson(expectedGuided)) {
+    throw new Error('guided tutorial witness does not prove exact successful product targets');
+  }
   return true;
 }
 
@@ -651,7 +1131,14 @@ export async function buildMechanismWitnessArtifact(root = ROOT) {
       'StripRecorder', 'currentEnclosureAuthority',
       'stoichiometricBudgetDebitPpmPerUm',
       '_createMovementController', 'movementPlayerInterventionReceipt',
-      'simulationStateFingerprint',
+      'simulationStateFingerprint', 'scenarioSpecHash',
+      '_tutorialActionTargetMatches', '_tutorialStripReceiptMatches',
+      '_tutorialCanonicalizeViewerState', 'tutorialViewerCommissioningReceipt',
+      'tutorialStateSnapshot', 'startTutorial',
+      'topoSetThreeRendererEnabled', 'helixSetOverlayEnabled',
+      'fortressBeginFromScenario', 'fortressStep', 'fortressReset', '_liveFortressSim',
+      '_stripDurableRunReceipt', 'stripDurableDatasetDigest',
+      'stripStorageOriginEligible',
     ],
   });
   const payload = {
@@ -664,6 +1151,7 @@ export async function buildMechanismWitnessArtifact(root = ROOT) {
       enclosure_control: chalcanthiteEnclosureWitness(science),
     },
     player_movement_choice: playerMovementChoiceWitness(science),
+    guided_tutorial: await guidedTutorialWitness(science),
   };
   return {
     schema: MECHANISM_WITNESS_SCHEMA,
