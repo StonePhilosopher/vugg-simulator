@@ -19,7 +19,8 @@
 //      gotcha), so text containing it would truncate the whole line
 //      and usually break the parse.
 //   4. action steps carry a selector; `checked:` only with
-//      event 'change'/'input'.
+//      event 'change'/'input'; typed dataset/value/selection authority uses
+//      the exact runtime schema from 70a-tutorial-overlay.ts.
 //   5. reports the trigger sequence + sim-step→(action|continue)
 //      junctions (v3.1 PAUSE points — informational, they're legal
 //      now; listed so an author can see where a Continue press lands).
@@ -71,6 +72,56 @@ const runtimeAnchorIds = new Set([
   'sat-hover-pop',
 ]);
 
+function validDatasetExpectation(value) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    && Object.keys(value).length > 0
+    && Object.entries(value).every(([key, expected]) =>
+      /^[A-Za-z][A-Za-z0-9]*$/.test(key) && typeof expected === 'string');
+}
+
+function validViewProductState(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const keys = Object.keys(value).sort();
+  return JSON.stringify(keys) === JSON.stringify([
+    'control', 'beforeEnabled', 'afterEnabled',
+  ].sort())
+    && ['topo-three-renderer', 'helix-overlay'].includes(value.control)
+    && typeof value.beforeEnabled === 'boolean'
+    && typeof value.afterEnabled === 'boolean'
+    && value.beforeEnabled !== value.afterEnabled;
+}
+
+function validTargetAuthority(action, allowContext = true) {
+  if (!action || typeof action !== 'object' || Array.isArray(action)) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'dataset')
+      && !validDatasetExpectation(action.dataset)) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'within')) {
+    const within = action.within;
+    if (!within || typeof within !== 'object' || Array.isArray(within)
+        || typeof within.selector !== 'string' || !within.selector.trim()
+        || !validDatasetExpectation(within.dataset)) return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(action, 'valueNormalized')
+      && (typeof action.valueNormalized !== 'string' || !action.valueNormalized.trim())) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'valueExact')
+      && typeof action.valueExact !== 'string') return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'selectedDataset')
+      && !validDatasetExpectation(action.selectedDataset)) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'latestStoredStrip')
+      && action.latestStoredStrip !== true) return false;
+  if (Object.prototype.hasOwnProperty.call(action, 'context')) {
+    if (!allowContext || !Array.isArray(action.context) || !action.context.length) return false;
+    for (const condition of action.context) {
+      if (!condition || typeof condition.selector !== 'string' || !condition.selector.trim()
+          || !validTargetAuthority(condition, false)) return false;
+      const predicates = ['dataset', 'within', 'valueNormalized', 'valueExact', 'selectedDataset']
+        .filter(key => Object.prototype.hasOwnProperty.call(condition, key));
+      if (!predicates.length) return false;
+    }
+  }
+  return true;
+}
+
 let errors = 0, warnings = 0;
 const scenarios = Object.entries(doc.scenarios || {}).filter(([, s]) => s.tutorial);
 
@@ -80,6 +131,27 @@ for (const [id, spec] of scenarios) {
   const seq = [];
   let lastSim = -Infinity;
   const junctions = [];
+
+  if (tut.mode === 'legends') {
+    const preset = tut.preset;
+    if (!preset || typeof preset !== 'object' || Array.isArray(preset)
+        || !Object.prototype.hasOwnProperty.call(preset, 'seed')
+        || !Object.prototype.hasOwnProperty.call(preset, 'steps')
+        || typeof preset.shapeSeed !== 'string'
+        || typeof preset.cavitySize !== 'string' || !preset.cavitySize.trim()) {
+      console.error(`[tutorial-lint] ${id}: Simulation tutorial preset must own seed, steps, shapeSeed, and cavitySize`);
+      errors++;
+    }
+    const growAction = steps.find(st => st?.action?.selector === '#btn-grow')?.action;
+    const commandSelectors = new Map((growAction?.context || []).map(row => [row?.selector, row]));
+    const required = ['#scenario', '#seed', '#steps', '#shape-seed', '#cavity-size'];
+    if (!growAction || required.some(selector => !commandSelectors.has(selector))
+        || commandSelectors.get('#shape-seed')?.valueExact !== preset?.shapeSeed
+        || commandSelectors.get('#cavity-size')?.valueExact !== preset?.cavitySize) {
+      console.error(`[tutorial-lint] ${id}: Grow authority must bind the complete authored Simulation command`);
+      errors++;
+    }
+  }
 
   steps.forEach((st, i) => {
     const trig = (typeof st.step === 'number') ? 'simstep'
@@ -105,6 +177,59 @@ for (const [id, spec] of scenarios) {
     if (st.action && typeof st.action.checked === 'boolean'
         && st.action.event !== 'change' && st.action.event !== 'input') {
       console.error(`[tutorial-lint] ${id} step[${i}]: checked: expectation with event '${st.action.event || 'click'}' — checkbox state is only committed on change/input`);
+      errors++;
+    }
+    if (st.action && Object.prototype.hasOwnProperty.call(st.action, 'dataset')
+        && !validDatasetExpectation(st.action.dataset)) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: dataset authority must be a nonempty string map`);
+      errors++;
+    }
+    if (st.action && Object.prototype.hasOwnProperty.call(st.action, 'within')) {
+      const within = st.action.within;
+      if (!within || typeof within !== 'object' || Array.isArray(within)
+          || typeof within.selector !== 'string' || !within.selector.trim()
+          || !validDatasetExpectation(within.dataset)) {
+        console.error(`[tutorial-lint] ${id} step[${i}]: within authority requires selector + nonempty string dataset map`);
+        errors++;
+      }
+    }
+    if (st.action && Object.prototype.hasOwnProperty.call(st.action, 'valueNormalized')
+        && (typeof st.action.valueNormalized !== 'string' || !st.action.valueNormalized.trim())) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: valueNormalized authority must be a nonempty string`);
+      errors++;
+    }
+    if (st.action && Object.prototype.hasOwnProperty.call(st.action, 'valueExact')
+        && typeof st.action.valueExact !== 'string') {
+      console.error(`[tutorial-lint] ${id} step[${i}]: valueExact authority must be a string`);
+      errors++;
+    }
+    if (st.action && Object.prototype.hasOwnProperty.call(st.action, 'selectedDataset')
+        && !validDatasetExpectation(st.action.selectedDataset)) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: selectedDataset authority must be a nonempty string map`);
+      errors++;
+    }
+    if (st.action && !validTargetAuthority(st.action)) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: malformed target/context authority`);
+      errors++;
+    }
+    if (st.action?.event === 'vugg:crystal-collected'
+        && (!st.action.within || !validDatasetExpectation(st.action.within.dataset))) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: collection success must bind an exact crystal owner`);
+      errors++;
+    }
+    if (st.action?.event === 'vugg:strip-opened' && st.action.latestStoredStrip !== true) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: strip success must bind the latest durable production run`);
+      errors++;
+    }
+    if (st.action?.event === 'vugg:fortress-fluid-action-committed'
+        && (st.action.selector !== '.action-grid'
+          || st.action.productAction !== 'carbonate-acid-titration')) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: fluid action success must bind the carbonate titration product`);
+      errors++;
+    }
+    if (st.action?.event === 'vugg:tutorial-view-state-committed'
+        && !validViewProductState(st.action.productState)) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: viewer action must bind an exact changing product state`);
       errors++;
     }
     for (const field of ['text', 'hint']) {

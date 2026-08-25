@@ -589,6 +589,13 @@ const EXPORTS = [
   'musicSetContext',
   'initSettingsUI',
   'importVuggLocalDataFile', // async declarations are not auto-harvested
+  'fortressBegin', // async declarations are not auto-harvested
+  'runSimulation',
+  'startScenarioInCreative', // shared async run-launch generation
+  'startStarterFluidInCreative',
+  'stripDurableDatasetDigest',
+  'stripDatasetMatchesDurableRunReceipt',
+  '_stripOpenStoredRow', // async declarations are not auto-harvested
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 

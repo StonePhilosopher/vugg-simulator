@@ -884,6 +884,124 @@ async function runWorkflow(driver, diagnostics) {
     assert.match(identity.title, /Vugg/i);
   });
 
+  await check('owns guided tutorial progress by one exact run lifecycle', async () => {
+    const started = await driver.evaluate(`(async () => {
+      topoSetThreeRendererEnabled(false, false);
+      helixSetOverlayEnabled(true, false);
+      await startTutorial('tutorial_first_crystal');
+      const locked = document.querySelector('.action-btn:not(.tutorial-allow)');
+      const beforeStep = window.vugg.fortressSim?.step ?? null;
+      locked?.click();
+      return {
+        tutorial: tutorialStateSnapshot(),
+        activeClass: document.body.classList.contains('tutorial-active'),
+        scenario: _liveSaveActiveRecord()?.origin?.scenario || null,
+        step: window.vugg.fortressSim?.step ?? null,
+        locked: locked ? {
+          disabled: locked.disabled,
+          ariaDisabled: locked.getAttribute('aria-disabled'),
+          tabIndex: locked.getAttribute('tabindex'),
+          stepUnchanged: (window.vugg.fortressSim?.step ?? null) === beforeStep,
+        } : null,
+        viewer: {
+          three: topoThreeRendererEnabled(),
+          helix: helixOverlayEnabled(),
+          threePressed: document.querySelector('#topo-three-btn')?.getAttribute('aria-pressed'),
+          helixPressed: document.querySelector('#helix-overlay-btn')?.getAttribute('aria-pressed'),
+        },
+      };
+    })()`);
+    assert.equal(started.tutorial?.mode, 'fortress');
+    assert.equal(started.tutorial?.step_index, 0);
+    assert.equal(started.activeClass, true);
+    assert.equal(started.scenario, 'tutorial_first_crystal');
+    assert.equal(started.step, 0);
+    assert.deepEqual(started.locked, {
+      disabled: true, ariaDisabled: 'true', tabIndex: '-1', stepUnchanged: true,
+    });
+    assert.deepEqual(started.viewer, {
+      three: true, helix: false, threePressed: 'true', helixPressed: 'false',
+    });
+
+    const viewerAction = await driver.evaluate(`(() => {
+      const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+      const idx = steps.findIndex(step =>
+        step.action?.productState?.control === 'topo-three-renderer'
+        && step.action.productState.afterEnabled === false);
+      while (tutorialStateSnapshot()?.step_index < idx) _tutorialAdvance();
+      return {
+        idx,
+        step: tutorialStateSnapshot()?.step_index,
+        enabled: !document.querySelector('#topo-three-btn')?.disabled,
+      };
+    })()`);
+    assert.equal(viewerAction.step, viewerAction.idx);
+    assert.equal(viewerAction.enabled, true);
+    await driver.click('#topo-three-btn');
+    await driver.waitFor(
+      `topoThreeRendererEnabled() === false
+        && tutorialStateSnapshot()?.step_index === ${viewerAction.idx + 1}`,
+      'guided tutorial committed flat-view product',
+    );
+
+    await driver.click('.btn-reset');
+    await driver.waitFor(
+      `tutorialStateSnapshot() === null && window.vugg.fortressSim === null
+        && !document.body.classList.contains('tutorial-active')
+        && getComputedStyle(document.querySelector('#fortress-setup')).display !== 'none'`,
+      'guided tutorial Reset boundary',
+    );
+    const reset = await driver.evaluate(`({
+      tutorial: tutorialStateSnapshot(),
+      sim: window.vugg.fortressSim,
+      activeSave: _liveSaveActiveRecord(),
+      callouts: document.querySelectorAll('.tutorial-callout').length,
+      locks: document.querySelectorAll('.tutorial-allow, .tutorial-spotlight').length,
+    })`);
+    assert.deepEqual(reset, {
+      tutorial: null, sim: null, activeSave: null, callouts: 0, locks: 0,
+    });
+
+    const race = await driver.evaluate(`(async () => {
+      const pending = startTutorial('tutorial_first_crystal');
+      fortressReset();
+      await pending;
+      return {
+        tutorial: tutorialStateSnapshot(),
+        sim: window.vugg.fortressSim,
+        activeSave: _liveSaveActiveRecord(),
+        activeClass: document.body.classList.contains('tutorial-active'),
+      };
+    })()`);
+    assert.deepEqual(race, {
+      tutorial: null, sim: null, activeSave: null, activeClass: false,
+    });
+
+    const titration = await driver.evaluate(`(async () => {
+      const grid = document.querySelector('.action-grid');
+      const products = [];
+      const listener = event => products.push(event.detail);
+      grid.addEventListener('vugg:fortress-fluid-action-committed', listener);
+      await startTutorial('tutorial_travertine');
+      fortressStep('drain');
+      fortressStep('tweak_acidify');
+      const rejectedCount = products.length;
+      await startTutorial('tutorial_travertine');
+      fortressStep('tweak_acidify');
+      const accepted = products.at(-1) || null;
+      grid.removeEventListener('vugg:fortress-fluid-action-committed', listener);
+      fortressReset();
+      return { rejectedCount, accepted };
+    })()`);
+    assert.equal(titration.rejectedCount, 0);
+    assert.equal(titration.accepted?.schema, 'fortress-fluid-action-product-v1');
+    assert.equal(titration.accepted?.product, 'carbonate-acid-titration');
+    assert.equal(titration.accepted?.spatial_authority_closed, true);
+    assert.ok(titration.accepted?.after_pH < titration.accepted?.before_pH);
+  });
+
+  await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=cancel`);
+
   await check('cancels a progressive Simulation run through the N shortcut', async () => {
     await driver.setValue('#scenario', 'cooling');
     await driver.setValue('#seed', TEST_SEED);
@@ -928,6 +1046,78 @@ async function runWorkflow(driver, diagnostics) {
     assert.equal(run.seed, TEST_SEED);
     assert.equal(run.shapeSeed, 1, 'blank shape input must preserve cooling\'s authored shape_seed');
     assert.equal(run.narrative, true);
+  });
+
+  await check('binds tutorial strip success to committed IndexedDB bytes', async () => {
+    await driver.waitFor(
+      `stripLatestDurableRunReceipt()?.scenario_id === 'cooling'`,
+      'durable short-run strip receipt',
+      30_000,
+    );
+    const authority = await driver.evaluate(`(async () => {
+      const receipt = stripLatestDurableRunReceipt();
+      const original = await stripStorageLoad(receipt.key);
+      if (!original || !original.chip_data?.length) throw new Error('production strip readback absent');
+      const originalMatches = await stripDatasetMatchesDurableRunReceipt(
+        receipt.key, original, receipt,
+      );
+
+      const tampered = {
+        ...original,
+        chip_data: original.chip_data.slice(),
+        player_action_testimony: [
+          ...(original.player_action_testimony || []),
+          { forged: true },
+        ],
+      };
+      tampered.chip_data[0] ^= 1;
+      const importedKey = await stripStorageSave(tampered, 'imported-file');
+      const productionAfterImport = await stripStorageLoad(receipt.key);
+      const productionStillMatches = await stripDatasetMatchesDurableRunReceipt(
+        receipt.key, productionAfterImport, receipt,
+      );
+
+      const makeRow = () => {
+        const row = document.createElement('div');
+        Object.assign(row.dataset, {
+          scenarioId: receipt.scenario_id,
+          seed: String(receipt.seed),
+          simVersion: String(receipt.sim_version),
+          modelDigest: receipt.model_digest,
+          scenarioSpecHash: receipt.scenario_spec_hash,
+          storageKey: receipt.key,
+          recordedAt: String(receipt.recorded_at),
+          manifestDigestSha256: receipt.manifest_digest_sha256,
+          datasetDigestSha256: receipt.dataset_digest_sha256,
+        });
+        return row;
+      };
+      const body = document.createElement('div');
+      let exactEvents = 0;
+      const exactRow = makeRow();
+      exactRow.addEventListener('vugg:strip-opened', () => exactEvents++);
+      await _stripOpenStoredRow(body, exactRow, receipt.key, stripStorageLoad, () => {});
+      let tamperedEvents = 0;
+      const tamperedRow = makeRow();
+      tamperedRow.addEventListener('vugg:strip-opened', () => tamperedEvents++);
+      await _stripOpenStoredRow(body, tamperedRow, receipt.key, async () => tampered, () => {});
+      return {
+        originalMatches,
+        importedNamespaced: importedKey === 'imported:' + receipt.key,
+        productionStillMatches,
+        latestKeyUnchanged: stripLatestDurableRunReceipt()?.key === receipt.key,
+        exactEvents,
+        tamperedEvents,
+      };
+    })()`);
+    assert.deepEqual(authority, {
+      originalMatches: true,
+      importedNamespaced: true,
+      productionStillMatches: true,
+      latestKeyUnchanged: true,
+      exactEvents: 1,
+      tamperedEvents: 0,
+    });
     await driver.key('n', 'KeyN', 78);
   });
 
