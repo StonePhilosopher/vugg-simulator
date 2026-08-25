@@ -7232,8 +7232,44 @@ function _topoSyncThreeCanvasVisibility(state = _topoThreeState) {
 // the renderer tier and forces drag-mode to 'rotate' on enable so
 // clicking once and dragging immediately orbits the scene. Disabled
 // when Three.js failed to load (CDN blocked / offline file://).
+function topoThreeRendererEnabled(): boolean {
+  return _topoUseThreeRenderer === true;
+}
+
+// Exact state setter shared by the toolbar and the guided-tour commissioner.
+// `emitProduct=false` is reserved for boot canonicalization; player changes
+// emit a state receipt from the owner control after the product state lands.
+function topoSetThreeRendererEnabled(enabled: boolean, emitProduct = true): boolean {
+  const desired = enabled === true;
+  const before = topoThreeRendererEnabled();
+  _topoUseThreeRenderer = desired;
+  if (_topoUseThreeRenderer && _topoThreeState?.threeShaderUnusable) {
+    _topoResetCavityFieldFailures(_topoThreeState);
+    _topoThreeState.cavitySig = '';
+    _topoThreeState.crystalsSig = '';
+  }
+  const btn = document.getElementById('topo-three-btn');
+  if (btn) {
+    (btn as HTMLElement).style.color = _topoUseThreeRenderer ? '#f0c050' : '';
+    btn.setAttribute('aria-pressed', String(_topoUseThreeRenderer));
+  }
+  if (_topoUseThreeRenderer && typeof topoSetDragMode === 'function'
+      && _topoDragMode !== 'rotate') {
+    topoSetDragMode('rotate');
+  }
+  _topoSyncThreeCanvasVisibility();
+  topoRender();
+  const changed = before !== _topoUseThreeRenderer;
+  if (changed && emitProduct && typeof _dispatchTutorialViewStateProduct === 'function') {
+    _dispatchTutorialViewStateProduct(
+      btn, 'topo-three-renderer', before, _topoUseThreeRenderer,
+    );
+  }
+  return changed;
+}
+
 function topoToggleThreeRenderer() {
-  if (!_topoThreeAvailable()) {
+  if (!_topoUseThreeRenderer && !_topoThreeAvailable()) {
     _topoThreeUnavailable = true;
     const btn = document.getElementById('topo-three-btn') as HTMLButtonElement | null;
     if (btn) {
@@ -7243,24 +7279,5 @@ function topoToggleThreeRenderer() {
     }
     return;
   }
-  _topoUseThreeRenderer = !_topoUseThreeRenderer;
-  if (_topoUseThreeRenderer && _topoThreeState?.threeShaderUnusable) {
-    // An intentional offâ†’on toggle is an operator retry, equivalent to the
-    // debug retry and a restored context. Re-arm once; ordinary frames cannot.
-    _topoResetCavityFieldFailures(_topoThreeState);
-    _topoThreeState.cavitySig = '';
-    _topoThreeState.crystalsSig = '';
-  }
-  const btn = document.getElementById('topo-three-btn');
-  if (btn) (btn as HTMLElement).style.color = _topoUseThreeRenderer ? '#f0c050' : '';
-  // Force rotate mode on enable so the existing pointer handlers
-  // already update _topoTiltX/_topoTiltY — the Three camera reads
-  // those globals every render. On disable, leave drag mode untouched
-  // (user might want to keep orbit mode on the canvas-vector path).
-  if (_topoUseThreeRenderer && typeof topoSetDragMode === 'function'
-      && _topoDragMode !== 'rotate') {
-    topoSetDragMode('rotate');
-  }
-  _topoSyncThreeCanvasVisibility();
-  topoRender();
+  topoSetThreeRendererEnabled(!_topoUseThreeRenderer, true);
 }

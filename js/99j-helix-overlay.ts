@@ -2044,10 +2044,28 @@ function _helixSpinTick(now: number) {
   _helixSpinRAF = requestAnimationFrame(_helixSpinTick);
 }
 
-function helixOverlayToggle() {
-  _helixOverlayEnabled = !_helixOverlayEnabled;
+function helixOverlayEnabled(): boolean {
+  return _helixOverlayEnabled === true;
+}
+
+function helixSetOverlayEnabled(enabled: boolean, emitProduct = true): boolean {
+  const desired = enabled === true;
+  const before = helixOverlayEnabled();
+  _helixOverlayEnabled = desired;
   const btn = document.getElementById('helix-overlay-btn');
-  if (btn) (btn as HTMLElement).style.color = _helixOverlayEnabled ? '#f0c050' : '';
+  if (btn) {
+    (btn as HTMLElement).style.color = _helixOverlayEnabled ? '#f0c050' : '';
+    btn.setAttribute('aria-pressed', String(_helixOverlayEnabled));
+  }
   _helixSyncLegendVisibility();
   if (typeof topoRender === 'function') topoRender();
+  const changed = before !== _helixOverlayEnabled;
+  if (changed && emitProduct && typeof _dispatchTutorialViewStateProduct === 'function') {
+    _dispatchTutorialViewStateProduct(btn, 'helix-overlay', before, _helixOverlayEnabled);
+  }
+  return changed;
+}
+
+function helixOverlayToggle() {
+  helixSetOverlayEnabled(!_helixOverlayEnabled, true);
 }
