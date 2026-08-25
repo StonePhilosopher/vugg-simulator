@@ -901,6 +901,7 @@ function _tutorialProductEventMatches(event, action, hit) {
       'spatial_authority_schema', 'spatial_authority_scope',
       'spatial_authority_count', 'spatial_authority_closed',
       'carbonate_transaction_kind', 'carbonate_transaction_index',
+      'carbonate_transactions_before_action', 'carbonate_preparation_transfer_count',
     ].sort();
     return action.productAction === 'carbonate-acid-titration'
       && JSON.stringify(keys) === JSON.stringify(expectedKeys)
@@ -918,7 +919,14 @@ function _tutorialProductEventMatches(event, action, hit) {
       && detail.spatial_authority_closed === true
       && detail.carbonate_transaction_kind === 'ph_titration'
       && Number.isSafeInteger(detail.carbonate_transaction_index)
-      && detail.carbonate_transaction_index >= 0;
+      && detail.carbonate_transaction_index >= 0
+      && Number.isSafeInteger(detail.carbonate_transactions_before_action)
+      && detail.carbonate_transactions_before_action >= 0
+      && Number.isSafeInteger(detail.carbonate_preparation_transfer_count)
+      && detail.carbonate_preparation_transfer_count >= 0
+      && detail.carbonate_transaction_index
+        === detail.carbonate_transactions_before_action
+          + detail.carbonate_preparation_transfer_count;
   }
   if (event.type === 'vugg:tutorial-view-state-committed') {
     const detail = event.detail;

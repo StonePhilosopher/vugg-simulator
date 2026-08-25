@@ -392,8 +392,33 @@ describe('guided tutorial run ownership', () => {
       spatial_authority_scope: 'canonical-nonvadose-voxel-volume',
       spatial_authority_closed: true,
       carbonate_transaction_kind: 'ph_titration',
+      carbonate_transactions_before_action: 0,
+      carbonate_preparation_transfer_count: 0,
     });
     expect(products[0].after_pH).toBeLessThan(products[0].before_pH);
+
+    // The full Travertine lesson reaches Acid immediately after step 50.
+    // Accepted calcite/aragonite shells are still queued for the carbonate
+    // boundary preparation at that point. The product must bind those exact
+    // intervening transfers instead of silently withholding tutorial success.
+    await startTutorial('tutorial_travertine');
+    const fullLessonSim = (window as any).vugg.fortressSim;
+    for (let step = 0; step < 50; step++) fullLessonSim.run_step();
+    const transactionCountBefore = fullLessonSim._carbonateBoundaryState.transactions.length;
+    fortressStep('tweak_acidify');
+    expect(products).toHaveLength(2);
+    expect(products[1].carbonate_transactions_before_action).toBe(transactionCountBefore);
+    expect(products[1].carbonate_preparation_transfer_count).toBeGreaterThan(0);
+    expect(products[1].carbonate_transaction_index).toBe(
+      products[1].carbonate_transactions_before_action
+        + products[1].carbonate_preparation_transfer_count,
+    );
+    const preparation = fullLessonSim._carbonateBoundaryState.transactions.slice(
+      products[1].carbonate_transactions_before_action,
+      products[1].carbonate_transaction_index,
+    );
+    expect(preparation.length).toBe(products[1].carbonate_preparation_transfer_count);
+    expect(preparation.every((row: any) => row.ok === true && row.kind === 'solid_transfer')).toBe(true);
   });
 
   it('canonicalizes stale shape and cavity overrides for both legends lessons', async () => {

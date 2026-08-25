@@ -1045,6 +1045,7 @@ export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
     'spatial_authority_schema', 'spatial_authority_scope',
     'spatial_authority_count', 'spatial_authority_closed',
     'carbonate_transaction_kind', 'carbonate_transaction_index',
+    'carbonate_transactions_before_action', 'carbonate_preparation_transfer_count',
   ];
   const acidReceipt = Array.isArray(accepted?.emitted_products)
     && accepted.emitted_products.length === 1 ? accepted.emitted_products[0] : null;
@@ -1086,7 +1087,11 @@ export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
       || acidReceipt.spatial_authority_count !== 7680
       || acidReceipt.spatial_authority_closed !== true
       || acidReceipt.carbonate_transaction_kind !== 'ph_titration'
-      || acidReceipt.carbonate_transaction_index !== accepted.transaction_count_before) {
+      || acidReceipt.carbonate_transactions_before_action !== accepted.transaction_count_before
+      || acidReceipt.carbonate_preparation_transfer_count !== 0
+      || acidReceipt.carbonate_transaction_index
+        !== acidReceipt.carbonate_transactions_before_action
+          + acidReceipt.carbonate_preparation_transfer_count) {
     throw new Error('guided tutorial witness does not prove accepted/rejected carbonate products');
   }
   const expectedGuided = {

@@ -1980,6 +1980,25 @@ function fortressStep(action, payload) {
   const carbonateTransactions = fortressSim._carbonateBoundaryState?.transactions;
   const carbonateTransactionIndex = Array.isArray(carbonateTransactions)
     ? carbonateTransactions.indexOf(carbonateActionTransaction) : -1;
+  // `_prepareCarbonateBoundarySpatialState()` is the authoritative flush for
+  // accepted carbonate growth. A player may press Acid immediately after an
+  // Advance whose last accepted shells are still pending; those exact
+  // solid-transfer rows legitimately land between the action's before-count
+  // and its pH-titration row. Bind and disclose that preparation interval
+  // instead of requiring the titration to occupy a stale pre-action index.
+  // 70a consumes this product, the guided browser journey exercises the real
+  // step-50 case, and the mechanism witness keeps the zero-pending control.
+  const carbonatePreparationTransactions = Array.isArray(carbonateTransactions)
+      && carbonateTransactionIndex >= carbonateTransactionCountBefore
+    ? carbonateTransactions.slice(carbonateTransactionCountBefore, carbonateTransactionIndex)
+    : [];
+  const carbonatePreparationClosed = carbonatePreparationTransactions.every((transaction: any) => (
+    transaction?.ok === true
+      && transaction.kind === 'solid_transfer'
+      && Array.isArray(transaction.minerals) && transaction.minerals.length > 0
+      && typeof transaction.note === 'string'
+      && transaction.note.startsWith(`step ${fortressSim.step}: accepted zone `)
+  ));
   if (['tweak_acidify', 'shift_acidify', 'acidify'].includes(String(action))
       && fluidActionAccepted
       && typeof fluidPHBefore === 'number' && Number.isFinite(fluidPHBefore)
@@ -1991,7 +2010,9 @@ function fortressStep(action, payload) {
       && Number.isSafeInteger(pHAuthority?.count) && pHAuthority.count > 0
       && carbonateActionTransaction?.ok === true
       && carbonateActionTransaction?.kind === 'ph_titration'
-      && carbonateTransactionIndex === carbonateTransactionCountBefore) {
+      && carbonateTransactionIndex >= carbonateTransactionCountBefore
+      && carbonateTransactionIndex === carbonateTransactions.length - 1
+      && carbonatePreparationClosed) {
     fluidActionProductReceipt = Object.freeze({
       schema: 'fortress-fluid-action-product-v1',
       product: 'carbonate-acid-titration',
@@ -2005,6 +2026,8 @@ function fortressStep(action, payload) {
       spatial_authority_closed: true,
       carbonate_transaction_kind: carbonateActionTransaction.kind,
       carbonate_transaction_index: carbonateTransactionIndex,
+      carbonate_transactions_before_action: carbonateTransactionCountBefore,
+      carbonate_preparation_transfer_count: carbonatePreparationTransactions.length,
     });
   }
   _fortressReconcilePlayerMovementDeltas(

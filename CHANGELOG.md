@@ -159,6 +159,10 @@ and the exact-execution evidence receipt.
   85h durable byte identity / 99k loaded-byte
   gate -> tutorial authoring lint -> controlled evidence witness /
   owned-browser lifecycle and IndexedDB checks.
+  The step-50 acid product now discloses accepted calcite/aragonite solid
+  transfers that the carbonate boundary must flush immediately before
+  titration instead of falsely requiring the titration to occupy the stale
+  pre-action transaction index.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and
