@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 280**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 281**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -122,6 +122,43 @@ and the exact-execution evidence receipt.
   Breadcrumb:
   97/97a visible action -> 85c opaque voxel closure -> 85j combined receipt ->
   85g/85h strip transport -> review-claim-card independent validation.
+- SIM 281 makes a guided tutorial belong to exactly one run. Reset, New Game,
+  save restoration, or a direct run replacement clears its lexical progress,
+  callout, delegated listeners, locks, and spotlights. An async boot epoch
+  prevents a tutorial from reappearing if Reset wins while scenario narratives
+  load. Actions whose explanation names a mineral or recording now require that
+  exact semantic target: quartz and calcite cards, Shigar topaz, TN457 barite,
+  and the seed-42 TN457 strip cannot be substituted by another matching button,
+  card, option, or row. The Shigar collection lesson is reconciled to the
+  authenticated seed-42 result: it grows topaz but no beryl, so the documented
+  aquamarine window remains permission rather than a fabricated specimen.
+  Scenario, Starter, Custom, tutorial, and Simulation launchers share one
+  pre-await generation, and the tutorial's first Grow is a synchronous one-use
+  claim, so navigation or a rapid second click cannot resurrect a stale run.
+  Both Simulation lessons now own and recheck the complete command—including
+  an empty scenario-default shape seed and scenario-default cavity size—so a
+  Random/manual override left by an earlier run cannot change the crystal
+  census underneath the lesson's explanations.
+  Tutorial locks are also semantic rather than CSS-only: locked controls leave
+  the tab order, advertise `aria-disabled`, and a capture guard blocks keyboard
+  or programmatic activation. Travertine advances past its acid experiment
+  only after the carbonate titration and exact pore-fluid pH replacement both
+  close, using a post-transaction receipt instead of the initiating click.
+  The Grand Tour also commissions its persistent viewer state as 3D-on and
+  Helicoid-off, temporarily unlocks only the viewer control named by the
+  current step, and advances only after an exact before/after state receipt;
+  a flat or open viewer retained from an earlier run cannot reverse the prose.
+  Collection progress now requires the committed specimen id, and Strip View
+  progress reauthenticates the complete serialized dataset after IndexedDB
+  readback. Imported files use a distinct key namespace and cannot overwrite or
+  inherit the current production-run receipt. The mechanism verifier rebuilds
+  that controlled manifest, scenario hash, binary strip, and receipt
+  independently rather than trusting self-rehashed witness fields.
+  Breadcrumb: 70a state/target authority -> 94/97 run boundaries -> 97c crystal
+  rows / 98 platter options -> 99i/99j viewer product state ->
+  85h durable byte identity / 99k loaded-byte
+  gate -> tutorial authoring lint -> controlled evidence witness /
+  owned-browser lifecycle and IndexedDB checks.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and
