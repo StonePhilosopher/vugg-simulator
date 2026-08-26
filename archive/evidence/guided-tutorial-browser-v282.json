@@ -1,0 +1,245 @@
+{
+  "schema": "vugg-guided-tutorial-browser-receipt-v4",
+  "sim_version": 282,
+  "browser_bundle_sha256": "4387445a216cdb2e2b7b0a278eccaaa9439cb37f9c3a01ebd1992f52b632cc3e",
+  "execution_set_sha256": "5e5833abb1c09219bf2ef556fd49eaf605453955a9ed701e1d894e5cdf1cf8ae",
+  "node_runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
+  "producer_contract_sha256": "acbe1ae71b2ec7cb7086d4b8e58cae074b8abeee489e56e0bd996a94b3be2d5d",
+  "payload": {
+    "browser_runtime": {
+      "schema": "vugg-owned-devtools-browser-runtime-v2",
+      "executable_name": "chrome.exe",
+      "executable_sha256": "bd88b26777496cef22fc09860164da7cba4a5c77e1dcbf5ad3a3967aa457d715",
+      "devtools_browser_product": "Chrome/151.0.7922.173",
+      "devtools_protocol_version": "1.3"
+    },
+    "journeys": {
+      "schema": "guided-tutorial-browser-journeys-v3",
+      "trust": "local-owned-browser-player-controls-not-independent-attestation",
+      "sim_version": 282,
+      "creative": {
+        "scenario": "tutorial_travertine",
+        "entry": "Begin menu Tutorial 3 button",
+        "controls": [
+          "Continue",
+          "Advance",
+          "0.2s narrative speed",
+          "Tweak acid",
+          "Finish tutorial"
+        ],
+        "geological_step": 50,
+        "authored_milestones": [
+          4,
+          11,
+          20,
+          26,
+          41,
+          50
+        ],
+        "pause": {
+          "step_index": 10,
+          "paused_at": 10,
+          "trigger": "continue"
+        },
+        "acid_product": {
+          "schema": "fortress-fluid-action-product-v1",
+          "product": "carbonate-acid-titration",
+          "action": "tweak_acidify",
+          "accepted_at_step": 50,
+          "before_pH": 8.228259199917794,
+          "after_pH": 7.928259199917797,
+          "spatial_authority_schema": "player-fluid-spatial-intervention-v1",
+          "spatial_authority_scope": "canonical-nonvadose-voxel-volume",
+          "spatial_authority_count": 7680,
+          "spatial_authority_closed": true,
+          "carbonate_transaction_kind": "ph_titration",
+          "carbonate_transaction_index": 141,
+          "carbonate_transactions_before_action": 139,
+          "carbonate_preparation_transfer_count": 2
+        },
+        "geology_preservation": {
+          "schema": "guided-tutorial-geology-preservation-v1",
+          "before": {
+            "runtime": "fortress",
+            "scenario": "tutorial_travertine",
+            "step": 50,
+            "fingerprint": "f0d89ae72df5be6733d169d070258480d84444b07064d93be56dc478459c5c4b",
+            "run_id": "save-16-dep"
+          },
+          "after": {
+            "runtime": "fortress",
+            "scenario": "tutorial_travertine",
+            "step": 50,
+            "fingerprint": "f0d89ae72df5be6733d169d070258480d84444b07064d93be56dc478459c5c4b",
+            "run_id": "save-16-dep"
+          }
+        },
+        "teardown": {
+          "tutorial_null": true,
+          "callouts": 0,
+          "locks": 0
+        }
+      },
+      "simulation": {
+        "scenario": "shigar_pegmatite",
+        "seed": 42,
+        "steps": 70,
+        "shape_seed_override": "",
+        "cavity_size": "any",
+        "entry": "Begin menu Tutorial 4 button",
+        "controls": [
+          "Continue",
+          "Grow",
+          "0.2s narrative speed",
+          "prologue gate",
+          "epilogue gate",
+          "Collect topaz",
+          "Library",
+          "search topaz",
+          "Finish tutorial"
+        ],
+        "collected": {
+          "record_id": "cry-16-9vm",
+          "name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+          "mineral": "topaz",
+          "source_scenario": "shigar_pegmatite",
+          "source_seed": 42
+        },
+        "library_result": "topaz",
+        "geology_preservation": {
+          "schema": "guided-tutorial-geology-preservation-v1",
+          "before": {
+            "runtime": "simulation",
+            "scenario": "shigar_pegmatite",
+            "step": 70,
+            "fingerprint": "85710f93c1d3890cbfec945b8a5cab6e2ec3d3450cd52cd3a079bc94ced2e872",
+            "run_id": "b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e"
+          },
+          "after": {
+            "runtime": "simulation",
+            "scenario": "shigar_pegmatite",
+            "step": 70,
+            "fingerprint": "85710f93c1d3890cbfec945b8a5cab6e2ec3d3450cd52cd3a079bc94ced2e872",
+            "run_id": "b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e"
+          }
+        },
+        "teardown": {
+          "tutorial_null": true,
+          "callouts": 0,
+          "locks": 0
+        }
+      },
+      "save_load_policy": {
+        "origin": "tutorial_travertine",
+        "autosave_step": 1,
+        "geology_preservation": {
+          "schema": "guided-tutorial-geology-preservation-v1",
+          "before": {
+            "runtime": "fortress",
+            "scenario": "tutorial_travertine",
+            "step": 1,
+            "fingerprint": "b328d800a46ec5ddc8e860bc01f21a36e6ad69f2d55f87b6d6197c833a938b92",
+            "run_id": "save-16-55o"
+          },
+          "after": {
+            "runtime": "fortress",
+            "scenario": "tutorial_travertine",
+            "step": 1,
+            "fingerprint": "b328d800a46ec5ddc8e860bc01f21a36e6ad69f2d55f87b6d6197c833a938b92",
+            "run_id": "save-16-55o"
+          }
+        },
+        "tutorial_resurrected": false,
+        "policy": "geological-run-restored-tutorial-overlay-intentionally-not-restored"
+      },
+      "skip_cleanup": {
+        "scenario": "tutorial_mn_calcite",
+        "tutorial_removed": true,
+        "geology_preservation": {
+          "schema": "guided-tutorial-geology-preservation-v1",
+          "before": {
+            "runtime": "fortress",
+            "scenario": "tutorial_mn_calcite",
+            "step": 0,
+            "fingerprint": "a05719ca80e6bc83fc9c6dc4cf84b1233c414b1323c8076a0d649f85c41815b3",
+            "run_id": "save-16-9bv"
+          },
+          "after": {
+            "runtime": "fortress",
+            "scenario": "tutorial_mn_calcite",
+            "step": 0,
+            "fingerprint": "a05719ca80e6bc83fc9c6dc4cf84b1233c414b1323c8076a0d649f85c41815b3",
+            "run_id": "save-16-9bv"
+          }
+        },
+        "callouts": 0,
+        "locks": 0
+      },
+      "player_surfaces": {
+        "schema": "game04-player-surfaces-v1",
+        "collection_record_groove": {
+          "record_id": "cry-16-9vm",
+          "stored_name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+          "library_name_text": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+          "groove_name_text": "“<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">”",
+          "hostile_dom_nodes": 0,
+          "hostile_code_executed": false,
+          "zone_count": 17,
+          "playback_started_and_stopped": true
+        },
+        "topology_helix": {
+          "scenario": "shigar_pegmatite",
+          "public_control_sequence": [
+            "three:on",
+            "helix:off",
+            "three:off",
+            "helix:on",
+            "helix:off",
+            "three:on"
+          ],
+          "pointer_hit_tested_controls": true,
+          "final_three_enabled": true,
+          "final_helix_enabled": false
+        },
+        "strip_view": {
+          "scenario": "shigar_pegmatite",
+          "seed": 42,
+          "download_filename": "shigar_pegmatite@seed42.stripview",
+          "download_sha256": "7f4b5f444b482f8f5787b4b19185fe57c6f806a10d1cf849b598c37aedc761fe",
+          "production_key": "shigar_pegmatite@42#42",
+          "production_origin": "production-run",
+          "imported_key": "imported:shigar_pegmatite@42#42@sha256-b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e",
+          "imported_origin": "imported-file",
+          "dataset_digest_sha256": "b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e",
+          "imported_digest_sha256": "b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e",
+          "visible_import_label": "IMPORTED FILE",
+          "upload_via_visible_file_chooser": true,
+          "durable_commit_before_render": true,
+          "playback_started_and_stopped": true
+        },
+        "phone": {
+          "width": 390,
+          "height": 844,
+          "modes": [
+            "library",
+            "groove",
+            "stripview",
+            "current"
+          ],
+          "no_horizontal_document_overflow": true,
+          "panels_inside_viewport": true
+        }
+      }
+    }
+  },
+  "payload_sha256": "6a580489e0dfa09027dfd5bf97267f2ea616475cf6b8dd4703887187f2560bad"
+}

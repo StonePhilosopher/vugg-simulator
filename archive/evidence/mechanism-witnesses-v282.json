@@ -1,0 +1,791 @@
+{
+  "schema": "vugg-mechanism-witnesses-v5",
+  "sim_version": 282,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6|fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+exact-authored-acid-stage-sulfate+Cu-only-enrichment+Ca-sulfate-recharge+generic-fluid-receipts+secondary-sulfides-aspirational-until-parent-replacement+TSNB301-questionable-rhodochrosite-excluded-v3|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+guided-tutorial-boundary+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v9|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8|creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3|save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11|gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11|guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6|collection-product:typed-bounded-backup-records+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v2|strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2",
+  "browser_bundle_sha256": "4387445a216cdb2e2b7b0a278eccaaa9439cb37f9c3a01ebd1992f52b632cc3e",
+  "execution_set_sha256": "5e5833abb1c09219bf2ef556fd49eaf605453955a9ed701e1d894e5cdf1cf8ae",
+  "node_runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
+  "producer_contract_sha256": "d27c362a88712a7ded0f726063a55523df590af335a142f8cfc8798611a37816",
+  "payload": {
+    "source": "exact production classes, engines, and accepted-zone budget path",
+    "transformation_reactivity": [
+      {
+        "mineral": "haidingerite",
+        "parent_mineral": "pharmacolite",
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "claim_card_scenario": "wittichen",
+        "claim_card_link": "executed-transformation-product",
+        "pH_threshold": 4.5,
+        "control_pH": 4.4,
+        "positive_growth_above_boundary": false,
+        "parent_shell": {
+          "thickness_um": 10,
+          "formula_stoichiometry": {
+            "Ca": 1,
+            "As": 1
+          },
+          "booked_inventory_per_um": {
+            "Ca": 0.003206400000000542,
+            "As": 0.005993599999999333
+          }
+        },
+        "accepted_etch": {
+          "thickness_um": -0.24,
+          "dissolution_mode": "acid",
+          "transformation_reactivity": {
+            "schema": "transformation-terminal-acid-v1",
+            "pH": 4.4,
+            "pH_threshold": 4.5,
+            "physical_retreat_um": 1.2,
+            "inventory_authority": "booked-layer-lifo",
+            "positive_growth_allowed": false
+          },
+          "returned_budget_inventory": {
+            "Ca": 0.00076953600000013,
+            "As": 0.00143846399999984
+          }
+        },
+        "expected_return_ppm": {
+          "Ca": 0.00076953600000013,
+          "As": 0.00143846399999984
+        },
+        "observed_return_ppm": {
+          "Ca": 0.000769536000007065,
+          "As": 0.0014384640000031368
+        },
+        "closure_error_ppm": {
+          "Ca": 6.9349907760862806e-15,
+          "As": 3.296841966093922e-15
+        },
+        "remaining_solid_um": 9.76
+      },
+      {
+        "mineral": "meta-autunite",
+        "parent_mineral": "autunite",
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "claim_card_scenario": "schneeberg",
+        "claim_card_link": "executed-surviving-parent",
+        "pH_threshold": 4.5,
+        "control_pH": 4.4,
+        "positive_growth_above_boundary": false,
+        "parent_shell": {
+          "thickness_um": 10,
+          "formula_stoichiometry": {
+            "Ca": 1,
+            "U": 2,
+            "P": 2
+          },
+          "booked_inventory_per_um": {
+            "Ca": 0.003206400000000542,
+            "U": 0.03808480000000003,
+            "P": 0.004955200000000559
+          }
+        },
+        "accepted_etch": {
+          "thickness_um": -0.24,
+          "dissolution_mode": "acid",
+          "transformation_reactivity": {
+            "schema": "transformation-terminal-acid-v1",
+            "pH": 4.4,
+            "pH_threshold": 4.5,
+            "physical_retreat_um": 1.2,
+            "inventory_authority": "booked-layer-lifo",
+            "positive_growth_allowed": false
+          },
+          "returned_budget_inventory": {
+            "Ca": 0.00076953600000013,
+            "U": 0.009140352000000006,
+            "P": 0.0011892480000001342
+          }
+        },
+        "expected_return_ppm": {
+          "Ca": 0.00076953600000013,
+          "U": 0.009140352000000006,
+          "P": 0.0011892480000001342
+        },
+        "observed_return_ppm": {
+          "Ca": 0.000769536000007065,
+          "U": 0.00914035200000285,
+          "P": 0.0011892480000028627
+        },
+        "closure_error_ppm": {
+          "Ca": 6.9349907760862806e-15,
+          "U": 2.843211777125987e-15,
+          "P": 2.7285031872770205e-15
+        },
+        "remaining_solid_um": 9.76
+      },
+      {
+        "mineral": "metatorbernite",
+        "parent_mineral": "torbernite",
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "claim_card_scenario": "schneeberg",
+        "claim_card_link": "executed-transformation-product",
+        "pH_threshold": 5,
+        "control_pH": 4.9,
+        "positive_growth_above_boundary": false,
+        "parent_shell": {
+          "thickness_um": 10,
+          "formula_stoichiometry": {
+            "Cu": 1,
+            "U": 2,
+            "P": 2
+          },
+          "booked_inventory_per_um": {
+            "Cu": 0.005083999999999378,
+            "U": 0.03808480000000003,
+            "P": 0.004955200000000559
+          }
+        },
+        "accepted_etch": {
+          "thickness_um": -0.24,
+          "dissolution_mode": "acid",
+          "transformation_reactivity": {
+            "schema": "transformation-terminal-acid-v1",
+            "pH": 4.9,
+            "pH_threshold": 5,
+            "physical_retreat_um": 1.2,
+            "inventory_authority": "booked-layer-lifo",
+            "positive_growth_allowed": false
+          },
+          "returned_budget_inventory": {
+            "Cu": 0.0012201599999998507,
+            "U": 0.009140352000000006,
+            "P": 0.0011892480000001342
+          }
+        },
+        "expected_return_ppm": {
+          "Cu": 0.0012201599999998507,
+          "U": 0.009140352000000006,
+          "P": 0.0011892480000001342
+        },
+        "observed_return_ppm": {
+          "Cu": 0.0012201600000025792,
+          "U": 0.00914035200000285,
+          "P": 0.0011892480000028627
+        },
+        "closure_error_ppm": {
+          "Cu": 2.7285031872770205e-15,
+          "U": 2.843211777125987e-15,
+          "P": 2.7285031872770205e-15
+        },
+        "remaining_solid_um": 9.76
+      },
+      {
+        "mineral": "metazeunerite",
+        "parent_mineral": "zeunerite",
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "claim_card_scenario": "schneeberg",
+        "claim_card_link": "executed-transformation-product",
+        "pH_threshold": 5,
+        "control_pH": 4.9,
+        "positive_growth_above_boundary": false,
+        "parent_shell": {
+          "thickness_um": 10,
+          "formula_stoichiometry": {
+            "Cu": 1,
+            "U": 2,
+            "As": 2
+          },
+          "booked_inventory_per_um": {
+            "Cu": 0.005083999999999378,
+            "U": 0.03808480000000003,
+            "As": 0.011987200000000087
+          }
+        },
+        "accepted_etch": {
+          "thickness_um": -0.24,
+          "dissolution_mode": "acid",
+          "transformation_reactivity": {
+            "schema": "transformation-terminal-acid-v1",
+            "pH": 4.9,
+            "pH_threshold": 5,
+            "physical_retreat_um": 1.2,
+            "inventory_authority": "booked-layer-lifo",
+            "positive_growth_allowed": false
+          },
+          "returned_budget_inventory": {
+            "Cu": 0.0012201599999998507,
+            "U": 0.009140352000000006,
+            "As": 0.0028769280000000208
+          }
+        },
+        "expected_return_ppm": {
+          "Cu": 0.0012201599999998507,
+          "U": 0.009140352000000006,
+          "As": 0.0028769280000000208
+        },
+        "observed_return_ppm": {
+          "Cu": 0.0012201600000025792,
+          "U": 0.00914035200000285,
+          "As": 0.0028769280000062736
+        },
+        "closure_error_ppm": {
+          "Cu": 2.7285031872770205e-15,
+          "U": 2.843211777125987e-15,
+          "As": 6.252810769158401e-15
+        },
+        "remaining_solid_um": 9.76
+      }
+    ],
+    "chalcanthite_water_solubility": {
+      "role": "controlled production-engine boundary; not a locality trajectory",
+      "trigger_controls": [
+        {
+          "name": "salinity-only",
+          "mineral": "chalcanthite",
+          "role": "controlled production-engine boundary; not a locality trajectory",
+          "local_gate": {
+            "salinity": 0,
+            "pH": 3,
+            "low_salinity": true,
+            "high_pH": false
+          },
+          "bulk_control": {
+            "salinity": 10,
+            "pH": 3
+          },
+          "accepted_loss_um": 4,
+          "dissolution_mode": "water_solubility_low_salinity",
+          "returned_budget_inventory": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "expected_return_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_delta_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_after_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_bulk_delta_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "booked_bulk_after_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "local_before_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "bulk_before_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "strip_negative_layer": {
+            "thickness_um": -4,
+            "dissolution_mode": "water_solubility_low_salinity",
+            "returned_budget_inventory": {
+              "Cu": 0.020336,
+              "S_sulfate": 0.010262400000000001
+            }
+          },
+          "remaining_solid_um": 6
+        },
+        {
+          "name": "pH-only",
+          "mineral": "chalcanthite",
+          "role": "controlled production-engine boundary; not a locality trajectory",
+          "local_gate": {
+            "salinity": 10,
+            "pH": 7,
+            "low_salinity": false,
+            "high_pH": true
+          },
+          "bulk_control": {
+            "salinity": 10,
+            "pH": 3
+          },
+          "accepted_loss_um": 4,
+          "dissolution_mode": "water_solubility_high_pH",
+          "returned_budget_inventory": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "expected_return_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_delta_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_after_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_bulk_delta_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "booked_bulk_after_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "local_before_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "bulk_before_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "strip_negative_layer": {
+            "thickness_um": -4,
+            "dissolution_mode": "water_solubility_high_pH",
+            "returned_budget_inventory": {
+              "Cu": 0.020336,
+              "S_sulfate": 0.010262400000000001
+            }
+          },
+          "remaining_solid_um": 6
+        },
+        {
+          "name": "combined",
+          "mineral": "chalcanthite",
+          "role": "controlled production-engine boundary; not a locality trajectory",
+          "local_gate": {
+            "salinity": 0,
+            "pH": 7,
+            "low_salinity": true,
+            "high_pH": true
+          },
+          "bulk_control": {
+            "salinity": 10,
+            "pH": 3
+          },
+          "accepted_loss_um": 4,
+          "dissolution_mode": "water_solubility_low_salinity_high_pH",
+          "returned_budget_inventory": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "expected_return_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_delta_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_local_after_ppm": {
+            "Cu": 0.020336,
+            "S_sulfate": 0.010262400000000001
+          },
+          "booked_bulk_delta_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "booked_bulk_after_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "local_before_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "bulk_before_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "strip_negative_layer": {
+            "thickness_um": -4,
+            "dissolution_mode": "water_solubility_low_salinity_high_pH",
+            "returned_budget_inventory": {
+              "Cu": 0.020336,
+              "S_sulfate": 0.010262400000000001
+            }
+          },
+          "remaining_solid_um": 6
+        },
+        {
+          "name": "neither",
+          "mineral": "chalcanthite",
+          "role": "controlled production-engine boundary; not a locality trajectory",
+          "local_gate": {
+            "salinity": 10,
+            "pH": 3,
+            "low_salinity": false,
+            "high_pH": false
+          },
+          "bulk_control": {
+            "salinity": 10,
+            "pH": 3
+          },
+          "accepted_loss_um": 0,
+          "dissolution_mode": null,
+          "returned_budget_inventory": {},
+          "expected_return_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "booked_local_delta_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "booked_local_after_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "booked_bulk_delta_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "booked_bulk_after_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "local_before_ppm": {
+            "Cu": 0,
+            "S_sulfate": 0
+          },
+          "bulk_before_ppm": {
+            "Cu": 0,
+            "S": 0,
+            "S_sulfate": 0
+          },
+          "strip_negative_layer": null,
+          "remaining_solid_um": 10
+        }
+      ],
+      "enclosure_control": {
+        "name": "authenticated-enclosure-withheld",
+        "mineral": "chalcanthite",
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "local_gate": {
+          "salinity": 0,
+          "pH": 7,
+          "low_salinity": true,
+          "high_pH": true
+        },
+        "enclosure_receipt": {
+          "schema": "enclosure-receipt-v1",
+          "event": "enclosed",
+          "step": 10,
+          "host_crystal_id": 271,
+          "host_mineral": "calcite",
+          "guest_crystal_id": 270,
+          "guest_mineral": "chalcanthite",
+          "route": "guest-on-host",
+          "adjacency_authority": "exact-substrate-id",
+          "host_same_step_positive_growth_um": 1,
+          "host_same_step_negative_growth_um": 0,
+          "host_same_step_net_growth_um": 1,
+          "host_physical_size_at_enclosure_um": 401,
+          "guest_positive_core_um": 100,
+          "guest_loss_um": 0,
+          "guest_remaining_growth_um": 100,
+          "guest_partially_dissolved": false,
+          "size_ratio": 4.01,
+          "guest_recent_growth_um": 1.5,
+          "guest_slowing_threshold_um": 3
+        },
+        "topology": {
+          "host_crystal_id": 271,
+          "guest_crystal_id": 270,
+          "guest_enclosed_by": 271,
+          "host_enclosed_crystals": [
+            270
+          ],
+          "host_enclosed_at_step": [
+            10
+          ],
+          "host_dissolved": false,
+          "guest_active": false,
+          "guest_dissolved": false
+        },
+        "authority_before": true,
+        "authority_after": true,
+        "accepted_loss_um": 0,
+        "strip_negative_layer_count": 0,
+        "remaining_solid_um": 100
+      }
+    },
+    "player_movement_choice": {
+      "role": "controlled production GAME-02 branch; not a locality trajectory claim",
+      "scenario": "cooling",
+      "seed": 42,
+      "authored_movement": {
+        "field": "temperature",
+        "startStep": 0,
+        "endStep": 100,
+        "base": 180,
+        "ops": [
+          {
+            "kind": "trend",
+            "amp": -20,
+            "ease": true
+          }
+        ]
+      },
+      "wait_only": {
+        "initial_temperature_C": 180,
+        "final_temperature_C": 158.26685435471236,
+        "player_actions": [],
+        "crystal_summary": [
+          {
+            "mineral": "quartz",
+            "total_growth_um": 565.1661834739987,
+            "positive_layer_count": 88
+          }
+        ],
+        "state_fingerprint": "43092e1a7c502ab675283ada7c285cda00df855624d4a10060333b5074e1d595"
+      },
+      "heat_choice": {
+        "initial_temperature_C": 180,
+        "final_temperature_C": 183.26685435471316,
+        "player_actions": [
+          {
+            "schema": "player-movement-intervention-v1",
+            "action": "heat",
+            "field": "temperature",
+            "accepted_at_step": 0,
+            "action_cursor": 0,
+            "first_geology_step": 1,
+            "value_before": 180,
+            "value_after": 205,
+            "applied_delta": 25,
+            "fluid_spatial_authority": null,
+            "movement_authority": {
+              "schema": "movement-player-offset-v2",
+              "movement_index": 0,
+              "movement_source": "authored-scenario",
+              "field": "temperature",
+              "first_geology_step": 1,
+              "applied_delta": 25,
+              "offset_before": 0,
+              "offset_after": 25,
+              "offset_application": "after-authored-texture-and-clamp"
+            },
+            "sample_index": 0
+          }
+        ],
+        "crystal_summary": [],
+        "state_fingerprint": "15e8adc5ba09087f7a9818287b10fc75820e255502b54f7e38cbadfa98272a00"
+      },
+      "divergence": {
+        "final_temperature_delta_C": 25.000000000000796,
+        "crystal_summary_changed": true,
+        "state_fingerprint_changed": true
+      }
+    },
+    "guided_tutorial": {
+      "role": "controlled production GAME-03 guided-flow witness; browser workflow owns visible lifecycle",
+      "shigar_execution": {
+        "scenario": "shigar_pegmatite",
+        "seed": 42,
+        "steps": 70,
+        "scenario_spec_hash": "4bf9eaa8d9c625e651e8797704da5e64bab450ed0fe61c734f805c046da654b4",
+        "command_authority": {
+          "scenario": "shigar_pegmatite",
+          "growth_seed": 42,
+          "steps": 70,
+          "shape_seed_input": "",
+          "cavity_size_input": "any"
+        },
+        "resolved_cavity_authority": {
+          "source": "scenario-default",
+          "shape_seed": 1985,
+          "vug_diameter_mm": 220
+        },
+        "positive_crystal_counts": {
+          "quartz": 3,
+          "feldspar": 2,
+          "albite": 2,
+          "tourmaline": 7,
+          "topaz": 4
+        },
+        "topaz_present": true,
+        "beryl_absent": true
+      },
+      "interaction_products": {
+        "source_authority": {
+          "commissioned_viewer_boot_state": {
+            "topo_three_renderer_enabled": true,
+            "helix_overlay_enabled": false
+          },
+          "viewer_products": [
+            {
+              "selector": "#topo-three-btn",
+              "control": "topo-three-renderer",
+              "beforeEnabled": true,
+              "afterEnabled": false
+            },
+            {
+              "selector": "#topo-three-btn",
+              "control": "topo-three-renderer",
+              "beforeEnabled": false,
+              "afterEnabled": true
+            },
+            {
+              "selector": "#helix-overlay-btn",
+              "control": "helix-overlay",
+              "beforeEnabled": false,
+              "afterEnabled": true
+            },
+            {
+              "selector": "#helix-overlay-btn",
+              "control": "helix-overlay",
+              "beforeEnabled": true,
+              "afterEnabled": false
+            }
+          ],
+          "carbonate_titration_product": {
+            "event": "vugg:fortress-fluid-action-committed",
+            "selector": ".action-grid",
+            "productAction": "carbonate-acid-titration"
+          }
+        },
+        "viewer_control": {
+          "boot_state": {
+            "mode": "fortress",
+            "step_index": 0,
+            "step_count": 36,
+            "rendered_index": 0,
+            "paused_at": -1,
+            "current_trigger": "continue"
+          },
+          "commissioning": {
+            "schema": "tutorial-viewer-commissioning-v1",
+            "before": {
+              "topo_three_renderer_enabled": false,
+              "helix_overlay_enabled": true
+            },
+            "after": {
+              "topo_three_renderer_enabled": true,
+              "helix_overlay_enabled": false
+            }
+          },
+          "emitted_products": [
+            {
+              "schema": "tutorial-view-state-product-v1",
+              "control": "topo-three-renderer",
+              "before_enabled": true,
+              "after_enabled": false
+            },
+            {
+              "schema": "tutorial-view-state-product-v1",
+              "control": "topo-three-renderer",
+              "before_enabled": false,
+              "after_enabled": true
+            },
+            {
+              "schema": "tutorial-view-state-product-v1",
+              "control": "helix-overlay",
+              "before_enabled": false,
+              "after_enabled": true
+            },
+            {
+              "schema": "tutorial-view-state-product-v1",
+              "control": "helix-overlay",
+              "before_enabled": true,
+              "after_enabled": false
+            }
+          ]
+        },
+        "carbonate_titration_control": {
+          "rejected": {
+            "precursor": "drain-to-partial-fluid-scope",
+            "action": "tweak_acidify",
+            "before_pH": 6.5,
+            "after_pH": 6.5,
+            "fluid_surface_ring": 14,
+            "transaction_count_before": 0,
+            "transaction_count_after": 1,
+            "last_transaction": {
+              "kind": "spatial_boundary_unsupported",
+              "ok": false
+            },
+            "emitted_products": []
+          },
+          "accepted": {
+            "precursor": "fully-wet-authored-start",
+            "action": "tweak_acidify",
+            "before_pH": 6.5,
+            "after_pH": 6.199999999999999,
+            "fluid_surface_ring": 0,
+            "transaction_count_before": 0,
+            "transaction_count_after": 1,
+            "last_transaction": {
+              "kind": "ph_titration",
+              "ok": true
+            },
+            "emitted_products": [
+              {
+                "schema": "fortress-fluid-action-product-v1",
+                "product": "carbonate-acid-titration",
+                "action": "tweak_acidify",
+                "accepted_at_step": 0,
+                "before_pH": 6.5,
+                "after_pH": 6.199999999999999,
+                "spatial_authority_schema": "player-fluid-spatial-intervention-v1",
+                "spatial_authority_scope": "canonical-nonvadose-voxel-volume",
+                "spatial_authority_count": 7680,
+                "spatial_authority_closed": true,
+                "carbonate_transaction_kind": "ph_titration",
+                "carbonate_transaction_index": 0,
+                "carbonate_transactions_before_action": 0,
+                "carbonate_preparation_transfer_count": 0
+              }
+            ]
+          }
+        }
+      },
+      "collection_target": {
+        "event": "vugg:crystal-collected",
+        "selector": ".inv-collect-btn",
+        "owner_mineral": "topaz",
+        "accepts_executed_topaz": true,
+        "rejects_wrong_quartz": true
+      },
+      "strip_target": {
+        "event": "vugg:strip-opened",
+        "selector": ".strip-view-datasetrow",
+        "latest_stored_strip_required": true,
+        "exact_current_receipt_accepted": true,
+        "stale_or_uploaded_row_rejected": true,
+        "production_run_can_commission_latest": true,
+        "imported_file_cannot_commission_latest": true,
+        "receipt": {
+          "key": "tn457_barite_pulses@42#281000042",
+          "scenario_id": "tn457_barite_pulses",
+          "seed": 42,
+          "recorded_at": 281000042,
+          "sim_version": 282,
+          "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6|fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+exact-authored-acid-stage-sulfate+Cu-only-enrichment+Ca-sulfate-recharge+generic-fluid-receipts+secondary-sulfides-aspirational-until-parent-replacement+TSNB301-questionable-rhodochrosite-excluded-v3|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+guided-tutorial-boundary+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v9|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8|creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3|save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11|gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11|guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6|collection-product:typed-bounded-backup-records+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v2|strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2",
+          "scenario_spec_hash": "978bbbf65018adc9d531fd03cca82feea4f489761e41e5b891fa72465bd2dd02",
+          "manifest_digest_sha256": "42bc505d9c216421b7874701b10d69d5c231ce761eef313fd8e9ee7f624e957a",
+          "dataset_digest_sha256": "3dae908498e2d97b671af6c5ae5bcd0aa12a6249847f84e36986a770f52e3c3f"
+        }
+      }
+    }
+  },
+  "payload_sha256": "c3d54fd567725b25b836e551178d259a16597a857310614f2c00a2c7b2eac9f8"
+}
