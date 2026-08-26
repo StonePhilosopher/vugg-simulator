@@ -42,30 +42,30 @@ function assertCleanup(value, label) {
 const EXPECTED_GEOLOGY = Object.freeze({
   save_load: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 1,
-    fingerprint: 'b90d5b3eae03ec3ccf48dacfee16943fb55c490323f732ad411cbeb1890d79b7',
+    fingerprint: '5ef7456369e7a7a0eb8835e363bbc0e2e31548fbbe93aa6b8ed6c9d169dd6ccb',
     run_id: 'save-16-55o',
   }),
   creative_completion: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 50,
-    fingerprint: '5022b328825f89c0a536a4d2ee0e38302efe0aecf6cd6a9249b782939e214e78',
+    fingerprint: 'ed4e4681dd620176024efd6e769c39c0c1d429714082a6b9eaa7f1fdd54acaf0',
     run_id: 'save-16-dep',
   }),
   skip: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_mn_calcite', step: 0,
-    fingerprint: '2f47f826479d39961c1f45b42908a0f7bb237c6b67e25f5616c2277c8dbfb38f',
+    fingerprint: '0c31bb3470132c06464bb68ecce745582b9cba9c239723f7001e8ce85e6f1656',
     run_id: 'save-16-9bv',
   }),
   simulation_completion: Object.freeze({
     runtime: 'simulation', scenario: 'shigar_pegmatite', step: 70,
-    fingerprint: 'fe4952d07a6e927cd77834273eeefb89645f7c6bb37341bdef25ab9de8255b8b',
-    run_id: '10cdea05af555de20884b3b37b1b4c74fc69f923d5f07b5db27939302f1140b6',
+    fingerprint: '0c1442b75304b65953c22ea198faa222fb2a6939142204c0045b87bff1081b2d',
+    run_id: 'b9d1934fa39a1e16c888d66170e355c21ff2d57f23b38fd5d7a0951de4dc9ffe',
   }),
 });
 const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-9vm';
 const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
-// Replaced with the exact SIM 283 values after the owned-browser source freeze.
-const EXPECTED_GAME04_DATASET_SHA256 = '10cdea05af555de20884b3b37b1b4c74fc69f923d5f07b5db27939302f1140b6';
-const EXPECTED_GAME04_DOWNLOAD_SHA256 = '4bafcb82b4bb2fe9929e8843d3fdbf50b8e53ed2020429a2acde0af0ca00d523';
+// Replaced with the exact SIM 284 values after the owned-browser source freeze.
+const EXPECTED_GAME04_DATASET_SHA256 = 'b9d1934fa39a1e16c888d66170e355c21ff2d57f23b38fd5d7a0951de4dc9ffe';
+const EXPECTED_GAME04_DOWNLOAD_SHA256 = '6612409f6fd051c68e0bf7ec8de507f1b56fe655f3fd4d50cc3f3d1bf7edea18';
 const EXPECTED_BROWSER_RUNTIME = Object.freeze({
   schema: 'vugg-owned-devtools-browser-runtime-v2',
   executable_name: 'chrome.exe',
