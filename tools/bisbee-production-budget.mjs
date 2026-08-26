@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 import { loadSimBundle } from './_harness.mjs';
+import {
+  bisbeeElapsedAllowanceMs,
+  validateBisbeeProductionBudgetReceipt,
+} from './bisbee-production-budget-contract.mjs';
 
 const {
   SCENARIOS, VugSimulator, setSeed,
@@ -19,6 +23,7 @@ const { conditions, events } = SCENARIOS.bisbee();
 requireBudget(conditions.wall.shape_seed === 13,
   `authored shape_seed changed to ${conditions.wall.shape_seed}`);
 const started = performance.now();
+const cpuStarted = process.cpuUsage();
 const sim = new VugSimulator(conditions, events);
 const initialCursor = sim.wall_state.cavityEvolutionLedger().cursor;
 const originalExtract = CavityScalarField.prototype.extract;
@@ -50,6 +55,7 @@ try {
   CavityProductionAuthority.authenticateSurface = originalAuthenticate;
 }
 const elapsedMs = performance.now() - started;
+const cpuUsed = process.cpuUsage(cpuStarted);
 const ledger = sim.wall_state.cavityEvolutionLedger();
 const acceptedErosions = ledger.cursor - initialCursor;
 // SIM 272 removes the uncited fleet-wide ambient chemistry package and lets
@@ -78,8 +84,21 @@ for (const entry of ledger.entries.slice(initialCursor)) {
   requireBudget(authority.volume_only_field_evaluations <= 39,
     `event ${entry.event_id} used ${authority.volume_only_field_evaluations} volume candidates`);
 }
+const erosionAuthority = ledger.entries.slice(initialCursor).map(entry => ({
+  event_id: entry.event_id,
+  field_build_and_extract_evaluations:
+    entry.geometry_authority.field_build_and_extract_evaluations,
+  production_48:
+    entry.geometry_authority.full_surface_extract_evaluations?.production_48,
+  reference_64:
+    entry.geometry_authority.full_surface_extract_evaluations?.reference_64,
+  provider_install:
+    entry.geometry_authority.full_surface_extract_evaluations?.provider_install,
+  volume_only_field_evaluations:
+    entry.geometry_authority.volume_only_field_evaluations,
+}));
 const receipt = {
-  schema: 'bisbee-production-budget-v1',
+  schema: 'bisbee-production-budget-v2',
   scenario: 'bisbee',
   simulation_seed: 42,
   shape_seed: conditions.wall.shape_seed,
@@ -87,21 +106,15 @@ const receipt = {
   accepted_erosions: acceptedErosions,
   full_surface_resolutions: fullSurfaceResolutions,
   provider_full_authentications: providerFullAuthentications,
+  erosion_authority: erosionAuthority,
   elapsed_ms: Number(elapsedMs.toFixed(1)),
+  elapsed_allowance_ms: bisbeeElapsedAllowanceMs(acceptedErosions),
   maximum_step_ms: Number(maximumStepMs.toFixed(1)),
+  process_cpu_ms: Number(((cpuUsed.user + cpuUsed.system) / 1000).toFixed(1)),
   peak_rss_mb: Number((peak.rss / 1048576).toFixed(1)),
   peak_heap_mb: Number((peak.heapUsed / 1048576).toFixed(1)),
   peak_external_mb: Number((peak.external / 1048576).toFixed(1)),
   peak_array_buffers_mb: Number((peak.arrayBuffers / 1048576).toFixed(1)),
 };
 console.log(`[bisbee-production-budget] ${JSON.stringify(receipt)}`);
-requireBudget(elapsedMs < 30_000, `elapsed ${elapsedMs.toFixed(1)} ms`);
-requireBudget(maximumStepMs < 5000, `maximum step ${maximumStepMs.toFixed(1)} ms`);
-requireBudget(peak.rss < 640 * 1024 * 1024,
-  `peak RSS ${(peak.rss / 1048576).toFixed(1)} MB`);
-requireBudget(peak.heapUsed < 384 * 1024 * 1024,
-  `peak heap ${(peak.heapUsed / 1048576).toFixed(1)} MB`);
-requireBudget(peak.external < 96 * 1024 * 1024,
-  `peak external ${(peak.external / 1048576).toFixed(1)} MB`);
-requireBudget(peak.arrayBuffers < 64 * 1024 * 1024,
-  `peak array buffers ${(peak.arrayBuffers / 1048576).toFixed(1)} MB`);
+validateBisbeeProductionBudgetReceipt(receipt);
