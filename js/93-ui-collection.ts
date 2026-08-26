@@ -85,6 +85,20 @@ function crystalsOfMineral(mineral) {
   return loadCrystals().filter(c => c.mineral === mineral);
 }
 
+// Player-owned specimen names remain exact, unmodified collection data. Any
+// surface that still assembles surrounding trusted chrome as HTML must pass
+// the name through this boundary first. Library (95) and Record Groove (98)
+// intentionally share it so Collect and Rename cannot drift into different
+// rendering rules.
+function collectionPlayerTextHTML(value): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
 // crystal later — without this the Groove would have nothing to draw.

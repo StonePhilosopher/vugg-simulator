@@ -140,7 +140,7 @@ function grooveSelectCrystal() {
   // Show crystal info
   info.style.display = 'block';
   const libraryName = grooveCrystal._libraryName
-    ? `<span class="gci-mineral">“${grooveCrystal._libraryName}”</span><br>`
+    ? `<span class="gci-mineral groove-library-name">“${collectionPlayerTextHTML(grooveCrystal._libraryName)}”</span><br>`
     : '';
   let infoHtml = libraryName + `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
   infoHtml += ` — ${grooveCrystal.describe_morphology()}`;

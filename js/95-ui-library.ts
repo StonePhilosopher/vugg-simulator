@@ -107,7 +107,7 @@ function renderCollectedForMineral(name) {
       const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
       const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
       const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
-      const safeName = (c.name || '').replace(/"/g, '&quot;');
+      const safeName = collectionPlayerTextHTML(c.name || '');
       const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
       const canPlay = zoneCount > 0;
       const playBtn = canPlay
@@ -123,7 +123,7 @@ function renderCollectedForMineral(name) {
         ${thumbHTML}
         <div style="flex:1;min-width:0">
           <div class="collected-row-head">
-            <span class="collected-name" title="${safeName}">${c.name}</span>
+            <span class="collected-name" title="${safeName}">${safeName}</span>
             <span class="collected-size">${c.mm.toFixed(2)} mm</span>
           </div>
           <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${zoneCount} zones</div>

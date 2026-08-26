@@ -91452,6 +91452,19 @@ function uniqueCollectedMinerals() {
 function crystalsOfMineral(mineral) {
     return loadCrystals().filter(c => c.mineral === mineral);
 }
+// Player-owned specimen names remain exact, unmodified collection data. Any
+// surface that still assembles surrounding trusted chrome as HTML must pass
+// the name through this boundary first. Library (95) and Record Groove (98)
+// intentionally share it so Collect and Rename cannot drift into different
+// rendering rules.
+function collectionPlayerTextHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
 // crystal later — without this the Groove would have nothing to draw.
@@ -94902,7 +94915,7 @@ function renderCollectedForMineral(name) {
         const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
         const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
         const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
-        const safeName = (c.name || '').replace(/"/g, '&quot;');
+        const safeName = collectionPlayerTextHTML(c.name || '');
         const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
         const canPlay = zoneCount > 0;
         const playBtn = canPlay
@@ -94918,7 +94931,7 @@ function renderCollectedForMineral(name) {
         ${thumbHTML}
         <div style="flex:1;min-width:0">
           <div class="collected-row-head">
-            <span class="collected-name" title="${safeName}">${c.name}</span>
+            <span class="collected-name" title="${safeName}">${safeName}</span>
             <span class="collected-size">${c.mm.toFixed(2)} mm</span>
           </div>
           <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${zoneCount} zones</div>
@@ -101674,7 +101687,7 @@ function grooveSelectCrystal() {
     // Show crystal info
     info.style.display = 'block';
     const libraryName = grooveCrystal._libraryName
-        ? `<span class="gci-mineral">“${grooveCrystal._libraryName}”</span><br>`
+        ? `<span class="gci-mineral groove-library-name">“${collectionPlayerTextHTML(grooveCrystal._libraryName)}”</span><br>`
         : '';
     let infoHtml = libraryName + `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
     infoHtml += ` — ${grooveCrystal.describe_morphology()}`;
