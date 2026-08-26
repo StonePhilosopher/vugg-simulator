@@ -409,6 +409,78 @@ describe('immutable simulation command/checkpoint protocol', () => {
       .toBe(simulationStateFingerprint(runtime));
   });
 
+  it('accepts byte-identical same-generation copies with documented primary priority', () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem(key: string) { return values.get(key) ?? null; },
+      setItem(key: string, value: string) { values.set(key, value); },
+      removeItem(key: string) { values.delete(key); },
+    };
+    const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(3));
+    persistSimulationCheckpoint(createSimulationCheckpoint(runtime), storage);
+    const primary = values.get('vugg.simulation.checkpoint.v2.primary');
+    expect(primary).toBeTruthy();
+    values.set('vugg.simulation.checkpoint.v2.staging', primary!);
+
+    const recovered = recoverPersistedSimulationRuntime(storage);
+    expect(recovered).toMatchObject({ source: 'primary', generation: 1, errors: [] });
+    expect(simulationStateFingerprint(recovered.runtime))
+      .toBe(simulationStateFingerprint(runtime));
+  });
+
+  it('fails closed on divergent independently valid envelopes at one generation', () => {
+    const makeStorage = () => {
+      const values = new Map<string, string>();
+      return {
+        values,
+        storage: {
+          getItem(key: string) { return values.get(key) ?? null; },
+          setItem(key: string, value: string) { values.set(key, value); },
+          removeItem(key: string) { values.delete(key); },
+        },
+      };
+    };
+    const a = makeStorage();
+    const b = makeStorage();
+    const runtimeA = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    const runtimeB = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    applySimulationCommand(runtimeA, makeSimulationAdvanceCommand(3));
+    applySimulationCommand(runtimeB, makeSimulationAdvanceCommand(4));
+    persistSimulationCheckpoint(createSimulationCheckpoint(runtimeA), a.storage);
+    persistSimulationCheckpoint(createSimulationCheckpoint(runtimeB), b.storage);
+    a.values.set(
+      'vugg.simulation.checkpoint.v2.staging',
+      b.values.get('vugg.simulation.checkpoint.v2.primary')!,
+    );
+
+    const recovered = recoverPersistedSimulationRuntime(a.storage);
+    expect(recovered.runtime).toBeNull();
+    expect(recovered.source).toBeNull();
+    expect(recovered.errors).toContain(
+      'generation 1: divergent authenticated checkpoint envelopes',
+    );
+  });
+
+  it('ignores a corrupt staging role when a lower valid generation survives', () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem(key: string) { return values.get(key) ?? null; },
+      setItem(key: string, value: string) { values.set(key, value); },
+      removeItem(key: string) { values.delete(key); },
+    };
+    const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(3));
+    persistSimulationCheckpoint(createSimulationCheckpoint(runtime), storage);
+    values.set('vugg.simulation.checkpoint.v2.staging', '{corrupt-newer-looking-slot');
+
+    const recovered = recoverPersistedSimulationRuntime(storage);
+    expect(recovered).toMatchObject({ source: 'primary', generation: 1 });
+    expect(recovered.errors.some((message: string) => message.startsWith('staging:'))).toBe(true);
+    expect(simulationStateFingerprint(recovered.runtime))
+      .toBe(simulationStateFingerprint(runtime));
+  });
+
   it('reduces structured-clone worker messages one bounded chunk at a time', async () => {
     const messages: any[] = [];
     const endpoint = createSimulationWorkerEndpoint(message => messages.push(
