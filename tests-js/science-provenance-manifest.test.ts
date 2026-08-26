@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { localityFrequencySpecHash } from '../tools/locality-frequency-contract.mjs';
+import { scienceEvidenceArtifactFiles } from '../tools/science-evidence-receipt.mjs';
 
 declare const SIM_VERSION: number;
 declare const MODEL_DIGEST: string;
@@ -72,9 +73,12 @@ describe('generated science/provenance manifest', () => {
         locale: new Intl.Collator().resolvedOptions().locale,
       },
       node_runtime_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
-      // 41 strips + 41 JSON cards + 41 Markdown cards, plus seed-42,
-      // locality-frequency, strip-digest, and controlled mechanism witnesses.
-      artifact_count: Object.keys(SCENARIOS).length * 3 + 4,
+      // Follow the producer's artifact map so adding a new authenticated
+      // evidence class (such as the owned-browser tutorial journey) cannot
+      // leave this consumer on a second, stale count literal.
+      artifact_count: scienceEvidenceArtifactFiles(
+        ROOT, SIM_VERSION, Object.keys(SCENARIOS),
+      ).length,
     });
     expect(manifest.science_evidence.sha256)
       .toBe(crypto.createHash('sha256').update(evidenceBytes).digest('hex'));
