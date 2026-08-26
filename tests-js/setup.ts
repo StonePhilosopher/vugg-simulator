@@ -594,6 +594,7 @@ const EXPORTS = [
   'startScenarioInCreative', // shared async run-launch generation
   'startStarterFluidInCreative',
   'stripDurableDatasetDigest',
+  'stripDatasetFromAuthenticatedStoredRecord',
   'stripDatasetMatchesDurableRunReceipt',
   '_stripOpenStoredRow', // async declarations are not auto-harvested
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface

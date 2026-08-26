@@ -80569,9 +80569,24 @@ function stripLatestDurableRunReceipt() {
 function stripStorageOriginEligible(origin) {
     return origin === 'production-run';
 }
+function stripStoredRecordOrigin(rec) {
+    if (rec.origin === 'production-run' || rec.origin === 'imported-file')
+        return rec.origin;
+    return String(rec.key || '').startsWith('imported:') ? 'imported-file' : 'production-run';
+}
 // Build a deterministic key for a dataset. recorded_at provides uniqueness.
 function stripStorageKey(manifest) {
     return `${manifest.scenario_id}@${manifest.seed}#${manifest.recorded_at}`;
+}
+// Imports are content-addressed underneath their own namespace. Re-importing
+// identical bytes is idempotent; a different payload with the same manifest
+// receives a different key and cannot replace either the local recording or a
+// prior import.
+function stripImportedStorageKey(manifest, datasetDigestSha256) {
+    if (!/^[0-9a-f]{64}$/.test(datasetDigestSha256)) {
+        throw new Error('strip: invalid imported dataset digest');
+    }
+    return `imported:${stripStorageKey(manifest)}@sha256-${datasetDigestSha256}`;
 }
 // Check if IndexedDB is available in this environment. Tests + Node.
 // won't have it unless a shim is loaded.
@@ -80582,9 +80597,10 @@ function stripStorageAvailable() {
 // persistence implementation.  These two lossless codecs are the only path
 // into and out of the object store, so newly-added evidence fields cannot be
 // silently forgotten by one half of the round trip.
-function stripStoredRecordFromDataset(ds) {
+function stripStoredRecordFromDataset(ds, origin = 'production-run') {
     return {
         key: stripStorageKey(ds.manifest),
+        origin,
         manifest: ds.manifest,
         chip_data: ds.chip_data,
         nucleation_events: ds.nucleation_events,
@@ -80640,85 +80656,125 @@ function _stripOpenDB() {
         req.onerror = () => reject(req.error || new Error('strip: failed to open DB'));
     });
 }
-// v155 (2026-05-26): count-based auto-eviction cap. Hard limit of 5
-// datasets in IDB at a time; on save, oldest entries beyond the cap
-// are silently removed before the new write. The download button +
+// v155 (2026-05-26), hardened for GAME-04: count-based auto-eviction cap.
+// Each origin domain retains its own five most recent datasets; imported
+// files can neither replace nor evict simulator-produced recordings. On save,
+// the oldest same-origin entry and the new bytes move in one transaction. The download button +
 // upload path lets users keep anything they care about as a
 // .stripview file on disk; IDB is treated as a recent-N cache.
 // Per locked v4 design (boss 2026-05-26): "the save/load will help
 // if anyone actually wants to keep these."
 const _STRIP_IDB_MAX_DATASETS = 5;
-// Save a dataset. Returns the stored key. Evicts oldest datasets
-// when the count cap is exceeded.
-async function stripStorageSave(ds, origin = 'production-run') {
-    const canonicalKey = stripStorageKey(ds.manifest);
-    // Uploaded files live in a separate key namespace. A file can have the
-    // same manifest timestamp as the current production run; it must never
-    // overwrite those commissioned bytes or inherit that run's receipt.
-    const key = origin === 'imported-file' ? `imported:${canonicalKey}` : canonicalKey;
-    const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
-    const db = await _stripOpenDB();
-    // Eviction pass: walk existing keys, sort by recorded_at ascending
-    // (OLDEST first), and delete the oldest until count = cap - 1 (one
-    // free slot for the new save). If the new key already exists (re-
-    // save of a same-timestamp dataset), it counts toward the cap as
-    // itself rather than a fresh slot.
-    await new Promise((resolve, reject) => {
-        const txList = db.transaction(_STRIP_STORE, 'readonly');
-        const storeList = txList.objectStore(_STRIP_STORE);
-        const req = storeList.getAll();
-        req.onsuccess = () => {
-            const all = (req.result || []);
-            const existingKeys = new Set(all.map(r => r.key));
-            const newSlotNeeded = !existingKeys.has(key) ? 1 : 0;
-            const overflow = all.length + newSlotNeeded - _STRIP_IDB_MAX_DATASETS;
-            if (overflow <= 0) {
-                resolve();
-                return;
-            }
-            // Sort by recorded_at ASC (oldest first) and pick the first
-            // `overflow` to evict. Skip the key we're about to write
-            // (re-saves shouldn't evict themselves).
-            const sorted = all
-                .filter(r => r.key !== key)
-                .sort((a, b) => a.manifest.recorded_at - b.manifest.recorded_at);
-            const toEvict = sorted.slice(0, overflow).map(r => r.key);
-            if (!toEvict.length) {
-                resolve();
-                return;
-            }
-            const txDel = db.transaction(_STRIP_STORE, 'readwrite');
-            const storeDel = txDel.objectStore(_STRIP_STORE);
-            for (const k of toEvict)
-                storeDel.delete(k);
-            txDel.oncomplete = () => resolve();
-            txDel.onerror = () => reject(txDel.error || new Error('strip: eviction failed'));
-        };
-        req.onerror = () => reject(req.error || new Error('strip: eviction list failed'));
-    });
-    const record = stripStoredRecordFromDataset(ds);
-    record.key = key;
-    record.dataset_digest_sha256 = datasetDigestSha256;
+function _stripPlanOriginEvictions(all, incoming) {
+    const origin = stripStoredRecordOrigin(incoming);
+    const sameOrigin = all.filter(rec => stripStoredRecordOrigin(rec) === origin);
+    const existingKeys = new Set(sameOrigin.map(rec => rec.key));
+    const newSlotNeeded = existingKeys.has(incoming.key) ? 0 : 1;
+    const overflow = sameOrigin.length + newSlotNeeded - _STRIP_IDB_MAX_DATASETS;
+    if (overflow <= 0)
+        return [];
+    return sameOrigin
+        .filter(rec => rec.key !== incoming.key)
+        .sort((a, b) => Number(a.manifest.recorded_at) - Number(b.manifest.recorded_at))
+        .slice(0, overflow)
+        .map(rec => rec.key);
+}
+// One readwrite transaction owns both eviction and insertion. IndexedDB only
+// publishes the staged deletes if the put also commits; quota/write failure
+// therefore leaves the previous recent-five cache intact.
+function _stripCommitRecordAtomic(db, record) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(_STRIP_STORE, 'readwrite');
         const store = tx.objectStore(_STRIP_STORE);
-        const req = store.put(record);
-        req.onerror = () => reject(req.error || new Error('strip: save failed'));
-        tx.onerror = () => reject(tx.error || new Error('strip: save transaction failed'));
-        tx.onabort = () => reject(tx.error || new Error('strip: save transaction aborted'));
+        let settled = false;
+        const fail = (error, fallback) => {
+            if (settled)
+                return;
+            settled = true;
+            reject(error || new Error(fallback));
+        };
+        tx.onerror = () => fail(tx.error, 'strip: save transaction failed');
+        tx.onabort = () => fail(tx.error, 'strip: save transaction aborted');
         tx.oncomplete = () => {
-            if (stripStorageOriginEligible(origin)) {
-                _stripLatestDurableRunReceipt = _stripDurableRunReceipt(key, ds.manifest, datasetDigestSha256);
+            if (settled)
+                return;
+            settled = true;
+            resolve();
+        };
+        const req = store.getAll();
+        req.onerror = () => {
+            try {
+                tx.abort();
             }
-            db.close();
-            resolve(key);
+            catch (_error) { }
+            fail(req.error, 'strip: eviction list failed');
+        };
+        req.onsuccess = () => {
+            try {
+                const all = (req.result || []);
+                for (const key of _stripPlanOriginEvictions(all, record))
+                    store.delete(key);
+                store.put(record);
+            }
+            catch (error) {
+                try {
+                    tx.abort();
+                }
+                catch (_abortError) { }
+                fail(error, 'strip: save failed');
+            }
         };
     });
+}
+async function stripDatasetFromAuthenticatedStoredRecord(rec) {
+    const origin = stripStoredRecordOrigin(rec);
+    const ds = stripDatasetFromStoredRecord(rec);
+    const digest = await stripDurableDatasetDigest(ds);
+    if (rec.dataset_digest_sha256 && digest !== rec.dataset_digest_sha256) {
+        throw new Error('strip: stored dataset digest mismatch');
+    }
+    if (origin === 'imported-file') {
+        if (!rec.dataset_digest_sha256)
+            throw new Error('strip: imported dataset is missing its payload digest');
+        if (rec.key !== stripImportedStorageKey(rec.manifest, digest)) {
+            throw new Error('strip: imported dataset key does not match its authenticated payload');
+        }
+    }
+    else if (rec.key !== stripStorageKey(rec.manifest)) {
+        throw new Error('strip: production dataset key does not match its manifest');
+    }
+    return ds;
+}
+// Save a dataset. Returns the stored key. Evicts the oldest same-origin
+// datasets when that origin's count cap is exceeded.
+async function stripStorageSave(ds, origin = 'production-run') {
+    const canonicalKey = stripStorageKey(ds.manifest);
+    const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
+    // Uploaded files live in a separate, content-addressed key namespace. A
+    // file can have the same manifest timestamp as the current production run;
+    // it must never overwrite those commissioned bytes or inherit that receipt.
+    const key = origin === 'imported-file'
+        ? stripImportedStorageKey(ds.manifest, datasetDigestSha256)
+        : canonicalKey;
+    const db = await _stripOpenDB();
+    const record = stripStoredRecordFromDataset(ds, origin);
+    record.key = key;
+    record.dataset_digest_sha256 = datasetDigestSha256;
+    try {
+        await _stripCommitRecordAtomic(db, record);
+        if (stripStorageOriginEligible(origin)) {
+            _stripLatestDurableRunReceipt = _stripDurableRunReceipt(key, ds.manifest, datasetDigestSha256);
+        }
+        return key;
+    }
+    finally {
+        db.close();
+    }
 }
 // Load a dataset by key. Returns null if the key isn't present.
 async function stripStorageLoad(key) {
     const db = await _stripOpenDB();
-    return new Promise((resolve, reject) => {
+    const rec = await new Promise((resolve, reject) => {
         const tx = db.transaction(_STRIP_STORE, 'readonly');
         const store = tx.objectStore(_STRIP_STORE);
         const req = store.get(key);
@@ -80728,11 +80784,14 @@ async function stripStorageLoad(key) {
                 resolve(null);
                 return;
             }
-            resolve(stripDatasetFromStoredRecord(rec));
+            resolve(rec);
         };
         req.onerror = () => reject(req.error || new Error('strip: load failed'));
         tx.oncomplete = () => db.close();
     });
+    if (!rec)
+        return null;
+    return stripDatasetFromAuthenticatedStoredRecord(rec);
 }
 // List all dataset keys + manifests (lightweight — no chip_data). Sorted
 // by recorded_at descending (newest first). Optional scenario_id filter.
@@ -80747,6 +80806,7 @@ async function stripStorageList(scenarioId) {
             let entries = all.map(rec => ({
                 key: rec.key,
                 manifest: rec.manifest,
+                origin: stripStoredRecordOrigin(rec),
                 ...(rec.dataset_digest_sha256
                     ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
                     : {}),
@@ -118801,6 +118861,12 @@ function _ensureStripViewStyles() {
     }
     .strip-view-datasetrow:hover { background: rgba(60, 80, 120, 0.5); }
     .strip-view-datasetrow .ds-name { font-weight: bold; flex: 1; color: #def; }
+    .strip-view-datasetrow .ds-origin {
+      display: inline-block; margin-left: 6px; padding: 1px 4px;
+      border: 1px solid #61708c; border-radius: 3px;
+      color: #9fb2d6; font-size: 8px; letter-spacing: 0.06em;
+    }
+    .strip-view-datasetrow .ds-origin.imported { border-color: #8b6f3e; color: #e0bd73; }
     .strip-view-datasetrow .ds-meta { color: #99b; font-size: 10px; }
     .strip-view-datasetrow .ds-delete {
       color: #b66; cursor: pointer; padding: 0 6px;
@@ -119397,6 +119463,42 @@ async function _stripOpenStoredRow(bodyEl, row, key, loader = stripStorageLoad, 
     renderer(bodyEl, ds);
     return true;
 }
+function _stripBuildDatasetListRow(e) {
+    const row = document.createElement('div');
+    row.className = 'strip-view-datasetrow';
+    // 70a's guided-reading lesson authenticates the chosen recording from
+    // these semantic fields; visible row order is not a scientific identity.
+    row.dataset.scenarioId = String(e.manifest.scenario_id || '');
+    row.dataset.seed = String(e.manifest.seed);
+    row.dataset.simVersion = String(e.manifest.sim_version);
+    row.dataset.modelDigest = String(e.manifest.model_digest || '');
+    row.dataset.scenarioSpecHash = String(e.manifest.scenario_spec_hash || '');
+    row.dataset.storageKey = String(e.key);
+    row.dataset.recordedAt = String(e.manifest.recorded_at);
+    row.dataset.origin = e.origin;
+    row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
+    row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
+    const date = new Date(e.manifest.recorded_at);
+    const name = document.createElement('div');
+    name.className = 'ds-name';
+    name.textContent = String(e.manifest.scenario_id || '');
+    const origin = document.createElement('span');
+    origin.className = `ds-origin ${e.origin === 'imported-file' ? 'imported' : 'recorded'}`;
+    origin.textContent = e.origin === 'imported-file' ? 'IMPORTED FILE' : 'LOCAL RECORDING';
+    name.append(' ', origin);
+    const details = document.createElement('div');
+    details.className = 'ds-meta';
+    details.textContent = `seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
+    const recorded = document.createElement('div');
+    recorded.className = 'ds-meta';
+    recorded.textContent = date.toLocaleString();
+    const del = document.createElement('span');
+    del.className = 'ds-delete';
+    del.title = 'Delete';
+    del.textContent = '✕';
+    row.append(name, details, recorded, del);
+    return row;
+}
 // Build / refresh the dataset list view.
 async function _stripRenderDatasetList(bodyEl) {
     bodyEl.innerHTML = '';
@@ -119425,33 +119527,14 @@ async function _stripRenderDatasetList(bodyEl) {
     if (!entries.length) {
         const empty = document.createElement('div');
         empty.className = 'strip-view-empty';
-        empty.innerHTML = 'No recordings yet. Run a Simulation, Random, or Fortress scenario to capture one.<br><br>The helicoid is now a recording instrument; every run writes a dataset for review here. Browser storage holds the 5 most recent — use ⬇ Download to keep anything you care about as a <code>.stripview</code> file on disk, and ⬆ Upload to bring it back later.';
+        empty.innerHTML = 'No recordings yet. Run a Simulation, Random, or Fortress scenario to capture one.<br><br>The helicoid is now a recording instrument; every run writes a dataset for review here. Browser storage holds the 5 most recent local recordings separately from the 5 most recent authenticated imports — use ⬇ Download to keep anything you care about as a <code>.stripview</code> file on disk, and ⬆ Upload to bring it back later.';
         bodyEl.appendChild(empty);
         return;
     }
     const list = document.createElement('div');
     list.className = 'strip-view-datasetlist';
     for (const e of entries) {
-        const row = document.createElement('div');
-        row.className = 'strip-view-datasetrow';
-        // 70a's guided-reading lesson authenticates the chosen recording from
-        // these semantic fields; visible row order is not a scientific identity.
-        row.dataset.scenarioId = String(e.manifest.scenario_id || '');
-        row.dataset.seed = String(e.manifest.seed);
-        row.dataset.simVersion = String(e.manifest.sim_version);
-        row.dataset.modelDigest = String(e.manifest.model_digest || '');
-        row.dataset.scenarioSpecHash = String(e.manifest.scenario_spec_hash || '');
-        row.dataset.storageKey = String(e.key);
-        row.dataset.recordedAt = String(e.manifest.recorded_at);
-        row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
-        row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
-        const date = new Date(e.manifest.recorded_at);
-        row.innerHTML = `
-      <div class="ds-name">${e.manifest.scenario_id}</div>
-      <div class="ds-meta">seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}</div>
-      <div class="ds-meta">${date.toLocaleString()}</div>
-      <span class="ds-delete" title="Delete">✕</span>
-    `;
+        const row = _stripBuildDatasetListRow(e);
         row.addEventListener('click', async (ev) => {
             if (ev.target.classList.contains('ds-delete')) {
                 ev.stopPropagation();
@@ -119466,7 +119549,11 @@ async function _stripRenderDatasetList(bodyEl) {
                 await _stripOpenStoredRow(bodyEl, row, e.key);
             }
             catch (err) {
-                bodyEl.innerHTML = '<div class="strip-view-empty">Load failed: ' + err.message + '</div>';
+                bodyEl.innerHTML = '';
+                const failed = document.createElement('div');
+                failed.className = 'strip-view-empty';
+                failed.textContent = 'Load failed: ' + err.message;
+                bodyEl.appendChild(failed);
             }
         });
         list.appendChild(row);
@@ -119493,13 +119580,18 @@ function _stripRenderDataset(bodyEl, ds) {
     // Back button
     const back = document.createElement('div');
     back.style.cssText = 'display:flex; gap:8px; padding-bottom:6px;';
-    back.innerHTML = `
-    <button class="strip-view-btn" id="strip-view-back">← Datasets</button>
-    <span style="color:#cde; font-weight:bold;">${ds.manifest.scenario_id}</span>
-    <span style="color:#99b;">seed ${ds.manifest.seed} · ${ds.manifest.duration_steps} steps · ${ds.manifest.axes.angular_indices} angular sub-strips × ${ds.manifest.axes.height_positions} heights</span>
-  `;
+    const backBtn = document.createElement('button');
+    backBtn.className = 'strip-view-btn';
+    backBtn.id = 'strip-view-back';
+    backBtn.textContent = '← Datasets';
+    const title = document.createElement('span');
+    title.style.cssText = 'color:#cde; font-weight:bold;';
+    title.textContent = String(ds.manifest.scenario_id || '');
+    const metadata = document.createElement('span');
+    metadata.style.cssText = 'color:#99b;';
+    metadata.textContent = `seed ${ds.manifest.seed} · ${ds.manifest.duration_steps} steps · ${ds.manifest.axes.angular_indices} angular sub-strips × ${ds.manifest.axes.height_positions} heights`;
+    back.append(backBtn, title, metadata);
     bodyEl.appendChild(back);
-    const backBtn = back.querySelector('#strip-view-back');
     backBtn.addEventListener('click', () => {
         _stripActiveDataset = null;
         const dl = document.getElementById('strip-view-download');
@@ -119873,7 +119965,11 @@ function initStripView() {
                 }
                 catch (err) {
                     const body = panel.querySelector('#strip-view-body');
-                    body.innerHTML = '<div class="strip-view-empty">Failed to load file: ' + err.message + '</div>';
+                    body.innerHTML = '';
+                    const failed = document.createElement('div');
+                    failed.className = 'strip-view-empty';
+                    failed.textContent = 'Failed to load file: ' + err.message;
+                    body.appendChild(failed);
                 }
                 // Reset so re-selecting the same file fires the change handler again.
                 uploadInput.value = '';

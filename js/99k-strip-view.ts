@@ -166,6 +166,12 @@ function _ensureStripViewStyles(): void {
     }
     .strip-view-datasetrow:hover { background: rgba(60, 80, 120, 0.5); }
     .strip-view-datasetrow .ds-name { font-weight: bold; flex: 1; color: #def; }
+    .strip-view-datasetrow .ds-origin {
+      display: inline-block; margin-left: 6px; padding: 1px 4px;
+      border: 1px solid #61708c; border-radius: 3px;
+      color: #9fb2d6; font-size: 8px; letter-spacing: 0.06em;
+    }
+    .strip-view-datasetrow .ds-origin.imported { border-color: #8b6f3e; color: #e0bd73; }
     .strip-view-datasetrow .ds-meta { color: #99b; font-size: 10px; }
     .strip-view-datasetrow .ds-delete {
       color: #b66; cursor: pointer; padding: 0 6px;
@@ -765,6 +771,43 @@ async function _stripOpenStoredRow(
   return true;
 }
 
+function _stripBuildDatasetListRow(e: StripListEntry): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = 'strip-view-datasetrow';
+  // 70a's guided-reading lesson authenticates the chosen recording from
+  // these semantic fields; visible row order is not a scientific identity.
+  row.dataset.scenarioId = String(e.manifest.scenario_id || '');
+  row.dataset.seed = String(e.manifest.seed);
+  row.dataset.simVersion = String(e.manifest.sim_version);
+  row.dataset.modelDigest = String(e.manifest.model_digest || '');
+  row.dataset.scenarioSpecHash = String((e.manifest as any).scenario_spec_hash || '');
+  row.dataset.storageKey = String(e.key);
+  row.dataset.recordedAt = String(e.manifest.recorded_at);
+  row.dataset.origin = e.origin;
+  row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
+  row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
+  const date = new Date(e.manifest.recorded_at);
+  const name = document.createElement('div');
+  name.className = 'ds-name';
+  name.textContent = String(e.manifest.scenario_id || '');
+  const origin = document.createElement('span');
+  origin.className = `ds-origin ${e.origin === 'imported-file' ? 'imported' : 'recorded'}`;
+  origin.textContent = e.origin === 'imported-file' ? 'IMPORTED FILE' : 'LOCAL RECORDING';
+  name.append(' ', origin);
+  const details = document.createElement('div');
+  details.className = 'ds-meta';
+  details.textContent = `seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
+  const recorded = document.createElement('div');
+  recorded.className = 'ds-meta';
+  recorded.textContent = date.toLocaleString();
+  const del = document.createElement('span');
+  del.className = 'ds-delete';
+  del.title = 'Delete';
+  del.textContent = '✕';
+  row.append(name, details, recorded, del);
+  return row;
+}
+
 // Build / refresh the dataset list view.
 async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
   bodyEl.innerHTML = '';
@@ -791,33 +834,14 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
   if (!entries.length) {
     const empty = document.createElement('div');
     empty.className = 'strip-view-empty';
-    empty.innerHTML = 'No recordings yet. Run a Simulation, Random, or Fortress scenario to capture one.<br><br>The helicoid is now a recording instrument; every run writes a dataset for review here. Browser storage holds the 5 most recent — use ⬇ Download to keep anything you care about as a <code>.stripview</code> file on disk, and ⬆ Upload to bring it back later.';
+    empty.innerHTML = 'No recordings yet. Run a Simulation, Random, or Fortress scenario to capture one.<br><br>The helicoid is now a recording instrument; every run writes a dataset for review here. Browser storage holds the 5 most recent local recordings separately from the 5 most recent authenticated imports — use ⬇ Download to keep anything you care about as a <code>.stripview</code> file on disk, and ⬆ Upload to bring it back later.';
     bodyEl.appendChild(empty);
     return;
   }
   const list = document.createElement('div');
   list.className = 'strip-view-datasetlist';
   for (const e of entries) {
-    const row = document.createElement('div');
-    row.className = 'strip-view-datasetrow';
-    // 70a's guided-reading lesson authenticates the chosen recording from
-    // these semantic fields; visible row order is not a scientific identity.
-    row.dataset.scenarioId = String(e.manifest.scenario_id || '');
-    row.dataset.seed = String(e.manifest.seed);
-    row.dataset.simVersion = String(e.manifest.sim_version);
-    row.dataset.modelDigest = String(e.manifest.model_digest || '');
-    row.dataset.scenarioSpecHash = String((e.manifest as any).scenario_spec_hash || '');
-    row.dataset.storageKey = String(e.key);
-    row.dataset.recordedAt = String(e.manifest.recorded_at);
-    row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
-    row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
-    const date = new Date(e.manifest.recorded_at);
-    row.innerHTML = `
-      <div class="ds-name">${e.manifest.scenario_id}</div>
-      <div class="ds-meta">seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}</div>
-      <div class="ds-meta">${date.toLocaleString()}</div>
-      <span class="ds-delete" title="Delete">✕</span>
-    `;
+    const row = _stripBuildDatasetListRow(e);
     row.addEventListener('click', async (ev) => {
       if ((ev.target as HTMLElement).classList.contains('ds-delete')) {
         ev.stopPropagation();
@@ -828,7 +852,11 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
       try {
         await _stripOpenStoredRow(bodyEl, row, e.key);
       } catch (err) {
-        bodyEl.innerHTML = '<div class="strip-view-empty">Load failed: ' + (err as Error).message + '</div>';
+        bodyEl.innerHTML = '';
+        const failed = document.createElement('div');
+        failed.className = 'strip-view-empty';
+        failed.textContent = 'Load failed: ' + (err as Error).message;
+        bodyEl.appendChild(failed);
       }
     });
     list.appendChild(row);
@@ -855,13 +883,18 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   // Back button
   const back = document.createElement('div');
   back.style.cssText = 'display:flex; gap:8px; padding-bottom:6px;';
-  back.innerHTML = `
-    <button class="strip-view-btn" id="strip-view-back">← Datasets</button>
-    <span style="color:#cde; font-weight:bold;">${ds.manifest.scenario_id}</span>
-    <span style="color:#99b;">seed ${ds.manifest.seed} · ${ds.manifest.duration_steps} steps · ${ds.manifest.axes.angular_indices} angular sub-strips × ${ds.manifest.axes.height_positions} heights</span>
-  `;
+  const backBtn = document.createElement('button');
+  backBtn.className = 'strip-view-btn';
+  backBtn.id = 'strip-view-back';
+  backBtn.textContent = '← Datasets';
+  const title = document.createElement('span');
+  title.style.cssText = 'color:#cde; font-weight:bold;';
+  title.textContent = String(ds.manifest.scenario_id || '');
+  const metadata = document.createElement('span');
+  metadata.style.cssText = 'color:#99b;';
+  metadata.textContent = `seed ${ds.manifest.seed} · ${ds.manifest.duration_steps} steps · ${ds.manifest.axes.angular_indices} angular sub-strips × ${ds.manifest.axes.height_positions} heights`;
+  back.append(backBtn, title, metadata);
   bodyEl.appendChild(back);
-  const backBtn = back.querySelector('#strip-view-back') as HTMLButtonElement;
   backBtn.addEventListener('click', () => {
     _stripActiveDataset = null;
     const dl = document.getElementById('strip-view-download') as HTMLButtonElement | null;
@@ -1214,7 +1247,11 @@ function initStripView(): void {
           _stripRenderDataset(body, ds);
         } catch (err) {
           const body = panel.querySelector('#strip-view-body') as HTMLElement;
-          body.innerHTML = '<div class="strip-view-empty">Failed to load file: ' + (err as Error).message + '</div>';
+          body.innerHTML = '';
+          const failed = document.createElement('div');
+          failed.className = 'strip-view-empty';
+          failed.textContent = 'Failed to load file: ' + (err as Error).message;
+          body.appendChild(failed);
         }
         // Reset so re-selecting the same file fires the change handler again.
         uploadInput.value = '';

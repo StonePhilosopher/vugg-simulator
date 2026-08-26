@@ -58,6 +58,9 @@ const _STRIP_STORE = 'datasets';
 
 interface StripStoredRecord {
   key: string;
+  // Production recordings and uploaded files are separate evidence domains.
+  // Legacy rows may omit this and are inferred from their key only.
+  origin?: 'production-run' | 'imported-file';
   // SHA-256 of stripSerialize(dataset, false). This binds the manifest,
   // tensors, events, and every testimony channel—not merely the list-row
   // header. Older records may omit it and remain readable, but can never
@@ -82,6 +85,7 @@ interface StripStoredRecord {
 interface StripListEntry {
   key: string;
   manifest: StripManifest;
+  origin: 'production-run' | 'imported-file';
   dataset_digest_sha256?: string;
 }
 
@@ -158,9 +162,25 @@ function stripStorageOriginEligible(origin: string): boolean {
   return origin === 'production-run';
 }
 
+function stripStoredRecordOrigin(rec: Pick<StripStoredRecord, 'key' | 'origin'>): 'production-run' | 'imported-file' {
+  if (rec.origin === 'production-run' || rec.origin === 'imported-file') return rec.origin;
+  return String(rec.key || '').startsWith('imported:') ? 'imported-file' : 'production-run';
+}
+
 // Build a deterministic key for a dataset. recorded_at provides uniqueness.
 function stripStorageKey(manifest: StripManifest): string {
   return `${manifest.scenario_id}@${manifest.seed}#${manifest.recorded_at}`;
+}
+
+// Imports are content-addressed underneath their own namespace. Re-importing
+// identical bytes is idempotent; a different payload with the same manifest
+// receives a different key and cannot replace either the local recording or a
+// prior import.
+function stripImportedStorageKey(manifest: StripManifest, datasetDigestSha256: string): string {
+  if (!/^[0-9a-f]{64}$/.test(datasetDigestSha256)) {
+    throw new Error('strip: invalid imported dataset digest');
+  }
+  return `imported:${stripStorageKey(manifest)}@sha256-${datasetDigestSha256}`;
 }
 
 // Check if IndexedDB is available in this environment. Tests + Node.
@@ -173,9 +193,13 @@ function stripStorageAvailable(): boolean {
 // persistence implementation.  These two lossless codecs are the only path
 // into and out of the object store, so newly-added evidence fields cannot be
 // silently forgotten by one half of the round trip.
-function stripStoredRecordFromDataset(ds: StripDataset): StripStoredRecord {
+function stripStoredRecordFromDataset(
+  ds: StripDataset,
+  origin: 'production-run' | 'imported-file' = 'production-run',
+): StripStoredRecord {
   return {
     key: stripStorageKey(ds.manifest),
+    origin,
     manifest: ds.manifest,
     chip_data: ds.chip_data,
     nucleation_events: ds.nucleation_events,
@@ -234,97 +258,137 @@ function _stripOpenDB(): Promise<IDBDatabase> {
   });
 }
 
-// v155 (2026-05-26): count-based auto-eviction cap. Hard limit of 5
-// datasets in IDB at a time; on save, oldest entries beyond the cap
-// are silently removed before the new write. The download button +
+// v155 (2026-05-26), hardened for GAME-04: count-based auto-eviction cap.
+// Each origin domain retains its own five most recent datasets; imported
+// files can neither replace nor evict simulator-produced recordings. On save,
+// the oldest same-origin entry and the new bytes move in one transaction. The download button +
 // upload path lets users keep anything they care about as a
 // .stripview file on disk; IDB is treated as a recent-N cache.
 // Per locked v4 design (boss 2026-05-26): "the save/load will help
 // if anyone actually wants to keep these."
 const _STRIP_IDB_MAX_DATASETS = 5;
 
-// Save a dataset. Returns the stored key. Evicts oldest datasets
-// when the count cap is exceeded.
+function _stripPlanOriginEvictions(
+  all: StripStoredRecord[],
+  incoming: StripStoredRecord,
+): string[] {
+  const origin = stripStoredRecordOrigin(incoming);
+  const sameOrigin = all.filter(rec => stripStoredRecordOrigin(rec) === origin);
+  const existingKeys = new Set(sameOrigin.map(rec => rec.key));
+  const newSlotNeeded = existingKeys.has(incoming.key) ? 0 : 1;
+  const overflow = sameOrigin.length + newSlotNeeded - _STRIP_IDB_MAX_DATASETS;
+  if (overflow <= 0) return [];
+  return sameOrigin
+    .filter(rec => rec.key !== incoming.key)
+    .sort((a, b) => Number(a.manifest.recorded_at) - Number(b.manifest.recorded_at))
+    .slice(0, overflow)
+    .map(rec => rec.key);
+}
+
+// One readwrite transaction owns both eviction and insertion. IndexedDB only
+// publishes the staged deletes if the put also commits; quota/write failure
+// therefore leaves the previous recent-five cache intact.
+function _stripCommitRecordAtomic(db: IDBDatabase, record: StripStoredRecord): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(_STRIP_STORE, 'readwrite');
+    const store = tx.objectStore(_STRIP_STORE);
+    let settled = false;
+    const fail = (error: unknown, fallback: string) => {
+      if (settled) return;
+      settled = true;
+      reject(error || new Error(fallback));
+    };
+    tx.onerror = () => fail(tx.error, 'strip: save transaction failed');
+    tx.onabort = () => fail(tx.error, 'strip: save transaction aborted');
+    tx.oncomplete = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    const req = store.getAll();
+    req.onerror = () => {
+      try { tx.abort(); } catch (_error) {}
+      fail(req.error, 'strip: eviction list failed');
+    };
+    req.onsuccess = () => {
+      try {
+        const all = (req.result || []) as StripStoredRecord[];
+        for (const key of _stripPlanOriginEvictions(all, record)) store.delete(key);
+        store.put(record);
+      } catch (error) {
+        try { tx.abort(); } catch (_abortError) {}
+        fail(error, 'strip: save failed');
+      }
+    };
+  });
+}
+
+async function stripDatasetFromAuthenticatedStoredRecord(rec: StripStoredRecord): Promise<StripDataset> {
+  const origin = stripStoredRecordOrigin(rec);
+  const ds = stripDatasetFromStoredRecord(rec);
+  const digest = await stripDurableDatasetDigest(ds);
+  if (rec.dataset_digest_sha256 && digest !== rec.dataset_digest_sha256) {
+    throw new Error('strip: stored dataset digest mismatch');
+  }
+  if (origin === 'imported-file') {
+    if (!rec.dataset_digest_sha256) throw new Error('strip: imported dataset is missing its payload digest');
+    if (rec.key !== stripImportedStorageKey(rec.manifest, digest)) {
+      throw new Error('strip: imported dataset key does not match its authenticated payload');
+    }
+  } else if (rec.key !== stripStorageKey(rec.manifest)) {
+    throw new Error('strip: production dataset key does not match its manifest');
+  }
+  return ds;
+}
+
+// Save a dataset. Returns the stored key. Evicts the oldest same-origin
+// datasets when that origin's count cap is exceeded.
 async function stripStorageSave(
   ds: StripDataset,
   origin: 'production-run' | 'imported-file' = 'production-run',
 ): Promise<string> {
   const canonicalKey = stripStorageKey(ds.manifest);
-  // Uploaded files live in a separate key namespace. A file can have the
-  // same manifest timestamp as the current production run; it must never
-  // overwrite those commissioned bytes or inherit that run's receipt.
-  const key = origin === 'imported-file' ? `imported:${canonicalKey}` : canonicalKey;
   const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
+  // Uploaded files live in a separate, content-addressed key namespace. A
+  // file can have the same manifest timestamp as the current production run;
+  // it must never overwrite those commissioned bytes or inherit that receipt.
+  const key = origin === 'imported-file'
+    ? stripImportedStorageKey(ds.manifest, datasetDigestSha256)
+    : canonicalKey;
   const db = await _stripOpenDB();
-  // Eviction pass: walk existing keys, sort by recorded_at ascending
-  // (OLDEST first), and delete the oldest until count = cap - 1 (one
-  // free slot for the new save). If the new key already exists (re-
-  // save of a same-timestamp dataset), it counts toward the cap as
-  // itself rather than a fresh slot.
-  await new Promise<void>((resolve, reject) => {
-    const txList = db.transaction(_STRIP_STORE, 'readonly');
-    const storeList = txList.objectStore(_STRIP_STORE);
-    const req = storeList.getAll();
-    req.onsuccess = () => {
-      const all = (req.result || []) as StripStoredRecord[];
-      const existingKeys = new Set(all.map(r => r.key));
-      const newSlotNeeded = !existingKeys.has(key) ? 1 : 0;
-      const overflow = all.length + newSlotNeeded - _STRIP_IDB_MAX_DATASETS;
-      if (overflow <= 0) { resolve(); return; }
-      // Sort by recorded_at ASC (oldest first) and pick the first
-      // `overflow` to evict. Skip the key we're about to write
-      // (re-saves shouldn't evict themselves).
-      const sorted = all
-        .filter(r => r.key !== key)
-        .sort((a, b) => a.manifest.recorded_at - b.manifest.recorded_at);
-      const toEvict = sorted.slice(0, overflow).map(r => r.key);
-      if (!toEvict.length) { resolve(); return; }
-      const txDel = db.transaction(_STRIP_STORE, 'readwrite');
-      const storeDel = txDel.objectStore(_STRIP_STORE);
-      for (const k of toEvict) storeDel.delete(k);
-      txDel.oncomplete = () => resolve();
-      txDel.onerror = () => reject(txDel.error || new Error('strip: eviction failed'));
-    };
-    req.onerror = () => reject(req.error || new Error('strip: eviction list failed'));
-  });
-
-  const record = stripStoredRecordFromDataset(ds);
+  const record = stripStoredRecordFromDataset(ds, origin);
   record.key = key;
   record.dataset_digest_sha256 = datasetDigestSha256;
-  return new Promise<string>((resolve, reject) => {
-    const tx = db.transaction(_STRIP_STORE, 'readwrite');
-    const store = tx.objectStore(_STRIP_STORE);
-    const req = store.put(record);
-    req.onerror = () => reject(req.error || new Error('strip: save failed'));
-    tx.onerror = () => reject(tx.error || new Error('strip: save transaction failed'));
-    tx.onabort = () => reject(tx.error || new Error('strip: save transaction aborted'));
-    tx.oncomplete = () => {
-      if (stripStorageOriginEligible(origin)) {
-        _stripLatestDurableRunReceipt = _stripDurableRunReceipt(
-          key, ds.manifest, datasetDigestSha256,
-        );
-      }
-      db.close();
-      resolve(key);
-    };
-  });
+  try {
+    await _stripCommitRecordAtomic(db, record);
+    if (stripStorageOriginEligible(origin)) {
+      _stripLatestDurableRunReceipt = _stripDurableRunReceipt(
+        key, ds.manifest, datasetDigestSha256,
+      );
+    }
+    return key;
+  } finally {
+    db.close();
+  }
 }
 
 // Load a dataset by key. Returns null if the key isn't present.
 async function stripStorageLoad(key: string): Promise<StripDataset | null> {
   const db = await _stripOpenDB();
-  return new Promise<StripDataset | null>((resolve, reject) => {
+  const rec = await new Promise<StripStoredRecord | null>((resolve, reject) => {
     const tx = db.transaction(_STRIP_STORE, 'readonly');
     const store = tx.objectStore(_STRIP_STORE);
     const req = store.get(key);
     req.onsuccess = () => {
       const rec = req.result as StripStoredRecord | undefined;
       if (!rec) { resolve(null); return; }
-      resolve(stripDatasetFromStoredRecord(rec));
+      resolve(rec);
     };
     req.onerror = () => reject(req.error || new Error('strip: load failed'));
     tx.oncomplete = () => db.close();
   });
+  if (!rec) return null;
+  return stripDatasetFromAuthenticatedStoredRecord(rec);
 }
 
 // List all dataset keys + manifests (lightweight — no chip_data). Sorted
@@ -340,6 +404,7 @@ async function stripStorageList(scenarioId?: string): Promise<StripListEntry[]> 
       let entries = all.map(rec => ({
         key: rec.key,
         manifest: rec.manifest,
+        origin: stripStoredRecordOrigin(rec),
         ...(rec.dataset_digest_sha256
           ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
           : {}),
