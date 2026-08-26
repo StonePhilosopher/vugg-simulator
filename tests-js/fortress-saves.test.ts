@@ -234,6 +234,23 @@ function minimalSave(id: string, overrides: Record<string, any> = {}): any {
   return rec;
 }
 
+// GAME-04 made the local-backup boundary share the same fail-closed specimen
+// grammar as Library and Record Groove (js/93-ui-collection.ts).  Save/WAL
+// fixtures must therefore represent records the product can actually render;
+// otherwise an import-transaction test can fail before reaching the storage
+// seam it owns.  Keep this helper beside minimalSave so future collection
+// schema additions have one breadcrumb into the save-system campaign.
+function minimalLibrarySpecimen(id: string, overrides: Record<string, any> = {}): any {
+  return {
+    id,
+    mineral: 'quartz',
+    name: id,
+    mm: 1,
+    zones: [],
+    ...overrides,
+  };
+}
+
 function minimalFinishingSave(id: string): any {
   const tx: any = {
     schema: 1,
@@ -756,9 +773,8 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
   it('exports and restores one checksum-bound, telemetry-free local data generation', () => {
     expect(persistSaves([minimalSave('backup-save')])).toBe(true);
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
-      { id: 'backup-specimen', mineral: 'quartz', name: 'Backup quartz', zones: [] },
-    ]));
+    const backupSpecimen = minimalLibrarySpecimen('backup-specimen', { name: 'Backup quartz' });
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([backupSpecimen]));
     localStorage.setItem('vugg-stats-v1', JSON.stringify({
       crystals_collected: 7,
       runs_finished: 2,
@@ -782,9 +798,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     localStorage.removeItem('vugg-settings-v1');
     expect(_saveApplyLocalExport(backup)).toBe(true);
     expect(loadSaves().map(record => record.id)).toEqual(['backup-save']);
-    expect(loadCrystals()).toEqual([
-      { id: 'backup-specimen', mineral: 'quartz', name: 'Backup quartz', zones: [] },
-    ]);
+    expect(loadCrystals()).toEqual([backupSpecimen]);
     expect(loadLifetimeStats()).toEqual({ crystals_collected: 7, runs_finished: 2 });
     expect(JSON.parse(localStorage.getItem('vugg-settings-v1') as string).display)
       .toEqual({ fontScale: 1.5, motion: 'reduced' });
@@ -799,7 +813,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
     const malformed = structuredClone(backup);
     malformed.storage['vugg-crystals-v1'] = JSON.stringify([
-      { id: 'same' }, { id: 'same' },
+      minimalLibrarySpecimen('same'), minimalLibrarySpecimen('same'),
     ]);
     malformed.backup_sha256 = _saveLocalExportDigest(malformed);
     expect(() => _saveAssertLocalExport(malformed)).toThrow(/duplicate specimen id/i);
@@ -807,7 +821,9 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
   it('rolls back an interrupted import and resumes its exact journal after storage recovers', () => {
     expect(persistSaves([minimalSave('import-target')])).toBe(true);
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'target-crystal' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('target-crystal'),
+    ]));
     localStorage.setItem('vugg-stats-v1', JSON.stringify({
       crystals_collected: 1,
       runs_finished: 1,
@@ -817,7 +833,9 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     const backup = _saveBuildLocalExport();
 
     expect(persistSaves([minimalSave('prior-save')])).toBe(true);
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'prior-crystal' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('prior-crystal'),
+    ]));
     const previousPrimary = localStorage.getItem('vugg-saves-v1');
     const previousLibrary = localStorage.getItem('vugg-crystals-v1');
     const nativeSetItem = Storage.prototype.setItem;
@@ -847,7 +865,9 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
   it('never replays an old import when browser storage silently retains the close marker', () => {
     expect(persistSaves([minimalSave('silent-remove-target')])).toBe(true);
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'imported-crystal' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('imported-crystal'),
+    ]));
     const backup = _saveBuildLocalExport();
 
     const nativeRemoveItem = Storage.prototype.removeItem;
@@ -867,16 +887,22 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
     // New player data written after the reported cleanup failure must survive
     // restart recovery; the retained value is a tombstone, not import intent.
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'newer-player-crystal' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('newer-player-crystal'),
+    ]));
     expect(_saveRecoverLocalImportJournal()).toBe(true);
     expect(loadCrystals().map(record => record.id)).toEqual(['newer-player-crystal']);
     expect(localStorage.getItem('vugg-local-import-v1.pending')).toBeNull();
   });
 
   it('reports throwing close-marker cleanup as post-commit and never mislabels changed data', () => {
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-remove-imported' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('throw-remove-imported'),
+    ]));
     const removeBackup = _saveBuildLocalExport();
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-remove-prior' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('throw-remove-prior'),
+    ]));
 
     const nativeRemoveItem = Storage.prototype.removeItem;
     const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function (key) {
@@ -896,9 +922,13 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       .toMatchObject({ schema: 'vugg-local-import-closed-v1' });
     expect(_saveRecoverLocalImportJournal()).toBe(true);
 
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-readback-imported' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('throw-readback-imported'),
+    ]));
     const readbackBackup = _saveBuildLocalExport();
-    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-readback-prior' }]));
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      minimalLibrarySpecimen('throw-readback-prior'),
+    ]));
     let pendingRemoved = false;
     let readbackThrew = false;
     const removeForReadback = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function (key) {
@@ -1043,7 +1073,8 @@ describe('fortress save system (93a) — event-sourced replay', () => {
   it('retains a durable finishing WAL without overwriting existing specimens when Library readback is denied', () => {
     fortressBeginFromScenario('cooling', 42);
     const activeId = _liveSaveActiveRecord().id;
-    const existingRaw = JSON.stringify([{ id: 'existing-specimen', mineral: 'quartz', name: 'Existing' }]);
+    const existingSpecimen = minimalLibrarySpecimen('existing-specimen', { name: 'Existing' });
+    const existingRaw = JSON.stringify([existingSpecimen]);
     localStorage.setItem('vugg-crystals-v1', existingRaw);
     const nativeGetItem = Storage.prototype.getItem;
     let libraryReads = 0;
@@ -1063,7 +1094,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       getItem.mockRestore();
     }
     expect(_saveMarkFinished()).toMatchObject({ saved: true });
-    expect(loadCrystals()).toEqual([{ id: 'existing-specimen', mineral: 'quartz', name: 'Existing' }]);
+    expect(loadCrystals()).toEqual([existingSpecimen]);
     expect(loadLifetimeStats()).toEqual({ crystals_collected: 0, runs_finished: 1 });
   });
 
