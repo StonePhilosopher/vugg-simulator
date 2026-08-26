@@ -11,7 +11,7 @@ import { sha256Bytes, writeJsonAtomic } from './scenario-evidence-checkpoint.mjs
 import { verifyOwnedDevToolsBrowserRuntime } from './owned-browser-runtime.mjs';
 
 export const GUIDED_TUTORIAL_BROWSER_RECEIPT_SCHEMA =
-  'vugg-guided-tutorial-browser-receipt-v3';
+  'vugg-guided-tutorial-browser-receipt-v4';
 export const GUIDED_TUTORIAL_BROWSER_PRODUCER = 'guided-tutorial-browser';
 
 const exactKeys = (value, keys) => value && typeof value === 'object'
@@ -62,6 +62,10 @@ const EXPECTED_GEOLOGY = Object.freeze({
   }),
 });
 const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-9vm';
+const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
+// Replaced with the exact SIM 282 values after the owned-browser source freeze.
+const EXPECTED_GAME04_DATASET_SHA256 = 'd63bb8c463a7163ac991c6ebec849e8d88a26d793e3aa8d5660b045e5c1f97dc';
+const EXPECTED_GAME04_DOWNLOAD_SHA256 = '2b831b72f4f9d03663d1aa31e80e90aec46a691111a628849dd613a88783c05c';
 const EXPECTED_BROWSER_RUNTIME = Object.freeze({
   schema: 'vugg-owned-devtools-browser-runtime-v2',
   executable_name: 'chrome.exe',
@@ -93,9 +97,9 @@ function assertGeologyPreservation(value, expected, label) {
 export function verifyGuidedTutorialJourneys(journeys, simVersion) {
   if (!exactKeys(journeys, [
     'schema', 'trust', 'sim_version', 'creative', 'simulation',
-    'save_load_policy', 'skip_cleanup',
+    'save_load_policy', 'skip_cleanup', 'player_surfaces',
   ])
-      || journeys.schema !== 'guided-tutorial-browser-journeys-v2'
+      || journeys.schema !== 'guided-tutorial-browser-journeys-v3'
       || journeys.trust !== 'local-owned-browser-player-controls-not-independent-attestation'
       || journeys.sim_version !== Number(simVersion)) {
     throw new Error('guided tutorial browser journey identity mismatch');
@@ -167,7 +171,7 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
         'record_id', 'name', 'mineral', 'source_scenario', 'source_seed',
       ])
       || simulation.collected.record_id !== EXPECTED_COLLECTION_RECORD_ID
-      || simulation.collected.name !== 'Browser QA — Shigar topaz'
+      || simulation.collected.name !== EXPECTED_COLLECTION_NAME
       || simulation.collected.mineral !== 'topaz'
       || simulation.collected.source_scenario !== 'shigar_pegmatite'
       || simulation.collected.source_seed !== 42) {
@@ -208,6 +212,76 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
     EXPECTED_GEOLOGY.skip,
     'Skip',
   );
+
+  const surfaces = journeys.player_surfaces;
+  if (!exactKeys(surfaces, [
+    'schema', 'collection_record_groove', 'topology_helix', 'strip_view', 'phone',
+  ]) || surfaces.schema !== 'game04-player-surfaces-v1') {
+    throw new Error('guided tutorial browser receipt has invalid GAME-04 player surfaces');
+  }
+  const collection = surfaces.collection_record_groove;
+  if (!exactKeys(collection, [
+    'record_id', 'stored_name', 'library_name_text', 'groove_name_text',
+    'hostile_dom_nodes', 'hostile_code_executed', 'zone_count',
+    'playback_started_and_stopped',
+  ])
+      || collection.record_id !== EXPECTED_COLLECTION_RECORD_ID
+      || collection.stored_name !== EXPECTED_COLLECTION_NAME
+      || collection.library_name_text !== EXPECTED_COLLECTION_NAME
+      || collection.groove_name_text !== `“${EXPECTED_COLLECTION_NAME}”`
+      || collection.hostile_dom_nodes !== 0
+      || collection.hostile_code_executed !== false
+      || collection.zone_count !== 17
+      || collection.playback_started_and_stopped !== true) {
+    throw new Error('guided tutorial browser receipt does not close Library and Record Groove');
+  }
+  const topology = surfaces.topology_helix;
+  if (!exactKeys(topology, [
+    'scenario', 'public_control_sequence', 'final_three_enabled', 'final_helix_enabled',
+  ])
+      || topology.scenario !== 'shigar_pegmatite'
+      || canonicalJson(topology.public_control_sequence) !== canonicalJson([
+        'three:on', 'helix:off', 'three:off', 'helix:on', 'helix:off', 'three:on',
+      ])
+      || topology.final_three_enabled !== true
+      || topology.final_helix_enabled !== false) {
+    throw new Error('guided tutorial browser receipt does not close topology and Helicoid controls');
+  }
+  const strip = surfaces.strip_view;
+  const expectedProductionKey = 'shigar_pegmatite@42#42';
+  const expectedImportedKey = `imported:${expectedProductionKey}@sha256-${EXPECTED_GAME04_DATASET_SHA256}`;
+  if (!exactKeys(strip, [
+    'scenario', 'seed', 'download_filename', 'download_sha256',
+    'production_key', 'production_origin', 'imported_key', 'imported_origin',
+    'dataset_digest_sha256', 'imported_digest_sha256', 'visible_import_label',
+    'playback_started_and_stopped',
+  ])
+      || strip.scenario !== 'shigar_pegmatite' || strip.seed !== 42
+      || strip.download_filename !== 'shigar_pegmatite@seed42.stripview'
+      || strip.download_sha256 !== EXPECTED_GAME04_DOWNLOAD_SHA256
+      || strip.production_key !== expectedProductionKey
+      || strip.production_origin !== 'production-run'
+      || strip.imported_key !== expectedImportedKey
+      || strip.imported_origin !== 'imported-file'
+      || strip.dataset_digest_sha256 !== EXPECTED_GAME04_DATASET_SHA256
+      || strip.imported_digest_sha256 !== EXPECTED_GAME04_DATASET_SHA256
+      || strip.visible_import_label !== 'IMPORTED FILE'
+      || strip.playback_started_and_stopped !== true) {
+    throw new Error('guided tutorial browser receipt does not close authenticated Strip View products');
+  }
+  const phone = surfaces.phone;
+  if (!exactKeys(phone, [
+    'width', 'height', 'modes', 'no_horizontal_document_overflow',
+    'panels_inside_viewport',
+  ])
+      || phone.width !== 390 || phone.height !== 844
+      || canonicalJson(phone.modes) !== canonicalJson([
+        'library', 'groove', 'stripview', 'current',
+      ])
+      || phone.no_horizontal_document_overflow !== true
+      || phone.panels_inside_viewport !== true) {
+    throw new Error('guided tutorial browser receipt does not close phone player surfaces');
+  }
   return true;
 }
 

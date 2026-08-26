@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 281**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 282**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -172,6 +172,25 @@ and the exact-execution evidence receipt.
   browser receipt binds those journeys to the exact browser bundle, execution
   set, Node runtime, evidence producer, and actual DevTools port-owner binary;
   it is intentionally not described as independent attestation.
+- SIM 282 closes the player-product seams around the collection and Strip View.
+  Collect and Rename preserve the exact player-owned specimen name in storage,
+  while Library and Record Groove share one text-only presentation boundary;
+  markup in a name is displayed literally and cannot construct a DOM node.
+  Uploaded strips live in a visible **IMPORTED FILE** namespace whose key
+  includes the digest of the complete serialized dataset. Identical bytes are
+  idempotent, different payloads with the same manifest coexist, and imported
+  entries have their own recent-five cache so they cannot replace or evict
+  simulator recordings. Every stored payload is rehashed on load. Eviction and
+  insertion now share one IndexedDB transaction, so a quota/write failure keeps
+  the old recording instead of losing both generations.
+  The owned-browser acceptance path follows the public player controls from a
+  hostile-named Shigar topaz in Library into Record Groove playback; toggles the
+  topology and Helicoid products; downloads, reimports, visibly identifies, and
+  sonifies the Shigar strip; and revisits Library, Groove, Strip View, and the
+  current game at a 390×844 phone viewport. Breadcrumb: 93 collection value ->
+  95/98 text surfaces; 85f serialized bytes -> 85h origin/digest/transaction ->
+  99k visible list/import/playback -> browser workflow -> exact executable
+  receipt.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and

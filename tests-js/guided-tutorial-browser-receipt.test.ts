@@ -29,11 +29,25 @@ describe('authenticated public-control guided tutorial journeys', () => {
     expect(receipt.payload.journeys.simulation.collected)
       .toEqual({
         record_id: 'cry-16-9vm',
-        name: 'Browser QA — Shigar topaz',
+        name: '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">',
         mineral: 'topaz',
         source_scenario: 'shigar_pegmatite',
         source_seed: 42,
       });
+    expect(receipt.payload.journeys.player_surfaces).toMatchObject({
+      collection_record_groove: {
+        hostile_dom_nodes: 0,
+        hostile_code_executed: false,
+        playback_started_and_stopped: true,
+      },
+      strip_view: {
+        production_origin: 'production-run',
+        imported_origin: 'imported-file',
+        visible_import_label: 'IMPORTED FILE',
+        playback_started_and_stopped: true,
+      },
+      phone: { width: 390, height: 844 },
+    });
   });
 
   it('rejects self-rehashed missing progress, false products, and resurrected tutorial state', () => {
@@ -86,6 +100,23 @@ describe('authenticated public-control guided tutorial journeys', () => {
     expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
       clone.payload.browser_runtime.executable_name = 'fabricated-browser';
     }), { simVersion: SIM_VERSION })).toThrow(/identity mismatch/);
+  });
+
+  it('rejects coordinated self-rehashed player-surface forgeries', () => {
+    const receipt = readGuidedTutorialBrowserReceipt(ROOT, SIM_VERSION);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      const collection = clone.payload.journeys.player_surfaces.collection_record_groove;
+      collection.stored_name = 'forged safe-looking name';
+      collection.library_name_text = 'forged safe-looking name';
+      collection.groove_name_text = '“forged safe-looking name”';
+      collection.zone_count = 999;
+      const strip = clone.payload.journeys.player_surfaces.strip_view;
+      strip.download_sha256 = 'a'.repeat(64);
+      strip.dataset_digest_sha256 = 'b'.repeat(64);
+      strip.imported_digest_sha256 = 'b'.repeat(64);
+      strip.imported_key = `imported:${strip.production_key}@sha256-${'b'.repeat(64)}`;
+      clone.payload.journeys.player_surfaces.phone.width = 412;
+    }), { simVersion: SIM_VERSION })).toThrow(/Library and Record Groove|Strip View|phone/);
   });
 
   it('verifies published browser evidence without requiring that browser on the review host', () => {

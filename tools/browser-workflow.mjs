@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
@@ -33,7 +33,7 @@ const FILE_BUNDLE_ASSET_COUNT = fileBundleAssetFiles(ROOT).length;
 const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;
 const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
-const TUTORIAL_COLLECTION_NAME = 'Browser QA — Shigar topaz';
+const TUTORIAL_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
 const DEFAULT_TIMEOUT_MS = 20_000;
 // Full app navigation includes the canonical 7.99 MB bundle, 98 embedded
 // authored assets, WebGL commissioning, and scenario/narrative registration.
@@ -46,6 +46,20 @@ const execFileAsync = promisify(execFile);
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waitForDownloadedFile(directory, filename, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const target = path.join(directory, filename);
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (existsSync(target) && !existsSync(`${target}.crdownload`)) return target;
+    await delay(100);
+  }
+  throw new Error(`download did not commit before deadline: ${filename}`);
+}
+
+function sha256File(file) {
+  return createHash('sha256').update(readFileSync(file)).digest('hex');
 }
 
 async function fetchWithDeadline(url, {
@@ -752,6 +766,19 @@ class BrowserDriver {
     })()`);
   }
 
+  async setFileInputFiles(selector, files) {
+    const documentNode = await this.client.send('DOM.getDocument', { depth: 0, pierce: true });
+    const match = await this.client.send('DOM.querySelector', {
+      nodeId: documentNode.root.nodeId,
+      selector,
+    });
+    if (!match.nodeId) throw new Error(`missing file input: ${selector}`);
+    await this.client.send('DOM.setFileInputFiles', {
+      nodeId: match.nodeId,
+      files,
+    });
+  }
+
   async elementRect(selector) {
     const encoded = JSON.stringify(selector);
     return this.evaluate(`(() => {
@@ -828,13 +855,14 @@ function assertSafeBounds(rect, width, height, insets, label) {
 async function runWorkflow(driver, diagnostics) {
   const checks = [];
   const guidedTutorialJourneys = {
-    schema: 'guided-tutorial-browser-journeys-v2',
+    schema: 'guided-tutorial-browser-journeys-v3',
     trust: 'local-owned-browser-player-controls-not-independent-attestation',
     sim_version: SIM_VERSION,
     creative: null,
     simulation: null,
     save_load_policy: null,
     skip_cleanup: null,
+    player_surfaces: null,
   };
   async function check(name, task) {
     const started = performance.now();
@@ -1365,6 +1393,224 @@ async function runWorkflow(driver, diagnostics) {
     };
   });
 
+  await check('traverses Library, Record Groove, Strip View, topology, and phone surfaces', async () => {
+    await driver.setViewport(1280, 720, false);
+    const libraryState = await driver.evaluate(`(() => {
+      const row = document.querySelector('.mineral-card[data-mineral="topaz"] .collected-row');
+      const name = row?.querySelector('.collected-name');
+      return {
+        panel_visible: getComputedStyle(document.querySelector('#library-panel')).display !== 'none',
+        name_text: name?.textContent || null,
+        injected_nodes: document.querySelectorAll('[data-vugg-player-name-probe]').length,
+        injection_executed: globalThis.__vuggPlayerNameInjection === 1,
+      };
+    })()`);
+    assert.deepEqual(libraryState, {
+      panel_visible: true,
+      name_text: TUTORIAL_COLLECTION_NAME,
+      injected_nodes: 0,
+      injection_executed: false,
+    });
+    await driver.clickExpression(
+      `Array.from(document.querySelectorAll('.mineral-card[data-mineral="topaz"] .collected-row-actions button')).find(button => button.textContent.includes('Play'))`,
+      'collected topaz Record Groove button',
+    );
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#groove-panel')).display !== 'none'
+        && document.querySelector('.groove-library-name')?.textContent === ${JSON.stringify(`“${TUTORIAL_COLLECTION_NAME}”`)}`,
+      'collected topaz in Record Groove',
+    );
+    const grooveState = await driver.evaluate(`({
+      name_text: document.querySelector('.groove-library-name')?.textContent || null,
+      injected_nodes: document.querySelectorAll('[data-vugg-player-name-probe]').length,
+      injection_executed: globalThis.__vuggPlayerNameInjection === 1,
+      zones: grooveCrystal?.zones?.length || 0,
+    })`);
+    assert.equal(grooveState.name_text, `“${TUTORIAL_COLLECTION_NAME}”`);
+    assert.equal(grooveState.injected_nodes, 0);
+    assert.equal(grooveState.injection_executed, false);
+    assert.ok(grooveState.zones > 0, 'Record Groove loaded no collected zones');
+    await driver.click('#groove-play-btn');
+    await driver.waitFor(
+      `document.querySelector('#groove-play-btn')?.classList.contains('groove-playing')`,
+      'Record Groove public playback start',
+    );
+    await driver.click('#groove-play-btn');
+    await driver.waitFor(
+      `!document.querySelector('#groove-play-btn')?.classList.contains('groove-playing')`,
+      'Record Groove public playback pause',
+    );
+
+    await driver.click('#mode-current');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#output-container')).display !== 'none'`,
+      'Simulation current-game surface',
+    );
+    if (await driver.evaluate(`topoThreeRendererEnabled() !== true`)) {
+      await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+      await driver.waitFor(`topoThreeRendererEnabled() === true`, '3D topology normalized on');
+    }
+    if (await driver.evaluate(`helixOverlayEnabled() === true`)) {
+      await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+      await driver.waitFor(`helixOverlayEnabled() === false`, 'helix normalized closed');
+    }
+    const topologySequence = ['three:on', 'helix:off'];
+    await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+    await driver.waitFor(`topoThreeRendererEnabled() === false && document.querySelector('#topo-three-btn')?.getAttribute('aria-pressed') === 'false'`, 'flat topology product');
+    topologySequence.push('three:off');
+    await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+    await driver.waitFor(
+      `helixOverlayEnabled() === true
+        && document.querySelector('#helix-overlay-btn')?.getAttribute('aria-pressed') === 'true'
+        && getComputedStyle(document.querySelector('#helix-legend')).display !== 'none'`,
+      'helix overlay product',
+    );
+    topologySequence.push('helix:on');
+    await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+    await driver.waitFor(`helixOverlayEnabled() === false && document.querySelector('#helix-overlay-btn')?.getAttribute('aria-pressed') === 'false'`, 'helix close product');
+    topologySequence.push('helix:off');
+    await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+    await driver.waitFor(`topoThreeRendererEnabled() === true && document.querySelector('#topo-three-btn')?.getAttribute('aria-pressed') === 'true'`, '3D topology restored');
+    topologySequence.push('three:on');
+
+    await driver.click('#mode-stripview');
+    await driver.waitFor(
+      `Array.from(document.querySelectorAll('.strip-view-datasetrow')).some(row =>
+        row.dataset.origin === 'production-run' && row.dataset.scenarioId === 'shigar_pegmatite')`,
+      'Shigar local recording row',
+    );
+    await driver.clickExpression(
+      `Array.from(document.querySelectorAll('.strip-view-datasetrow')).find(row =>
+        row.dataset.origin === 'production-run' && row.dataset.scenarioId === 'shigar_pegmatite')`,
+      'Shigar local recording row',
+    );
+    await driver.waitFor(`document.querySelector('#strip-view-download')?.disabled === false`, 'Strip View download control');
+    await driver.click('#strip-view-download');
+    const downloadFilename = 'shigar_pegmatite@seed42.stripview';
+    const downloadedFile = await waitForDownloadedFile(diagnostics.download_dir, downloadFilename);
+    const downloadSha256 = sha256File(downloadedFile);
+    await driver.click('#strip-view-back');
+    await driver.waitFor(`!!document.querySelector('#strip-view-upload-input')`, 'Strip View upload input');
+    await driver.setFileInputFiles('#strip-view-upload-input', [downloadedFile]);
+    await driver.waitFor(
+      `stripStorageList().then(entries => entries.some(entry =>
+        entry.origin === 'imported-file' && entry.manifest.scenario_id === 'shigar_pegmatite'))`,
+      'authenticated imported Strip View persistence',
+    );
+    await driver.click('#strip-view-back');
+    await driver.waitFor(
+      `Array.from(document.querySelectorAll('.strip-view-datasetrow')).some(row =>
+        row.dataset.origin === 'imported-file' && row.dataset.scenarioId === 'shigar_pegmatite')`,
+      'imported Strip View row',
+    );
+    const stripIdentity = await driver.evaluate(`(async () => {
+      const entries = await stripStorageList('shigar_pegmatite');
+      const production = entries.find(entry => entry.origin === 'production-run');
+      const imported = entries.find(entry => entry.origin === 'imported-file');
+      return {
+        production_key: production?.key || null,
+        production_origin: production?.origin || null,
+        production_digest: production?.dataset_digest_sha256 || null,
+        imported_key: imported?.key || null,
+        imported_origin: imported?.origin || null,
+        imported_digest: imported?.dataset_digest_sha256 || null,
+        visible_import_label: Array.from(document.querySelectorAll('.strip-view-datasetrow'))
+          .find(row => row.dataset.origin === 'imported-file')
+          ?.querySelector('.ds-origin')?.textContent || null,
+      };
+    })()`);
+    assert.equal(stripIdentity.production_origin, 'production-run');
+    assert.equal(stripIdentity.imported_origin, 'imported-file');
+    assert.notEqual(stripIdentity.production_key, stripIdentity.imported_key);
+    assert.equal(stripIdentity.production_digest, stripIdentity.imported_digest);
+    assert.equal(stripIdentity.visible_import_label, 'IMPORTED FILE');
+    await driver.clickExpression(
+      `Array.from(document.querySelectorAll('.strip-view-datasetrow')).find(row =>
+        row.dataset.origin === 'imported-file' && row.dataset.scenarioId === 'shigar_pegmatite')`,
+      'imported Shigar recording row',
+    );
+    await driver.waitFor(`document.querySelector('#strip-view-sonify')?.disabled === false`, 'Strip sonification control');
+    await driver.click('#strip-view-sonify');
+    await driver.waitFor(
+      `document.querySelector('#strip-view-sonify')?.textContent === '🤫 Silence the Rocks'`,
+      'Strip View public playback start',
+    );
+    await driver.click('#strip-view-sonify');
+    await driver.waitFor(
+      `document.querySelector('#strip-view-sonify')?.textContent === '🪨 The Rocks Are Screaming'`,
+      'Strip View public playback stop',
+    );
+
+    await driver.setViewport(390, 844, true);
+    const phoneModes = [];
+    for (const [button, panel, name] of [
+      ['#mode-library', '#library-panel', 'library'],
+      ['#mode-groove', '#groove-panel', 'groove'],
+      ['#mode-stripview', '#strip-view-mode-panel', 'stripview'],
+      ['#mode-current', '#output-container', 'current'],
+    ]) {
+      await driver.click(button);
+      await driver.waitFor(`getComputedStyle(document.querySelector(${JSON.stringify(panel)})).display !== 'none'`, `phone ${name} panel`);
+      const layout = await driver.evaluate(`(() => {
+        const panel = document.querySelector(${JSON.stringify(panel)});
+        const rect = panel.getBoundingClientRect();
+        return {
+          viewport_width: innerWidth,
+          document_scroll_width: document.documentElement.scrollWidth,
+          panel_left: rect.left,
+          panel_right: rect.right,
+          panel_width: rect.width,
+        };
+      })()`);
+      assert.ok(layout.document_scroll_width <= layout.viewport_width + 1, `${name} phone surface causes horizontal document overflow`);
+      assert.ok(layout.panel_left >= -1 && layout.panel_right <= layout.viewport_width + 1, `${name} phone panel leaves viewport`);
+      assert.ok(layout.panel_width > 0, `${name} phone panel has no rendered width`);
+      phoneModes.push(name);
+    }
+    await driver.setViewport(1280, 720, false);
+
+    guidedTutorialJourneys.player_surfaces = {
+      schema: 'game04-player-surfaces-v1',
+      collection_record_groove: {
+        record_id: guidedTutorialJourneys.simulation.collected.record_id,
+        stored_name: TUTORIAL_COLLECTION_NAME,
+        library_name_text: libraryState.name_text,
+        groove_name_text: grooveState.name_text,
+        hostile_dom_nodes: libraryState.injected_nodes + grooveState.injected_nodes,
+        hostile_code_executed: libraryState.injection_executed || grooveState.injection_executed,
+        zone_count: grooveState.zones,
+        playback_started_and_stopped: true,
+      },
+      topology_helix: {
+        scenario: 'shigar_pegmatite',
+        public_control_sequence: topologySequence,
+        final_three_enabled: true,
+        final_helix_enabled: false,
+      },
+      strip_view: {
+        scenario: 'shigar_pegmatite',
+        seed: 42,
+        download_filename: downloadFilename,
+        download_sha256: downloadSha256,
+        production_key: stripIdentity.production_key,
+        production_origin: stripIdentity.production_origin,
+        imported_key: stripIdentity.imported_key,
+        imported_origin: stripIdentity.imported_origin,
+        dataset_digest_sha256: stripIdentity.production_digest,
+        imported_digest_sha256: stripIdentity.imported_digest,
+        visible_import_label: stripIdentity.visible_import_label,
+        playback_started_and_stopped: true,
+      },
+      phone: {
+        width: 390,
+        height: 844,
+        modes: phoneModes,
+        no_horizontal_document_overflow: true,
+        panels_inside_viewport: true,
+      },
+    };
+  });
+
   await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=cancel`);
 
   await check('cancels a progressive Simulation run through the N shortcut', async () => {
@@ -1468,7 +1714,8 @@ async function runWorkflow(driver, diagnostics) {
       await _stripOpenStoredRow(body, tamperedRow, receipt.key, async () => tampered, () => {});
       return {
         originalMatches,
-        importedNamespaced: importedKey === 'imported:' + receipt.key,
+        importedNamespaced: importedKey.startsWith('imported:' + receipt.key + '@sha256-')
+          && /^[0-9a-f]{64}$/.test(importedKey.slice(-64)),
         productionStillMatches,
         latestKeyUnchanged: stripLatestDurableRunReceipt()?.key === receipt.key,
         exactEvents,
@@ -1928,6 +2175,8 @@ async function main() {
   const browserPath = findOwnedBrowserExecutable();
   const serverPort = await freePort();
   const profileDir = await mkdtemp(path.join(os.tmpdir(), 'vugg-browser-qa-'));
+  const downloadDir = path.join(profileDir, 'downloads');
+  await mkdir(downloadDir, { recursive: true });
   const serverNonce = randomUUID();
   let server = null;
   let browser = null;
@@ -1941,6 +2190,7 @@ async function main() {
     seed: TEST_SEED,
     browser_path: browserPath,
     browser_runtime: null,
+    download_dir: downloadDir,
     base_url: `http://127.0.0.1:${serverPort}`,
     dialog_expectations: [],
     dialogs: [],
@@ -2018,6 +2268,11 @@ async function main() {
     });
     client = new CdpClient(version.webSocketDebuggerUrl);
     await client.open();
+    await client.send('Browser.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: downloadDir,
+      eventsEnabled: true,
+    });
     const targets = await fetchWithDeadline(`http://127.0.0.1:${devTools.port}/json/list`, {
       options: { cache: 'no-store' },
       consume: async response => {
