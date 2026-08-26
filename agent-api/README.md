@@ -2,6 +2,14 @@
 
 A headless JSON CLI for AI agents to play a deliberately narrower Vugg Simulator. It mirrors selected browser engines and shares their sulfur-reservoir and locality-event identity, but it is not a claim of full thermodynamic parity with the [web version](https://stonephilosopher.github.io/vugg-simulator).
 
+The two runtimes share an exact per-crystal serialization core. Their complete
+responses are intentionally not interchangeable: `finish` identifies itself as
+`vugg-headless-agent-finish-v1` and adds the narrow game's summary and Record
+Groove products, while the browser's `vugg-browser-agent-specimen-v1` envelope
+adds canonical scenario/model identity and paragenetic order. Consumers should
+branch on `serializer_contract`, not infer whole-response parity from the shared
+crystal fields.
+
 **Play blind. 200 steps. See your records at the end. Write about what you see.**
 
 ## Install

@@ -56,13 +56,18 @@
 //      L/E/C (potential future bindings — add only when needed).
 //
 // ── ?dump=specimen JSON SHAPE ───────────────────────────────────
-// Mirrors agent-api/vugg-agent.js's `finish` response so an analyst
-// who's parsed one runtime's output can parse the other's unchanged.
-// Per-crystal fields: mineral, crystal_id, nucleation_step,
+// The browser and agent-api runtimes share one exact per-crystal core,
+// guarded field-for-field in tests. Their response envelopes are deliberately
+// different: browser dumps carry canonical scenario/model identity and
+// paragenesis; agent-api `finish` carries its narrower game summary and Groove
+// products. `serializer_contract` and `runtime_scope` make that boundary
+// machine-readable instead of claiming interchangeability.
+// Shared per-crystal fields: mineral, crystal_id, nucleation_step,
 // nucleation_temp, position, c_length_mm, a_width_mm, habit,
 // dominant_forms, zones_count, total_growth_um, twinned, twin_law,
-// active, dissolved, phantom_count, morphology, fluorescence, zones[].
-// Wrapper adds: ok, sim_version, scenario, seed, shape_seed,
+// active, dissolved, phantom_count, radiation_damage, morphology,
+// fluorescence, zones[]. Browser wrapper adds: ok, sim_version,
+// model_digest, scenario, seed, shape_seed,
 // total_steps, crystals[], paragenetic_sequence[], log_length.
 //
 // ── DETERMINISM AUDIT (2026-05-20) ──────────────────────────────
@@ -121,6 +126,15 @@ function _agentParamBool(params: URLSearchParams, name: string, defaultVal: bool
   return raw === '1' || raw === 'true' || raw === 'yes';
 }
 
+function _agentOptionalSafeInteger(opts: any, name: string): number | null {
+  const value = opts?.[name];
+  if (value == null) return null;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
+    throw new TypeError(`[vugg] ${name} must be a safe integer`);
+  }
+  return value;
+}
+
 // ---- Deterministic-random scenario pick from a seed ----
 // Used by ?scenario=random&seed=N so the URL is shareable. Mulberry32
 // one-shot (matches SeededRandom's algorithm so the picked index is
@@ -163,6 +177,7 @@ function _agentSpecimenJSON(simOverride?: any): any {
       active: c.active !== false,
       dissolved: !!c.dissolved,
       phantom_count: c.phantom_count || 0,
+      radiation_damage: c.radiation_damage || 0,
     };
     if (typeof c.describe_morphology === 'function') {
       try { obj.morphology = c.describe_morphology(); } catch { obj.morphology = null; }
@@ -181,6 +196,10 @@ function _agentSpecimenJSON(simOverride?: any): any {
       trace_Fe: +(z.trace_Fe || 0).toFixed(2),
       trace_Mn: +(z.trace_Mn || 0).toFixed(2),
       trace_Al: +(z.trace_Al || 0).toFixed(2),
+      trace_Ti: +(z.trace_Ti || 0).toFixed(3),
+      fluid_inclusion: !!z.fluid_inclusion,
+      inclusion_type: z.inclusion_type || null,
+      ca_from_wall: +(z.ca_from_wall || 0).toFixed(2),
       is_phantom: !!z.is_phantom,
       note: z.note || null,
     }));
@@ -201,10 +220,13 @@ function _agentSpecimenJSON(simOverride?: any): any {
   }
 
   const wnd: any = (typeof window !== 'undefined') ? window : (globalThis as any);
-  const meta = (wnd.vugg && wnd.vugg._lastRunMeta) || {};
+  const meta = sim._agentRunMeta || (wnd.vugg && wnd.vugg._lastRunMeta) || {};
 
   return {
     ok: true,
+    serializer_contract: 'vugg-browser-agent-specimen-v1',
+    runtime_scope: 'canonical-browser-simulator',
+    agent_api_relation: 'shared-crystal-core-not-response-parity',
     sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
     model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
     scenario: meta.scenario || null,
@@ -232,8 +254,13 @@ function _agentHeadlessRun(scenarioName: string, opts: any): any {
   if (typeof SCENARIOS === 'undefined' || !SCENARIOS[scenarioName]) {
     throw new Error(`_agentHeadlessRun: unknown scenario '${scenarioName}'`);
   }
-  const seed = opts.seed != null ? (opts.seed >>> 0) : (Math.floor(Math.random() * 2147483647) >>> 0);
-  const shapeSeed = opts.shape_seed != null ? (opts.shape_seed | 0) : null;
+  const requestedSeed = _agentOptionalSafeInteger(opts, 'seed');
+  const requestedShapeSeed = _agentOptionalSafeInteger(opts, 'shape_seed');
+  const requestedSteps = _agentOptionalSafeInteger(opts, 'steps');
+  const seed = requestedSeed != null
+    ? (requestedSeed >>> 0)
+    : (Math.floor(Math.random() * 2147483647) >>> 0);
+  const shapeSeed = requestedShapeSeed;
   // Direct lexical-scope mutation — see file header note on script-mode TS.
   rng = new SeededRandom(seed);
 
@@ -241,7 +268,8 @@ function _agentHeadlessRun(scenarioName: string, opts: any): any {
   if (shapeSeed != null) overrides.wall = { shape_seed: shapeSeed };
 
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName](overrides);
-  const steps = (opts.steps != null && opts.steps > 0) ? (opts.steps | 0) : ((defaultSteps | 0) || 200);
+  const steps = (requestedSteps != null && requestedSteps > 0)
+    ? requestedSteps : ((defaultSteps | 0) || 200);
 
   const sim = new VugSimulator(conditions, events);
   // === HELIX-OVERLAY-FORK ADDITION (strip view v155+, 2026-05-26) ===
@@ -281,10 +309,13 @@ function _agentHeadlessRun(scenarioName: string, opts: any): any {
   // Stash metadata so _agentSpecimenJSON can include it in the dump.
   const wnd: any = (typeof window !== 'undefined') ? window : (globalThis as any);
   wnd.vugg = wnd.vugg || {};
-  wnd.vugg._lastRunMeta = { scenario: scenarioName, seed, shape_seed: shapeSeed };
+  const resolvedShapeSeed = conditions.wall?.shape_seed ?? null;
+  const runMeta = Object.freeze({ scenario: scenarioName, seed, shape_seed: resolvedShapeSeed });
+  sim._agentRunMeta = runMeta;
+  wnd.vugg._lastRunMeta = runMeta;
 
   return {
-    sim, seed, shape_seed: shapeSeed, scenario: scenarioName, total_steps: steps,
+    sim, seed, shape_seed: resolvedShapeSeed, scenario: scenarioName, total_steps: steps,
     // v155: strip dataset for the run. Agents can serialize via
     // stripSerialize, save via stripStorageSave, or just inspect.
     // null if the recorder wasn't available.
@@ -410,25 +441,45 @@ function _agentExposeWindow(): void {
         ? _topoCavityClipCapabilityReceipt() : null;
     };
 
-    v.startScenario = function (name: string, opts: any) {
+    v.startScenario = async function (name: string, opts: any) {
       opts = opts || {};
       if (typeof startScenarioInCreative !== 'function') return null;
+      const requestedSeed = _agentOptionalSafeInteger(opts, 'seed');
+      const requestedShapeSeed = _agentOptionalSafeInteger(opts, 'shape_seed');
+      const requestedSteps = _agentOptionalSafeInteger(opts, 'steps');
       // Seed threads through to the seed-first begin (2026-07-08, save
       // system): the whole run — wall geometry included — reproduces
       // from the seed. Previously this had to re-seed AFTER begin, so
       // wall shape stayed on the Date.now() roll.
-      startScenarioInCreative(name, opts.seed != null ? (opts.seed >>> 0) : undefined);
-      v._lastRunMeta = {
+      await startScenarioInCreative(
+        name,
+        requestedSeed != null ? (requestedSeed >>> 0) : undefined,
+        undefined,
+        requestedShapeSeed == null ? undefined : requestedShapeSeed,
+      );
+      if (typeof fortressSim === 'undefined' || !fortressSim) {
+        throw new Error(`[vugg] scenario '${name}' did not start`);
+      }
+      const resolvedShapeSeed = fortressSim.conditions?.wall?.shape_seed ?? null;
+      if (requestedShapeSeed != null && resolvedShapeSeed !== requestedShapeSeed) {
+        throw new Error('[vugg] requested shape_seed was not applied to the constructed wall');
+      }
+      const runMeta = Object.freeze({
         scenario: name,
-        seed: opts.seed != null ? opts.seed : null,
-        shape_seed: opts.shape_seed != null ? opts.shape_seed : null,
-      };
-      if (opts.steps && opts.steps > 0
+        seed: requestedSeed != null ? (requestedSeed >>> 0) : null,
+        shape_seed: resolvedShapeSeed,
+      });
+      fortressSim._agentRunMeta = runMeta;
+      v._lastRunMeta = runMeta;
+      if (requestedSteps != null && requestedSteps > 0
           && typeof fortressActive !== 'undefined' && fortressActive
           && typeof fortressSim !== 'undefined' && fortressSim) {
-        for (let i = 0; i < opts.steps; i++) fortressSim.run_step();
+        for (let i = 0; i < requestedSteps; i++) {
+          if (typeof fortressStep === 'function') fortressStep('wait', null);
+          else fortressSim.run_step();
+        }
       }
-      return v._lastRunMeta;
+      return runMeta;
     };
 
     v.headlessRun = function (name: string, opts: any) {
@@ -622,6 +673,7 @@ async function _agentBootFromURL(): Promise<void> {
     _agentIsTutorial,
     _agentParamInt,
     _agentParamBool,
+    _agentOptionalSafeInteger,
     _agentDeterministicPick,
     _agentSpecimenJSON,
     _agentHeadlessRun,

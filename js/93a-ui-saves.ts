@@ -744,6 +744,11 @@ function _saveRecordShapeReason(rec) {
     return 'in-progress record carries an impossible finish transaction';
   }
   if (!rec.origin || typeof rec.origin !== 'object') return 'record origin is missing';
+  if (rec.origin.type === 'scenario'
+      && rec.origin.shape_seed != null
+      && !Number.isSafeInteger(rec.origin.shape_seed)) {
+    return 'scenario shape seed override is invalid';
+  }
   if (!Array.isArray(rec.actions) || rec.actions.length > 100_000) return 'record action log is invalid';
   if (!Array.isArray(rec.collected)) return 'record collection map is invalid';
   if (rec.collection_receipts != null && !Array.isArray(rec.collection_receipts)) {
@@ -1797,7 +1802,9 @@ function _saveRebuildOrigin(origin) {
     if (typeof SCENARIOS === 'undefined' || !SCENARIOS[origin.scenario]) {
       throw new Error(`scenario "${origin.scenario}" is not registered in this build`);
     }
-    fortressBeginFromScenario(origin.scenario, origin.seed);
+    fortressBeginFromScenario(
+      origin.scenario, origin.seed, undefined, undefined, origin.shape_seed,
+    );
   } else if (origin.type === 'starter') {
     if (typeof FLUID_PRESETS === 'undefined' || !FLUID_PRESETS[origin.presetId]) {
       throw new Error(`starter fluid "${origin.presetId}" is not registered in this build`);

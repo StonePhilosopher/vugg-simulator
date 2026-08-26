@@ -2878,9 +2878,7 @@ function getState() {
   };
 }
 
-function getCrystals(includeZones) {
-  if (!gameSim) return [];
-  return gameSim.crystals.map(c => {
+function serializeAgentCrystal(c, includeZones) {
     const obj = {
       mineral: c.mineral,
       crystal_id: c.crystal_id,
@@ -2919,7 +2917,11 @@ function getCrystals(includeZones) {
       }));
     }
     return obj;
-  });
+}
+
+function getCrystals(includeZones) {
+  if (!gameSim) return [];
+  return gameSim.crystals.map(c => serializeAgentCrystal(c, includeZones));
 }
 
 function applyAction(type) {
@@ -3550,6 +3552,9 @@ rl.on('line', (line) => {
 
       console.log(JSON.stringify({
         ok: true,
+        serializer_contract: 'vugg-headless-agent-finish-v1',
+        runtime_scope: 'narrow-headless-agent-game',
+        browser_relation: 'shared-crystal-core-not-response-parity',
         summary_text: summary.join('\n'),
         crystals,
         grooves: grooveResults,
@@ -3595,5 +3600,6 @@ module.exports = {
   event_oxidation,
   FLUID_PRESETS,
   SCENARIOS,
+  serializeAgentCrystal,
   runCli,
 };

@@ -17,10 +17,17 @@
 //      (scenario, seed, shape_seed) twice yields byte-identical
 //      paragenetic sequence + nucleation steps.
 
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import { describe, expect, it, beforeAll } from 'vitest';
 
 declare const SCENARIOS: any;
 declare const SIM_VERSION: number;
+declare const loadSaves: () => any[];
+declare const loadSaveById: (id: string) => boolean;
+
+const require = createRequire(import.meta.url);
+const agentApi = require(path.resolve(process.cwd(), 'agent-api/vugg-agent.js'));
 
 // The helpers live on globalThis after the bundle's _agentTestHooks
 // IIFE installs them at load time.
@@ -138,6 +145,11 @@ describe('Agent-friendly interface — v117 guard test', () => {
       const spec = _agentSpecimenJSON(result.sim);
       // Wrapper fields
       expect(spec.ok).toBe(true);
+      expect(spec).toMatchObject({
+        serializer_contract: 'vugg-browser-agent-specimen-v1',
+        runtime_scope: 'canonical-browser-simulator',
+        agent_api_relation: 'shared-crystal-core-not-response-parity',
+      });
       expect(spec.sim_version).toBe(SIM_VERSION);
       expect(spec.scenario).toBe('mvt');
       expect(spec.seed).toBe(42);
@@ -160,6 +172,33 @@ describe('Agent-friendly interface — v117 guard test', () => {
         expect(typeof c.twinned).toBe('boolean');
         expect(typeof c.active).toBe('boolean');
       }
+    });
+
+    it('shares the exact crystal core with agent-api without claiming envelope parity', () => {
+      const { _agentSpecimenJSON } = hooks();
+      const zone: any = {
+        step: 3, temperature: 87.25, thickness_um: 4.125,
+        trace_Fe: 1.25, trace_Mn: 2.5, trace_Al: 3.75, trace_Ti: 0.125,
+        fluid_inclusion: true, inclusion_type: 'primary', ca_from_wall: 0.25,
+        is_phantom: false, note: 'shared core',
+      };
+      const crystal: any = {
+        mineral: 'calcite', crystal_id: 9, nucleation_step: 2,
+        nucleation_temp: 90, position: 'vug wall', c_length_mm: 1.25,
+        a_width_mm: 0.75, habit: 'scalenohedral', dominant_forms: ['{211}'],
+        zones: [zone], total_growth_um: 4.125, twinned: false, twin_law: null,
+        active: true, dissolved: false, phantom_count: 0, radiation_damage: 0.2,
+        describe_morphology: () => 'scalenohedral',
+        predict_fluorescence: () => 'dim',
+      };
+      const browser = _agentSpecimenJSON({
+        crystals: [crystal], step: 3, log: [],
+        _agentRunMeta: { scenario: 'fixture', seed: 1, shape_seed: 2 },
+      }).crystals[0];
+      const headless = agentApi.serializeAgentCrystal(crystal, true);
+      expect(Object.keys(browser)).toEqual(Object.keys(headless));
+      expect(Object.keys(browser.zones[0])).toEqual(Object.keys(headless.zones[0]));
+      expect(browser).toEqual(headless);
     });
 
     it('paragenetic_sequence is ordered by nucleation_step (no duplicates)', () => {
@@ -287,6 +326,28 @@ describe('Agent-friendly interface — v117 guard test', () => {
       expect(spec.scenario).toBe('mvt');
       expect(spec.seed).toBe(7);
       expect(w.vugg.lastSpecimen).toBe(spec);
+    });
+
+    it('window.vugg applies shape_seed to the constructed Creative wall and save replay', async () => {
+      localStorage.clear();
+      const w: any = (globalThis as any).window || globalThis;
+      const meta = await w.vugg.startScenario('cooling', {
+        seed: 7001, shape_seed: 73, steps: 1,
+      });
+      expect(meta).toEqual({ scenario: 'cooling', seed: 7001, shape_seed: 73 });
+      expect(w.vugg.fortressSim.conditions.wall.shape_seed).toBe(73);
+      const save = loadSaves().find(row => row.origin?.seed === 7001);
+      expect(save?.origin).toMatchObject({
+        type: 'scenario', scenario: 'cooling', seed: 7001, shape_seed: 73,
+      });
+      expect(loadSaveById(save.id)).toBe(true);
+      expect(w.vugg.fortressSim.conditions.wall.shape_seed).toBe(73);
+    });
+
+    it('rejects coercive shape_seed values instead of recording an unapplied override', async () => {
+      const w: any = (globalThis as any).window || globalThis;
+      await expect(w.vugg.startScenario('cooling', { seed: 7002, shape_seed: '73' }))
+        .rejects.toThrow('shape_seed must be a safe integer');
     });
   });
 

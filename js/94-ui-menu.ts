@@ -110,7 +110,9 @@ function menuGo(modeName) { switchMode(modeName); }
 // step numbers as the sim advances. Optional seed threads through to the
 // seed-first begin (2026-07-08) — callers like the agent API get fully
 // deterministic runs, wall geometry included.
-async function startScenarioInCreative(scenarioName, seedOverride?, tutorialBootToken?) {
+async function startScenarioInCreative(
+  scenarioName, seedOverride?, tutorialBootToken?, shapeSeedOverride?,
+) {
   const make = SCENARIOS[scenarioName];
   if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
   const runLaunchToken = _runLaunchClaim();
@@ -123,7 +125,9 @@ async function startScenarioInCreative(scenarioName, seedOverride?, tutorialBoot
       && (typeof _tutorialBootTokenCurrent !== 'function'
         || !_tutorialBootTokenCurrent(tutorialBootToken)))) return;
   switchMode('fortress');
-  fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken);
+  fortressBeginFromScenario(
+    scenarioName, seedOverride, tutorialBootToken, runLaunchToken, shapeSeedOverride,
+  );
 }
 
 // Take a FLUID_PRESETS[id] starter fluid and run it inside Creative as a
@@ -229,7 +233,7 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?, runLaunchToken?)
 // make() (the pre-save-system order) left anything the factory drew
 // unreproducible.
 function fortressBeginFromScenario(
-  scenarioName, seedOverride?, tutorialBootToken?, runLaunchToken?,
+  scenarioName, seedOverride?, tutorialBootToken?, runLaunchToken?, shapeSeedOverride?,
 ) {
   const make = SCENARIOS[scenarioName];
   if (!make) return;
@@ -239,7 +243,14 @@ function fortressBeginFromScenario(
 
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
   rng = new SeededRandom(seed);
-  const { conditions, events, defaultSteps } = make();
+  if (shapeSeedOverride != null
+      && (!Number.isSafeInteger(shapeSeedOverride))) {
+    throw new TypeError('Scenario shape_seed override must be a safe integer');
+  }
+  const scenarioOverrides = shapeSeedOverride == null
+    ? undefined
+    : { wall: { shape_seed: shapeSeedOverride } };
+  const { conditions, events, defaultSteps } = make(scenarioOverrides);
 
   // Creative mode always exposes the mass-balanced carbon controls. Scenarios
   // that do not need atmospheric exchange stay closed, but never drop into the
@@ -301,7 +312,10 @@ function fortressBeginFromScenario(
   // Autosave opens AFTER the slider sync (broth baseline = what the
   // first action will see). See 93a-ui-saves.ts.
   if (typeof _saveNoteBegin === 'function') {
-    _saveNoteBegin({ type: 'scenario', scenario: scenarioName, seed });
+    _saveNoteBegin({
+      type: 'scenario', scenario: scenarioName, seed,
+      ...(shapeSeedOverride == null ? {} : { shape_seed: shapeSeedOverride }),
+    });
   }
 }
 
