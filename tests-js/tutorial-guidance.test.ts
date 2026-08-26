@@ -711,6 +711,9 @@ describe('guided tutorial run ownership', () => {
     // when no newer boundary invalidates its launch generation.
     await runSimulation();
     expect((window as any).vugg.legendsSim?.step).toBe(1);
+    const dump = (window as any).vugg.dumpSpecimen();
+    expect(dump).toMatchObject({ scenario: 'cooling', seed: 42, total_steps: 1 });
+    expect(dump.shape_seed).toBe((window as any).vugg.legendsSim.conditions.wall.shape_seed);
   });
 
   it('carries the one-use exact Grow claim across a delayed narrative continuation', async () => {

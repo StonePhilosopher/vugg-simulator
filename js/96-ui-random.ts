@@ -456,6 +456,11 @@ async function runRandomVugg() {
   randomSim = sim;
   randomSimArchetype = scen.archetype;
   randomSimSeed = seed;
+  _agentCommissionVisibleSim(sim, {
+    scenario: `random:${scen.archetype}`,
+    seed,
+    shape_seed: scen.conditions.wall?.shape_seed ?? null,
+  });
 
   // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
   // Run finished — finalize the strip recording and persist to

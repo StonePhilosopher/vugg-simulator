@@ -148,15 +148,35 @@ function _agentDeterministicPick(keys: string[], seed: number): string {
 }
 
 // ---- Specimen JSON: mirror agent-api's `finish` shape ----
-// `simOverride` lets the headless run pass its own sim directly;
-// callers without one fall back to the global fortressSim / legendsSim /
-// idleSim handles.
+// Visible constructors commission one exact current sim through
+// `_agentCommissionVisibleSim`. `simOverride` lets the headless path serialize
+// its own sim without stealing that visible-run authority. Permanent UI handles
+// are deliberately not searched by priority: an old Fortress handle must not
+// eclipse a newer Simulation or Zen run.
+let _agentCurrentVisibleSim: any = null;
+
+function _agentCommissionVisibleSim(sim: any, meta: any): any {
+  if (!sim) return null;
+  const runMeta = Object.freeze({
+    scenario: typeof meta?.scenario === 'string' ? meta.scenario : null,
+    seed: typeof meta?.seed === 'number' && Number.isSafeInteger(meta.seed)
+      ? meta.seed : null,
+    shape_seed: typeof meta?.shape_seed === 'number' && Number.isSafeInteger(meta.shape_seed)
+      ? meta.shape_seed : null,
+  });
+  sim._agentRunMeta = runMeta;
+  _agentCurrentVisibleSim = sim;
+  const wnd: any = (typeof window !== 'undefined') ? window : (globalThis as any);
+  if (wnd.vugg) wnd.vugg._lastRunMeta = runMeta; // UI convenience, never serializer authority
+  return runMeta;
+}
+
+function _agentReleaseVisibleSim(sim: any): void {
+  if (_agentCurrentVisibleSim === sim) _agentCurrentVisibleSim = null;
+}
+
 function _agentSpecimenJSON(simOverride?: any): any {
-  const sim = simOverride
-    || (typeof fortressSim !== 'undefined' && fortressSim)
-    || (typeof legendsSim !== 'undefined' && legendsSim)
-    || (typeof idleSim !== 'undefined' && idleSim)
-    || null;
+  const sim = simOverride || _agentCurrentVisibleSim || null;
   if (!sim) return { ok: false, error: 'no active sim' };
 
   const crystals = (sim.crystals || []).map((c: any) => {
@@ -219,8 +239,9 @@ function _agentSpecimenJSON(simOverride?: any): any {
     }
   }
 
-  const wnd: any = (typeof window !== 'undefined') ? window : (globalThis as any);
-  const meta = sim._agentRunMeta || (wnd.vugg && wnd.vugg._lastRunMeta) || {};
+  // Identity belongs to this exact simulation. A global last-run label can
+  // describe another headless/visible run and is never evidence authority.
+  const meta = sim._agentRunMeta || {};
 
   return {
     ok: true,

@@ -88092,13 +88092,11 @@ async function runSimulation() {
     // the visible Simulation controls, not only URL/agent entry points.  Record
     // the resolved authored shape seed after scenario construction so a blank
     // override reports the scenario's own cavity identity.
-    if (typeof window !== 'undefined' && window.vugg) {
-        window.vugg._lastRunMeta = {
-            scenario: scenarioName,
-            seed,
-            shape_seed: conditions.wall?.shape_seed ?? null,
-        };
-    }
+    _agentCommissionVisibleSim(sim, {
+        scenario: scenarioName,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+    });
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Attach a StripRecorder so this Simulation run is captured. Same
     // pattern as 96-ui-random.ts. Helicoid-as-recorder reframe (Shy's
@@ -94820,6 +94818,11 @@ function fortressBeginFromStarterFluid(presetId, seedOverride, runLaunchToken) {
         temperature: 200.0, pressure: 1.0, fluid, wall
     });
     fortressSim = new VugSimulator(conditions, []);
+    _agentCommissionVisibleSim(fortressSim, {
+        scenario: null,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+    });
     // Replenish consumes a run-owned recipe in 97-ui-fortress.ts. Binding it at
     // every constructor boundary also makes 93a save replay reconstruct the
     // same future input from the recorded Starter origin.
@@ -94899,6 +94902,11 @@ function fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken
         });
     }
     fortressSim = new VugSimulator(conditions, events);
+    const agentRunMeta = _agentCommissionVisibleSim(fortressSim, {
+        scenario: scenarioName,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+    });
     // Never inherit the previous Custom run's recipe: the authored Scenario is
     // the sole source for Replenish, both live and during origin-based replay.
     _fortressBindInitialFluidRecipe(fortressSim, conditions.fluid);
@@ -94953,9 +94961,9 @@ function fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken
     return Object.freeze({
         schema: 'creative-scenario-launch-v1',
         sim: fortressSim,
-        scenario: scenarioName,
-        seed,
-        shape_seed: conditions.wall?.shape_seed ?? null,
+        scenario: agentRunMeta.scenario,
+        seed: agentRunMeta.seed,
+        shape_seed: agentRunMeta.shape_seed,
         run_launch_token: Number.isSafeInteger(runLaunchToken) ? runLaunchToken : null,
     });
 }
@@ -96350,6 +96358,11 @@ async function runRandomVugg() {
     randomSim = sim;
     randomSimArchetype = scen.archetype;
     randomSimSeed = seed;
+    _agentCommissionVisibleSim(sim, {
+        scenario: `random:${scen.archetype}`,
+        seed,
+        shape_seed: scen.conditions.wall?.shape_seed ?? null,
+    });
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Run finished — finalize the strip recording and persist to
     // IndexedDB. Non-blocking + non-fatal: if storage fails the run still
@@ -97430,6 +97443,11 @@ function _fortressBeginCustomFromParams(params, seedOverride, runLaunchToken) {
             || 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
     });
     fortressSim = new VugSimulator(conditions, []);
+    _agentCommissionVisibleSim(fortressSim, {
+        scenario: null,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+    });
     // Bind after construction so omitted controls resolve to FluidChemistry's
     // canonical defaults. Scenario and Starter entry points do the same in 94.
     _fortressBindInitialFluidRecipe(fortressSim, fluid);
@@ -98708,6 +98726,8 @@ function fortressReset() {
     // cannot survive over setup or the next run (70a-tutorial-overlay.ts).
     if (typeof _tutorialRunBoundary === 'function')
         _tutorialRunBoundary();
+    if (typeof _agentReleaseVisibleSim === 'function')
+        _agentReleaseVisibleSim(fortressSim);
     fortressSim = null;
     fortressActive = false;
     fortressLogLines = [];
@@ -102933,7 +102953,8 @@ function idleCreateSim(scenarioKey) {
         return null;
     // SCENARIOS values are functions — call to get {conditions, events, defaultSteps}
     const scenarioData = scenarioFn();
-    rng = new SeededRandom(Date.now());
+    const seed = Date.now();
+    rng = new SeededRandom(seed);
     // Clone the scenario's conditions for the idle simulation
     const srcCond = scenarioData.conditions;
     const conditions = new VugConditions({
@@ -102943,6 +102964,11 @@ function idleCreateSim(scenarioKey) {
         wall: srcCond.wall || new VugWall({ composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 })
     });
     const sim = new VugSimulator(conditions, []); // no scripted events — drift handles everything
+    _agentCommissionVisibleSim(sim, {
+        scenario: scenarioKey,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+    });
     idleDrift.tempTarget = srcCond.temperature;
     idleDrift.tempRate = 0;
     idleDrift.driftTimer = 0;
@@ -120942,15 +120968,35 @@ function _agentDeterministicPick(keys, seed) {
     return keys[r % keys.length];
 }
 // ---- Specimen JSON: mirror agent-api's `finish` shape ----
-// `simOverride` lets the headless run pass its own sim directly;
-// callers without one fall back to the global fortressSim / legendsSim /
-// idleSim handles.
+// Visible constructors commission one exact current sim through
+// `_agentCommissionVisibleSim`. `simOverride` lets the headless path serialize
+// its own sim without stealing that visible-run authority. Permanent UI handles
+// are deliberately not searched by priority: an old Fortress handle must not
+// eclipse a newer Simulation or Zen run.
+let _agentCurrentVisibleSim = null;
+function _agentCommissionVisibleSim(sim, meta) {
+    if (!sim)
+        return null;
+    const runMeta = Object.freeze({
+        scenario: typeof meta?.scenario === 'string' ? meta.scenario : null,
+        seed: typeof meta?.seed === 'number' && Number.isSafeInteger(meta.seed)
+            ? meta.seed : null,
+        shape_seed: typeof meta?.shape_seed === 'number' && Number.isSafeInteger(meta.shape_seed)
+            ? meta.shape_seed : null,
+    });
+    sim._agentRunMeta = runMeta;
+    _agentCurrentVisibleSim = sim;
+    const wnd = (typeof window !== 'undefined') ? window : globalThis;
+    if (wnd.vugg)
+        wnd.vugg._lastRunMeta = runMeta; // UI convenience, never serializer authority
+    return runMeta;
+}
+function _agentReleaseVisibleSim(sim) {
+    if (_agentCurrentVisibleSim === sim)
+        _agentCurrentVisibleSim = null;
+}
 function _agentSpecimenJSON(simOverride) {
-    const sim = simOverride
-        || (typeof fortressSim !== 'undefined' && fortressSim)
-        || (typeof legendsSim !== 'undefined' && legendsSim)
-        || (typeof idleSim !== 'undefined' && idleSim)
-        || null;
+    const sim = simOverride || _agentCurrentVisibleSim || null;
     if (!sim)
         return { ok: false, error: 'no active sim' };
     const crystals = (sim.crystals || []).map((c) => {
@@ -121023,8 +121069,9 @@ function _agentSpecimenJSON(simOverride) {
             paragenesis.push(c.mineral);
         }
     }
-    const wnd = (typeof window !== 'undefined') ? window : globalThis;
-    const meta = sim._agentRunMeta || (wnd.vugg && wnd.vugg._lastRunMeta) || {};
+    // Identity belongs to this exact simulation. A global last-run label can
+    // describe another headless/visible run and is never evidence authority.
+    const meta = sim._agentRunMeta || {};
     return {
         ok: true,
         serializer_contract: 'vugg-browser-agent-specimen-v1',

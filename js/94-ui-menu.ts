@@ -185,6 +185,11 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?, runLaunchToken?)
   });
 
   fortressSim = new VugSimulator(conditions, []);
+  _agentCommissionVisibleSim(fortressSim, {
+    scenario: null,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+  });
   // Replenish consumes a run-owned recipe in 97-ui-fortress.ts. Binding it at
   // every constructor boundary also makes 93a save replay reconstruct the
   // same future input from the recorded Starter origin.
@@ -274,6 +279,11 @@ function fortressBeginFromScenario(
   }
 
   fortressSim = new VugSimulator(conditions, events);
+  const agentRunMeta = _agentCommissionVisibleSim(fortressSim, {
+    scenario: scenarioName,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+  });
   // Never inherit the previous Custom run's recipe: the authored Scenario is
   // the sole source for Replenish, both live and during origin-based replay.
   _fortressBindInitialFluidRecipe(fortressSim, conditions.fluid);
@@ -328,9 +338,9 @@ function fortressBeginFromScenario(
   return Object.freeze({
     schema: 'creative-scenario-launch-v1',
     sim: fortressSim,
-    scenario: scenarioName,
-    seed,
-    shape_seed: conditions.wall?.shape_seed ?? null,
+    scenario: agentRunMeta.scenario,
+    seed: agentRunMeta.seed,
+    shape_seed: agentRunMeta.shape_seed,
     run_launch_token: Number.isSafeInteger(runLaunchToken) ? runLaunchToken : null,
   });
 }

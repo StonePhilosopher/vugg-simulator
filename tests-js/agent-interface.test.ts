@@ -365,6 +365,22 @@ describe('Agent-friendly interface — v117 guard test', () => {
       expect(w.vugg._lastRunMeta).toBe(beforeMeta);
     });
 
+    it('serializes identity from the selected visible sim, never the last headless label', async () => {
+      const w: any = (globalThis as any).window || globalThis;
+      const launch = await startScenarioInCreative('cooling', 7008, undefined, 89);
+      expect(launch.sim).toBe(w.vugg.fortressSim);
+      const visibleStep = launch.sim.step;
+
+      const headless = w.vugg.headlessRun('mvt', { seed: 99, shape_seed: 11, steps: 1 });
+      expect(headless).toMatchObject({ scenario: 'mvt', seed: 99, shape_seed: 11 });
+      const dumped = w.vugg.dumpSpecimen();
+      expect(dumped).toMatchObject({
+        scenario: 'cooling', seed: 7008, shape_seed: 89, total_steps: visibleStep,
+      });
+      expect(launch.sim.conditions._scenario.id).toBe('cooling');
+      expect(launch.sim.conditions.wall.shape_seed).toBe(89);
+    });
+
     it('rejects a superseded async launch and binds metadata only to its winner', async () => {
       const w: any = (globalThis as any).window || globalThis;
       const superseded = w.vugg.startScenario('cooling', {

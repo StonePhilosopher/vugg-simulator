@@ -88,7 +88,8 @@ function idleCreateSim(scenarioKey) {
   // SCENARIOS values are functions — call to get {conditions, events, defaultSteps}
   const scenarioData = scenarioFn();
 
-  rng = new SeededRandom(Date.now());
+  const seed = Date.now();
+  rng = new SeededRandom(seed);
   // Clone the scenario's conditions for the idle simulation
   const srcCond = scenarioData.conditions;
   const conditions = new VugConditions({
@@ -99,6 +100,11 @@ function idleCreateSim(scenarioKey) {
   });
 
   const sim = new VugSimulator(conditions, []); // no scripted events — drift handles everything
+  _agentCommissionVisibleSim(sim, {
+    scenario: scenarioKey,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+  });
   idleDrift.tempTarget = srcCond.temperature;
   idleDrift.tempRate = 0;
   idleDrift.driftTimer = 0;

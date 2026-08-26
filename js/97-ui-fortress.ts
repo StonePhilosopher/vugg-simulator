@@ -1085,6 +1085,11 @@ function _fortressBeginCustomFromParams(params, seedOverride?, runLaunchToken?) 
   );
 
   fortressSim = new VugSimulator(conditions, []);
+  _agentCommissionVisibleSim(fortressSim, {
+    scenario: null,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+  });
   // Bind after construction so omitted controls resolve to FluidChemistry's
   // canonical defaults. Scenario and Starter entry points do the same in 94.
   _fortressBindInitialFluidRecipe(fortressSim, fluid);
@@ -2388,6 +2393,7 @@ function fortressReset() {
   // lexical tutorial state first so its CSS allow-list and delegated listeners
   // cannot survive over setup or the next run (70a-tutorial-overlay.ts).
   if (typeof _tutorialRunBoundary === 'function') _tutorialRunBoundary();
+  if (typeof _agentReleaseVisibleSim === 'function') _agentReleaseVisibleSim(fortressSim);
   fortressSim = null;
   fortressActive = false;
   fortressLogLines = [];

@@ -283,13 +283,11 @@ async function runSimulation() {
   // the visible Simulation controls, not only URL/agent entry points.  Record
   // the resolved authored shape seed after scenario construction so a blank
   // override reports the scenario's own cavity identity.
-  if (typeof window !== 'undefined' && (window as any).vugg) {
-    (window as any).vugg._lastRunMeta = {
-      scenario: scenarioName,
-      seed,
-      shape_seed: conditions.wall?.shape_seed ?? null,
-    };
-  }
+  _agentCommissionVisibleSim(sim, {
+    scenario: scenarioName,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+  });
 
   // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
   // Attach a StripRecorder so this Simulation run is captured. Same
