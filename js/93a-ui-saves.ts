@@ -153,8 +153,8 @@ function _saveAssertLocalExport(payload) {
     if (!Array.isArray(records)) throw new Error('local backup Library is not an array');
     const ids = new Set();
     for (const record of records) {
-      if (!record || typeof record !== 'object' || typeof record.id !== 'string'
-          || !record.id || ids.has(record.id)) {
+      assertCrystalCollectionRecord(record, 'local backup Library specimen');
+      if (ids.has(record.id)) {
         throw new Error('local backup Library contains a missing or duplicate specimen id');
       }
       ids.add(record.id);

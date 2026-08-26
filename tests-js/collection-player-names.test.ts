@@ -5,6 +5,10 @@ declare function loadCrystals(): any[];
 declare function renameCollectedCrystal(id: string): void;
 declare function playCollectedInGroove(id: string): void;
 declare function groovePopulateCrystals(): void;
+declare function grooveZonePlayerProseHTML(zone: any): string;
+declare function _saveBuildLocalExport(): any;
+declare function _saveLocalExportDigest(payload: any): string;
+declare function _saveAssertLocalExport(payload: any): boolean;
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -94,6 +98,49 @@ describe('player-owned collection names', () => {
     const info = document.getElementById('groove-crystal-info')!;
     expect(info.querySelector('.groove-library-name')?.textContent).toBe(`“${HOSTILE_NAME}”`);
     expect(info.getElementsByTagName('img')).toHaveLength(0);
+    expect((globalThis as any).__playerNamePwned).toBeUndefined();
+  });
+
+  it('keeps every imported specimen prose field inert in Library and Record Groove', () => {
+    const imported = specimen('Imported specimen');
+    imported.habit = HOSTILE_NAME;
+    imported.twinned = true;
+    (imported as any).twin_law = HOSTILE_NAME;
+    imported.source.scenario = HOSTILE_NAME;
+    imported.zones[0].note = HOSTILE_NAME;
+    imported.zones[0].fluid_inclusion = true;
+    imported.zones[0].inclusion_type = HOSTILE_NAME;
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([imported]));
+
+    const holder = document.createElement('div');
+    holder.innerHTML = renderCollectedForMineral('topaz');
+    document.body.appendChild(holder);
+    expect(holder.querySelector('.collected-row-meta')?.textContent).toContain(HOSTILE_NAME);
+    expect(Array.from(holder.getElementsByTagName('img')).some(img => img.id === 'player-name-pwn')).toBe(false);
+
+    installGrooveSurface();
+    playCollectedInGroove('cry-hostile-name');
+    groovePopulateCrystals();
+    const info = document.getElementById('groove-crystal-info')!;
+    expect(info.textContent).toContain(HOSTILE_NAME);
+    expect(Array.from(info.getElementsByTagName('img')).some(img => img.id === 'player-name-pwn')).toBe(false);
+    // Both Groove hover surfaces consume this one shared imported-prose
+    // boundary; exercise the exact output independently of canvas geometry.
+    const tooltip = document.createElement('div');
+    tooltip.innerHTML = grooveZonePlayerProseHTML(imported.zones[0]);
+    expect(tooltip.textContent).toContain(HOSTILE_NAME);
+    expect(tooltip.querySelector('#player-name-pwn')).toBeNull();
+    expect((globalThis as any).__playerNamePwned).toBeUndefined();
+  });
+
+  it('rejects a self-rehashed backup whose specimen id could own an inline action', () => {
+    const payload = _saveBuildLocalExport();
+    payload.storage['vugg-crystals-v1'] = JSON.stringify([{
+      ...specimen('Imported specimen'),
+      id: 'cry-bad\") ; globalThis.__playerNamePwned=1; //',
+    }]);
+    payload.backup_sha256 = _saveLocalExportDigest(payload);
+    expect(() => _saveAssertLocalExport(payload)).toThrow(/invalid specimen id/);
     expect((globalThis as any).__playerNamePwned).toBeUndefined();
   });
 });

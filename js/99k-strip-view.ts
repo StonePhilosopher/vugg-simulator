@@ -172,6 +172,7 @@ function _ensureStripViewStyles(): void {
       color: #9fb2d6; font-size: 8px; letter-spacing: 0.06em;
     }
     .strip-view-datasetrow .ds-origin.imported { border-color: #8b6f3e; color: #e0bd73; }
+    .strip-view-datasetrow .ds-origin.legacy { border-color: #a45e5e; color: #ef9b9b; }
     .strip-view-datasetrow .ds-meta { color: #99b; font-size: 10px; }
     .strip-view-datasetrow .ds-delete {
       color: #b66; cursor: pointer; padding: 0 6px;
@@ -471,6 +472,18 @@ function _stripSampleChipFloorNormalized(
 // means chips within 2% of each chip's range bundle together.
 const _STRIP_BUNDLE_TOLERANCE = 0.02;
 
+// Imported labels and event names remain inert text even though the filmstrip
+// is assembled as an SVG string for performance. Attribute and title contexts
+// intentionally share the full XML escape set.
+function _stripEscapeSvg(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 // Render a single strip (one row OR one angular/radial sub-strip). When
 // `angle` is null, renders the mean across angles (collapsed view). When
 // `angle` is a specific index, renders that one angular slice. `depth`
@@ -513,7 +526,7 @@ function _stripRenderStripSVG(
         const bot: string[] = [];
         for (let i = botPts.length - 1; i >= 0; i--) bot.push(`${botPts[i].x.toFixed(1)},${botPts[i].y.toFixed(2)}`);
         const colorHex = '#' + (meta.color | 0).toString(16).padStart(6, '0');
-        segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${meta.id}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${meta.label}: broth drawn down here (depletion halo)</title></polygon>`);
+        segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${_stripEscapeSvg(meta.id)}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${_stripEscapeSvg(meta.label)}: broth drawn down here (depletion halo)</title></polygon>`);
       }
     }
   }
@@ -585,7 +598,7 @@ function _stripRenderStripSVG(
       // dynamic stylesheet dims every .strip-chip-line except the
       // hovered chip's data-chip-id. CSS does the matching — no
       // per-element DOM walk.
-      segs.push(`<polyline class="strip-chip-line" data-chip-id="${meta.id}" points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1.25" stroke-opacity="0.65"/>`);
+      segs.push(`<polyline class="strip-chip-line" data-chip-id="${_stripEscapeSvg(meta.id)}" points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1.25" stroke-opacity="0.65"/>`);
     }
   }
 
@@ -614,7 +627,7 @@ function _stripRenderStripSVG(
       // v151: bigger marker radius (2.2 → 3.5) for the taller strip;
       // nudge upward from bottom edge so it sits in the strip body
       // rather than against the border.
-      segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${ev.mineral} @ step ${eventDisplayStep}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
+      segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${_stripEscapeSvg(ev.mineral)} @ step ${eventDisplayStep}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
     }
   }
 
@@ -774,32 +787,49 @@ async function _stripOpenStoredRow(
 function _stripBuildDatasetListRow(e: StripListEntry): HTMLDivElement {
   const row = document.createElement('div');
   row.className = 'strip-view-datasetrow';
+  const manifest = e.manifest && typeof e.manifest === 'object'
+    ? e.manifest
+    : ({} as StripManifest);
+  const invalidReason = String(e.invalid_reason || '');
   // 70a's guided-reading lesson authenticates the chosen recording from
   // these semantic fields; visible row order is not a scientific identity.
-  row.dataset.scenarioId = String(e.manifest.scenario_id || '');
-  row.dataset.seed = String(e.manifest.seed);
-  row.dataset.simVersion = String(e.manifest.sim_version);
-  row.dataset.modelDigest = String(e.manifest.model_digest || '');
-  row.dataset.scenarioSpecHash = String((e.manifest as any).scenario_spec_hash || '');
+  row.dataset.scenarioId = String(manifest.scenario_id || '');
+  row.dataset.seed = String(manifest.seed ?? '');
+  row.dataset.simVersion = String(manifest.sim_version ?? '');
+  row.dataset.modelDigest = String(manifest.model_digest || '');
+  row.dataset.scenarioSpecHash = String((manifest as any).scenario_spec_hash || '');
   row.dataset.storageKey = String(e.key);
-  row.dataset.recordedAt = String(e.manifest.recorded_at);
+  row.dataset.recordedAt = String(manifest.recorded_at ?? '');
   row.dataset.origin = e.origin;
-  row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
+  row.dataset.valid = invalidReason ? 'false' : 'true';
+  row.dataset.manifestDigestSha256 = invalidReason ? '' : stripDurableManifestDigest(manifest);
   row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
-  const date = new Date(e.manifest.recorded_at);
+  const recordedAt = typeof manifest.recorded_at === 'number' && Number.isFinite(manifest.recorded_at)
+    ? manifest.recorded_at : null;
+  const date = recordedAt === null ? null : new Date(recordedAt);
   const name = document.createElement('div');
   name.className = 'ds-name';
-  name.textContent = String(e.manifest.scenario_id || '');
+  name.textContent = typeof manifest.scenario_id === 'string' && manifest.scenario_id
+    ? manifest.scenario_id : '(unreadable strip)';
   const origin = document.createElement('span');
-  origin.className = `ds-origin ${e.origin === 'imported-file' ? 'imported' : 'recorded'}`;
-  origin.textContent = e.origin === 'imported-file' ? 'IMPORTED FILE' : 'LOCAL RECORDING';
+  const originPresentation = invalidReason
+    ? { className: 'legacy', label: 'CORRUPT / UNVERIFIED' }
+    : e.origin === 'imported-file'
+      ? { className: 'imported', label: 'IMPORTED FILE' }
+      : e.origin === 'production-run'
+        ? { className: 'recorded', label: 'LOCAL RECORDING' }
+        : { className: 'legacy', label: 'LEGACY / UNVERIFIED' };
+  origin.className = `ds-origin ${originPresentation.className}`;
+  origin.textContent = originPresentation.label;
   name.append(' ', origin);
   const details = document.createElement('div');
   details.className = 'ds-meta';
-  details.textContent = `seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
+  details.textContent = invalidReason
+    ? `Cannot open: ${invalidReason}`
+    : `seed ${manifest.seed} · ${manifest.duration_steps} steps · ${manifest.chips.length} chips · v${manifest.sim_version}${manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
   const recorded = document.createElement('div');
   recorded.className = 'ds-meta';
-  recorded.textContent = date.toLocaleString();
+  recorded.textContent = date ? date.toLocaleString() : 'unknown recording time';
   const del = document.createElement('span');
   del.className = 'ds-delete';
   del.title = 'Delete';
@@ -847,6 +877,13 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
         ev.stopPropagation();
         try { await stripStorageDelete(e.key); } catch (_e) {}
         await _stripRenderDatasetList(bodyEl);
+        return;
+      }
+      if (e.invalid_reason) {
+        const failed = document.createElement('div');
+        failed.className = 'strip-view-empty';
+        failed.textContent = 'Cannot open corrupt strip: ' + e.invalid_reason;
+        bodyEl.prepend(failed);
         return;
       }
       try {
@@ -1159,6 +1196,38 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   });
 }
 
+async function _stripPresentImportedDataset(
+  bodyEl: HTMLElement,
+  ds: StripDataset,
+  saver: (dataset: StripDataset, origin: 'imported-file') => Promise<string> = stripStorageSave,
+  available: () => boolean = stripStorageAvailable,
+  renderer: (body: HTMLElement, dataset: StripDataset) => void = _stripRenderDataset,
+): Promise<string> {
+  if (!available()) throw new Error('browser storage is unavailable; imported strip was not saved');
+  // Present the imported product only after the same transaction that owns
+  // eviction has committed. A quota/abort failure therefore leaves both the
+  // prior cache and the visible player state unchanged.
+  const key = await saver(ds, 'imported-file');
+  renderer(bodyEl, ds);
+  return key;
+}
+
+async function _stripReadUploadedDataset(
+  file: File,
+  deserializer: (bytes: Uint8Array) => Promise<StripDataset> = stripDeserialize,
+): Promise<StripDataset> {
+  const size = file?.size;
+  if (typeof size !== 'number' || !Number.isSafeInteger(size) || size < 1
+      || size > stripMaximumSerializedBytes()) {
+    throw new Error('strip file is empty or exceeds the supported size');
+  }
+  // The size gate deliberately precedes arrayBuffer(): rejecting after that
+  // call would still let a multi-gigabyte selection allocate first.
+  const buffer = await file.arrayBuffer();
+  if (buffer.byteLength !== size) throw new Error('strip file changed while it was being read');
+  return deserializer(new Uint8Array(buffer));
+}
+
 // Refresh all strip-row canvases (e.g., after chip toggle).
 function _stripRefreshFilmstrip(bodyEl: HTMLElement, ds: StripDataset): void {
   const film = bodyEl.querySelector('#strip-view-filmstrip');
@@ -1236,15 +1305,9 @@ function initStripView(): void {
         const file = uploadInput.files && uploadInput.files[0];
         if (!file) return;
         try {
-          const buf = new Uint8Array(await file.arrayBuffer());
-          const ds = await stripDeserialize(buf);
-          // Stash to IDB so it persists across page reloads + appears in
-          // the dataset list. Safe to fail silently if IDB unavailable.
-          if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
-            stripStorageSave(ds, 'imported-file').catch(() => { /* silent */ });
-          }
+          const ds = await _stripReadUploadedDataset(file);
           const body = panel.querySelector('#strip-view-body') as HTMLElement;
-          _stripRenderDataset(body, ds);
+          await _stripPresentImportedDataset(body, ds);
         } catch (err) {
           const body = panel.querySelector('#strip-view-body') as HTMLElement;
           body.innerHTML = '';

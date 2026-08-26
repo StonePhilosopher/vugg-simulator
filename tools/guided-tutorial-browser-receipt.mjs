@@ -64,8 +64,8 @@ const EXPECTED_GEOLOGY = Object.freeze({
 const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-9vm';
 const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
 // Replaced with the exact SIM 282 values after the owned-browser source freeze.
-const EXPECTED_GAME04_DATASET_SHA256 = 'd63bb8c463a7163ac991c6ebec849e8d88a26d793e3aa8d5660b045e5c1f97dc';
-const EXPECTED_GAME04_DOWNLOAD_SHA256 = '2b831b72f4f9d03663d1aa31e80e90aec46a691111a628849dd613a88783c05c';
+const EXPECTED_GAME04_DATASET_SHA256 = 'b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e';
+const EXPECTED_GAME04_DOWNLOAD_SHA256 = '7f4b5f444b482f8f5787b4b19185fe57c6f806a10d1cf849b598c37aedc761fe';
 const EXPECTED_BROWSER_RUNTIME = Object.freeze({
   schema: 'vugg-owned-devtools-browser-runtime-v2',
   executable_name: 'chrome.exe',
@@ -237,12 +237,14 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
   }
   const topology = surfaces.topology_helix;
   if (!exactKeys(topology, [
-    'scenario', 'public_control_sequence', 'final_three_enabled', 'final_helix_enabled',
+    'scenario', 'public_control_sequence', 'pointer_hit_tested_controls',
+    'final_three_enabled', 'final_helix_enabled',
   ])
       || topology.scenario !== 'shigar_pegmatite'
       || canonicalJson(topology.public_control_sequence) !== canonicalJson([
         'three:on', 'helix:off', 'three:off', 'helix:on', 'helix:off', 'three:on',
       ])
+      || topology.pointer_hit_tested_controls !== true
       || topology.final_three_enabled !== true
       || topology.final_helix_enabled !== false) {
     throw new Error('guided tutorial browser receipt does not close topology and Helicoid controls');
@@ -254,6 +256,7 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
     'scenario', 'seed', 'download_filename', 'download_sha256',
     'production_key', 'production_origin', 'imported_key', 'imported_origin',
     'dataset_digest_sha256', 'imported_digest_sha256', 'visible_import_label',
+    'upload_via_visible_file_chooser', 'durable_commit_before_render',
     'playback_started_and_stopped',
   ])
       || strip.scenario !== 'shigar_pegmatite' || strip.seed !== 42
@@ -266,6 +269,8 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
       || strip.dataset_digest_sha256 !== EXPECTED_GAME04_DATASET_SHA256
       || strip.imported_digest_sha256 !== EXPECTED_GAME04_DATASET_SHA256
       || strip.visible_import_label !== 'IMPORTED FILE'
+      || strip.upload_via_visible_file_chooser !== true
+      || strip.durable_commit_before_render !== true
       || strip.playback_started_and_stopped !== true) {
     throw new Error('guided tutorial browser receipt does not close authenticated Strip View products');
   }

@@ -104,21 +104,32 @@ function renderCollectedForMineral(name) {
     .slice()
     .sort((a, b) => new Date(b.collected_at).getTime() - new Date(a.collected_at).getTime())
     .map(c => {
-      const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
+      const safeTwinLaw = collectionPlayerTextHTML(c.twin_law || '');
+      const twin = c.twinned ? ` · ⟁ ${safeTwinLaw}` : '';
       const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
-      const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
+      const safeSource = collectionPlayerTextHTML(src);
+      const seed = c.source && c.source.seed != null
+        ? ` · seed ${collectionPlayerTextHTML(c.source.seed)}` : '';
       const safeName = collectionPlayerTextHTML(c.name || '');
+      const safeHabit = collectionPlayerTextHTML(c.habit || '');
+      const safeIdArgument = collectionPlayerInlineArgumentHTML(c.id);
       const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
       const canPlay = zoneCount > 0;
       const playBtn = canPlay
-        ? `<button onclick="playCollectedInGroove('${c.id}')" title="Open this crystal in the Record Player">▶ Play</button>`
+        ? `<button onclick="playCollectedInGroove(${safeIdArgument})" title="Open this crystal in the Record Player">▶ Play</button>`
         : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;
       // Zone-viz Phase 1d: bar-graph thumbnail for each collected specimen.
       // crystalThumbHTML is duck-typed — it reads .mineral + .zones, which
       // the serialized record has. For records saved before zone data was
       // persisted (c.zones undefined), falls back to the generic mineral
       // photo/placeholder automatically.
-      const thumbHTML = crystalThumbHTML(c, 40);
+      const thumbHTML = crystalThumbHTML({
+        ...c,
+        // The Library key is canonical mineral authority; twin prose crosses
+        // the same text boundary before crystalThumbHTML builds its title.
+        mineral: name,
+        twin_law: safeTwinLaw,
+      }, 40);
       return `<div class="collected-row" style="display:flex;gap:0.5rem;align-items:flex-start">
         ${thumbHTML}
         <div style="flex:1;min-width:0">
@@ -126,11 +137,11 @@ function renderCollectedForMineral(name) {
             <span class="collected-name" title="${safeName}">${safeName}</span>
             <span class="collected-size">${c.mm.toFixed(2)} mm</span>
           </div>
-          <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${zoneCount} zones</div>
+          <div class="collected-row-meta">${safeHabit}${twin} · ${safeSource}${seed} · ${zoneCount} zones</div>
           <div class="collected-row-actions">
             ${playBtn}
-            <button onclick="renameCollectedCrystal('${c.id}')">✎ Rename</button>
-            <button onclick="deleteCollectedCrystal('${c.id}')" class="danger">🗑 Delete</button>
+            <button onclick="renameCollectedCrystal(${safeIdArgument})">✎ Rename</button>
+            <button onclick="deleteCollectedCrystal(${safeIdArgument})" class="danger">🗑 Delete</button>
           </div>
         </div>
       </div>`;

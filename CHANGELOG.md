@@ -176,17 +176,25 @@ and the exact-execution evidence receipt.
   Collect and Rename preserve the exact player-owned specimen name in storage,
   while Library and Record Groove share one text-only presentation boundary;
   markup in a name is displayed literally and cannot construct a DOM node.
+  Local-backup specimen records are now typed and bounded before commit, so
+  hostile IDs cannot own inline actions and imported habit, source, twin,
+  inclusion, or zone-note prose stays inert across both player surfaces.
   Uploaded strips live in a visible **IMPORTED FILE** namespace whose key
   includes the digest of the complete serialized dataset. Identical bytes are
   idempotent, different payloads with the same manifest coexist, and imported
   entries have their own recent-five cache so they cannot replace or evict
-  simulator recordings. Every stored payload is rehashed on load. Eviction and
-  insertion now share one IndexedDB transaction, so a quota/write failure keeps
-  the old recording instead of losing both generations.
+  simulator recordings. Provenance-free rows from older versions are labeled
+  **LEGACY / UNVERIFIED**, never guessed to be local evidence. Every stored
+  payload is rehashed and shape-validated on load; uploaded dimensions/tensors
+  are bounded, and all manifest/event prose remains inert text in SVG. Eviction
+  and insertion now share one IndexedDB transaction, and an import is not shown
+  as a player product until that transaction commits, so a quota/write failure
+  keeps the old recording and visible state instead of losing both generations.
   The owned-browser acceptance path follows the public player controls from a
   hostile-named Shigar topaz in Library into Record Groove playback; toggles the
-  topology and Helicoid products; downloads, reimports, visibly identifies, and
-  sonifies the Shigar strip; and revisits Library, Groove, Strip View, and the
+  topology and Helicoid products through real pointer hit tests; downloads,
+  reimports through the visible file chooser, visibly identifies, and sonifies
+  the Shigar strip; and revisits Library, Groove, Strip View, and the
   current game at a 390×844 phone viewport. Breadcrumb: 93 collection value ->
   95/98 text surfaces; 85f serialized bytes -> 85h origin/digest/transaction ->
   99k visible list/import/playback -> browser workflow -> exact executable

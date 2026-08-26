@@ -85,8 +85,9 @@ interface StripStoredRecord {
 interface StripListEntry {
   key: string;
   manifest: StripManifest;
-  origin: 'production-run' | 'imported-file';
+  origin: 'production-run' | 'imported-file' | 'legacy-unverified';
   dataset_digest_sha256?: string;
+  invalid_reason?: string;
 }
 
 interface StripDurableRunReceipt {
@@ -162,9 +163,17 @@ function stripStorageOriginEligible(origin: string): boolean {
   return origin === 'production-run';
 }
 
-function stripStoredRecordOrigin(rec: Pick<StripStoredRecord, 'key' | 'origin'>): 'production-run' | 'imported-file' {
+function stripStoredRecordOrigin(
+  rec: Pick<StripStoredRecord, 'key' | 'origin'>,
+): 'production-run' | 'imported-file' | 'legacy-unverified' {
   if (rec.origin === 'production-run' || rec.origin === 'imported-file') return rec.origin;
-  return String(rec.key || '').startsWith('imported:') ? 'imported-file' : 'production-run';
+  // Before GAME-04, local recordings and uploaded files shared the canonical
+  // key and neither carried provenance. A surviving legacy row therefore
+  // cannot honestly be guessed to be either source: an uploaded file may
+  // already have replaced the local bytes. Keep it readable, but label it
+  // unverified and exclude it from production receipts and both recent-five
+  // eviction domains. Reimporting or recording anew creates an exact origin.
+  return 'legacy-unverified';
 }
 
 // Build a deterministic key for a dataset. recorded_at provides uniqueness.
@@ -326,6 +335,7 @@ function _stripCommitRecordAtomic(db: IDBDatabase, record: StripStoredRecord): P
 async function stripDatasetFromAuthenticatedStoredRecord(rec: StripStoredRecord): Promise<StripDataset> {
   const origin = stripStoredRecordOrigin(rec);
   const ds = stripDatasetFromStoredRecord(rec);
+  stripValidateDatasetShape(ds);
   const digest = await stripDurableDatasetDigest(ds);
   if (rec.dataset_digest_sha256 && digest !== rec.dataset_digest_sha256) {
     throw new Error('strip: stored dataset digest mismatch');
@@ -335,8 +345,18 @@ async function stripDatasetFromAuthenticatedStoredRecord(rec: StripStoredRecord)
     if (rec.key !== stripImportedStorageKey(rec.manifest, digest)) {
       throw new Error('strip: imported dataset key does not match its authenticated payload');
     }
-  } else if (rec.key !== stripStorageKey(rec.manifest)) {
-    throw new Error('strip: production dataset key does not match its manifest');
+  } else if (origin === 'production-run') {
+    if (rec.key !== stripStorageKey(rec.manifest)) {
+      throw new Error('strip: production dataset key does not match its manifest');
+    }
+  } else {
+    // Two pre-GAME04 layouts existed: the original shared canonical key and
+    // SIM281's `imported:` prefix. Neither carried durable origin/digest
+    // fields, so both remain readable only as visibly unverified legacy data.
+    const canonical = stripStorageKey(rec.manifest);
+    if (rec.key !== canonical && rec.key !== `imported:${canonical}`) {
+      throw new Error('strip: legacy dataset key does not match its manifest');
+    }
   }
   return ds;
 }
@@ -347,6 +367,7 @@ async function stripStorageSave(
   ds: StripDataset,
   origin: 'production-run' | 'imported-file' = 'production-run',
 ): Promise<string> {
+  stripValidateDatasetShape(ds);
   const canonicalKey = stripStorageKey(ds.manifest);
   const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
   // Uploaded files live in a separate, content-addressed key namespace. A
@@ -401,18 +422,28 @@ async function stripStorageList(scenarioId?: string): Promise<StripListEntry[]> 
     const req = store.getAll();
     req.onsuccess = () => {
       const all = (req.result || []) as StripStoredRecord[];
-      let entries = all.map(rec => ({
-        key: rec.key,
-        manifest: rec.manifest,
-        origin: stripStoredRecordOrigin(rec),
-        ...(rec.dataset_digest_sha256
-          ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
-          : {}),
-      }));
+      let entries = all.map(rec => {
+        let invalidReason = '';
+        try { stripValidateDatasetShape(stripDatasetFromStoredRecord(rec)); }
+        catch (error) { invalidReason = (error as Error).message || String(error); }
+        return {
+          key: String(rec.key || ''),
+          manifest: rec.manifest,
+          origin: stripStoredRecordOrigin(rec),
+          ...(rec.dataset_digest_sha256
+            ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
+            : {}),
+          ...(invalidReason ? { invalid_reason: invalidReason } : {}),
+        } as StripListEntry;
+      });
       if (scenarioId) {
-        entries = entries.filter(e => e.manifest.scenario_id === scenarioId);
+        entries = entries.filter(e => e.manifest?.scenario_id === scenarioId);
       }
-      entries.sort((a, b) => b.manifest.recorded_at - a.manifest.recorded_at);
+      entries.sort((a, b) => {
+        const aTime = typeof a.manifest?.recorded_at === 'number' ? a.manifest.recorded_at : -Infinity;
+        const bTime = typeof b.manifest?.recorded_at === 'number' ? b.manifest.recorded_at : -Infinity;
+        return bTime - aTime;
+      });
       resolve(entries);
     };
     req.onerror = () => reject(req.error || new Error('strip: list failed'));

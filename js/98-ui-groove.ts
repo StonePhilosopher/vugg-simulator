@@ -30,6 +30,20 @@ const GROOVE_AXES = [
   { name: 'Ti', key: 'trace_Ti', color: '#88cc88' },
 ];
 
+// Imported Library zone prose is rendered in both the detail timeline and
+// the main canvas tooltip. Keep the boundary shared: adding a second visual
+// consumer must not create a second interpretation of player/import text.
+function grooveZonePlayerProseHTML(zone): string {
+  let html = '';
+  if (zone?.fluid_inclusion) {
+    html += `💧 ${collectionPlayerTextHTML(zone.inclusion_type)}<br>`;
+  }
+  if (zone?.note) {
+    html += `<span style="color:#8a7a40">${collectionPlayerTextHTML(zone.note)}</span>`;
+  }
+  return html;
+}
+
 // Loaded-from-collection stand-ins, set by playCollectedInGroove. Takes
 // priority over live sims when present so the user actually sees the
 // crystal they asked for.
@@ -142,12 +156,12 @@ function grooveSelectCrystal() {
   const libraryName = grooveCrystal._libraryName
     ? `<span class="gci-mineral groove-library-name">“${collectionPlayerTextHTML(grooveCrystal._libraryName)}”</span><br>`
     : '';
-  let infoHtml = libraryName + `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
-  infoHtml += ` — ${grooveCrystal.describe_morphology()}`;
+  let infoHtml = libraryName + `<span class="gci-mineral">${collectionPlayerTextHTML(grooveCrystal.mineral)} #${collectionPlayerTextHTML(grooveCrystal.crystal_id)}</span>`;
+  infoHtml += ` — ${collectionPlayerTextHTML(grooveCrystal.describe_morphology())}`;
   infoHtml += `<br>${grooveCrystal.zones.length} growth zones, nucleated step ${grooveCrystal.nucleation_step} at ${grooveCrystal.nucleation_temp.toFixed(0)}°C`;
-  if (grooveCrystal.twinned) infoHtml += `<br><span style="color:#bb66ee">⟁ ${grooveCrystal.twin_law}</span>`;
-  infoHtml += `<br>Fluorescence: ${grooveCrystal.predict_fluorescence()}`;
-  infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${data.source}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
+  if (grooveCrystal.twinned) infoHtml += `<br><span style="color:#bb66ee">⟁ ${collectionPlayerTextHTML(grooveCrystal.twin_law)}</span>`;
+  infoHtml += `<br>Fluorescence: ${collectionPlayerTextHTML(grooveCrystal.predict_fluorescence())}`;
+  infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${collectionPlayerTextHTML(data.source)}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
   info.innerHTML = infoHtml;
 
   // Reset playback
@@ -630,8 +644,7 @@ function renderDetailStrip(startIdx, endIdx) {
       html += `<span style="color:#ffaa44">Mn: ${z.trace_Mn.toFixed(1)}</span> · `;
       html += `<span style="color:#8888cc">Al: ${z.trace_Al.toFixed(1)}</span> · `;
       html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
-      if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
-      if (z.note) html += `<span style="color:#8a7a40">${z.note}</span>`;
+      html += grooveZonePlayerProseHTML(z);
 
       tooltip.innerHTML = html;
       tooltip.style.display = 'block';
@@ -677,9 +690,9 @@ function renderDetailStrip(startIdx, endIdx) {
     if (z.trace_Mn > 0.05) html += `<div class="dz-mn">Mn ${z.trace_Mn.toFixed(1)}</div>`;
     if (z.trace_Al > 0.1) html += `<div class="dz-al">Al ${z.trace_Al.toFixed(1)}</div>`;
     if (z.trace_Ti > 0.005) html += `<div class="dz-ti">Ti ${z.trace_Ti.toFixed(2)}</div>`;
-    if (z.fluid_inclusion) html += `<div class="dz-event">💧 ${z.inclusion_type}</div>`;
+    if (z.fluid_inclusion) html += `<div class="dz-event">💧 ${collectionPlayerTextHTML(z.inclusion_type)}</div>`;
     if (z.note && z.note.toLowerCase().includes('twin')) html += `<div class="dz-event">⟁ twin</div>`;
-    if (z.note && !z.note.toLowerCase().includes('twin')) html += `<div class="dz-note">${z.note}</div>`;
+    if (z.note && !z.note.toLowerCase().includes('twin')) html += `<div class="dz-note">${collectionPlayerTextHTML(z.note)}</div>`;
 
     div.innerHTML = html;
     zonesDiv.appendChild(div);
@@ -729,8 +742,7 @@ function renderDetailStrip(startIdx, endIdx) {
       if (z.trace_Al > 0.5) html += `Al: ${z.trace_Al.toFixed(1)} · `;
       if (z.trace_Ti > 0.01) html += `Ti: ${z.trace_Ti.toFixed(3)} · `;
       html = html.replace(/ · $/, '<br>');
-      if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
-      if (z.note) html += `<span style="color:#8a7a40">${z.note}</span>`;
+      html += grooveZonePlayerProseHTML(z);
 
       tooltip.innerHTML = html;
       tooltip.style.display = 'block';

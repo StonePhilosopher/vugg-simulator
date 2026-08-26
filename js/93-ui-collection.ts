@@ -17,6 +17,107 @@
 const CRYSTAL_KEY = 'vugg-crystals-v1';
 const CRYSTAL_CORRUPT_KEY = 'vugg-crystals-v1.corrupt';
 
+function _collectionBoundedOptionalText(value, label, maxLength = 4_096) {
+  if (value === undefined || value === null) return;
+  if (typeof value !== 'string' || value.length > maxLength) {
+    throw new Error(`Library specimen has invalid ${label}`);
+  }
+}
+
+function _collectionFiniteOptional(value, label, { required = false, min = -Infinity } = {}) {
+  if (value === undefined || value === null) {
+    if (required) throw new Error(`Library specimen has missing ${label}`);
+    return;
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < min) {
+    throw new Error(`Library specimen has invalid ${label}`);
+  }
+}
+
+// Local backups are external input even when their envelope digest is valid.
+// Names remain arbitrary player text; every machine identity and renderer-
+// consumed coordinate is typed/bounded so an imported record cannot own an
+// inline handler or crash Record Groove after the backup commits.
+function assertCrystalCollectionRecord(record, label = 'Library specimen') {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) {
+    throw new Error(`${label} is not an object`);
+  }
+  if (typeof record.id !== 'string' || !/^[A-Za-z0-9._:-]{1,256}$/.test(record.id)) {
+    throw new Error(`${label} has invalid specimen id`);
+  }
+  _collectionBoundedOptionalText(record.name, 'name');
+  if (typeof record.mineral !== 'string' || !/^[A-Za-z0-9_.:+-]{1,128}$/.test(record.mineral)) {
+    throw new Error(`${label} has invalid mineral`);
+  }
+  _collectionBoundedOptionalText(record.collected_at, 'collection time', 128);
+  _collectionFiniteOptional(record.mm, 'length', { required: true, min: 0 });
+  _collectionFiniteOptional(record.a_mm, 'width', { min: 0 });
+  _collectionFiniteOptional(record.total_growth_um, 'total growth', { min: 0 });
+  _collectionFiniteOptional(record.radiation_damage, 'radiation damage', { min: 0 });
+  _collectionBoundedOptionalText(record.habit, 'habit', 512);
+  _collectionBoundedOptionalText(record.twin_law, 'twin law', 512);
+  _collectionBoundedOptionalText(record.position, 'position', 512);
+  if (record.twinned !== undefined && typeof record.twinned !== 'boolean') {
+    throw new Error(`${label} has invalid twin state`);
+  }
+  if (record.forms !== undefined
+      && (!Array.isArray(record.forms) || record.forms.length > 128
+        || record.forms.some(value => typeof value !== 'string' || value.length > 512))) {
+    throw new Error(`${label} has invalid crystal forms`);
+  }
+  if (record.source !== undefined && record.source !== null) {
+    if (typeof record.source !== 'object' || Array.isArray(record.source)) {
+      throw new Error(`${label} has invalid source`);
+    }
+    for (const key of ['mode', 'scenario', 'archetype', 'run_id']) {
+      _collectionBoundedOptionalText(record.source[key], `source ${key}`, 512);
+    }
+    for (const key of ['seed', 'crystal_index', 'nucleation_step', 'nucleation_temp']) {
+      _collectionFiniteOptional(record.source[key], `source ${key}`);
+    }
+  }
+  if (record.zones !== undefined) {
+    if (!Array.isArray(record.zones) || record.zones.length > 10_000) {
+      throw new Error(`${label} has invalid growth zones`);
+    }
+    for (const zone of record.zones) {
+      if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
+        throw new Error(`${label} has invalid growth zone`);
+      }
+      for (const key of [
+        'step', 'temperature', 'thickness_um', 'growth_rate',
+        'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
+      ]) {
+        _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
+      }
+      for (const key of [
+        'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
+        'morph_surf_sigma',
+      ]) _collectionFiniteOptional(zone[key], `zone ${key}`);
+      for (const key of [
+        'inclusion_type', 'note', 'morphology_status',
+        'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
+        'morph_form',
+      ]) _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
+      for (const key of ['fluid_inclusion', 'is_phantom']) {
+        if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
+          throw new Error(`${label} has invalid zone ${key}`);
+        }
+      }
+    }
+  }
+  if (record.zone_count !== undefined
+      && (typeof record.zone_count !== 'number' || !Number.isSafeInteger(record.zone_count)
+        || record.zone_count < 0 || record.zone_count > 10_000)) {
+    throw new Error(`${label} has invalid zone count`);
+  }
+  if (Array.isArray(record.zones) && record.zone_count !== undefined
+      && record.zone_count !== record.zones.length) {
+    throw new Error(`${label} has inconsistent zone count`);
+  }
+  return true;
+}
+
 function loadCrystalsStrict() {
   let raw = null;
   try {
@@ -26,8 +127,8 @@ function loadCrystalsStrict() {
     if (!Array.isArray(parsed)) throw new Error('Library payload is not an array');
     const ids = new Set();
     for (const record of parsed) {
-      if (!record || typeof record !== 'object' || typeof record.id !== 'string'
-          || !record.id || ids.has(record.id)) {
+      assertCrystalCollectionRecord(record);
+      if (ids.has(record.id)) {
         throw new Error('Library contains a missing or duplicate specimen id');
       }
       ids.add(record.id);
@@ -97,6 +198,10 @@ function collectionPlayerTextHTML(value): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function collectionPlayerInlineArgumentHTML(value): string {
+  return collectionPlayerTextHTML(JSON.stringify(String(value ?? '')));
 }
 
 // Turn a live Crystal + the run it came from into a persistent record.

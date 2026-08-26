@@ -779,6 +779,40 @@ class BrowserDriver {
     });
   }
 
+  async chooseFilesThroughPublicButton(buttonSelector, files) {
+    let consumed = false;
+    let timer = null;
+    let resolveChooser;
+    const chooser = new Promise((resolve, reject) => {
+      resolveChooser = resolve;
+      timer = setTimeout(() => reject(new Error('Timed out waiting for public file chooser')), DEFAULT_TIMEOUT_MS);
+    });
+    this.client.on('Page.fileChooserOpened', event => {
+      if (consumed) return;
+      consumed = true;
+      if (timer) clearTimeout(timer);
+      resolveChooser(event);
+    });
+    await this.client.send('Page.setInterceptFileChooserDialog', { enabled: true });
+    try {
+      // Real pointer input proves the visible Upload button itself is
+      // reachable and still owns the file-input activation path.
+      await this.click(buttonSelector);
+      const event = await chooser;
+      if (!event?.backendNodeId) throw new Error('public file chooser did not identify its input');
+      await this.client.send('DOM.setFileInputFiles', {
+        backendNodeId: event.backendNodeId,
+        files,
+      });
+    } catch (error) {
+      consumed = true;
+      if (timer) clearTimeout(timer);
+      throw error;
+    } finally {
+      await this.client.send('Page.setInterceptFileChooserDialog', { enabled: false });
+    }
+  }
+
   async elementRect(selector) {
     const encoded = JSON.stringify(selector);
     return this.evaluate(`(() => {
@@ -1447,18 +1481,18 @@ async function runWorkflow(driver, diagnostics) {
       'Simulation current-game surface',
     );
     if (await driver.evaluate(`topoThreeRendererEnabled() !== true`)) {
-      await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+      await driver.click('#topo-three-btn');
       await driver.waitFor(`topoThreeRendererEnabled() === true`, '3D topology normalized on');
     }
     if (await driver.evaluate(`helixOverlayEnabled() === true`)) {
-      await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+      await driver.click('#helix-overlay-btn');
       await driver.waitFor(`helixOverlayEnabled() === false`, 'helix normalized closed');
     }
     const topologySequence = ['three:on', 'helix:off'];
-    await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+    await driver.click('#topo-three-btn');
     await driver.waitFor(`topoThreeRendererEnabled() === false && document.querySelector('#topo-three-btn')?.getAttribute('aria-pressed') === 'false'`, 'flat topology product');
     topologySequence.push('three:off');
-    await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+    await driver.click('#helix-overlay-btn');
     await driver.waitFor(
       `helixOverlayEnabled() === true
         && document.querySelector('#helix-overlay-btn')?.getAttribute('aria-pressed') === 'true'
@@ -1466,10 +1500,10 @@ async function runWorkflow(driver, diagnostics) {
       'helix overlay product',
     );
     topologySequence.push('helix:on');
-    await driver.evaluate(`document.querySelector('#helix-overlay-btn').click()`);
+    await driver.click('#helix-overlay-btn');
     await driver.waitFor(`helixOverlayEnabled() === false && document.querySelector('#helix-overlay-btn')?.getAttribute('aria-pressed') === 'false'`, 'helix close product');
     topologySequence.push('helix:off');
-    await driver.evaluate(`document.querySelector('#topo-three-btn').click()`);
+    await driver.click('#topo-three-btn');
     await driver.waitFor(`topoThreeRendererEnabled() === true && document.querySelector('#topo-three-btn')?.getAttribute('aria-pressed') === 'true'`, '3D topology restored');
     topologySequence.push('three:on');
 
@@ -1490,8 +1524,13 @@ async function runWorkflow(driver, diagnostics) {
     const downloadedFile = await waitForDownloadedFile(diagnostics.download_dir, downloadFilename);
     const downloadSha256 = sha256File(downloadedFile);
     await driver.click('#strip-view-back');
-    await driver.waitFor(`!!document.querySelector('#strip-view-upload-input')`, 'Strip View upload input');
-    await driver.setFileInputFiles('#strip-view-upload-input', [downloadedFile]);
+    await driver.waitFor(
+      `!!document.querySelector('#strip-view-upload-input')
+        && !document.querySelector('#strip-view-upload')?.disabled
+        && getComputedStyle(document.querySelector('#strip-view-upload')).display !== 'none'`,
+      'Strip View public upload control',
+    );
+    await driver.chooseFilesThroughPublicButton('#strip-view-upload', [downloadedFile]);
     await driver.waitFor(
       `stripStorageList().then(entries => entries.some(entry =>
         entry.origin === 'imported-file' && entry.manifest.scenario_id === 'shigar_pegmatite'))`,
@@ -1584,6 +1623,7 @@ async function runWorkflow(driver, diagnostics) {
       topology_helix: {
         scenario: 'shigar_pegmatite',
         public_control_sequence: topologySequence,
+        pointer_hit_tested_controls: true,
         final_three_enabled: true,
         final_helix_enabled: false,
       },
@@ -1599,6 +1639,8 @@ async function runWorkflow(driver, diagnostics) {
         dataset_digest_sha256: stripIdentity.production_digest,
         imported_digest_sha256: stripIdentity.imported_digest,
         visible_import_label: stripIdentity.visible_import_label,
+        upload_via_visible_file_chooser: true,
+        durable_commit_before_render: true,
         playback_started_and_stopped: true,
       },
       phone: {

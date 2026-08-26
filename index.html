@@ -19975,8 +19975,8 @@ const MODEL_DIGEST = [
     'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
     'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
     'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
-    'collection-product:exact-player-owned-name+shared-text-only-library-and-record-groove-rendering-v1',
-    'strip-storage:production-vs-import-origin+content-addressed-import-key+full-payload-readback-digest+per-origin-five-cache+atomic-eviction-and-insertion-v1',
+    'collection-product:typed-bounded-backup-records+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v2',
+    'strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -79694,6 +79694,183 @@ function stripAllocateData(axes, chip_count) {
     const total = axes.steps * axes.angular_indices * axes.height_positions * D * chip_count;
     return new Uint8Array(total);
 }
+// Uploaded strips are untrusted binary input. These limits are deliberately
+// generous compared with the production recorder (a normal 200-step strip is
+// tens of MiB raw), but finite enough that a forged manifest cannot commission
+// an impossible tensor or turn gzip into an unbounded allocation request.
+const _STRIP_MAX_SERIALIZED_BYTES = 256 * 1024 * 1024;
+const _STRIP_MAX_JSON_SECTION_BYTES = 64 * 1024 * 1024;
+const _STRIP_MAX_STEPS = 10_000;
+const _STRIP_MAX_ANGLES = 720;
+const _STRIP_MAX_HEIGHTS = 2_048;
+const _STRIP_MAX_DEPTHS = 128;
+const _STRIP_MAX_CHIPS = 512;
+const _STRIP_MAX_EVENTS = 1_000_000;
+function stripMaximumSerializedBytes() {
+    return _STRIP_MAX_SERIALIZED_BYTES;
+}
+function _stripBoundedText(value, label, maxLength) {
+    if (typeof value !== 'string' || value.length === 0 || value.length > maxLength) {
+        throw new Error(`strip: invalid ${label}`);
+    }
+    return value;
+}
+function _stripPositiveSafeInteger(value, label, max) {
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1 || value > max) {
+        throw new Error(`strip: invalid ${label}`);
+    }
+    return value;
+}
+// Validate the complete renderer-facing shape. Testimony payloads are carried
+// as opaque evidence, but every array is bounded by the section byte limit;
+// the manifest, events, and tensors that drive loops/SVG receive exact types,
+// dimensions, and length closure.
+function stripValidateDatasetShape(ds) {
+    if (!ds || typeof ds !== 'object' || !ds.manifest || typeof ds.manifest !== 'object') {
+        throw new Error('strip: missing dataset manifest');
+    }
+    const manifest = ds.manifest;
+    _stripPositiveSafeInteger(manifest.format_version, 'format version', _STRIP_FORMAT_VERSION);
+    if (typeof manifest.sim_version !== 'number' || !Number.isSafeInteger(manifest.sim_version)
+        || manifest.sim_version < 0)
+        throw new Error('strip: invalid simulator version');
+    _stripBoundedText(manifest.scenario_id, 'scenario id', 256);
+    if (typeof manifest.seed !== 'number' || !Number.isFinite(manifest.seed)) {
+        throw new Error('strip: invalid seed');
+    }
+    if (typeof manifest.recorded_at !== 'number' || !Number.isSafeInteger(manifest.recorded_at)
+        || manifest.recorded_at < 0)
+        throw new Error('strip: invalid recording time');
+    if (manifest.model_digest !== undefined)
+        _stripBoundedText(manifest.model_digest, 'model digest', 65_536);
+    if (manifest.scenario_spec_hash !== undefined) {
+        _stripBoundedText(manifest.scenario_spec_hash, 'scenario specification hash', 512);
+    }
+    if (manifest.notes !== undefined && (typeof manifest.notes !== 'string' || manifest.notes.length > 16_384)) {
+        throw new Error('strip: invalid manifest notes');
+    }
+    const axes = manifest.axes;
+    if (!axes || typeof axes !== 'object')
+        throw new Error('strip: missing tensor axes');
+    const steps = _stripPositiveSafeInteger(axes.steps, 'step count', _STRIP_MAX_STEPS);
+    const angles = _stripPositiveSafeInteger(axes.angular_indices, 'angular count', _STRIP_MAX_ANGLES);
+    const heights = _stripPositiveSafeInteger(axes.height_positions, 'height count', _STRIP_MAX_HEIGHTS);
+    const depths = axes.depth_positions === undefined
+        ? 1
+        : _stripPositiveSafeInteger(axes.depth_positions, 'depth count', _STRIP_MAX_DEPTHS);
+    if (manifest.duration_steps !== steps)
+        throw new Error('strip: duration does not match tensor steps');
+    if (!Array.isArray(manifest.chips) || manifest.chips.length < 1
+        || manifest.chips.length > _STRIP_MAX_CHIPS)
+        throw new Error('strip: invalid chip manifest');
+    const chipIds = new Set();
+    for (const chip of manifest.chips) {
+        if (!chip || typeof chip !== 'object')
+            throw new Error('strip: invalid chip metadata');
+        const id = _stripBoundedText(chip.id, 'chip id', 128);
+        // IDs cross SVG attributes and CSS selectors. Keep them canonical tokens;
+        // human Unicode belongs in the separately escaped label.
+        if (!/^[A-Za-z0-9_.:+-]+$/.test(id) || chipIds.has(id)) {
+            throw new Error('strip: invalid or duplicate chip id');
+        }
+        chipIds.add(id);
+        _stripBoundedText(chip.label, 'chip label', 512);
+        _stripBoundedText(chip.system, 'chip system', 64);
+        if (typeof chip.units !== 'string' || chip.units.length > 128) {
+            throw new Error('strip: invalid chip units');
+        }
+        if (!Array.isArray(chip.range) || chip.range.length !== 2
+            || typeof chip.range[0] !== 'number' || !Number.isFinite(chip.range[0])
+            || typeof chip.range[1] !== 'number' || !Number.isFinite(chip.range[1])
+            || chip.range[1] <= chip.range[0])
+            throw new Error('strip: invalid chip range');
+        if (typeof chip.color !== 'number' || !Number.isSafeInteger(chip.color)
+            || chip.color < 0 || chip.color > 0xffffff)
+            throw new Error('strip: invalid chip color');
+    }
+    let expectedTensorLength = manifest.chips.length;
+    for (const dimension of [steps, angles, heights, depths]) {
+        if (expectedTensorLength > Math.floor(_STRIP_MAX_SERIALIZED_BYTES / dimension)) {
+            throw new Error('strip: tensor exceeds supported size');
+        }
+        expectedTensorLength *= dimension;
+    }
+    if (!(ds.chip_data instanceof Uint8Array) || ds.chip_data.length !== expectedTensorLength) {
+        throw new Error('strip: chip tensor length mismatch');
+    }
+    if (ds.floor_data !== undefined
+        && (!(ds.floor_data instanceof Uint8Array) || ds.floor_data.length !== expectedTensorLength)) {
+        throw new Error('strip: floor tensor length mismatch');
+    }
+    if (!Array.isArray(ds.nucleation_events) || ds.nucleation_events.length > _STRIP_MAX_EVENTS) {
+        throw new Error('strip: invalid nucleation events');
+    }
+    for (const event of ds.nucleation_events) {
+        if (!event || typeof event !== 'object'
+            || typeof event.step !== 'number' || !Number.isSafeInteger(event.step)
+            || event.step < 0 || event.step > steps
+            || typeof event.ring !== 'number' || !Number.isSafeInteger(event.ring)
+            || event.ring < 0 || event.ring >= heights
+            || typeof event.cell !== 'number' || !Number.isSafeInteger(event.cell)
+            || event.cell < 0 || event.cell >= 120)
+            throw new Error('strip: invalid nucleation event coordinates');
+        if (event.sample_index !== undefined
+            && (typeof event.sample_index !== 'number' || !Number.isSafeInteger(event.sample_index)
+                || event.sample_index < 0 || event.sample_index >= steps)) {
+            throw new Error('strip: invalid nucleation sample index');
+        }
+        _stripBoundedText(event.mineral, 'nucleation mineral', 256);
+        if (event.surface_anchor_key !== undefined) {
+            _stripBoundedText(event.surface_anchor_key, 'surface anchor key', 2_048);
+        }
+    }
+    for (const key of [
+        'pressure_phase_testimony', 'stress_event_testimony',
+        'transformation_event_testimony', 'carbonate_boundary_testimony',
+        'sulfur_ledger_testimony', 'fluid_boundary_testimony',
+        'enclosure_testimony', 'player_action_testimony',
+        'layer_growth_testimony', 'habit_morphology_testimony',
+    ]) {
+        const value = ds[key];
+        if (value !== undefined && (!Array.isArray(value) || value.length > _STRIP_MAX_EVENTS)) {
+            throw new Error(`strip: invalid ${key}`);
+        }
+    }
+}
+async function _stripReadStreamBounded(stream, maxBytes) {
+    const reader = stream.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done)
+                break;
+            const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+            total += chunk.length;
+            if (total > maxBytes)
+                throw new Error('strip: decompressed dataset exceeds supported size');
+            chunks.push(chunk);
+        }
+    }
+    catch (error) {
+        try {
+            await reader.cancel(error);
+        }
+        catch (_cancelError) { }
+        throw error;
+    }
+    finally {
+        reader.releaseLock();
+    }
+    const output = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        output.set(chunk, offset);
+        offset += chunk.length;
+    }
+    return output;
+}
 // ============================================================
 // Serialization (for download / share — NOT IndexedDB)
 // ============================================================
@@ -79782,6 +79959,10 @@ async function stripSerialize(ds, gzip = true) {
 // Reverse of stripSerialize. Handles both gzipped and raw input via
 // magic-byte sniff.
 async function stripDeserialize(input) {
+    if (!(input instanceof Uint8Array) || input.length === 0
+        || input.length > stripMaximumSerializedBytes()) {
+        throw new Error('strip: invalid or oversized dataset bytes');
+    }
     let buf = input;
     // gzip magic = 0x1F 0x8B
     if (buf.length >= 2 && buf[0] === 0x1F && buf[1] === 0x8B) {
@@ -79790,26 +79971,39 @@ async function stripDeserialize(input) {
         }
         const ds = new globalThis.DecompressionStream('gzip');
         const stream = new Blob([buf]).stream().pipeThrough(ds);
-        const decompressed = await new Response(stream).arrayBuffer();
-        buf = new Uint8Array(decompressed);
+        buf = await _stripReadStreamBounded(stream, stripMaximumSerializedBytes());
     }
     const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
     const dec = new TextDecoder();
     let offset = 0;
-    const manifestLen = dv.getUint32(offset, true);
-    offset += 4;
-    const manifest = JSON.parse(dec.decode(buf.subarray(offset, offset + manifestLen)));
-    offset += manifestLen;
-    const eventsLen = dv.getUint32(offset, true);
-    offset += 4;
-    const nucleation_events = JSON.parse(dec.decode(buf.subarray(offset, offset + eventsLen)));
-    offset += eventsLen;
+    const takeLength = (label) => {
+        if (offset + 4 > buf.length)
+            throw new Error(`strip: truncated ${label} length`);
+        const length = dv.getUint32(offset, true);
+        offset += 4;
+        if (length > _STRIP_MAX_JSON_SECTION_BYTES || offset + length > buf.length) {
+            throw new Error(`strip: invalid ${label} length`);
+        }
+        return length;
+    };
+    const takeJson = (label) => {
+        const length = takeLength(label);
+        const text = dec.decode(buf.subarray(offset, offset + length));
+        offset += length;
+        try {
+            return JSON.parse(text);
+        }
+        catch (_error) {
+            throw new Error(`strip: invalid ${label} JSON`);
+        }
+    };
+    const manifest = takeJson('manifest');
+    const nucleation_events = takeJson('events');
     // Floor section: only present for format_version ≥ 3 (v1/v2 blobs skip
     // straight to chip_data). A written length of 0 means "v3 but no floor".
     let floor_data;
     if ((manifest.format_version || 0) >= 3) {
-        const floorLen = dv.getUint32(offset, true);
-        offset += 4;
+        const floorLen = takeLength('floor');
         if (floorLen > 0) {
             floor_data = buf.slice(offset, offset + floorLen);
             offset += floorLen;
@@ -79826,10 +80020,7 @@ async function stripDeserialize(input) {
     let layer_growth_testimony;
     let habit_morphology_testimony;
     if ((manifest.format_version || 0) >= 4) {
-        const testimonyLen = dv.getUint32(offset, true);
-        offset += 4;
-        const testimony = JSON.parse(dec.decode(buf.subarray(offset, offset + testimonyLen)));
-        offset += testimonyLen;
+        const testimony = takeJson('testimony');
         pressure_phase_testimony = Array.isArray(testimony.pressure_phase_testimony)
             ? testimony.pressure_phase_testimony : [];
         stress_event_testimony = Array.isArray(testimony.stress_event_testimony)
@@ -79852,7 +80043,7 @@ async function stripDeserialize(input) {
             ? testimony.habit_morphology_testimony : [];
     }
     const chip_data = buf.slice(offset);
-    return {
+    const result = {
         manifest, chip_data, nucleation_events,
         ...(floor_data ? { floor_data } : {}),
         ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
@@ -79866,6 +80057,8 @@ async function stripDeserialize(input) {
         ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
         ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
     };
+    stripValidateDatasetShape(result);
+    return result;
 }
 // === END HELIX-OVERLAY-FORK ADDITION ==================================
 
@@ -80582,7 +80775,13 @@ function stripStorageOriginEligible(origin) {
 function stripStoredRecordOrigin(rec) {
     if (rec.origin === 'production-run' || rec.origin === 'imported-file')
         return rec.origin;
-    return String(rec.key || '').startsWith('imported:') ? 'imported-file' : 'production-run';
+    // Before GAME-04, local recordings and uploaded files shared the canonical
+    // key and neither carried provenance. A surviving legacy row therefore
+    // cannot honestly be guessed to be either source: an uploaded file may
+    // already have replaced the local bytes. Keep it readable, but label it
+    // unverified and exclude it from production receipts and both recent-five
+    // eviction domains. Reimporting or recording anew creates an exact origin.
+    return 'legacy-unverified';
 }
 // Build a deterministic key for a dataset. recorded_at provides uniqueness.
 function stripStorageKey(manifest) {
@@ -80739,6 +80938,7 @@ function _stripCommitRecordAtomic(db, record) {
 async function stripDatasetFromAuthenticatedStoredRecord(rec) {
     const origin = stripStoredRecordOrigin(rec);
     const ds = stripDatasetFromStoredRecord(rec);
+    stripValidateDatasetShape(ds);
     const digest = await stripDurableDatasetDigest(ds);
     if (rec.dataset_digest_sha256 && digest !== rec.dataset_digest_sha256) {
         throw new Error('strip: stored dataset digest mismatch');
@@ -80750,14 +80950,26 @@ async function stripDatasetFromAuthenticatedStoredRecord(rec) {
             throw new Error('strip: imported dataset key does not match its authenticated payload');
         }
     }
-    else if (rec.key !== stripStorageKey(rec.manifest)) {
-        throw new Error('strip: production dataset key does not match its manifest');
+    else if (origin === 'production-run') {
+        if (rec.key !== stripStorageKey(rec.manifest)) {
+            throw new Error('strip: production dataset key does not match its manifest');
+        }
+    }
+    else {
+        // Two pre-GAME04 layouts existed: the original shared canonical key and
+        // SIM281's `imported:` prefix. Neither carried durable origin/digest
+        // fields, so both remain readable only as visibly unverified legacy data.
+        const canonical = stripStorageKey(rec.manifest);
+        if (rec.key !== canonical && rec.key !== `imported:${canonical}`) {
+            throw new Error('strip: legacy dataset key does not match its manifest');
+        }
     }
     return ds;
 }
 // Save a dataset. Returns the stored key. Evicts the oldest same-origin
 // datasets when that origin's count cap is exceeded.
 async function stripStorageSave(ds, origin = 'production-run') {
+    stripValidateDatasetShape(ds);
     const canonicalKey = stripStorageKey(ds.manifest);
     const datasetDigestSha256 = await stripDurableDatasetDigest(ds);
     // Uploaded files live in a separate, content-addressed key namespace. A
@@ -80813,18 +81025,32 @@ async function stripStorageList(scenarioId) {
         const req = store.getAll();
         req.onsuccess = () => {
             const all = (req.result || []);
-            let entries = all.map(rec => ({
-                key: rec.key,
-                manifest: rec.manifest,
-                origin: stripStoredRecordOrigin(rec),
-                ...(rec.dataset_digest_sha256
-                    ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
-                    : {}),
-            }));
+            let entries = all.map(rec => {
+                let invalidReason = '';
+                try {
+                    stripValidateDatasetShape(stripDatasetFromStoredRecord(rec));
+                }
+                catch (error) {
+                    invalidReason = error.message || String(error);
+                }
+                return {
+                    key: String(rec.key || ''),
+                    manifest: rec.manifest,
+                    origin: stripStoredRecordOrigin(rec),
+                    ...(rec.dataset_digest_sha256
+                        ? { dataset_digest_sha256: rec.dataset_digest_sha256 }
+                        : {}),
+                    ...(invalidReason ? { invalid_reason: invalidReason } : {}),
+                };
+            });
             if (scenarioId) {
-                entries = entries.filter(e => e.manifest.scenario_id === scenarioId);
+                entries = entries.filter(e => e.manifest?.scenario_id === scenarioId);
             }
-            entries.sort((a, b) => b.manifest.recorded_at - a.manifest.recorded_at);
+            entries.sort((a, b) => {
+                const aTime = typeof a.manifest?.recorded_at === 'number' ? a.manifest.recorded_at : -Infinity;
+                const bTime = typeof b.manifest?.recorded_at === 'number' ? b.manifest.recorded_at : -Infinity;
+                return bTime - aTime;
+            });
             resolve(entries);
         };
         req.onerror = () => reject(req.error || new Error('strip: list failed'));
@@ -91442,6 +91668,108 @@ Object.assign(VugSimulator.prototype, {
 // the Library.
 const CRYSTAL_KEY = 'vugg-crystals-v1';
 const CRYSTAL_CORRUPT_KEY = 'vugg-crystals-v1.corrupt';
+function _collectionBoundedOptionalText(value, label, maxLength = 4_096) {
+    if (value === undefined || value === null)
+        return;
+    if (typeof value !== 'string' || value.length > maxLength) {
+        throw new Error(`Library specimen has invalid ${label}`);
+    }
+}
+function _collectionFiniteOptional(value, label, { required = false, min = -Infinity } = {}) {
+    if (value === undefined || value === null) {
+        if (required)
+            throw new Error(`Library specimen has missing ${label}`);
+        return;
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < min) {
+        throw new Error(`Library specimen has invalid ${label}`);
+    }
+}
+// Local backups are external input even when their envelope digest is valid.
+// Names remain arbitrary player text; every machine identity and renderer-
+// consumed coordinate is typed/bounded so an imported record cannot own an
+// inline handler or crash Record Groove after the backup commits.
+function assertCrystalCollectionRecord(record, label = 'Library specimen') {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) {
+        throw new Error(`${label} is not an object`);
+    }
+    if (typeof record.id !== 'string' || !/^[A-Za-z0-9._:-]{1,256}$/.test(record.id)) {
+        throw new Error(`${label} has invalid specimen id`);
+    }
+    _collectionBoundedOptionalText(record.name, 'name');
+    if (typeof record.mineral !== 'string' || !/^[A-Za-z0-9_.:+-]{1,128}$/.test(record.mineral)) {
+        throw new Error(`${label} has invalid mineral`);
+    }
+    _collectionBoundedOptionalText(record.collected_at, 'collection time', 128);
+    _collectionFiniteOptional(record.mm, 'length', { required: true, min: 0 });
+    _collectionFiniteOptional(record.a_mm, 'width', { min: 0 });
+    _collectionFiniteOptional(record.total_growth_um, 'total growth', { min: 0 });
+    _collectionFiniteOptional(record.radiation_damage, 'radiation damage', { min: 0 });
+    _collectionBoundedOptionalText(record.habit, 'habit', 512);
+    _collectionBoundedOptionalText(record.twin_law, 'twin law', 512);
+    _collectionBoundedOptionalText(record.position, 'position', 512);
+    if (record.twinned !== undefined && typeof record.twinned !== 'boolean') {
+        throw new Error(`${label} has invalid twin state`);
+    }
+    if (record.forms !== undefined
+        && (!Array.isArray(record.forms) || record.forms.length > 128
+            || record.forms.some(value => typeof value !== 'string' || value.length > 512))) {
+        throw new Error(`${label} has invalid crystal forms`);
+    }
+    if (record.source !== undefined && record.source !== null) {
+        if (typeof record.source !== 'object' || Array.isArray(record.source)) {
+            throw new Error(`${label} has invalid source`);
+        }
+        for (const key of ['mode', 'scenario', 'archetype', 'run_id']) {
+            _collectionBoundedOptionalText(record.source[key], `source ${key}`, 512);
+        }
+        for (const key of ['seed', 'crystal_index', 'nucleation_step', 'nucleation_temp']) {
+            _collectionFiniteOptional(record.source[key], `source ${key}`);
+        }
+    }
+    if (record.zones !== undefined) {
+        if (!Array.isArray(record.zones) || record.zones.length > 10_000) {
+            throw new Error(`${label} has invalid growth zones`);
+        }
+        for (const zone of record.zones) {
+            if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
+                throw new Error(`${label} has invalid growth zone`);
+            }
+            for (const key of [
+                'step', 'temperature', 'thickness_um', 'growth_rate',
+                'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
+            ]) {
+                _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
+            }
+            for (const key of [
+                'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
+                'morph_surf_sigma',
+            ])
+                _collectionFiniteOptional(zone[key], `zone ${key}`);
+            for (const key of [
+                'inclusion_type', 'note', 'morphology_status',
+                'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
+                'morph_form',
+            ])
+                _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
+            for (const key of ['fluid_inclusion', 'is_phantom']) {
+                if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
+                    throw new Error(`${label} has invalid zone ${key}`);
+                }
+            }
+        }
+    }
+    if (record.zone_count !== undefined
+        && (typeof record.zone_count !== 'number' || !Number.isSafeInteger(record.zone_count)
+            || record.zone_count < 0 || record.zone_count > 10_000)) {
+        throw new Error(`${label} has invalid zone count`);
+    }
+    if (Array.isArray(record.zones) && record.zone_count !== undefined
+        && record.zone_count !== record.zones.length) {
+        throw new Error(`${label} has inconsistent zone count`);
+    }
+    return true;
+}
 function loadCrystalsStrict() {
     let raw = null;
     try {
@@ -91453,8 +91781,8 @@ function loadCrystalsStrict() {
             throw new Error('Library payload is not an array');
         const ids = new Set();
         for (const record of parsed) {
-            if (!record || typeof record !== 'object' || typeof record.id !== 'string'
-                || !record.id || ids.has(record.id)) {
+            assertCrystalCollectionRecord(record);
+            if (ids.has(record.id)) {
                 throw new Error('Library contains a missing or duplicate specimen id');
             }
             ids.add(record.id);
@@ -91534,6 +91862,9 @@ function collectionPlayerTextHTML(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+function collectionPlayerInlineArgumentHTML(value) {
+    return collectionPlayerTextHTML(JSON.stringify(String(value ?? '')));
 }
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
@@ -92172,8 +92503,8 @@ function _saveAssertLocalExport(payload) {
             throw new Error('local backup Library is not an array');
         const ids = new Set();
         for (const record of records) {
-            if (!record || typeof record !== 'object' || typeof record.id !== 'string'
-                || !record.id || ids.has(record.id)) {
+            assertCrystalCollectionRecord(record, 'local backup Library specimen');
+            if (ids.has(record.id)) {
                 throw new Error('local backup Library contains a missing or duplicate specimen id');
             }
             ids.add(record.id);
@@ -94982,21 +95313,32 @@ function renderCollectedForMineral(name) {
         .slice()
         .sort((a, b) => new Date(b.collected_at).getTime() - new Date(a.collected_at).getTime())
         .map(c => {
-        const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
+        const safeTwinLaw = collectionPlayerTextHTML(c.twin_law || '');
+        const twin = c.twinned ? ` · ⟁ ${safeTwinLaw}` : '';
         const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
-        const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
+        const safeSource = collectionPlayerTextHTML(src);
+        const seed = c.source && c.source.seed != null
+            ? ` · seed ${collectionPlayerTextHTML(c.source.seed)}` : '';
         const safeName = collectionPlayerTextHTML(c.name || '');
+        const safeHabit = collectionPlayerTextHTML(c.habit || '');
+        const safeIdArgument = collectionPlayerInlineArgumentHTML(c.id);
         const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
         const canPlay = zoneCount > 0;
         const playBtn = canPlay
-            ? `<button onclick="playCollectedInGroove('${c.id}')" title="Open this crystal in the Record Player">▶ Play</button>`
+            ? `<button onclick="playCollectedInGroove(${safeIdArgument})" title="Open this crystal in the Record Player">▶ Play</button>`
             : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;
         // Zone-viz Phase 1d: bar-graph thumbnail for each collected specimen.
         // crystalThumbHTML is duck-typed — it reads .mineral + .zones, which
         // the serialized record has. For records saved before zone data was
         // persisted (c.zones undefined), falls back to the generic mineral
         // photo/placeholder automatically.
-        const thumbHTML = crystalThumbHTML(c, 40);
+        const thumbHTML = crystalThumbHTML({
+            ...c,
+            // The Library key is canonical mineral authority; twin prose crosses
+            // the same text boundary before crystalThumbHTML builds its title.
+            mineral: name,
+            twin_law: safeTwinLaw,
+        }, 40);
         return `<div class="collected-row" style="display:flex;gap:0.5rem;align-items:flex-start">
         ${thumbHTML}
         <div style="flex:1;min-width:0">
@@ -95004,11 +95346,11 @@ function renderCollectedForMineral(name) {
             <span class="collected-name" title="${safeName}">${safeName}</span>
             <span class="collected-size">${c.mm.toFixed(2)} mm</span>
           </div>
-          <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${zoneCount} zones</div>
+          <div class="collected-row-meta">${safeHabit}${twin} · ${safeSource}${seed} · ${zoneCount} zones</div>
           <div class="collected-row-actions">
             ${playBtn}
-            <button onclick="renameCollectedCrystal('${c.id}')">✎ Rename</button>
-            <button onclick="deleteCollectedCrystal('${c.id}')" class="danger">🗑 Delete</button>
+            <button onclick="renameCollectedCrystal(${safeIdArgument})">✎ Rename</button>
+            <button onclick="deleteCollectedCrystal(${safeIdArgument})" class="danger">🗑 Delete</button>
           </div>
         </div>
       </div>`;
@@ -101654,6 +101996,19 @@ const GROOVE_AXES = [
     { name: 'Al', key: 'trace_Al', color: '#8888cc' },
     { name: 'Ti', key: 'trace_Ti', color: '#88cc88' },
 ];
+// Imported Library zone prose is rendered in both the detail timeline and
+// the main canvas tooltip. Keep the boundary shared: adding a second visual
+// consumer must not create a second interpretation of player/import text.
+function grooveZonePlayerProseHTML(zone) {
+    let html = '';
+    if (zone?.fluid_inclusion) {
+        html += `💧 ${collectionPlayerTextHTML(zone.inclusion_type)}<br>`;
+    }
+    if (zone?.note) {
+        html += `<span style="color:#8a7a40">${collectionPlayerTextHTML(zone.note)}</span>`;
+    }
+    return html;
+}
 // Loaded-from-collection stand-ins, set by playCollectedInGroove. Takes
 // priority over live sims when present so the user actually sees the
 // crystal they asked for.
@@ -101759,13 +102114,13 @@ function grooveSelectCrystal() {
     const libraryName = grooveCrystal._libraryName
         ? `<span class="gci-mineral groove-library-name">“${collectionPlayerTextHTML(grooveCrystal._libraryName)}”</span><br>`
         : '';
-    let infoHtml = libraryName + `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
-    infoHtml += ` — ${grooveCrystal.describe_morphology()}`;
+    let infoHtml = libraryName + `<span class="gci-mineral">${collectionPlayerTextHTML(grooveCrystal.mineral)} #${collectionPlayerTextHTML(grooveCrystal.crystal_id)}</span>`;
+    infoHtml += ` — ${collectionPlayerTextHTML(grooveCrystal.describe_morphology())}`;
     infoHtml += `<br>${grooveCrystal.zones.length} growth zones, nucleated step ${grooveCrystal.nucleation_step} at ${grooveCrystal.nucleation_temp.toFixed(0)}°C`;
     if (grooveCrystal.twinned)
-        infoHtml += `<br><span style="color:#bb66ee">⟁ ${grooveCrystal.twin_law}</span>`;
-    infoHtml += `<br>Fluorescence: ${grooveCrystal.predict_fluorescence()}`;
-    infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${data.source}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
+        infoHtml += `<br><span style="color:#bb66ee">⟁ ${collectionPlayerTextHTML(grooveCrystal.twin_law)}</span>`;
+    infoHtml += `<br>Fluorescence: ${collectionPlayerTextHTML(grooveCrystal.predict_fluorescence())}`;
+    infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${collectionPlayerTextHTML(data.source)}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
     info.innerHTML = infoHtml;
     // Reset playback
     grooveStop();
@@ -102201,10 +102556,7 @@ function renderDetailStrip(startIdx, endIdx) {
             html += `<span style="color:#ffaa44">Mn: ${z.trace_Mn.toFixed(1)}</span> · `;
             html += `<span style="color:#8888cc">Al: ${z.trace_Al.toFixed(1)}</span> · `;
             html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
-            if (z.fluid_inclusion)
-                html += `💧 ${z.inclusion_type}<br>`;
-            if (z.note)
-                html += `<span style="color:#8a7a40">${z.note}</span>`;
+            html += grooveZonePlayerProseHTML(z);
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 12) + 'px';
@@ -102261,11 +102613,11 @@ function renderDetailStrip(startIdx, endIdx) {
         if (z.trace_Ti > 0.005)
             html += `<div class="dz-ti">Ti ${z.trace_Ti.toFixed(2)}</div>`;
         if (z.fluid_inclusion)
-            html += `<div class="dz-event">💧 ${z.inclusion_type}</div>`;
+            html += `<div class="dz-event">💧 ${collectionPlayerTextHTML(z.inclusion_type)}</div>`;
         if (z.note && z.note.toLowerCase().includes('twin'))
             html += `<div class="dz-event">⟁ twin</div>`;
         if (z.note && !z.note.toLowerCase().includes('twin'))
-            html += `<div class="dz-note">${z.note}</div>`;
+            html += `<div class="dz-note">${collectionPlayerTextHTML(z.note)}</div>`;
         div.innerHTML = html;
         zonesDiv.appendChild(div);
     }
@@ -102316,10 +102668,7 @@ function renderDetailStrip(startIdx, endIdx) {
             if (z.trace_Ti > 0.01)
                 html += `Ti: ${z.trace_Ti.toFixed(3)} · `;
             html = html.replace(/ · $/, '<br>');
-            if (z.fluid_inclusion)
-                html += `💧 ${z.inclusion_type}<br>`;
-            if (z.note)
-                html += `<span style="color:#8a7a40">${z.note}</span>`;
+            html += grooveZonePlayerProseHTML(z);
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 12) + 'px';
@@ -118877,6 +119226,7 @@ function _ensureStripViewStyles() {
       color: #9fb2d6; font-size: 8px; letter-spacing: 0.06em;
     }
     .strip-view-datasetrow .ds-origin.imported { border-color: #8b6f3e; color: #e0bd73; }
+    .strip-view-datasetrow .ds-origin.legacy { border-color: #a45e5e; color: #ef9b9b; }
     .strip-view-datasetrow .ds-meta { color: #99b; font-size: 10px; }
     .strip-view-datasetrow .ds-delete {
       color: #b66; cursor: pointer; padding: 0 6px;
@@ -119181,6 +119531,17 @@ function _stripSampleChipFloorNormalized(ds, step, angle, height, k, depth = 0) 
 // _STRIP_BUNDLE_TOLERANCE is in normalized chip units (0..1). 0.02
 // means chips within 2% of each chip's range bundle together.
 const _STRIP_BUNDLE_TOLERANCE = 0.02;
+// Imported labels and event names remain inert text even though the filmstrip
+// is assembled as an SVG string for performance. Attribute and title contexts
+// intentionally share the full XML escape set.
+function _stripEscapeSvg(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
 // Render a single strip (one row OR one angular/radial sub-strip). When
 // `angle` is null, renders the mean across angles (collapsed view). When
 // `angle` is a specific index, renders that one angular slice. `depth`
@@ -119223,7 +119584,7 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
                 for (let i = botPts.length - 1; i >= 0; i--)
                     bot.push(`${botPts[i].x.toFixed(1)},${botPts[i].y.toFixed(2)}`);
                 const colorHex = '#' + (meta.color | 0).toString(16).padStart(6, '0');
-                segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${meta.id}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${meta.label}: broth drawn down here (depletion halo)</title></polygon>`);
+                segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${_stripEscapeSvg(meta.id)}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${_stripEscapeSvg(meta.label)}: broth drawn down here (depletion halo)</title></polygon>`);
             }
         }
     }
@@ -119298,7 +119659,7 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
             // dynamic stylesheet dims every .strip-chip-line except the
             // hovered chip's data-chip-id. CSS does the matching — no
             // per-element DOM walk.
-            segs.push(`<polyline class="strip-chip-line" data-chip-id="${meta.id}" points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1.25" stroke-opacity="0.65"/>`);
+            segs.push(`<polyline class="strip-chip-line" data-chip-id="${_stripEscapeSvg(meta.id)}" points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1.25" stroke-opacity="0.65"/>`);
         }
     }
     // Mineral nucleation markers. When `angle` is null (collapsed view),
@@ -119328,7 +119689,7 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
             // v151: bigger marker radius (2.2 → 3.5) for the taller strip;
             // nudge upward from bottom edge so it sits in the strip body
             // rather than against the border.
-            segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${ev.mineral} @ step ${eventDisplayStep}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
+            segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${_stripEscapeSvg(ev.mineral)} @ step ${eventDisplayStep}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
         }
     }
     segs.push('</svg>');
@@ -119476,32 +119837,49 @@ async function _stripOpenStoredRow(bodyEl, row, key, loader = stripStorageLoad, 
 function _stripBuildDatasetListRow(e) {
     const row = document.createElement('div');
     row.className = 'strip-view-datasetrow';
+    const manifest = e.manifest && typeof e.manifest === 'object'
+        ? e.manifest
+        : {};
+    const invalidReason = String(e.invalid_reason || '');
     // 70a's guided-reading lesson authenticates the chosen recording from
     // these semantic fields; visible row order is not a scientific identity.
-    row.dataset.scenarioId = String(e.manifest.scenario_id || '');
-    row.dataset.seed = String(e.manifest.seed);
-    row.dataset.simVersion = String(e.manifest.sim_version);
-    row.dataset.modelDigest = String(e.manifest.model_digest || '');
-    row.dataset.scenarioSpecHash = String(e.manifest.scenario_spec_hash || '');
+    row.dataset.scenarioId = String(manifest.scenario_id || '');
+    row.dataset.seed = String(manifest.seed ?? '');
+    row.dataset.simVersion = String(manifest.sim_version ?? '');
+    row.dataset.modelDigest = String(manifest.model_digest || '');
+    row.dataset.scenarioSpecHash = String(manifest.scenario_spec_hash || '');
     row.dataset.storageKey = String(e.key);
-    row.dataset.recordedAt = String(e.manifest.recorded_at);
+    row.dataset.recordedAt = String(manifest.recorded_at ?? '');
     row.dataset.origin = e.origin;
-    row.dataset.manifestDigestSha256 = stripDurableManifestDigest(e.manifest);
+    row.dataset.valid = invalidReason ? 'false' : 'true';
+    row.dataset.manifestDigestSha256 = invalidReason ? '' : stripDurableManifestDigest(manifest);
     row.dataset.datasetDigestSha256 = String(e.dataset_digest_sha256 || '');
-    const date = new Date(e.manifest.recorded_at);
+    const recordedAt = typeof manifest.recorded_at === 'number' && Number.isFinite(manifest.recorded_at)
+        ? manifest.recorded_at : null;
+    const date = recordedAt === null ? null : new Date(recordedAt);
     const name = document.createElement('div');
     name.className = 'ds-name';
-    name.textContent = String(e.manifest.scenario_id || '');
+    name.textContent = typeof manifest.scenario_id === 'string' && manifest.scenario_id
+        ? manifest.scenario_id : '(unreadable strip)';
     const origin = document.createElement('span');
-    origin.className = `ds-origin ${e.origin === 'imported-file' ? 'imported' : 'recorded'}`;
-    origin.textContent = e.origin === 'imported-file' ? 'IMPORTED FILE' : 'LOCAL RECORDING';
+    const originPresentation = invalidReason
+        ? { className: 'legacy', label: 'CORRUPT / UNVERIFIED' }
+        : e.origin === 'imported-file'
+            ? { className: 'imported', label: 'IMPORTED FILE' }
+            : e.origin === 'production-run'
+                ? { className: 'recorded', label: 'LOCAL RECORDING' }
+                : { className: 'legacy', label: 'LEGACY / UNVERIFIED' };
+    origin.className = `ds-origin ${originPresentation.className}`;
+    origin.textContent = originPresentation.label;
     name.append(' ', origin);
     const details = document.createElement('div');
     details.className = 'ds-meta';
-    details.textContent = `seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
+    details.textContent = invalidReason
+        ? `Cannot open: ${invalidReason}`
+        : `seed ${manifest.seed} · ${manifest.duration_steps} steps · ${manifest.chips.length} chips · v${manifest.sim_version}${manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}`;
     const recorded = document.createElement('div');
     recorded.className = 'ds-meta';
-    recorded.textContent = date.toLocaleString();
+    recorded.textContent = date ? date.toLocaleString() : 'unknown recording time';
     const del = document.createElement('span');
     del.className = 'ds-delete';
     del.title = 'Delete';
@@ -119553,6 +119931,13 @@ async function _stripRenderDatasetList(bodyEl) {
                 }
                 catch (_e) { }
                 await _stripRenderDatasetList(bodyEl);
+                return;
+            }
+            if (e.invalid_reason) {
+                const failed = document.createElement('div');
+                failed.className = 'strip-view-empty';
+                failed.textContent = 'Cannot open corrupt strip: ' + e.invalid_reason;
+                bodyEl.prepend(failed);
                 return;
             }
             try {
@@ -119883,6 +120268,29 @@ function _stripRenderDataset(bodyEl, ds) {
         bodyEl.scrollTop = bodyEl.scrollHeight;
     });
 }
+async function _stripPresentImportedDataset(bodyEl, ds, saver = stripStorageSave, available = stripStorageAvailable, renderer = _stripRenderDataset) {
+    if (!available())
+        throw new Error('browser storage is unavailable; imported strip was not saved');
+    // Present the imported product only after the same transaction that owns
+    // eviction has committed. A quota/abort failure therefore leaves both the
+    // prior cache and the visible player state unchanged.
+    const key = await saver(ds, 'imported-file');
+    renderer(bodyEl, ds);
+    return key;
+}
+async function _stripReadUploadedDataset(file, deserializer = stripDeserialize) {
+    const size = file?.size;
+    if (typeof size !== 'number' || !Number.isSafeInteger(size) || size < 1
+        || size > stripMaximumSerializedBytes()) {
+        throw new Error('strip file is empty or exceeds the supported size');
+    }
+    // The size gate deliberately precedes arrayBuffer(): rejecting after that
+    // call would still let a multi-gigabyte selection allocate first.
+    const buffer = await file.arrayBuffer();
+    if (buffer.byteLength !== size)
+        throw new Error('strip file changed while it was being read');
+    return deserializer(new Uint8Array(buffer));
+}
 // Refresh all strip-row canvases (e.g., after chip toggle).
 function _stripRefreshFilmstrip(bodyEl, ds) {
     const film = bodyEl.querySelector('#strip-view-filmstrip');
@@ -119963,15 +120371,9 @@ function initStripView() {
                 if (!file)
                     return;
                 try {
-                    const buf = new Uint8Array(await file.arrayBuffer());
-                    const ds = await stripDeserialize(buf);
-                    // Stash to IDB so it persists across page reloads + appears in
-                    // the dataset list. Safe to fail silently if IDB unavailable.
-                    if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
-                        stripStorageSave(ds, 'imported-file').catch(() => { });
-                    }
+                    const ds = await _stripReadUploadedDataset(file);
                     const body = panel.querySelector('#strip-view-body');
-                    _stripRenderDataset(body, ds);
+                    await _stripPresentImportedDataset(body, ds);
                 }
                 catch (err) {
                     const body = panel.querySelector('#strip-view-body');

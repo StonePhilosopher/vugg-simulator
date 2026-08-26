@@ -44,6 +44,8 @@ describe('authenticated public-control guided tutorial journeys', () => {
         production_origin: 'production-run',
         imported_origin: 'imported-file',
         visible_import_label: 'IMPORTED FILE',
+        upload_via_visible_file_chooser: true,
+        durable_commit_before_render: true,
         playback_started_and_stopped: true,
       },
       phone: { width: 390, height: 844 },

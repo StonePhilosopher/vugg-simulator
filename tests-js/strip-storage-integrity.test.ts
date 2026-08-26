@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 declare function stripDurableDatasetDigest(ds: any): Promise<string>;
 declare function stripImportedStorageKey(manifest: any, digest: string): string;
@@ -8,6 +8,16 @@ declare function stripDatasetFromAuthenticatedStoredRecord(rec: any): Promise<an
 declare function _stripPlanOriginEvictions(all: any[], incoming: any): string[];
 declare function _stripCommitRecordAtomic(db: any, record: any): Promise<void>;
 declare function _stripBuildDatasetListRow(entry: any): HTMLDivElement;
+declare function stripStoredRecordOrigin(rec: any): 'production-run' | 'imported-file' | 'legacy-unverified';
+declare function stripStorageOriginEligible(origin: string): boolean;
+declare function stripSerialize(ds: any, gzip?: boolean): Promise<Uint8Array>;
+declare function stripDeserialize(input: Uint8Array): Promise<any>;
+declare function _stripRenderStepSVG(ds: any, step: number, width: number, height: number): string;
+declare function _stripPresentImportedDataset(
+  body: HTMLElement, ds: any, saver?: any, available?: any, renderer?: any,
+): Promise<string>;
+declare function _stripReadUploadedDataset(file: any, deserializer?: any): Promise<any>;
+declare function stripMaximumSerializedBytes(): number;
 
 function dataset(byte = 7, recordedAt = 100) {
   return {
@@ -173,5 +183,132 @@ describe('Strip View storage identity', () => {
     expect(row.querySelector('.ds-origin')?.textContent).toBe('IMPORTED FILE');
     expect(row.querySelector('.ds-name')?.firstChild?.textContent).toBe(hostile);
     expect(Array.from(row.getElementsByTagName('img')).some(img => img.id === 'strip-origin-pwn')).toBe(false);
+  });
+
+  it('fails closed on provenance-free legacy rows instead of calling them local evidence', async () => {
+    const ds = dataset(31, 123);
+    const legacy = stripStoredRecordFromDataset(ds);
+    delete legacy.origin;
+    delete legacy.dataset_digest_sha256;
+    legacy.key = stripStorageKey(ds.manifest);
+
+    expect(stripStoredRecordOrigin(legacy)).toBe('legacy-unverified');
+    expect(stripStorageOriginEligible(stripStoredRecordOrigin(legacy))).toBe(false);
+    await expect(stripDatasetFromAuthenticatedStoredRecord(legacy)).resolves.toMatchObject({
+      manifest: { scenario_id: 'storage_control' },
+    });
+    const prefixedLegacy = { ...legacy, key: `imported:${legacy.key}` };
+    await expect(stripDatasetFromAuthenticatedStoredRecord(prefixedLegacy)).resolves.toMatchObject({
+      manifest: { scenario_id: 'storage_control' },
+    });
+
+    const malformedLegacy = {
+      ...legacy,
+      manifest: {
+        ...legacy.manifest,
+        duration_steps: 2,
+        axes: { ...legacy.manifest.axes, steps: 2 },
+      },
+    };
+    malformedLegacy.key = stripStorageKey(malformedLegacy.manifest);
+    await expect(stripDatasetFromAuthenticatedStoredRecord(malformedLegacy))
+      .rejects.toThrow(/tensor length mismatch/);
+
+    const row = _stripBuildDatasetListRow({
+      key: legacy.key,
+      manifest: legacy.manifest,
+      origin: stripStoredRecordOrigin(legacy),
+    });
+    expect(row.dataset.origin).toBe('legacy-unverified');
+    expect(row.querySelector('.ds-origin')?.textContent).toBe('LEGACY / UNVERIFIED');
+
+    const fullProduction = Array.from({ length: 5 }, (_, i) => storedStub(`local-${i}`, 'production-run', i));
+    expect(_stripPlanOriginEvictions([legacy, ...fullProduction], storedStub('local-new', 'production-run', 999)))
+      .toEqual(['local-0']);
+  });
+
+  it('keeps imported manifest and event prose inert through deserialize and SVG rendering', async () => {
+    const hostile = '</title><image id="strip-import-pwn" href="x" onerror="globalThis.__stripImportPwn=1"></image><title>';
+    const ds = dataset(127, 777);
+    ds.manifest.scenario_id = hostile;
+    ds.manifest.axes = { steps: 1, angular_indices: 1, height_positions: 2 };
+    ds.manifest.duration_steps = 1;
+    ds.manifest.chips[0].label = hostile;
+    ds.chip_data = new Uint8Array([127, 127]);
+    ds.nucleation_events = [{ step: 0, ring: 0, cell: 0, mineral: hostile }];
+
+    const decoded = await stripDeserialize(await stripSerialize(ds, false));
+    const row = _stripBuildDatasetListRow({
+      key: `imported:${stripStorageKey(decoded.manifest)}`,
+      manifest: decoded.manifest,
+      origin: 'imported-file',
+    });
+    const holder = document.createElement('div');
+    holder.appendChild(row);
+    holder.insertAdjacentHTML('beforeend', _stripRenderStepSVG(decoded, 0, 100, 20));
+
+    expect(row.querySelector('.ds-name')?.firstChild?.textContent).toBe(hostile);
+    expect(holder.querySelector('#strip-import-pwn')).toBeNull();
+    expect(holder.querySelector('title')?.textContent).toContain(hostile);
+    expect((globalThis as any).__stripImportPwn).toBeUndefined();
+  });
+
+  it('rejects attribute-breaking chip ids and tensor-length lies at the import boundary', async () => {
+    const hostileId = dataset(1, 888);
+    hostileId.manifest.chips[0].id = 'pH" onload="globalThis.__stripImportPwn=1';
+    await expect(stripDeserialize(await stripSerialize(hostileId, false)))
+      .rejects.toThrow(/chip id/);
+
+    const wrongTensor = dataset(1, 889);
+    wrongTensor.manifest.axes.steps = 2;
+    wrongTensor.manifest.duration_steps = 2;
+    await expect(stripDeserialize(await stripSerialize(wrongTensor, false)))
+      .rejects.toThrow(/tensor length mismatch/);
+  });
+
+  it('does not present a failed import as a durable imported product', async () => {
+    const body = document.createElement('div');
+    body.textContent = 'prior durable list';
+    const renderer = vi.fn();
+    const saver = vi.fn().mockRejectedValue(new Error('simulated quota failure'));
+
+    await expect(_stripPresentImportedDataset(body, dataset(), saver, () => true, renderer))
+      .rejects.toThrow('simulated quota failure');
+    expect(renderer).not.toHaveBeenCalled();
+    expect(body.textContent).toBe('prior durable list');
+  });
+
+  it('renders malformed legacy rows as separately deletable without hiding valid rows', () => {
+    const corrupt = _stripBuildDatasetListRow({
+      key: 'legacy-broken',
+      origin: 'legacy-unverified',
+      manifest: { scenario_id: 'broken-upload', recorded_at: 1 },
+      invalid_reason: 'strip: invalid chip manifest',
+    });
+    const validDataset = dataset(7, 2);
+    const valid = _stripBuildDatasetListRow({
+      key: stripStorageKey(validDataset.manifest),
+      origin: 'production-run',
+      manifest: validDataset.manifest,
+    });
+    const list = document.createElement('div');
+    list.append(corrupt, valid);
+
+    expect(list.querySelectorAll('.strip-view-datasetrow')).toHaveLength(2);
+    expect(corrupt.dataset.valid).toBe('false');
+    expect(corrupt.querySelector('.ds-origin')?.textContent).toBe('CORRUPT / UNVERIFIED');
+    expect(corrupt.querySelector('.ds-delete')).not.toBeNull();
+    expect(valid.dataset.valid).toBe('true');
+    expect(valid.querySelector('.ds-origin')?.textContent).toBe('LOCAL RECORDING');
+  });
+
+  it('rejects an oversized upload before allocating its bytes', async () => {
+    const arrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(0));
+    const oversized = {
+      size: stripMaximumSerializedBytes() + 1,
+      arrayBuffer,
+    };
+    await expect(_stripReadUploadedDataset(oversized)).rejects.toThrow(/supported size/);
+    expect(arrayBuffer).not.toHaveBeenCalled();
   });
 });

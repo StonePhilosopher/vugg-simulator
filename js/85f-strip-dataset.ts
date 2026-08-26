@@ -258,6 +258,171 @@ function stripAllocateData(
   return new Uint8Array(total);
 }
 
+// Uploaded strips are untrusted binary input. These limits are deliberately
+// generous compared with the production recorder (a normal 200-step strip is
+// tens of MiB raw), but finite enough that a forged manifest cannot commission
+// an impossible tensor or turn gzip into an unbounded allocation request.
+const _STRIP_MAX_SERIALIZED_BYTES = 256 * 1024 * 1024;
+const _STRIP_MAX_JSON_SECTION_BYTES = 64 * 1024 * 1024;
+const _STRIP_MAX_STEPS = 10_000;
+const _STRIP_MAX_ANGLES = 720;
+const _STRIP_MAX_HEIGHTS = 2_048;
+const _STRIP_MAX_DEPTHS = 128;
+const _STRIP_MAX_CHIPS = 512;
+const _STRIP_MAX_EVENTS = 1_000_000;
+
+function stripMaximumSerializedBytes(): number {
+  return _STRIP_MAX_SERIALIZED_BYTES;
+}
+
+function _stripBoundedText(value: unknown, label: string, maxLength: number): string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > maxLength) {
+    throw new Error(`strip: invalid ${label}`);
+  }
+  return value;
+}
+
+function _stripPositiveSafeInteger(value: unknown, label: string, max: number): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1 || value > max) {
+    throw new Error(`strip: invalid ${label}`);
+  }
+  return value;
+}
+
+// Validate the complete renderer-facing shape. Testimony payloads are carried
+// as opaque evidence, but every array is bounded by the section byte limit;
+// the manifest, events, and tensors that drive loops/SVG receive exact types,
+// dimensions, and length closure.
+function stripValidateDatasetShape(ds: StripDataset): void {
+  if (!ds || typeof ds !== 'object' || !ds.manifest || typeof ds.manifest !== 'object') {
+    throw new Error('strip: missing dataset manifest');
+  }
+  const manifest = ds.manifest as StripManifest;
+  _stripPositiveSafeInteger(manifest.format_version, 'format version', _STRIP_FORMAT_VERSION);
+  if (typeof manifest.sim_version !== 'number' || !Number.isSafeInteger(manifest.sim_version)
+      || manifest.sim_version < 0) throw new Error('strip: invalid simulator version');
+  _stripBoundedText(manifest.scenario_id, 'scenario id', 256);
+  if (typeof manifest.seed !== 'number' || !Number.isFinite(manifest.seed)) {
+    throw new Error('strip: invalid seed');
+  }
+  if (typeof manifest.recorded_at !== 'number' || !Number.isSafeInteger(manifest.recorded_at)
+      || manifest.recorded_at < 0) throw new Error('strip: invalid recording time');
+  if (manifest.model_digest !== undefined) _stripBoundedText(manifest.model_digest, 'model digest', 65_536);
+  if (manifest.scenario_spec_hash !== undefined) {
+    _stripBoundedText(manifest.scenario_spec_hash, 'scenario specification hash', 512);
+  }
+  if (manifest.notes !== undefined && (typeof manifest.notes !== 'string' || manifest.notes.length > 16_384)) {
+    throw new Error('strip: invalid manifest notes');
+  }
+  const axes = manifest.axes;
+  if (!axes || typeof axes !== 'object') throw new Error('strip: missing tensor axes');
+  const steps = _stripPositiveSafeInteger(axes.steps, 'step count', _STRIP_MAX_STEPS);
+  const angles = _stripPositiveSafeInteger(axes.angular_indices, 'angular count', _STRIP_MAX_ANGLES);
+  const heights = _stripPositiveSafeInteger(axes.height_positions, 'height count', _STRIP_MAX_HEIGHTS);
+  const depths = axes.depth_positions === undefined
+    ? 1
+    : _stripPositiveSafeInteger(axes.depth_positions, 'depth count', _STRIP_MAX_DEPTHS);
+  if (manifest.duration_steps !== steps) throw new Error('strip: duration does not match tensor steps');
+  if (!Array.isArray(manifest.chips) || manifest.chips.length < 1
+      || manifest.chips.length > _STRIP_MAX_CHIPS) throw new Error('strip: invalid chip manifest');
+  const chipIds = new Set<string>();
+  for (const chip of manifest.chips) {
+    if (!chip || typeof chip !== 'object') throw new Error('strip: invalid chip metadata');
+    const id = _stripBoundedText(chip.id, 'chip id', 128);
+    // IDs cross SVG attributes and CSS selectors. Keep them canonical tokens;
+    // human Unicode belongs in the separately escaped label.
+    if (!/^[A-Za-z0-9_.:+-]+$/.test(id) || chipIds.has(id)) {
+      throw new Error('strip: invalid or duplicate chip id');
+    }
+    chipIds.add(id);
+    _stripBoundedText(chip.label, 'chip label', 512);
+    _stripBoundedText(chip.system, 'chip system', 64);
+    if (typeof chip.units !== 'string' || chip.units.length > 128) {
+      throw new Error('strip: invalid chip units');
+    }
+    if (!Array.isArray(chip.range) || chip.range.length !== 2
+        || typeof chip.range[0] !== 'number' || !Number.isFinite(chip.range[0])
+        || typeof chip.range[1] !== 'number' || !Number.isFinite(chip.range[1])
+        || chip.range[1] <= chip.range[0]) throw new Error('strip: invalid chip range');
+    if (typeof chip.color !== 'number' || !Number.isSafeInteger(chip.color)
+        || chip.color < 0 || chip.color > 0xffffff) throw new Error('strip: invalid chip color');
+  }
+  let expectedTensorLength = manifest.chips.length;
+  for (const dimension of [steps, angles, heights, depths]) {
+    if (expectedTensorLength > Math.floor(_STRIP_MAX_SERIALIZED_BYTES / dimension)) {
+      throw new Error('strip: tensor exceeds supported size');
+    }
+    expectedTensorLength *= dimension;
+  }
+  if (!(ds.chip_data instanceof Uint8Array) || ds.chip_data.length !== expectedTensorLength) {
+    throw new Error('strip: chip tensor length mismatch');
+  }
+  if (ds.floor_data !== undefined
+      && (!(ds.floor_data instanceof Uint8Array) || ds.floor_data.length !== expectedTensorLength)) {
+    throw new Error('strip: floor tensor length mismatch');
+  }
+  if (!Array.isArray(ds.nucleation_events) || ds.nucleation_events.length > _STRIP_MAX_EVENTS) {
+    throw new Error('strip: invalid nucleation events');
+  }
+  for (const event of ds.nucleation_events) {
+    if (!event || typeof event !== 'object'
+        || typeof event.step !== 'number' || !Number.isSafeInteger(event.step)
+        || event.step < 0 || event.step > steps
+        || typeof event.ring !== 'number' || !Number.isSafeInteger(event.ring)
+        || event.ring < 0 || event.ring >= heights
+        || typeof event.cell !== 'number' || !Number.isSafeInteger(event.cell)
+        || event.cell < 0 || event.cell >= 120) throw new Error('strip: invalid nucleation event coordinates');
+    if (event.sample_index !== undefined
+        && (typeof event.sample_index !== 'number' || !Number.isSafeInteger(event.sample_index)
+          || event.sample_index < 0 || event.sample_index >= steps)) {
+      throw new Error('strip: invalid nucleation sample index');
+    }
+    _stripBoundedText(event.mineral, 'nucleation mineral', 256);
+    if (event.surface_anchor_key !== undefined) {
+      _stripBoundedText(event.surface_anchor_key, 'surface anchor key', 2_048);
+    }
+  }
+  for (const key of [
+    'pressure_phase_testimony', 'stress_event_testimony',
+    'transformation_event_testimony', 'carbonate_boundary_testimony',
+    'sulfur_ledger_testimony', 'fluid_boundary_testimony',
+    'enclosure_testimony', 'player_action_testimony',
+    'layer_growth_testimony', 'habit_morphology_testimony',
+  ] as const) {
+    const value = (ds as any)[key];
+    if (value !== undefined && (!Array.isArray(value) || value.length > _STRIP_MAX_EVENTS)) {
+      throw new Error(`strip: invalid ${key}`);
+    }
+  }
+}
+
+async function _stripReadStreamBounded(
+  stream: ReadableStream<any>, maxBytes: number,
+): Promise<Uint8Array> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const chunk = value instanceof Uint8Array ? value : new Uint8Array(value as any);
+      total += chunk.length;
+      if (total > maxBytes) throw new Error('strip: decompressed dataset exceeds supported size');
+      chunks.push(chunk);
+    }
+  } catch (error) {
+    try { await reader.cancel(error); } catch (_cancelError) {}
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+  const output = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { output.set(chunk, offset); offset += chunk.length; }
+  return output;
+}
+
 // ============================================================
 // Serialization (for download / share — NOT IndexedDB)
 // ============================================================
@@ -342,6 +507,10 @@ async function stripSerialize(
 // Reverse of stripSerialize. Handles both gzipped and raw input via
 // magic-byte sniff.
 async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
+  if (!(input instanceof Uint8Array) || input.length === 0
+      || input.length > stripMaximumSerializedBytes()) {
+    throw new Error('strip: invalid or oversized dataset bytes');
+  }
   let buf = input;
   // gzip magic = 0x1F 0x8B
   if (buf.length >= 2 && buf[0] === 0x1F && buf[1] === 0x8B) {
@@ -350,25 +519,33 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     }
     const ds = new (globalThis as any).DecompressionStream('gzip');
     const stream = new Blob([buf as BlobPart]).stream().pipeThrough(ds);
-    const decompressed = await new Response(stream).arrayBuffer();
-    buf = new Uint8Array(decompressed);
+    buf = await _stripReadStreamBounded(stream, stripMaximumSerializedBytes());
   }
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   const dec = new TextDecoder();
   let offset = 0;
-  const manifestLen = dv.getUint32(offset, true); offset += 4;
-  const manifest = JSON.parse(dec.decode(buf.subarray(offset, offset + manifestLen))) as StripManifest;
-  offset += manifestLen;
-  const eventsLen = dv.getUint32(offset, true); offset += 4;
-  const nucleation_events = JSON.parse(
-    dec.decode(buf.subarray(offset, offset + eventsLen))
-  ) as StripNucleationEvent[];
-  offset += eventsLen;
+  const takeLength = (label: string): number => {
+    if (offset + 4 > buf.length) throw new Error(`strip: truncated ${label} length`);
+    const length = dv.getUint32(offset, true); offset += 4;
+    if (length > _STRIP_MAX_JSON_SECTION_BYTES || offset + length > buf.length) {
+      throw new Error(`strip: invalid ${label} length`);
+    }
+    return length;
+  };
+  const takeJson = (label: string): any => {
+    const length = takeLength(label);
+    const text = dec.decode(buf.subarray(offset, offset + length));
+    offset += length;
+    try { return JSON.parse(text); }
+    catch (_error) { throw new Error(`strip: invalid ${label} JSON`); }
+  };
+  const manifest = takeJson('manifest') as StripManifest;
+  const nucleation_events = takeJson('events') as StripNucleationEvent[];
   // Floor section: only present for format_version ≥ 3 (v1/v2 blobs skip
   // straight to chip_data). A written length of 0 means "v3 but no floor".
   let floor_data: Uint8Array | undefined;
   if ((manifest.format_version || 0) >= 3) {
-    const floorLen = dv.getUint32(offset, true); offset += 4;
+    const floorLen = takeLength('floor');
     if (floorLen > 0) { floor_data = buf.slice(offset, offset + floorLen); offset += floorLen; }
   }
   let pressure_phase_testimony: any[] | undefined;
@@ -382,11 +559,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let layer_growth_testimony: any[] | undefined;
   let habit_morphology_testimony: any[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
-    const testimonyLen = dv.getUint32(offset, true); offset += 4;
-    const testimony = JSON.parse(
-      dec.decode(buf.subarray(offset, offset + testimonyLen))
-    );
-    offset += testimonyLen;
+    const testimony = takeJson('testimony');
     pressure_phase_testimony = Array.isArray(testimony.pressure_phase_testimony)
       ? testimony.pressure_phase_testimony : [];
     stress_event_testimony = Array.isArray(testimony.stress_event_testimony)
@@ -409,7 +582,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.habit_morphology_testimony : [];
   }
   const chip_data = buf.slice(offset);
-  return {
+  const result = {
     manifest, chip_data, nucleation_events,
     ...(floor_data ? { floor_data } : {}),
     ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
@@ -423,6 +596,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
     ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
   };
+  stripValidateDatasetShape(result);
+  return result;
 }
 
 // === END HELIX-OVERLAY-FORK ADDITION ==================================

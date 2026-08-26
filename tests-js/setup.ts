@@ -575,6 +575,7 @@ const EXPORTS = [
   'stripDequantizeNormalized',
   'stripDataIndex',
   'stripAllocateData',
+  'stripMaximumSerializedBytes',
   'stripSerialize',
   'stripDeserialize',
   'stripStoredRecordFromDataset',
@@ -597,6 +598,8 @@ const EXPORTS = [
   'stripDatasetFromAuthenticatedStoredRecord',
   'stripDatasetMatchesDurableRunReceipt',
   '_stripOpenStoredRow', // async declarations are not auto-harvested
+  '_stripPresentImportedDataset', // commit-gated imported player product
+  '_stripReadUploadedDataset', // pre-allocation size-gated file boundary
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
