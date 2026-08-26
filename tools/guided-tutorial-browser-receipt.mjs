@@ -42,23 +42,23 @@ function assertCleanup(value, label) {
 const EXPECTED_GEOLOGY = Object.freeze({
   save_load: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 1,
-    fingerprint: 'd4e99a37931642ca89d3e2a627995188c7e765efafc6d7cd4a3b4eecd143cd84',
+    fingerprint: 'b328d800a46ec5ddc8e860bc01f21a36e6ad69f2d55f87b6d6197c833a938b92',
     run_id: 'save-16-55o',
   }),
   creative_completion: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 50,
-    fingerprint: '024fcf12f43ad4b232817f31352fa9946e87a15686e50100ab42590c9d410279',
+    fingerprint: 'f0d89ae72df5be6733d169d070258480d84444b07064d93be56dc478459c5c4b',
     run_id: 'save-16-dep',
   }),
   skip: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_mn_calcite', step: 0,
-    fingerprint: '211a864b76a03e5f2b86c566f4d97e2dca2ade4aef06ce6050b27d9c86576f14',
+    fingerprint: 'a05719ca80e6bc83fc9c6dc4cf84b1233c414b1323c8076a0d649f85c41815b3',
     run_id: 'save-16-9bv',
   }),
   simulation_completion: Object.freeze({
     runtime: 'simulation', scenario: 'shigar_pegmatite', step: 70,
-    fingerprint: '11f957f20499ab1489ecaf29ee092cdc56be6ec7213b73f3d2092042a4f25df6',
-    run_id: 'f122650dfd97998056f7014e13ab394ceffa8b5678a8c8115b3af1fa53166e26',
+    fingerprint: '85710f93c1d3890cbfec945b8a5cab6e2ec3d3450cd52cd3a079bc94ced2e872',
+    run_id: 'b41db7387a786605df9ebf1749dbcc7390d8d2762d01ca9fd25317c2c87ecc6e',
   }),
 });
 const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-9vm';
