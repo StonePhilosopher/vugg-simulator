@@ -218,7 +218,10 @@ and the exact-execution evidence receipt.
   same cavity on replay. Its async launch now consumes the exact immutable
   constructor receipt and revalidates that generation after the await, so an
   unknown, cancelled, or microtask-superseded request cannot relabel or step an
-  older ambient run. The browser dump and standalone agent `finish` output
+  older ambient run. Creative, Simulation, Random, and Zen constructors bind a
+  frozen identity to the exact simulation and commission the current specimen
+  source; browser dumps never borrow a headless label or prefer an older mode's
+  permanent handle. The browser dump and standalone agent `finish` output
   expose distinct serializer contracts and runtime scopes; their per-crystal
   core is field-for-field identical, but their complete response envelopes are
   no longer advertised as interchangeable. Simulation checkpoint storage uses

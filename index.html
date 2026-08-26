@@ -19912,7 +19912,10 @@ function scenarioSpecHash(spec) {
 // machine-readable envelopes rather than claiming whole-response parity. The
 // public async command consumes an immutable constructor receipt and rechecks
 // its launch generation before metadata or stepping; an unknown, cancelled,
-// or superseded request can never relabel the ambient prior simulation.
+// or superseded request can never relabel the ambient prior simulation. Every
+// visible constructor owns a frozen run identity and commissions the current
+// specimen source, so a headless label or older mode handle cannot leak into a
+// later dump.
 // Crash-safe Simulation checkpoint envelopes carry monotonic generations, so
 // an interrupted newer staging write wins over an older valid primary; corrupt
 // generations still fall back and equal-generation divergence fails closed.
@@ -19988,7 +19991,7 @@ const MODEL_DIGEST = [
     'replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1',
     'enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10',
     'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2',
-    'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound+exact-constructor-receipt+post-await-launch-generation-v3',
+    'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound+exact-constructor-receipt+post-await-launch-generation+sim-owned-metadata+last-commissioned-visible-selection-v4',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8',
