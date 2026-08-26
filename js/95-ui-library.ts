@@ -113,8 +113,15 @@ function renderCollectedForMineral(name) {
       const safeName = collectionPlayerTextHTML(c.name || '');
       const safeHabit = collectionPlayerTextHTML(c.habit || '');
       const safeIdArgument = collectionPlayerInlineArgumentHTML(c.id);
-      const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
-      const canPlay = zoneCount > 0;
+      // Initial-release records kept the count in `zones` but did not retain
+      // the layers themselves. Preserve that honest census while only making
+      // Groove reachable when actual zone records exist (93/98 own the shared
+      // migration and playback boundaries).
+      const hasPlayableZones = Array.isArray(c.zones) && c.zones.length > 0;
+      const zoneCount = Array.isArray(c.zones)
+        ? c.zones.length
+        : Number.isSafeInteger(c.zones) ? c.zones : (c.zone_count || 0);
+      const canPlay = hasPlayableZones;
       const playBtn = canPlay
         ? `<button onclick="playCollectedInGroove(${safeIdArgument})" title="Open this crystal in the Record Player">▶ Play</button>`
         : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;

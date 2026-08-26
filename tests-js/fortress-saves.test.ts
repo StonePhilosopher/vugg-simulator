@@ -243,10 +243,22 @@ function minimalSave(id: string, overrides: Record<string, any> = {}): any {
 function minimalLibrarySpecimen(id: string, overrides: Record<string, any> = {}): any {
   return {
     id,
+    collected_at: '2026-08-14T12:00:00.000Z',
     mineral: 'quartz',
     name: id,
     mm: 1,
+    a_mm: 0.5,
+    habit: 'prismatic',
+    forms: ['prism'],
+    twinned: false,
+    source: {
+      mode: 'creative', scenario: 'cooling', seed: 42,
+      nucleation_step: 1, nucleation_temp: 180,
+    },
     zones: [],
+    zone_count: 0,
+    total_growth_um: 1_000,
+    radiation_damage: 0,
     ...overrides,
   };
 }

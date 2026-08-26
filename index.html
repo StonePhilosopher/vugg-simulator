@@ -19895,7 +19895,14 @@ function scenarioSpecHash(spec) {
 // collected specimen through Record Groove, downloads/reimports/plays its
 // strip, traverses topology/Helicoid controls, and checks all four surfaces on
 // a phone viewport.
-const SIM_VERSION = 282;
+// v283 (August 2026): the initial released per-crystal Library stored a
+// bounded zone count in `zones`; later builds stored the full zone array
+// without changing the vugg-crystals-v1 key. The GAME-04 import validator now
+// recognizes that exact historical representation, keeps its specimen and
+// count visible and backup-portable, and still refuses Record Groove playback
+// unless actual zone records exist. Malformed or inconsistent numeric aliases
+// remain rejected at the shared Library/local-backup boundary.
+const SIM_VERSION = 283;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19975,7 +19982,7 @@ const MODEL_DIGEST = [
     'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
     'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
     'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
-    'collection-product:typed-bounded-backup-records+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v2',
+    'collection-product:typed-bounded-backup-records+released-numeric-zone-count-migration+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
     'strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2',
 ].join('|');
 
@@ -91728,35 +91735,41 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
         }
     }
     if (record.zones !== undefined) {
-        if (!Array.isArray(record.zones) || record.zones.length > 10_000) {
-            throw new Error(`${label} has invalid growth zones`);
-        }
-        for (const zone of record.zones) {
-            if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
-                throw new Error(`${label} has invalid growth zone`);
+        if (Array.isArray(record.zones)) {
+            if (record.zones.length > 10_000) {
+                throw new Error(`${label} has invalid growth zones`);
             }
-            for (const key of [
-                'step', 'temperature', 'thickness_um', 'growth_rate',
-                'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
-            ]) {
-                _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
-            }
-            for (const key of [
-                'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
-                'morph_surf_sigma',
-            ])
-                _collectionFiniteOptional(zone[key], `zone ${key}`);
-            for (const key of [
-                'inclusion_type', 'note', 'morphology_status',
-                'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
-                'morph_form',
-            ])
-                _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
-            for (const key of ['fluid_inclusion', 'is_phantom']) {
-                if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
-                    throw new Error(`${label} has invalid zone ${key}`);
+            for (const zone of record.zones) {
+                if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
+                    throw new Error(`${label} has invalid growth zone`);
+                }
+                for (const key of [
+                    'step', 'temperature', 'thickness_um', 'growth_rate',
+                    'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
+                ]) {
+                    _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
+                }
+                for (const key of [
+                    'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
+                    'morph_surf_sigma',
+                ])
+                    _collectionFiniteOptional(zone[key], `zone ${key}`);
+                for (const key of [
+                    'inclusion_type', 'note', 'morphology_status',
+                    'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
+                    'morph_form',
+                ])
+                    _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
+                for (const key of ['fluid_inclusion', 'is_phantom']) {
+                    if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
+                        throw new Error(`${label} has invalid zone ${key}`);
+                    }
                 }
             }
+        }
+        else if (typeof record.zones !== 'number' || !Number.isSafeInteger(record.zones)
+            || record.zones < 0 || record.zones > 10_000) {
+            throw new Error(`${label} has invalid growth zones`);
         }
     }
     if (record.zone_count !== undefined
@@ -91766,6 +91779,14 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
     }
     if (Array.isArray(record.zones) && record.zone_count !== undefined
         && record.zone_count !== record.zones.length) {
+        throw new Error(`${label} has inconsistent zone count`);
+    }
+    // The first released Library schema (87e0647e) stored only the bounded
+    // zone count in `zones`. Later builds stored the actual array without
+    // changing vugg-crystals-v1. Keep that exact old record readable and
+    // backup-importable, but do not invent Groove data from the count.
+    if (typeof record.zones === 'number' && record.zone_count !== undefined
+        && record.zone_count !== record.zones) {
         throw new Error(`${label} has inconsistent zone count`);
     }
     return true;
@@ -91949,7 +91970,9 @@ function buildCrystalRecord(crystal, meta) {
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
 function reconstructCrystalFromRecord(rec) {
-    const zones = (rec.zones || []).map(z => Object.assign({}, z));
+    const zones = Array.isArray(rec.zones)
+        ? rec.zones.map(z => Object.assign({}, z))
+        : [];
     const stand = {
         mineral: rec.mineral,
         crystal_id: `C${(rec.id || '').slice(-4)}`,
@@ -95334,8 +95357,15 @@ function renderCollectedForMineral(name) {
         const safeName = collectionPlayerTextHTML(c.name || '');
         const safeHabit = collectionPlayerTextHTML(c.habit || '');
         const safeIdArgument = collectionPlayerInlineArgumentHTML(c.id);
-        const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
-        const canPlay = zoneCount > 0;
+        // Initial-release records kept the count in `zones` but did not retain
+        // the layers themselves. Preserve that honest census while only making
+        // Groove reachable when actual zone records exist (93/98 own the shared
+        // migration and playback boundaries).
+        const hasPlayableZones = Array.isArray(c.zones) && c.zones.length > 0;
+        const zoneCount = Array.isArray(c.zones)
+            ? c.zones.length
+            : Number.isSafeInteger(c.zones) ? c.zones : (c.zone_count || 0);
+        const canPlay = hasPlayableZones;
         const playBtn = canPlay
             ? `<button onclick="playCollectedInGroove(${safeIdArgument})" title="Open this crystal in the Record Player">▶ Play</button>`
             : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;
@@ -102053,7 +102083,7 @@ function playCollectedInGroove(id) {
         alert('Collected crystal not found.');
         return;
     }
-    if (!rec.zones || !rec.zones.length) {
+    if (!Array.isArray(rec.zones) || !rec.zones.length) {
         alert('This specimen was collected before zone data was saved, so the Record Player has nothing to spiral. Collect a fresh one to play it.');
         return;
     }

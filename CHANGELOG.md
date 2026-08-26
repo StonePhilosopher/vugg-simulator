@@ -199,6 +199,16 @@ and the exact-execution evidence receipt.
   95/98 text surfaces; 85f serialized bytes -> 85h origin/digest/transaction ->
   99k visible list/import/playback -> browser workflow -> exact executable
   receipt.
+- SIM 283 preserves collections created by the first released Library schema.
+  Those records stored the number of growth layers directly in `zones`; later
+  builds stored a zone array under the same local-storage key. The shared
+  Library/backup validator now accepts only that bounded historical numeric
+  form, keeps the specimen and its honest layer count visible, and round-trips
+  it through authenticated local backup import. Record Groove remains disabled
+  because a count is not layer data. Negative, fractional, oversized, typed-
+  string, null, and inconsistent count aliases still fail closed. Breadcrumb:
+  93 collection migration/validation -> 93a backup import -> 95 Library census
+  and playback gate -> 98 Groove array authority -> collection/save tests.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and

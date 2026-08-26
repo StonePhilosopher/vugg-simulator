@@ -9,8 +9,10 @@ declare function grooveZonePlayerProseHTML(zone: any): string;
 declare function _saveBuildLocalExport(): any;
 declare function _saveLocalExportDigest(payload: any): string;
 declare function _saveAssertLocalExport(payload: any): boolean;
+declare function _saveApplyLocalExport(payload: any): boolean;
 declare function _saveMaximumLocalImportBytes(): number;
 declare function importVuggLocalDataFile(input: any): Promise<boolean>;
+declare function assertCrystalCollectionRecord(record: any, label?: string): boolean;
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -36,6 +38,33 @@ function specimen(name = HOSTILE_NAME) {
     }],
     zone_count: 1,
     total_growth_um: 4.25,
+  };
+}
+
+// Exact shape emitted by the first released per-crystal Library
+// (87e0647e): `zones` was the retained count, not an array of zone records.
+function legacyCountSpecimen(overrides: Record<string, any> = {}) {
+  return {
+    id: 'cry-legacy-zone-count',
+    collected_at: '2026-07-13T12:00:00.000Z',
+    name: 'Released legacy quartz',
+    mineral: 'quartz',
+    source: {
+      mode: 'creative', scenario: 'cooling', archetype: null, seed: 42,
+      nucleation_step: 1, nucleation_temp: 180,
+    },
+    mm: 3.25,
+    a_mm: 1.5,
+    habit: 'prismatic',
+    forms: ['prism'],
+    twinned: false,
+    twin_law: null,
+    position: 'wall',
+    fluorescence: 'non-fluorescent',
+    zones: 7,
+    total_growth_um: 3250,
+    radiation_damage: 0,
+    ...overrides,
   };
 }
 
@@ -155,5 +184,36 @@ describe('player-owned collection names', () => {
     await expect(importVuggLocalDataFile(input)).resolves.toBe(false);
     expect(text).not.toHaveBeenCalled();
     expect(input.value).toBe('');
+  });
+
+  it('keeps released numeric zone-count specimens visible and backup-portable without inventing Groove layers', () => {
+    const legacy = legacyCountSpecimen();
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([legacy]));
+
+    expect(loadCrystals()).toEqual([legacy]);
+    const holder = document.createElement('div');
+    holder.innerHTML = renderCollectedForMineral('quartz');
+    expect(holder.querySelector('.collected-row-meta')?.textContent).toContain('7 zones');
+    expect(holder.querySelector('.collected-row-actions button')?.hasAttribute('disabled')).toBe(true);
+
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+    playCollectedInGroove(legacy.id);
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/before zone data was saved/i));
+    alertSpy.mockRestore();
+
+    const backup = _saveBuildLocalExport();
+    expect(_saveAssertLocalExport(backup)).toBe(true);
+    localStorage.setItem('vugg-crystals-v1', '[]');
+    expect(_saveApplyLocalExport(backup)).toBe(true);
+    expect(loadCrystals()).toEqual([legacy]);
+  });
+
+  it('rejects malformed numeric legacy zone counts and inconsistent aliases', () => {
+    for (const zones of [-1, 1.5, 10_001, '7', null]) {
+      expect(() => assertCrystalCollectionRecord(legacyCountSpecimen({ zones })))
+        .toThrow(/invalid growth zones/i);
+    }
+    expect(() => assertCrystalCollectionRecord(legacyCountSpecimen({ zone_count: 6 })))
+      .toThrow(/inconsistent zone count/i);
   });
 });

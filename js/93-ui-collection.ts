@@ -77,33 +77,38 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
     }
   }
   if (record.zones !== undefined) {
-    if (!Array.isArray(record.zones) || record.zones.length > 10_000) {
-      throw new Error(`${label} has invalid growth zones`);
-    }
-    for (const zone of record.zones) {
-      if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
-        throw new Error(`${label} has invalid growth zone`);
+    if (Array.isArray(record.zones)) {
+      if (record.zones.length > 10_000) {
+        throw new Error(`${label} has invalid growth zones`);
       }
-      for (const key of [
-        'step', 'temperature', 'thickness_um', 'growth_rate',
-        'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
-      ]) {
-        _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
-      }
-      for (const key of [
-        'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
-        'morph_surf_sigma',
-      ]) _collectionFiniteOptional(zone[key], `zone ${key}`);
-      for (const key of [
-        'inclusion_type', 'note', 'morphology_status',
-        'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
-        'morph_form',
-      ]) _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
-      for (const key of ['fluid_inclusion', 'is_phantom']) {
-        if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
-          throw new Error(`${label} has invalid zone ${key}`);
+      for (const zone of record.zones) {
+        if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
+          throw new Error(`${label} has invalid growth zone`);
+        }
+        for (const key of [
+          'step', 'temperature', 'thickness_um', 'growth_rate',
+          'trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Ti',
+        ]) {
+          _collectionFiniteOptional(zone[key], `zone ${key}`, { required: true });
+        }
+        for (const key of [
+          'trace_Pb', 'trace_Cu', 'trace_Ge', 'morph_post_step_sigma',
+          'morph_surf_sigma',
+        ]) _collectionFiniteOptional(zone[key], `zone ${key}`);
+        for (const key of [
+          'inclusion_type', 'note', 'morphology_status',
+          'morph_unavailable_reason', 'morph_sigma_basis', 'morph_regime',
+          'morph_form',
+        ]) _collectionBoundedOptionalText(zone[key], `zone ${key}`, 4_096);
+        for (const key of ['fluid_inclusion', 'is_phantom']) {
+          if (zone[key] !== undefined && typeof zone[key] !== 'boolean') {
+            throw new Error(`${label} has invalid zone ${key}`);
+          }
         }
       }
+    } else if (typeof record.zones !== 'number' || !Number.isSafeInteger(record.zones)
+        || record.zones < 0 || record.zones > 10_000) {
+      throw new Error(`${label} has invalid growth zones`);
     }
   }
   if (record.zone_count !== undefined
@@ -113,6 +118,14 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
   }
   if (Array.isArray(record.zones) && record.zone_count !== undefined
       && record.zone_count !== record.zones.length) {
+    throw new Error(`${label} has inconsistent zone count`);
+  }
+  // The first released Library schema (87e0647e) stored only the bounded
+  // zone count in `zones`. Later builds stored the actual array without
+  // changing vugg-crystals-v1. Keep that exact old record readable and
+  // backup-importable, but do not invent Groove data from the count.
+  if (typeof record.zones === 'number' && record.zone_count !== undefined
+      && record.zone_count !== record.zones) {
     throw new Error(`${label} has inconsistent zone count`);
   }
   return true;
@@ -290,7 +303,9 @@ function buildCrystalRecord(crystal, meta) {
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
 function reconstructCrystalFromRecord(rec): any {
-  const zones = (rec.zones || []).map(z => Object.assign({}, z));
+  const zones = Array.isArray(rec.zones)
+    ? rec.zones.map(z => Object.assign({}, z))
+    : [];
   const stand = {
     mineral: rec.mineral,
     crystal_id: `C${(rec.id || '').slice(-4)}`,
