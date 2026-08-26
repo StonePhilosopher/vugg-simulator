@@ -215,7 +215,10 @@ and the exact-execution evidence receipt.
   `window.vugg.startScenario()` now validates and applies `shape_seed` before
   scenario wall construction, carries the resolved seed in its run metadata,
   writes the override into the Creative autosave recipe, and reconstructs the
-  same cavity on replay. The browser dump and standalone agent `finish` output
+  same cavity on replay. Its async launch now consumes the exact immutable
+  constructor receipt and revalidates that generation after the await, so an
+  unknown, cancelled, or microtask-superseded request cannot relabel or step an
+  older ambient run. The browser dump and standalone agent `finish` output
   expose distinct serializer contracts and runtime scopes; their per-crystal
   core is field-for-field identical, but their complete response envelopes are
   no longer advertised as interchangeable. Simulation checkpoint storage uses
