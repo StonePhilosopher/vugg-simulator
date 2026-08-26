@@ -9,6 +9,8 @@ declare function grooveZonePlayerProseHTML(zone: any): string;
 declare function _saveBuildLocalExport(): any;
 declare function _saveLocalExportDigest(payload: any): string;
 declare function _saveAssertLocalExport(payload: any): boolean;
+declare function _saveMaximumLocalImportBytes(): number;
+declare function importVuggLocalDataFile(input: any): Promise<boolean>;
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -142,5 +144,16 @@ describe('player-owned collection names', () => {
     payload.backup_sha256 = _saveLocalExportDigest(payload);
     expect(() => _saveAssertLocalExport(payload)).toThrow(/invalid specimen id/);
     expect((globalThis as any).__playerNamePwned).toBeUndefined();
+  });
+
+  it('rejects an oversized local backup before allocating its text', async () => {
+    const text = vi.fn().mockResolvedValue('{}');
+    const input = {
+      files: [{ size: _saveMaximumLocalImportBytes() + 1, text }],
+      value: 'oversized.json',
+    };
+    await expect(importVuggLocalDataFile(input)).resolves.toBe(false);
+    expect(text).not.toHaveBeenCalled();
+    expect(input.value).toBe('');
   });
 });

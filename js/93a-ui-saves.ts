@@ -288,6 +288,16 @@ function exportVuggLocalData() {
   _saveSetStorageNotice('Local backup exported. It stayed on this device; Vugg Simulator sent no telemetry.');
 }
 
+// A valid browser-local export is bounded by the browser's much smaller
+// localStorage quota. Keep a generous explicit ceiling, but apply it before
+// File.text() so an arbitrary selected file cannot force an unbounded string
+// allocation before authentication begins.
+const _SAVE_MAX_LOCAL_IMPORT_BYTES = 64 * 1024 * 1024;
+
+function _saveMaximumLocalImportBytes(): number {
+  return _SAVE_MAX_LOCAL_IMPORT_BYTES;
+}
+
 async function importVuggLocalDataFile(input) {
   const file = input?.files?.[0];
   const importButton = (typeof document !== 'undefined')
@@ -299,6 +309,10 @@ async function importVuggLocalDataFile(input) {
     return false;
   }
   try {
+    if (typeof file.size !== 'number' || !Number.isSafeInteger(file.size)
+        || file.size < 1 || file.size > _saveMaximumLocalImportBytes()) {
+      throw new Error('local backup file is empty or exceeds the supported size');
+    }
     const payload = JSON.parse(await file.text());
     _saveAssertLocalExport(payload);
     const confirmed = typeof confirm !== 'function' || confirm(

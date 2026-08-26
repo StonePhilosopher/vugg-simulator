@@ -590,6 +590,7 @@ const EXPORTS = [
   'musicSetContext',
   'initSettingsUI',
   'importVuggLocalDataFile', // async declarations are not auto-harvested
+  '_saveMaximumLocalImportBytes', // explicit external-file allocation bound
   'fortressBegin', // async declarations are not auto-harvested
   'runSimulation',
   'startScenarioInCreative', // shared async run-launch generation
