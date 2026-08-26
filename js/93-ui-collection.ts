@@ -16,6 +16,12 @@
 // the Library.
 const CRYSTAL_KEY = 'vugg-crystals-v1';
 const CRYSTAL_CORRUPT_KEY = 'vugg-crystals-v1.corrupt';
+// Current records retain the full per-layer payload, so their upper bound is
+// also an allocation/rendering boundary. The first released schema retained
+// only a numeric count; accepting any nonnegative safe integer there allocates
+// nothing and preserves runs made while Simulation steps were unbounded.
+const COLLECTION_MAX_ZONE_RECORDS = 10_000;
+const COLLECTION_MAX_LEGACY_ZONE_COUNT = Number.MAX_SAFE_INTEGER;
 
 function _collectionBoundedOptionalText(value, label, maxLength = 4_096) {
   if (value === undefined || value === null) return;
@@ -78,7 +84,7 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
   }
   if (record.zones !== undefined) {
     if (Array.isArray(record.zones)) {
-      if (record.zones.length > 10_000) {
+      if (record.zones.length > COLLECTION_MAX_ZONE_RECORDS) {
         throw new Error(`${label} has invalid growth zones`);
       }
       for (const zone of record.zones) {
@@ -107,13 +113,13 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
         }
       }
     } else if (typeof record.zones !== 'number' || !Number.isSafeInteger(record.zones)
-        || record.zones < 0 || record.zones > 10_000) {
+        || record.zones < 0 || record.zones > COLLECTION_MAX_LEGACY_ZONE_COUNT) {
       throw new Error(`${label} has invalid growth zones`);
     }
   }
   if (record.zone_count !== undefined
       && (typeof record.zone_count !== 'number' || !Number.isSafeInteger(record.zone_count)
-        || record.zone_count < 0 || record.zone_count > 10_000)) {
+        || record.zone_count < 0 || record.zone_count > COLLECTION_MAX_ZONE_RECORDS)) {
     throw new Error(`${label} has invalid zone count`);
   }
   if (Array.isArray(record.zones) && record.zone_count !== undefined
@@ -228,9 +234,16 @@ function buildCrystalRecord(crystal, meta) {
   const fl = typeof crystal.predict_fluorescence === 'function'
     ? crystal.predict_fluorescence() : null;
 
+  const liveZones = Array.isArray(crystal.zones) ? crystal.zones : [];
+  if (liveZones.length > COLLECTION_MAX_ZONE_RECORDS) {
+    throw new Error(
+      `This crystal has ${liveZones.length} growth zones; the Library can retain at most ${COLLECTION_MAX_ZONE_RECORDS}.`,
+    );
+  }
+
   // Serialize zones with the fields the Groove visualization reads.
   // Everything else on a GrowthZone is recomputable or decorative.
-  const zones = (crystal.zones || []).map(z => ({
+  const zones = liveZones.map(z => ({
     step: z.step,
     temperature: z.temperature,
     thickness_um: z.thickness_um,
@@ -358,7 +371,13 @@ function collectCrystal(crystal, meta) {
     alert('This crystal has no growth zones yet — let it grow first.');
     return false;
   }
-  const rec = buildCrystalRecord(crystal, meta);
+  let rec;
+  try {
+    rec = buildCrystalRecord(crystal, meta);
+  } catch (error) {
+    alert(`Could not collect this crystal: ${error && (error as any).message ? (error as any).message : error}`);
+    return false;
+  }
   const defaultName = rec.name;
   const chosen = prompt(`Name this ${crystal.mineral}:`, defaultName);
   if (chosen === null) return false; // cancelled
@@ -548,11 +567,16 @@ function collectAllCrystals(crystals, metaFn, opts?: { silent?: boolean }) {
   const before = uniqueCollectedMinerals();
   const items = loadCrystals();
   const records: Array<{ crystal: any; rec: any }> = [];
-  for (const crystal of candidates) {
-    const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
-    const rec = buildCrystalRecord(crystal, meta);
-    items.push(rec);
-    records.push({ crystal, rec });
+  try {
+    for (const crystal of candidates) {
+      const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
+      const rec = buildCrystalRecord(crystal, meta);
+      items.push(rec);
+      records.push({ crystal, rec });
+    }
+  } catch (error) {
+    alert(`Could not collect this batch: ${error && (error as any).message ? (error as any).message : error}`);
+    return { count: 0, newSpecies: [] };
   }
 
   // Disambiguate duplicate default names within this batch (boss request,

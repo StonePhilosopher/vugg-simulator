@@ -13105,10 +13105,12 @@
 // v283 (August 2026): the initial released per-crystal Library stored a
 // bounded zone count in `zones`; later builds stored the full zone array
 // without changing the vugg-crystals-v1 key. The GAME-04 import validator now
-// recognizes that exact historical representation, keeps its specimen and
-// count visible and backup-portable, and still refuses Record Groove playback
-// unless actual zone records exist. Malformed or inconsistent numeric aliases
-// remain rejected at the shared Library/local-backup boundary.
+// recognizes that exact historical representation up to the safe-integer
+// bound, keeps its specimen and count visible and backup-portable, and still
+// refuses Record Groove playback unless actual zone records exist. Current
+// full-layer records share one 10,000-zone producer/validator cap and an
+// oversized Collect fails visibly before prompt or persistence. Malformed or
+// inconsistent numeric aliases remain rejected at the shared boundary.
 const SIM_VERSION = 283;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
@@ -13190,7 +13192,7 @@ const MODEL_DIGEST = [
   'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
   'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
   'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
-  'collection-product:typed-bounded-backup-records+released-numeric-zone-count-migration+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
+  'collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
   'strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2',
 ].join('|');
 

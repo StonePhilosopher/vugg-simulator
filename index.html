@@ -19898,10 +19898,12 @@ function scenarioSpecHash(spec) {
 // v283 (August 2026): the initial released per-crystal Library stored a
 // bounded zone count in `zones`; later builds stored the full zone array
 // without changing the vugg-crystals-v1 key. The GAME-04 import validator now
-// recognizes that exact historical representation, keeps its specimen and
-// count visible and backup-portable, and still refuses Record Groove playback
-// unless actual zone records exist. Malformed or inconsistent numeric aliases
-// remain rejected at the shared Library/local-backup boundary.
+// recognizes that exact historical representation up to the safe-integer
+// bound, keeps its specimen and count visible and backup-portable, and still
+// refuses Record Groove playback unless actual zone records exist. Current
+// full-layer records share one 10,000-zone producer/validator cap and an
+// oversized Collect fails visibly before prompt or persistence. Malformed or
+// inconsistent numeric aliases remain rejected at the shared boundary.
 const SIM_VERSION = 283;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -19982,7 +19984,7 @@ const MODEL_DIGEST = [
     'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
     'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
     'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
-    'collection-product:typed-bounded-backup-records+released-numeric-zone-count-migration+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
+    'collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
     'strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2',
 ].join('|');
 
@@ -91675,6 +91677,12 @@ Object.assign(VugSimulator.prototype, {
 // the Library.
 const CRYSTAL_KEY = 'vugg-crystals-v1';
 const CRYSTAL_CORRUPT_KEY = 'vugg-crystals-v1.corrupt';
+// Current records retain the full per-layer payload, so their upper bound is
+// also an allocation/rendering boundary. The first released schema retained
+// only a numeric count; accepting any nonnegative safe integer there allocates
+// nothing and preserves runs made while Simulation steps were unbounded.
+const COLLECTION_MAX_ZONE_RECORDS = 10_000;
+const COLLECTION_MAX_LEGACY_ZONE_COUNT = Number.MAX_SAFE_INTEGER;
 function _collectionBoundedOptionalText(value, label, maxLength = 4_096) {
     if (value === undefined || value === null)
         return;
@@ -91736,7 +91744,7 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
     }
     if (record.zones !== undefined) {
         if (Array.isArray(record.zones)) {
-            if (record.zones.length > 10_000) {
+            if (record.zones.length > COLLECTION_MAX_ZONE_RECORDS) {
                 throw new Error(`${label} has invalid growth zones`);
             }
             for (const zone of record.zones) {
@@ -91768,13 +91776,13 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
             }
         }
         else if (typeof record.zones !== 'number' || !Number.isSafeInteger(record.zones)
-            || record.zones < 0 || record.zones > 10_000) {
+            || record.zones < 0 || record.zones > COLLECTION_MAX_LEGACY_ZONE_COUNT) {
             throw new Error(`${label} has invalid growth zones`);
         }
     }
     if (record.zone_count !== undefined
         && (typeof record.zone_count !== 'number' || !Number.isSafeInteger(record.zone_count)
-            || record.zone_count < 0 || record.zone_count > 10_000)) {
+            || record.zone_count < 0 || record.zone_count > COLLECTION_MAX_ZONE_RECORDS)) {
         throw new Error(`${label} has invalid zone count`);
     }
     if (Array.isArray(record.zones) && record.zone_count !== undefined
@@ -91897,9 +91905,13 @@ function buildCrystalRecord(crystal, meta) {
     const defaultName = `${capitalize(crystal.mineral)} from ${titleBase}`;
     const fl = typeof crystal.predict_fluorescence === 'function'
         ? crystal.predict_fluorescence() : null;
+    const liveZones = Array.isArray(crystal.zones) ? crystal.zones : [];
+    if (liveZones.length > COLLECTION_MAX_ZONE_RECORDS) {
+        throw new Error(`This crystal has ${liveZones.length} growth zones; the Library can retain at most ${COLLECTION_MAX_ZONE_RECORDS}.`);
+    }
     // Serialize zones with the fields the Groove visualization reads.
     // Everything else on a GrowthZone is recomputable or decorative.
-    const zones = (crystal.zones || []).map(z => ({
+    const zones = liveZones.map(z => ({
         step: z.step,
         temperature: z.temperature,
         thickness_um: z.thickness_um,
@@ -92027,7 +92039,14 @@ function collectCrystal(crystal, meta) {
         alert('This crystal has no growth zones yet — let it grow first.');
         return false;
     }
-    const rec = buildCrystalRecord(crystal, meta);
+    let rec;
+    try {
+        rec = buildCrystalRecord(crystal, meta);
+    }
+    catch (error) {
+        alert(`Could not collect this crystal: ${error && error.message ? error.message : error}`);
+        return false;
+    }
     const defaultName = rec.name;
     const chosen = prompt(`Name this ${crystal.mineral}:`, defaultName);
     if (chosen === null)
@@ -92227,11 +92246,17 @@ function collectAllCrystals(crystals, metaFn, opts) {
     const before = uniqueCollectedMinerals();
     const items = loadCrystals();
     const records = [];
-    for (const crystal of candidates) {
-        const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
-        const rec = buildCrystalRecord(crystal, meta);
-        items.push(rec);
-        records.push({ crystal, rec });
+    try {
+        for (const crystal of candidates) {
+            const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
+            const rec = buildCrystalRecord(crystal, meta);
+            items.push(rec);
+            records.push({ crystal, rec });
+        }
+    }
+    catch (error) {
+        alert(`Could not collect this batch: ${error && error.message ? error.message : error}`);
+        return { count: 0, newSpecies: [] };
     }
     // Disambiguate duplicate default names within this batch (boss request,
     // 2026-05-23). buildCrystalRecord's default name is

@@ -13,6 +13,12 @@ declare function _saveApplyLocalExport(payload: any): boolean;
 declare function _saveMaximumLocalImportBytes(): number;
 declare function importVuggLocalDataFile(input: any): Promise<boolean>;
 declare function assertCrystalCollectionRecord(record: any, label?: string): boolean;
+declare function buildCrystalRecord(crystal: any, meta: any): any;
+declare function collectCrystal(crystal: any, meta: any): boolean;
+declare function collectAllCrystals(crystals: any[], meta: any, opts?: { silent?: boolean }): {
+  count: number;
+  newSpecies: string[];
+};
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -65,6 +71,30 @@ function legacyCountSpecimen(overrides: Record<string, any> = {}) {
     total_growth_um: 3250,
     radiation_damage: 0,
     ...overrides,
+  };
+}
+
+function liveCrystalWithZones(count: number) {
+  const zone = {
+    step: 1, temperature: 180, thickness_um: 1, growth_rate: 1,
+    trace_Fe: 0, trace_Mn: 0, trace_Al: 0, trace_Ti: 0,
+    fluid_inclusion: false, note: '', is_phantom: false,
+  };
+  return {
+    mineral: 'quartz',
+    zones: Array.from({ length: count }, () => zone),
+    total_growth_um: count,
+    c_length_mm: count / 1_000,
+    a_width_mm: 1,
+    habit: 'prismatic',
+    dominant_forms: ['prism'],
+    twinned: false,
+    twin_law: null,
+    position: 'wall',
+    nucleation_step: 1,
+    nucleation_temp: 180,
+    radiation_damage: 0,
+    predict_fluorescence: () => 'non-fluorescent',
   };
 }
 
@@ -186,14 +216,14 @@ describe('player-owned collection names', () => {
     expect(input.value).toBe('');
   });
 
-  it('keeps released numeric zone-count specimens visible and backup-portable without inventing Groove layers', () => {
-    const legacy = legacyCountSpecimen();
+  it('keeps released high numeric zone-count specimens visible and backup-portable without inventing Groove layers', () => {
+    const legacy = legacyCountSpecimen({ zones: 10_001 });
     localStorage.setItem('vugg-crystals-v1', JSON.stringify([legacy]));
 
     expect(loadCrystals()).toEqual([legacy]);
     const holder = document.createElement('div');
     holder.innerHTML = renderCollectedForMineral('quartz');
-    expect(holder.querySelector('.collected-row-meta')?.textContent).toContain('7 zones');
+    expect(holder.querySelector('.collected-row-meta')?.textContent).toContain('10001 zones');
     expect(holder.querySelector('.collected-row-actions button')?.hasAttribute('disabled')).toBe(true);
 
     const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
@@ -209,11 +239,38 @@ describe('player-owned collection names', () => {
   });
 
   it('rejects malformed numeric legacy zone counts and inconsistent aliases', () => {
-    for (const zones of [-1, 1.5, 10_001, '7', null]) {
+    for (const zones of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1, '7', null]) {
       expect(() => assertCrystalCollectionRecord(legacyCountSpecimen({ zones })))
         .toThrow(/invalid growth zones/i);
     }
     expect(() => assertCrystalCollectionRecord(legacyCountSpecimen({ zone_count: 6 })))
       .toThrow(/inconsistent zone count/i);
+  });
+
+  it('shares the 10,000-layer producer/validator cap and refuses 10,001 atomically', () => {
+    const maximum = liveCrystalWithZones(10_000);
+    const maximumRecord = buildCrystalRecord(maximum, { mode: 'test', scenario: 'cooling', seed: 42 });
+    expect(maximumRecord.zones).toHaveLength(10_000);
+    expect(assertCrystalCollectionRecord(maximumRecord)).toBe(true);
+
+    const prior = JSON.stringify([specimen('Existing specimen')]);
+    localStorage.setItem('vugg-crystals-v1', prior);
+    const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('Should not be asked');
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+    expect(collectCrystal(liveCrystalWithZones(10_001), {
+      mode: 'test', scenario: 'cooling', seed: 42,
+    })).toBe(false);
+    expect(promptSpy).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/at most 10000/i));
+    expect(localStorage.getItem('vugg-crystals-v1')).toBe(prior);
+
+    const oversizedBatchCrystal = liveCrystalWithZones(10_001);
+    expect(collectAllCrystals([oversizedBatchCrystal], {
+      mode: 'test', scenario: 'cooling', seed: 42,
+    }, { silent: true })).toEqual({ count: 0, newSpecies: [] });
+    expect(oversizedBatchCrystal._collectedRecordId).toBeUndefined();
+    expect(localStorage.getItem('vugg-crystals-v1')).toBe(prior);
+    promptSpy.mockRestore();
+    alertSpy.mockRestore();
   });
 });
