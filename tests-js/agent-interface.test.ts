@@ -349,6 +349,40 @@ describe('Agent-friendly interface — v117 guard test', () => {
       await expect(w.vugg.startScenario('cooling', { seed: 7002, shape_seed: '73' }))
         .rejects.toThrow('shape_seed must be a safe integer');
     });
+
+    it('never relabels an older run when an unknown scenario fails to launch', async () => {
+      const w: any = (globalThis as any).window || globalThis;
+      const beforeMeta = await w.vugg.startScenario('cooling', {
+        seed: 7003, shape_seed: 79,
+      });
+      const beforeSim = w.vugg.fortressSim;
+      expect(beforeMeta).toEqual({ scenario: 'cooling', seed: 7003, shape_seed: 79 });
+
+      await expect(w.vugg.startScenario('__definitely_missing__', { seed: 9999 }))
+        .rejects.toThrow("scenario '__definitely_missing__' did not start");
+      expect(w.vugg.fortressSim).toBe(beforeSim);
+      expect(beforeSim._agentRunMeta).toBe(beforeMeta);
+      expect(w.vugg._lastRunMeta).toBe(beforeMeta);
+    });
+
+    it('rejects a superseded async launch and binds metadata only to its winner', async () => {
+      const w: any = (globalThis as any).window || globalThis;
+      const superseded = w.vugg.startScenario('cooling', {
+        seed: 7004, shape_seed: 81,
+      });
+      const winner = w.vugg.startScenario('cooling', {
+        seed: 7005, shape_seed: 83,
+      });
+
+      await expect(superseded).rejects.toThrow("scenario 'cooling' did not start");
+      await expect(winner).resolves.toEqual({
+        scenario: 'cooling', seed: 7005, shape_seed: 83,
+      });
+      expect(w.vugg.fortressSim._agentRunMeta).toEqual({
+        scenario: 'cooling', seed: 7005, shape_seed: 83,
+      });
+      expect(w.vugg.fortressSim.conditions.wall.shape_seed).toBe(83);
+    });
   });
 
   describe('Bundle / build invariants', () => {

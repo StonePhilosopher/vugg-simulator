@@ -7,10 +7,10 @@ declare function _tutorialActionTargetMatches(action: any, hit: Element): boolea
 declare function tutorialStateSnapshot(): any;
 declare function startTutorial(name: string): Promise<void>;
 declare function fortressReset(): void;
-declare function fortressBeginFromScenario(name: string, seed?: number): void;
+declare function fortressBeginFromScenario(name: string, seed?: number): any;
 declare function fortressBeginFromStarterFluid(name: string, seed?: number): void;
 declare function fortressBegin(): Promise<void>;
-declare function startScenarioInCreative(name: string, seed?: number): Promise<void>;
+declare function startScenarioInCreative(name: string, seed?: number): Promise<any>;
 declare function startStarterFluidInCreative(name: string): Promise<void>;
 declare function runSimulation(): Promise<void>;
 declare function cancelSimulationPlayback(): void;

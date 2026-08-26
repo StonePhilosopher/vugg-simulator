@@ -19904,7 +19904,16 @@ function scenarioSpecHash(spec) {
 // full-layer records share one 10,000-zone producer/validator cap and an
 // oversized Collect fails visibly before prompt or persistence. Malformed or
 // inconsistent numeric aliases remain rejected at the shared boundary.
-const SIM_VERSION = 283;
+// v284 (August 2026): public agent and Simulation recovery identities now
+// describe what the executable actually does. `window.vugg.startScenario`
+// validates and applies its shape_seed before cavity construction, persists
+// that override in the Creative recipe, and replays the same wall. Browser and
+// headless agent outputs share one exact crystal core but carry distinct,
+// machine-readable envelopes rather than claiming whole-response parity.
+// Crash-safe Simulation checkpoint envelopes carry monotonic generations, so
+// an interrupted newer staging write wins over an older valid primary; corrupt
+// generations still fall back and equal-generation divergence fails closed.
+const SIM_VERSION = 284;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19976,12 +19985,12 @@ const MODEL_DIGEST = [
     'replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1',
     'enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10',
     'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2',
-    'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1',
+    'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound-v2',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8',
     'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3',
-    'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
+    'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor+monotonic-checkpoint-generation+newest-valid-staging-recovery+equal-generation-divergence-fail-closed-v12',
     'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
     'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
     'collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',
@@ -83674,11 +83683,11 @@ const _createFluidSpotField = (sim) => {
 const SIMULATION_COMMAND_SCHEMA = 'vugg-simulation-command-v1';
 const SIMULATION_CHECKPOINT_SCHEMA = 'vugg-simulation-checkpoint-v1';
 const SIMULATION_WORKER_MESSAGE_SCHEMA = 'vugg-simulation-worker-message-v1';
-const SIMULATION_CHECKPOINT_STORAGE_SCHEMA = 'vugg-simulation-checkpoint-storage-v1';
+const SIMULATION_CHECKPOINT_STORAGE_SCHEMA = 'vugg-simulation-checkpoint-storage-v2';
 const SIMULATION_CHECKPOINT_STORAGE_KEYS = Object.freeze({
-    primary: 'vugg.simulation.checkpoint.v1.primary',
-    staging: 'vugg.simulation.checkpoint.v1.staging',
-    backup: 'vugg.simulation.checkpoint.v1.backup',
+    primary: 'vugg.simulation.checkpoint.v2.primary',
+    staging: 'vugg.simulation.checkpoint.v2.staging',
+    backup: 'vugg.simulation.checkpoint.v2.backup',
 });
 function _simulationJsonClone(value) {
     return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -84140,10 +84149,14 @@ function _validateSimulationCheckpointIntegrity(checkpointInput) {
     }
     return { ...checkpoint, integrityHash };
 }
-function _encodeSimulationCheckpointEnvelope(checkpointInput) {
+function _encodeSimulationCheckpointEnvelope(checkpointInput, generation) {
     const checkpoint = _validateSimulationCheckpointIntegrity(checkpointInput);
+    if (!Number.isSafeInteger(generation) || generation < 1) {
+        throw new Error('invalid checkpoint storage generation');
+    }
     const payload = {
         schema: SIMULATION_CHECKPOINT_STORAGE_SCHEMA,
+        generation,
         writtenAt: new Date().toISOString(),
         checkpoint,
     };
@@ -84155,12 +84168,23 @@ function _decodeSimulationCheckpointEnvelope(encoded) {
     if (envelope?.schema !== SIMULATION_CHECKPOINT_STORAGE_SCHEMA) {
         throw new Error('invalid checkpoint storage schema');
     }
+    if (!Number.isSafeInteger(envelope.generation) || envelope.generation < 1) {
+        throw new Error('invalid checkpoint storage generation');
+    }
+    if (typeof envelope.writtenAt !== 'string' || !Number.isFinite(Date.parse(envelope.writtenAt))) {
+        throw new Error('invalid checkpoint storage timestamp');
+    }
     const integrityHash = envelope.integrityHash;
     delete envelope.integrityHash;
     if (integrityHash !== sha256HexUtf8(JSON.stringify(envelope))) {
         throw new Error('checkpoint storage integrity mismatch');
     }
-    return _validateSimulationCheckpointIntegrity(envelope.checkpoint);
+    return {
+        generation: envelope.generation,
+        writtenAt: envelope.writtenAt,
+        checkpoint: _validateSimulationCheckpointIntegrity(envelope.checkpoint),
+        envelopeIntegrityHash: integrityHash,
+    };
 }
 // Crash-safe, two-generation local persistence.  A new envelope is written to
 // staging first, the prior valid primary is copied to backup, and primary is
@@ -84169,7 +84193,17 @@ function _decodeSimulationCheckpointEnvelope(encoded) {
 function persistSimulationCheckpoint(checkpoint, storage = globalThis.localStorage) {
     if (!storage?.getItem || !storage?.setItem)
         throw new Error('checkpoint storage unavailable');
-    const encoded = _encodeSimulationCheckpointEnvelope(checkpoint);
+    let generation = 1;
+    for (const source of ['primary', 'staging', 'backup']) {
+        const priorEncoded = storage.getItem(SIMULATION_CHECKPOINT_STORAGE_KEYS[source]);
+        if (!priorEncoded)
+            continue;
+        try {
+            generation = Math.max(generation, _decodeSimulationCheckpointEnvelope(priorEncoded).generation + 1);
+        }
+        catch (_e) { /* corrupt or obsolete slots do not commission a generation */ }
+    }
+    const encoded = _encodeSimulationCheckpointEnvelope(checkpoint, generation);
     storage.setItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging, encoded);
     const prior = storage.getItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.primary);
     if (prior) {
@@ -84184,6 +84218,7 @@ function persistSimulationCheckpoint(checkpoint, storage = globalThis.localStora
         storage.removeItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging);
     return _simulationDeepFreeze({
         key: SIMULATION_CHECKPOINT_STORAGE_KEYS.primary,
+        generation,
         checkpoint: _simulationJsonClone(checkpoint),
     });
 }
@@ -84191,21 +84226,50 @@ function recoverPersistedSimulationRuntime(storage = globalThis.localStorage) {
     if (!storage?.getItem)
         return { runtime: null, checkpoint: null, source: null, errors: ['checkpoint storage unavailable'] };
     const errors = [];
+    const candidates = [];
     for (const source of ['primary', 'staging', 'backup']) {
         const key = SIMULATION_CHECKPOINT_STORAGE_KEYS[source];
         const encoded = storage.getItem(key);
         if (!encoded)
             continue;
         try {
-            const checkpoint = _decodeSimulationCheckpointEnvelope(encoded);
-            const runtime = restoreSimulationCommandRuntime(checkpoint);
-            return { runtime, checkpoint, source, errors };
+            const decoded = _decodeSimulationCheckpointEnvelope(encoded);
+            const runtime = restoreSimulationCommandRuntime(decoded.checkpoint);
+            candidates.push({
+                source,
+                generation: decoded.generation,
+                envelopeIntegrityHash: decoded.envelopeIntegrityHash,
+                checkpoint: decoded.checkpoint,
+                runtime,
+            });
         }
         catch (error) {
             errors.push(`${source}: ${error?.message || String(error)}`);
         }
     }
-    return { runtime: null, checkpoint: null, source: null, errors };
+    if (!candidates.length)
+        return { runtime: null, checkpoint: null, source: null, errors };
+    // A crash can leave a newly written staging generation beside an older,
+    // still-valid primary.  Slot names describe transaction roles, not recency:
+    // recover the highest authenticated generation.  Equal-generation copies
+    // must be byte-identical; divergent valid envelopes are ambiguous and fail
+    // closed instead of silently preferring one slot by name.
+    const newestGeneration = Math.max(...candidates.map(candidate => candidate.generation));
+    const newest = candidates.filter(candidate => candidate.generation === newestGeneration);
+    if (new Set(newest.map(candidate => candidate.envelopeIntegrityHash)).size !== 1) {
+        errors.push(`generation ${newestGeneration}: divergent authenticated checkpoint envelopes`);
+        return { runtime: null, checkpoint: null, source: null, errors };
+    }
+    const sourcePriority = { primary: 0, staging: 1, backup: 2 };
+    newest.sort((a, b) => sourcePriority[a.source] - sourcePriority[b.source]);
+    const selected = newest[0];
+    return {
+        runtime: selected.runtime,
+        checkpoint: selected.checkpoint,
+        source: selected.source,
+        generation: selected.generation,
+        errors,
+    };
 }
 async function runSimulationProgressively(runtime, steps, opts = {}) {
     const total = Math.max(0, Math.trunc(Number(steps) || 0));
@@ -93137,6 +93201,11 @@ function _saveRecordShapeReason(rec) {
     }
     if (!rec.origin || typeof rec.origin !== 'object')
         return 'record origin is missing';
+    if (rec.origin.type === 'scenario'
+        && rec.origin.shape_seed != null
+        && !Number.isSafeInteger(rec.origin.shape_seed)) {
+        return 'scenario shape seed override is invalid';
+    }
     if (!Array.isArray(rec.actions) || rec.actions.length > 100_000)
         return 'record action log is invalid';
     if (!Array.isArray(rec.collected))
@@ -94222,7 +94291,7 @@ function _saveRebuildOrigin(origin) {
         if (typeof SCENARIOS === 'undefined' || !SCENARIOS[origin.scenario]) {
             throw new Error(`scenario "${origin.scenario}" is not registered in this build`);
         }
-        fortressBeginFromScenario(origin.scenario, origin.seed);
+        fortressBeginFromScenario(origin.scenario, origin.seed, undefined, undefined, origin.shape_seed);
     }
     else if (origin.type === 'starter') {
         if (typeof FLUID_PRESETS === 'undefined' || !FLUID_PRESETS[origin.presetId]) {
@@ -94673,11 +94742,11 @@ function menuGo(modeName) { switchMode(modeName); }
 // step numbers as the sim advances. Optional seed threads through to the
 // seed-first begin (2026-07-08) — callers like the agent API get fully
 // deterministic runs, wall geometry included.
-async function startScenarioInCreative(scenarioName, seedOverride, tutorialBootToken) {
+async function startScenarioInCreative(scenarioName, seedOverride, tutorialBootToken, shapeSeedOverride) {
     const make = SCENARIOS[scenarioName];
     if (!make) {
         alert('Unknown scenario: ' + scenarioName);
-        return;
+        return null;
     }
     const runLaunchToken = _runLaunchClaim();
     await waitForNarrativesReady();
@@ -94688,9 +94757,13 @@ async function startScenarioInCreative(scenarioName, seedOverride, tutorialBootT
         || (tutorialBootToken != null
             && (typeof _tutorialBootTokenCurrent !== 'function'
                 || !_tutorialBootTokenCurrent(tutorialBootToken))))
-        return;
+        return null;
     switchMode('fortress');
-    fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken);
+    // Return the exact launch authority created by the constructor. Callers
+    // that cross an async boundary must never infer success from the ambient
+    // fortressSim handle: it may still name an older run after a rejected or
+    // superseded launch. See 99z-agent-interface.ts.
+    return fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken, shapeSeedOverride);
 }
 // Take a FLUID_PRESETS[id] starter fluid and run it inside Creative as a
 // no-event sim. The starter fluid represents what would naturally leak
@@ -94793,16 +94866,23 @@ function fortressBeginFromStarterFluid(presetId, seedOverride, runLaunchToken) {
 // baselines prove reproduces a run from the seed alone. Seeding after
 // make() (the pre-save-system order) left anything the factory drew
 // unreproducible.
-function fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken) {
+function fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken, runLaunchToken, shapeSeedOverride) {
     const make = SCENARIOS[scenarioName];
     if (!make)
-        return;
+        return null;
     if (typeof _tutorialRunBoundary === 'function') {
         _tutorialRunBoundary(tutorialBootToken, runLaunchToken);
     }
     const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
     rng = new SeededRandom(seed);
-    const { conditions, events, defaultSteps } = make();
+    if (shapeSeedOverride != null
+        && (!Number.isSafeInteger(shapeSeedOverride))) {
+        throw new TypeError('Scenario shape_seed override must be a safe integer');
+    }
+    const scenarioOverrides = shapeSeedOverride == null
+        ? undefined
+        : { wall: { shape_seed: shapeSeedOverride } };
+    const { conditions, events, defaultSteps } = make(scenarioOverrides);
     // Creative mode always exposes the mass-balanced carbon controls. Scenarios
     // that do not need atmospheric exchange stay closed, but never drop into the
     // retired fixed-DIC/pH-only path when the player opens the CO2 reservoir.
@@ -94858,8 +94938,23 @@ function fortressBeginFromScenario(scenarioName, seedOverride, tutorialBootToken
     // Autosave opens AFTER the slider sync (broth baseline = what the
     // first action will see). See 93a-ui-saves.ts.
     if (typeof _saveNoteBegin === 'function') {
-        _saveNoteBegin({ type: 'scenario', scenario: scenarioName, seed });
+        _saveNoteBegin({
+            type: 'scenario', scenario: scenarioName, seed,
+            ...(shapeSeedOverride == null ? {} : { shape_seed: shapeSeedOverride }),
+        });
     }
+    // Immutable constructor receipt. It binds the returned simulation to the
+    // resolved inputs and to the launch generation that survived the narrative
+    // await. Consumers may use only launch.sim; ambient globals are display
+    // handles, not proof that this particular request constructed a run.
+    return Object.freeze({
+        schema: 'creative-scenario-launch-v1',
+        sim: fortressSim,
+        scenario: scenarioName,
+        seed,
+        shape_seed: conditions.wall?.shape_seed ?? null,
+        run_launch_token: Number.isSafeInteger(runLaunchToken) ? runLaunchToken : null,
+    });
 }
 // Title screen button handlers.
 function titleNewGame() {
@@ -120752,13 +120847,18 @@ const RELEASE_RUNTIME_CONTRACT = Object.freeze({
 //      L/E/C (potential future bindings — add only when needed).
 //
 // ── ?dump=specimen JSON SHAPE ───────────────────────────────────
-// Mirrors agent-api/vugg-agent.js's `finish` response so an analyst
-// who's parsed one runtime's output can parse the other's unchanged.
-// Per-crystal fields: mineral, crystal_id, nucleation_step,
+// The browser and agent-api runtimes share one exact per-crystal core,
+// guarded field-for-field in tests. Their response envelopes are deliberately
+// different: browser dumps carry canonical scenario/model identity and
+// paragenesis; agent-api `finish` carries its narrower game summary and Groove
+// products. `serializer_contract` and `runtime_scope` make that boundary
+// machine-readable instead of claiming interchangeability.
+// Shared per-crystal fields: mineral, crystal_id, nucleation_step,
 // nucleation_temp, position, c_length_mm, a_width_mm, habit,
 // dominant_forms, zones_count, total_growth_um, twinned, twin_law,
-// active, dissolved, phantom_count, morphology, fluorescence, zones[].
-// Wrapper adds: ok, sim_version, scenario, seed, shape_seed,
+// active, dissolved, phantom_count, radiation_damage, morphology,
+// fluorescence, zones[]. Browser wrapper adds: ok, sim_version,
+// model_digest, scenario, seed, shape_seed,
 // total_steps, crystals[], paragenetic_sequence[], log_length.
 //
 // ── DETERMINISM AUDIT (2026-05-20) ──────────────────────────────
@@ -120818,6 +120918,15 @@ function _agentParamBool(params, name, defaultVal) {
         return defaultVal;
     return raw === '1' || raw === 'true' || raw === 'yes';
 }
+function _agentOptionalSafeInteger(opts, name) {
+    const value = opts?.[name];
+    if (value == null)
+        return null;
+    if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
+        throw new TypeError(`[vugg] ${name} must be a safe integer`);
+    }
+    return value;
+}
 // ---- Deterministic-random scenario pick from a seed ----
 // Used by ?scenario=random&seed=N so the URL is shareable. Mulberry32
 // one-shot (matches SeededRandom's algorithm so the picked index is
@@ -120859,6 +120968,7 @@ function _agentSpecimenJSON(simOverride) {
             active: c.active !== false,
             dissolved: !!c.dissolved,
             phantom_count: c.phantom_count || 0,
+            radiation_damage: c.radiation_damage || 0,
         };
         if (typeof c.describe_morphology === 'function') {
             try {
@@ -120889,6 +120999,10 @@ function _agentSpecimenJSON(simOverride) {
             trace_Fe: +(z.trace_Fe || 0).toFixed(2),
             trace_Mn: +(z.trace_Mn || 0).toFixed(2),
             trace_Al: +(z.trace_Al || 0).toFixed(2),
+            trace_Ti: +(z.trace_Ti || 0).toFixed(3),
+            fluid_inclusion: !!z.fluid_inclusion,
+            inclusion_type: z.inclusion_type || null,
+            ca_from_wall: +(z.ca_from_wall || 0).toFixed(2),
             is_phantom: !!z.is_phantom,
             note: z.note || null,
         }));
@@ -120907,9 +121021,12 @@ function _agentSpecimenJSON(simOverride) {
         }
     }
     const wnd = (typeof window !== 'undefined') ? window : globalThis;
-    const meta = (wnd.vugg && wnd.vugg._lastRunMeta) || {};
+    const meta = sim._agentRunMeta || (wnd.vugg && wnd.vugg._lastRunMeta) || {};
     return {
         ok: true,
+        serializer_contract: 'vugg-browser-agent-specimen-v1',
+        runtime_scope: 'canonical-browser-simulator',
+        agent_api_relation: 'shared-crystal-core-not-response-parity',
         sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
         model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
         scenario: meta.scenario || null,
@@ -120936,15 +121053,21 @@ function _agentHeadlessRun(scenarioName, opts) {
     if (typeof SCENARIOS === 'undefined' || !SCENARIOS[scenarioName]) {
         throw new Error(`_agentHeadlessRun: unknown scenario '${scenarioName}'`);
     }
-    const seed = opts.seed != null ? (opts.seed >>> 0) : (Math.floor(Math.random() * 2147483647) >>> 0);
-    const shapeSeed = opts.shape_seed != null ? (opts.shape_seed | 0) : null;
+    const requestedSeed = _agentOptionalSafeInteger(opts, 'seed');
+    const requestedShapeSeed = _agentOptionalSafeInteger(opts, 'shape_seed');
+    const requestedSteps = _agentOptionalSafeInteger(opts, 'steps');
+    const seed = requestedSeed != null
+        ? (requestedSeed >>> 0)
+        : (Math.floor(Math.random() * 2147483647) >>> 0);
+    const shapeSeed = requestedShapeSeed;
     // Direct lexical-scope mutation — see file header note on script-mode TS.
     rng = new SeededRandom(seed);
     const overrides = {};
     if (shapeSeed != null)
         overrides.wall = { shape_seed: shapeSeed };
     const { conditions, events, defaultSteps } = SCENARIOS[scenarioName](overrides);
-    const steps = (opts.steps != null && opts.steps > 0) ? (opts.steps | 0) : ((defaultSteps | 0) || 200);
+    const steps = (requestedSteps != null && requestedSteps > 0)
+        ? requestedSteps : ((defaultSteps | 0) || 200);
     const sim = new VugSimulator(conditions, events);
     // === HELIX-OVERLAY-FORK ADDITION (strip view v155+, 2026-05-26) ===
     // Attach a StripRecorder so agent runs produce a dataset too.
@@ -120989,9 +121112,12 @@ function _agentHeadlessRun(scenarioName, opts) {
     // Stash metadata so _agentSpecimenJSON can include it in the dump.
     const wnd = (typeof window !== 'undefined') ? window : globalThis;
     wnd.vugg = wnd.vugg || {};
-    wnd.vugg._lastRunMeta = { scenario: scenarioName, seed, shape_seed: shapeSeed };
+    const resolvedShapeSeed = conditions.wall?.shape_seed ?? null;
+    const runMeta = Object.freeze({ scenario: scenarioName, seed, shape_seed: resolvedShapeSeed });
+    sim._agentRunMeta = runMeta;
+    wnd.vugg._lastRunMeta = runMeta;
     return {
-        sim, seed, shape_seed: shapeSeed, scenario: scenarioName, total_steps: steps,
+        sim, seed, shape_seed: resolvedShapeSeed, scenario: scenarioName, total_steps: steps,
         // v155: strip dataset for the run. Agents can serialize via
         // stripSerialize, save via stripStorageSave, or just inspect.
         // null if the recorder wasn't available.
@@ -121120,27 +121246,46 @@ function _agentExposeWindow() {
             return typeof _topoCavityClipCapabilityReceipt === 'function'
                 ? _topoCavityClipCapabilityReceipt() : null;
         };
-        v.startScenario = function (name, opts) {
+        v.startScenario = async function (name, opts) {
             opts = opts || {};
             if (typeof startScenarioInCreative !== 'function')
                 return null;
+            const requestedSeed = _agentOptionalSafeInteger(opts, 'seed');
+            const requestedShapeSeed = _agentOptionalSafeInteger(opts, 'shape_seed');
+            const requestedSteps = _agentOptionalSafeInteger(opts, 'steps');
             // Seed threads through to the seed-first begin (2026-07-08, save
             // system): the whole run — wall geometry included — reproduces
             // from the seed. Previously this had to re-seed AFTER begin, so
             // wall shape stayed on the Date.now() roll.
-            startScenarioInCreative(name, opts.seed != null ? (opts.seed >>> 0) : undefined);
-            v._lastRunMeta = {
-                scenario: name,
-                seed: opts.seed != null ? opts.seed : null,
-                shape_seed: opts.shape_seed != null ? opts.shape_seed : null,
-            };
-            if (opts.steps && opts.steps > 0
-                && typeof fortressActive !== 'undefined' && fortressActive
-                && typeof fortressSim !== 'undefined' && fortressSim) {
-                for (let i = 0; i < opts.steps; i++)
-                    fortressSim.run_step();
+            const launch = await startScenarioInCreative(name, requestedSeed != null ? (requestedSeed >>> 0) : undefined, undefined, requestedShapeSeed == null ? undefined : requestedShapeSeed);
+            if (!launch || launch.schema !== 'creative-scenario-launch-v1'
+                || !launch.sim || launch.sim !== fortressSim
+                || launch.scenario !== name) {
+                throw new Error(`[vugg] scenario '${name}' did not start`);
             }
-            return v._lastRunMeta;
+            const launchedSim = launch.sim;
+            const resolvedShapeSeed = launchedSim.conditions?.wall?.shape_seed ?? null;
+            if (requestedShapeSeed != null && resolvedShapeSeed !== requestedShapeSeed) {
+                throw new Error('[vugg] requested shape_seed was not applied to the constructed wall');
+            }
+            const runMeta = Object.freeze({
+                scenario: launch.scenario,
+                seed: launch.seed,
+                shape_seed: resolvedShapeSeed,
+            });
+            launchedSim._agentRunMeta = runMeta;
+            v._lastRunMeta = runMeta;
+            if (requestedSteps != null && requestedSteps > 0
+                && typeof fortressActive !== 'undefined' && fortressActive
+                && typeof fortressSim !== 'undefined' && fortressSim === launchedSim) {
+                for (let i = 0; i < requestedSteps; i++) {
+                    if (typeof fortressStep === 'function')
+                        fortressStep('wait', null);
+                    else
+                        launchedSim.run_step();
+                }
+            }
+            return runMeta;
         };
         v.headlessRun = function (name, opts) {
             const result = _agentHeadlessRun(name, opts || {});
@@ -121341,6 +121486,7 @@ async function _agentBootFromURL() {
         _agentIsTutorial,
         _agentParamInt,
         _agentParamBool,
+        _agentOptionalSafeInteger,
         _agentDeterministicPick,
         _agentSpecimenJSON,
         _agentHeadlessRun,

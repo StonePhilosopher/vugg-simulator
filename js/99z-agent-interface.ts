@@ -451,32 +451,35 @@ function _agentExposeWindow(): void {
       // system): the whole run — wall geometry included — reproduces
       // from the seed. Previously this had to re-seed AFTER begin, so
       // wall shape stayed on the Date.now() roll.
-      await startScenarioInCreative(
+      const launch = await startScenarioInCreative(
         name,
         requestedSeed != null ? (requestedSeed >>> 0) : undefined,
         undefined,
         requestedShapeSeed == null ? undefined : requestedShapeSeed,
       );
-      if (typeof fortressSim === 'undefined' || !fortressSim) {
+      if (!launch || launch.schema !== 'creative-scenario-launch-v1'
+          || !launch.sim || launch.sim !== fortressSim
+          || launch.scenario !== name) {
         throw new Error(`[vugg] scenario '${name}' did not start`);
       }
-      const resolvedShapeSeed = fortressSim.conditions?.wall?.shape_seed ?? null;
+      const launchedSim = launch.sim;
+      const resolvedShapeSeed = launchedSim.conditions?.wall?.shape_seed ?? null;
       if (requestedShapeSeed != null && resolvedShapeSeed !== requestedShapeSeed) {
         throw new Error('[vugg] requested shape_seed was not applied to the constructed wall');
       }
       const runMeta = Object.freeze({
-        scenario: name,
-        seed: requestedSeed != null ? (requestedSeed >>> 0) : null,
+        scenario: launch.scenario,
+        seed: launch.seed,
         shape_seed: resolvedShapeSeed,
       });
-      fortressSim._agentRunMeta = runMeta;
+      launchedSim._agentRunMeta = runMeta;
       v._lastRunMeta = runMeta;
       if (requestedSteps != null && requestedSteps > 0
           && typeof fortressActive !== 'undefined' && fortressActive
-          && typeof fortressSim !== 'undefined' && fortressSim) {
+          && typeof fortressSim !== 'undefined' && fortressSim === launchedSim) {
         for (let i = 0; i < requestedSteps; i++) {
           if (typeof fortressStep === 'function') fortressStep('wait', null);
-          else fortressSim.run_step();
+          else launchedSim.run_step();
         }
       }
       return runMeta;

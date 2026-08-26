@@ -114,7 +114,7 @@ async function startScenarioInCreative(
   scenarioName, seedOverride?, tutorialBootToken?, shapeSeedOverride?,
 ) {
   const make = SCENARIOS[scenarioName];
-  if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
+  if (!make) { alert('Unknown scenario: ' + scenarioName); return null; }
   const runLaunchToken = _runLaunchClaim();
   await waitForNarrativesReady();
   // Reset/Home/New Game may have won while the await yielded. Reject the
@@ -123,9 +123,13 @@ async function startScenarioInCreative(
   if (!_runLaunchTokenCurrent(runLaunchToken)
       || (tutorialBootToken != null
       && (typeof _tutorialBootTokenCurrent !== 'function'
-        || !_tutorialBootTokenCurrent(tutorialBootToken)))) return;
+        || !_tutorialBootTokenCurrent(tutorialBootToken)))) return null;
   switchMode('fortress');
-  fortressBeginFromScenario(
+  // Return the exact launch authority created by the constructor. Callers
+  // that cross an async boundary must never infer success from the ambient
+  // fortressSim handle: it may still name an older run after a rejected or
+  // superseded launch. See 99z-agent-interface.ts.
+  return fortressBeginFromScenario(
     scenarioName, seedOverride, tutorialBootToken, runLaunchToken, shapeSeedOverride,
   );
 }
@@ -236,7 +240,7 @@ function fortressBeginFromScenario(
   scenarioName, seedOverride?, tutorialBootToken?, runLaunchToken?, shapeSeedOverride?,
 ) {
   const make = SCENARIOS[scenarioName];
-  if (!make) return;
+  if (!make) return null;
   if (typeof _tutorialRunBoundary === 'function') {
     _tutorialRunBoundary(tutorialBootToken, runLaunchToken);
   }
@@ -317,6 +321,18 @@ function fortressBeginFromScenario(
       ...(shapeSeedOverride == null ? {} : { shape_seed: shapeSeedOverride }),
     });
   }
+  // Immutable constructor receipt. It binds the returned simulation to the
+  // resolved inputs and to the launch generation that survived the narrative
+  // await. Consumers may use only launch.sim; ambient globals are display
+  // handles, not proof that this particular request constructed a run.
+  return Object.freeze({
+    schema: 'creative-scenario-launch-v1',
+    sim: fortressSim,
+    scenario: scenarioName,
+    seed,
+    shape_seed: conditions.wall?.shape_seed ?? null,
+    run_launch_token: Number.isSafeInteger(runLaunchToken) ? runLaunchToken : null,
+  });
 }
 
 // Title screen button handlers.
