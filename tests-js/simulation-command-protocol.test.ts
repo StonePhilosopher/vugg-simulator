@@ -367,14 +367,46 @@ describe('immutable simulation command/checkpoint protocol', () => {
     applySimulationCommand(runtime, makeSimulationAdvanceCommand(2));
     persistSimulationCheckpoint(createSimulationCheckpoint(runtime));
 
-    localStorage.setItem('vugg.simulation.checkpoint.v1.primary', '{not-json');
+    localStorage.setItem('vugg.simulation.checkpoint.v2.primary', '{not-json');
     const recovered = recoverPersistedSimulationRuntime();
     expect(recovered.source).toBe('backup');
+    expect(recovered.generation).toBe(1);
     expect(recovered.errors[0]).toContain('primary');
     expect(recovered.runtime.sim.step).toBe(3);
     expect(simulationStateFingerprint(recovered.runtime)).not.toBe(
       simulationStateFingerprint(runtime),
     );
+  });
+
+  it('recovers a newer valid staging generation instead of an older valid primary', () => {
+    const values = new Map<string, string>();
+    let failPrimary = false;
+    const storage = {
+      getItem(key: string) { return values.get(key) ?? null; },
+      setItem(key: string, value: string) {
+        if (failPrimary && key === 'vugg.simulation.checkpoint.v2.primary') {
+          throw new Error('simulated interruption before primary commit');
+        }
+        values.set(key, value);
+      },
+      removeItem(key: string) { values.delete(key); },
+    };
+
+    const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(3));
+    const first = persistSimulationCheckpoint(createSimulationCheckpoint(runtime), storage);
+    expect(first.generation).toBe(1);
+
+    applySimulationCommand(runtime, makeSimulationAdvanceCommand(2));
+    failPrimary = true;
+    expect(() => persistSimulationCheckpoint(createSimulationCheckpoint(runtime), storage))
+      .toThrow('simulated interruption');
+
+    const recovered = recoverPersistedSimulationRuntime(storage);
+    expect(recovered).toMatchObject({ source: 'staging', generation: 2 });
+    expect(recovered.runtime.sim.step).toBe(5);
+    expect(simulationStateFingerprint(recovered.runtime))
+      .toBe(simulationStateFingerprint(runtime));
   });
 
   it('reduces structured-clone worker messages one bounded chunk at a time', async () => {

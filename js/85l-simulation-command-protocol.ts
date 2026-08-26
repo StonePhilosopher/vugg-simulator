@@ -8,11 +8,11 @@
 const SIMULATION_COMMAND_SCHEMA = 'vugg-simulation-command-v1';
 const SIMULATION_CHECKPOINT_SCHEMA = 'vugg-simulation-checkpoint-v1';
 const SIMULATION_WORKER_MESSAGE_SCHEMA = 'vugg-simulation-worker-message-v1';
-const SIMULATION_CHECKPOINT_STORAGE_SCHEMA = 'vugg-simulation-checkpoint-storage-v1';
+const SIMULATION_CHECKPOINT_STORAGE_SCHEMA = 'vugg-simulation-checkpoint-storage-v2';
 const SIMULATION_CHECKPOINT_STORAGE_KEYS = Object.freeze({
-  primary: 'vugg.simulation.checkpoint.v1.primary',
-  staging: 'vugg.simulation.checkpoint.v1.staging',
-  backup: 'vugg.simulation.checkpoint.v1.backup',
+  primary: 'vugg.simulation.checkpoint.v2.primary',
+  staging: 'vugg.simulation.checkpoint.v2.staging',
+  backup: 'vugg.simulation.checkpoint.v2.backup',
 });
 
 function _simulationJsonClone<T>(value: T): T {
@@ -494,10 +494,14 @@ function _validateSimulationCheckpointIntegrity(checkpointInput: any): any {
   return { ...checkpoint, integrityHash };
 }
 
-function _encodeSimulationCheckpointEnvelope(checkpointInput: any): string {
+function _encodeSimulationCheckpointEnvelope(checkpointInput: any, generation: number): string {
   const checkpoint = _validateSimulationCheckpointIntegrity(checkpointInput);
+  if (!Number.isSafeInteger(generation) || generation < 1) {
+    throw new Error('invalid checkpoint storage generation');
+  }
   const payload: any = {
     schema: SIMULATION_CHECKPOINT_STORAGE_SCHEMA,
+    generation,
     writtenAt: new Date().toISOString(),
     checkpoint,
   };
@@ -510,12 +514,23 @@ function _decodeSimulationCheckpointEnvelope(encoded: string): any {
   if (envelope?.schema !== SIMULATION_CHECKPOINT_STORAGE_SCHEMA) {
     throw new Error('invalid checkpoint storage schema');
   }
+  if (!Number.isSafeInteger(envelope.generation) || envelope.generation < 1) {
+    throw new Error('invalid checkpoint storage generation');
+  }
+  if (typeof envelope.writtenAt !== 'string' || !Number.isFinite(Date.parse(envelope.writtenAt))) {
+    throw new Error('invalid checkpoint storage timestamp');
+  }
   const integrityHash = envelope.integrityHash;
   delete envelope.integrityHash;
   if (integrityHash !== sha256HexUtf8(JSON.stringify(envelope))) {
     throw new Error('checkpoint storage integrity mismatch');
   }
-  return _validateSimulationCheckpointIntegrity(envelope.checkpoint);
+  return {
+    generation: envelope.generation,
+    writtenAt: envelope.writtenAt,
+    checkpoint: _validateSimulationCheckpointIntegrity(envelope.checkpoint),
+    envelopeIntegrityHash: integrityHash,
+  };
 }
 
 // Crash-safe, two-generation local persistence.  A new envelope is written to
@@ -524,7 +539,18 @@ function _decodeSimulationCheckpointEnvelope(encoded: string): any {
 // individual localStorage write still leaves at least one validated generation.
 function persistSimulationCheckpoint(checkpoint: any, storage: any = globalThis.localStorage): any {
   if (!storage?.getItem || !storage?.setItem) throw new Error('checkpoint storage unavailable');
-  const encoded = _encodeSimulationCheckpointEnvelope(checkpoint);
+  let generation = 1;
+  for (const source of ['primary', 'staging', 'backup']) {
+    const priorEncoded = storage.getItem((SIMULATION_CHECKPOINT_STORAGE_KEYS as any)[source]);
+    if (!priorEncoded) continue;
+    try {
+      generation = Math.max(
+        generation,
+        _decodeSimulationCheckpointEnvelope(priorEncoded).generation + 1,
+      );
+    } catch (_e) { /* corrupt or obsolete slots do not commission a generation */ }
+  }
+  const encoded = _encodeSimulationCheckpointEnvelope(checkpoint, generation);
   storage.setItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging, encoded);
   const prior = storage.getItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.primary);
   if (prior) {
@@ -537,6 +563,7 @@ function persistSimulationCheckpoint(checkpoint: any, storage: any = globalThis.
   if (storage.removeItem) storage.removeItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging);
   return _simulationDeepFreeze({
     key: SIMULATION_CHECKPOINT_STORAGE_KEYS.primary,
+    generation,
     checkpoint: _simulationJsonClone(checkpoint),
   });
 }
@@ -544,19 +571,48 @@ function persistSimulationCheckpoint(checkpoint: any, storage: any = globalThis.
 function recoverPersistedSimulationRuntime(storage: any = globalThis.localStorage): any {
   if (!storage?.getItem) return { runtime: null, checkpoint: null, source: null, errors: ['checkpoint storage unavailable'] };
   const errors: string[] = [];
+  const candidates: any[] = [];
   for (const source of ['primary', 'staging', 'backup']) {
     const key = (SIMULATION_CHECKPOINT_STORAGE_KEYS as any)[source];
     const encoded = storage.getItem(key);
     if (!encoded) continue;
     try {
-      const checkpoint = _decodeSimulationCheckpointEnvelope(encoded);
-      const runtime = restoreSimulationCommandRuntime(checkpoint);
-      return { runtime, checkpoint, source, errors };
+      const decoded = _decodeSimulationCheckpointEnvelope(encoded);
+      const runtime = restoreSimulationCommandRuntime(decoded.checkpoint);
+      candidates.push({
+        source,
+        generation: decoded.generation,
+        envelopeIntegrityHash: decoded.envelopeIntegrityHash,
+        checkpoint: decoded.checkpoint,
+        runtime,
+      });
     } catch (error: any) {
       errors.push(`${source}: ${error?.message || String(error)}`);
     }
   }
-  return { runtime: null, checkpoint: null, source: null, errors };
+  if (!candidates.length) return { runtime: null, checkpoint: null, source: null, errors };
+
+  // A crash can leave a newly written staging generation beside an older,
+  // still-valid primary.  Slot names describe transaction roles, not recency:
+  // recover the highest authenticated generation.  Equal-generation copies
+  // must be byte-identical; divergent valid envelopes are ambiguous and fail
+  // closed instead of silently preferring one slot by name.
+  const newestGeneration = Math.max(...candidates.map(candidate => candidate.generation));
+  const newest = candidates.filter(candidate => candidate.generation === newestGeneration);
+  if (new Set(newest.map(candidate => candidate.envelopeIntegrityHash)).size !== 1) {
+    errors.push(`generation ${newestGeneration}: divergent authenticated checkpoint envelopes`);
+    return { runtime: null, checkpoint: null, source: null, errors };
+  }
+  const sourcePriority = { primary: 0, staging: 1, backup: 2 };
+  newest.sort((a, b) => sourcePriority[a.source] - sourcePriority[b.source]);
+  const selected = newest[0];
+  return {
+    runtime: selected.runtime,
+    checkpoint: selected.checkpoint,
+    source: selected.source,
+    generation: selected.generation,
+    errors,
+  };
 }
 
 async function runSimulationProgressively(
