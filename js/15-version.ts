@@ -13111,7 +13111,16 @@
 // full-layer records share one 10,000-zone producer/validator cap and an
 // oversized Collect fails visibly before prompt or persistence. Malformed or
 // inconsistent numeric aliases remain rejected at the shared boundary.
-const SIM_VERSION = 283;
+// v284 (August 2026): public agent and Simulation recovery identities now
+// describe what the executable actually does. `window.vugg.startScenario`
+// validates and applies its shape_seed before cavity construction, persists
+// that override in the Creative recipe, and replays the same wall. Browser and
+// headless agent outputs share one exact crystal core but carry distinct,
+// machine-readable envelopes rather than claiming whole-response parity.
+// Crash-safe Simulation checkpoint envelopes carry monotonic generations, so
+// an interrupted newer staging write wins over an older valid primary; corrupt
+// generations still fall back and equal-generation divergence fails closed.
+const SIM_VERSION = 284;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -13184,12 +13193,12 @@ const MODEL_DIGEST = [
   'replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1',
   'enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10',
   'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2',
-  'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-parity-v1',
+  'agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8',
   'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3',
-  'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v11',
+  'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor+monotonic-checkpoint-generation+newest-valid-staging-recovery+equal-generation-divergence-fail-closed-v12',
   'gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v11',
   'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
   'collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v3',

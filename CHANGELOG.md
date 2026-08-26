@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 282**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 284**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -211,6 +211,26 @@ and the exact-execution evidence receipt.
   typed-string, null, and inconsistent count aliases still fail closed. Breadcrumb:
   93 collection migration/validation -> 93a backup import -> 95 Library census
   and playback gate -> 98 Groove array authority -> collection/save tests.
+- SIM 284 closes the final GAME-05 public-agent and Simulation-recovery seams.
+  `window.vugg.startScenario()` now validates and applies `shape_seed` before
+  scenario wall construction, carries the resolved seed in its run metadata,
+  writes the override into the Creative autosave recipe, and reconstructs the
+  same cavity on replay. The browser dump and standalone agent `finish` output
+  expose distinct serializer contracts and runtime scopes; their per-crystal
+  core is field-for-field identical, but their complete response envelopes are
+  no longer advertised as interchangeable. Simulation checkpoint storage uses
+  an authenticated monotonic generation, so a crash after publishing newer
+  staging bytes cannot make recovery silently choose an older valid primary;
+  corrupt slots still fall back, while divergent equal-generation bytes fail
+  closed. Breadcrumb: 99z public command/serializer -> 94 scenario constructor
+  -> 93a recipe replay; 91 progressive Simulation -> 85l staged checkpoint
+  envelope -> newest-valid recovery.
+- The GAME-05 formation checks also close two already-landed portability
+  repairs on the exact candidate: all 98 embedded authored assets, the browser
+  executable, the scientific execution set, and release source receipts use
+  the shared canonical-LF projection while binary assets remain raw-byte
+  authenticated; and an isolated `npm ci --prefix agent-api` resolves the
+  manifest/lock pair to canvas 3.2.2 without lockfile drift.
 - Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
   boundaries from upgradient sulfide oxidation. The former copper-enrichment
   event no longer invents dissolved sulfide: USGS models place chalcocite and
