@@ -459,7 +459,10 @@ function _agentExposeWindow(): void {
       );
       if (!launch || launch.schema !== 'creative-scenario-launch-v1'
           || !launch.sim || launch.sim !== fortressSim
-          || launch.scenario !== name) {
+          || launch.scenario !== name
+          || !Number.isSafeInteger(launch.run_launch_token)
+          || typeof _runLaunchTokenCurrent !== 'function'
+          || !_runLaunchTokenCurrent(launch.run_launch_token)) {
         throw new Error(`[vugg] scenario '${name}' did not start`);
       }
       const launchedSim = launch.sim;

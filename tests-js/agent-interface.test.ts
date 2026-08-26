@@ -383,6 +383,28 @@ describe('Agent-friendly interface — v117 guard test', () => {
       });
       expect(w.vugg.fortressSim.conditions.wall.shape_seed).toBe(83);
     });
+
+    it('rejects ownership lost between construction and the agent continuation', async () => {
+      const w: any = (globalThis as any).window || globalThis;
+      const first = w.vugg.startScenario('cooling', {
+        seed: 7006, shape_seed: 85,
+      });
+      let second: Promise<any> | null = null;
+      await new Promise<void>(resolve => queueMicrotask(() => {
+        second = w.vugg.startScenario('cooling', {
+          seed: 7007, shape_seed: 87,
+        });
+        resolve();
+      }));
+
+      await expect(first).rejects.toThrow("scenario 'cooling' did not start");
+      await expect(second).resolves.toEqual({
+        scenario: 'cooling', seed: 7007, shape_seed: 87,
+      });
+      expect(w.vugg.fortressSim._agentRunMeta).toEqual({
+        scenario: 'cooling', seed: 7007, shape_seed: 87,
+      });
+    });
   });
 
   describe('Bundle / build invariants', () => {
