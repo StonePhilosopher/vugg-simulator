@@ -27,6 +27,9 @@ function populateCreativeMovementFields() {
       ['fluid.Eh', 'Redox potential Eh (V)'],
     ];
     for (const prop of Object.keys(CREATIVE_CHEMISTRY_CONTROLS)) {
+      // Generic trajectories cannot book valence-specific sulfur transfers.
+      // The visible sulfur controls in js/97-ui-fortress.ts own that boundary.
+      if (movementFieldRequiresSulfurBoundary(`fluid.${prop}`)) continue;
       fields.push([`fluid.${prop}`, `Fluid ${prop}`]);
     }
     for (const [value, label] of fields) {
@@ -87,19 +90,6 @@ function normalizeCreativeMovementSpec(payload: any, currentStep: number): any |
   else spec.ops = [{ kind: 'trend', amp: value, ease: payload.ease !== false }];
   if (Number.isFinite(payload.clampMin)) spec.clampMin = payload.clampMin;
   if (Number.isFinite(payload.clampMax)) spec.clampMax = payload.clampMax;
-  // Project the runtime domain into the saved schedule. This breadcrumb makes
-  // the implicit chemistry boundary visible to the editor, save/replay, and
-  // reviewers; MovementController enforces the same domain independently.
-  const fieldDomain = movementFieldDomain(spec.field);
-  if (typeof fieldDomain?.min === 'number') {
-    spec.clampMin = Math.max(fieldDomain.min, spec.clampMin ?? fieldDomain.min);
-  }
-  if (typeof fieldDomain?.max === 'number') {
-    spec.clampMax = Math.min(fieldDomain.max, spec.clampMax ?? fieldDomain.max);
-  }
-  if (typeof spec.clampMin === 'number' && typeof spec.clampMax === 'number'
-      && spec.clampMin > spec.clampMax) return null;
-  if (fieldDomain) spec.domainAuthority = fieldDomain.authority;
   if (Number.isFinite(payload.textureSigma) && payload.textureSigma > 0) {
     spec.texture = {
       sigma: payload.textureSigma,
@@ -108,7 +98,12 @@ function normalizeCreativeMovementSpec(payload: any, currentStep: number): any |
         : 0.35,
     };
   }
-  return spec;
+  // Project the runtime domain into the saved schedule. This breadcrumb makes
+  // the implicit chemistry boundary visible to the editor, save/replay, and
+  // reviewers; MovementController calls the same commissioner for authored
+  // scenario rows, so the two origins cannot drift.
+  try { return _commissionMovementSpec(spec); }
+  catch (_error) { return null; }
 }
 
 function creativeScheduleMovement() {
@@ -287,7 +282,11 @@ function refreshCreativeGeologyEditors() {
   if (!fortressSim) return;
   const movementEl = document.getElementById('creative-movement-list');
   if (movementEl) {
-    const movements = fortressSim.conditions._scenario?.movements || [];
+    // The controller owns the commissioned projection for both scenario and
+    // player-scheduled rows. Scenario JSON stays immutable; UI/save identity
+    // sees the effective clamps and named authority actually being executed.
+    const movements = fortressSim._movements?.movements
+      || fortressSim.conditions._scenario?.movements || [];
     movementEl.textContent = movements.length
       ? movements.map((m, i) => {
         const bounds = [

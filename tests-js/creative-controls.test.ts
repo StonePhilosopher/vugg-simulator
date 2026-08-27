@@ -608,6 +608,76 @@ describe('Creative chemistry control contract', () => {
     expect(mesh.cells.every((cell: any) => cell.fluid.Ca >= 0)).toBe(true);
   });
 
+  it('pointwise-closes upper and lower movement domains on heterogeneous pore fluids', () => {
+    (globalThis as any).setFortressInstantLines(true);
+    (globalThis as any).fortressBeginFromScenario('cooling', 8137);
+    const sim = (globalThis as any)._liveFortressSim();
+    const grid = sim.wall_state.voxelGridFor(sim);
+    for (const voxel of grid.voxels) voxel.fluid.reactiveSilicaFraction = 0.5;
+    sim.conditions.fluid.reactiveSilicaFraction = 0.5;
+    grid.voxels[0].fluid.reactiveSilicaFraction = 0.9;
+
+    (globalThis as any).fortressStep('schedule_movement', {
+      field: 'fluid.reactiveSilicaFraction', operator: 'trend', value: 2,
+      delay: 0, duration: 2, origin: 'global',
+    });
+    (globalThis as any).fortressStep('wait');
+    (globalThis as any).fortressStep('wait');
+    expect(sim.conditions.fluid.reactiveSilicaFraction).toBe(1);
+    expect(grid.voxels.every((voxel: any) =>
+      voxel.fluid.reactiveSilicaFraction >= 0
+      && voxel.fluid.reactiveSilicaFraction <= 1)).toBe(true);
+
+    (globalThis as any).fortressBeginFromScenario('supergene_oxidation', 8138);
+    const pHSim = (globalThis as any)._liveFortressSim();
+    const pHGrid = pHSim.wall_state.voxelGridFor(pHSim);
+    for (const voxel of pHGrid.voxels) voxel.fluid.pH = 7;
+    pHSim.conditions.fluid.pH = 7;
+    pHGrid.voxels[0].fluid.pH = 2;
+    // Exercise the exact movement -> global snapshot -> voxel propagation
+    // boundary without letting a later scenario buffer obscure the value.
+    const pHMovement = new (globalThis as any).MovementController([{
+      field: 'fluid.pH', startStep: 0, endStep: 2, base: 7,
+      ops: [{ kind: 'trend', amp: -20, ease: false }],
+    }], 8137);
+    const pHSnapshot = pHSim._snapshotGlobal();
+    // Fortress construction carries carbonate-boundary bookkeeping whose
+    // direct-pH guard is intentionally outside this MovementController unit.
+    // Apply the movement to the exact shared bulk-fluid handle, then exercise
+    // the production global-to-voxel propagation boundary below.
+    pHMovement.applyStep({ fluid: pHSim.conditions.fluid }, 1, pHSim);
+    expect(pHMovement.globalDomainApplicationsSnapshot()).toEqual([{
+      field: 'fluid.pH', min: 0, max: 14,
+      authority: 'aqueous-pH-domain',
+    }]);
+    pHSim._propagateGlobalDelta(pHSnapshot, {
+      movementFieldDomains: pHMovement.globalDomainApplicationsSnapshot(),
+    });
+    expect(pHSim.conditions.fluid.pH).toBe(0);
+    expect(pHGrid.voxels.every((voxel: any) => voxel.fluid.pH >= 0 && voxel.fluid.pH <= 14)).toBe(true);
+  });
+
+  it('publishes canonical domain breadcrumbs on every authored fluid movement', () => {
+    const expected = new Map<string, any>([
+      ['fluid.Eh', { authority: 'signed-redox-potential' }],
+      ['fluid.pH', { authority: 'aqueous-pH-domain', min: 0, max: 14 }],
+      ['fluid.reactiveSilicaFraction', { authority: 'dissolved-silica-fraction-domain', min: 0, max: 1 }],
+    ]);
+    let count = 0;
+    for (const makeScenario of Object.values((globalThis as any).SCENARIOS) as any[]) {
+      for (const movement of (makeScenario._json5_spec?.movements || [])) {
+        if (!String(movement.field).startsWith('fluid.')) continue;
+        count++;
+        const rule = expected.get(movement.field)
+          || { authority: 'nonnegative-dissolved-inventory', min: 0 };
+        expect(movement.domainAuthority, movement.field).toBe(rule.authority);
+        if (Number.isFinite(rule.min)) expect(movement.clampMin, movement.field).toBeGreaterThanOrEqual(rule.min);
+        if (Number.isFinite(rule.max)) expect(movement.clampMax, movement.field).toBeLessThanOrEqual(rule.max);
+      }
+    }
+    expect(count).toBe(12);
+  });
+
   it('appends a trajectory without restarting an active geological history', () => {
     (globalThis as any).setFortressInstantLines(true);
     (globalThis as any).fortressBeginFromScenario('cooling', 8134);

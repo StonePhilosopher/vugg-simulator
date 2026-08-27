@@ -1186,6 +1186,12 @@ _propagateGlobalDelta(snap, options: any = {}) {
       mesh.propagateDelta(propagationPreFluid, this._fluidFieldNames, equatorFluid, replaceFields);
     }
   }
+  // CROSS-01: additive propagation preserves spatial differences, so a bulk
+  // value that lands exactly on its movement bound can otherwise push a
+  // heterogeneous voxel beyond that bound. Apply only the domains named by
+  // the movement that actually wrote this step. Events retain their own
+  // authorities (including attested negative-pH waters).
+  _applyMovementDomainsToSimulator(this, options?.movementFieldDomains || []);
   // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
   // numeric field, so propagateEventDelta (which diffs _fluidFieldNames) never carries it.
   // The GROWTH path reads per-cell/voxel fluids (js/85b _runEngineForCrystal), so without

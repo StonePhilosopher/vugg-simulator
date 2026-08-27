@@ -16,6 +16,8 @@ declare const _mvStep: any;
 declare const _mvMixFraction: any;
 declare const _evalMovementOps: any;
 declare const movementFieldDomain: any;
+declare const movementFieldRequiresSulfurBoundary: any;
+declare const _commissionMovementSpec: any;
 declare const MovementController: any;
 declare const _createMovementController: any;
 declare const _pickOriginCell: any;
@@ -208,6 +210,31 @@ describe('movements — controller: active movement drives its field', () => {
     }], 58);
     signed.applyStep(c, 1);
     expect(c.fluid.Eh).toBeLessThan(0);
+  });
+
+  it('commissions authored and player movement rows from the same derived authority', () => {
+    const commissioned = _commissionMovementSpec({
+      field: 'fluid.Ca', startStep: 0, endStep: 5,
+      clampMin: -99, domainAuthority: 'forged-authority',
+    });
+    expect(commissioned).toMatchObject({
+      field: 'fluid.Ca',
+      clampMin: 0,
+      domainAuthority: 'nonnegative-dissolved-inventory',
+    });
+    const ctl = new MovementController([{
+      field: 'fluid.reactiveSilicaFraction', startStep: 0, endStep: 5,
+    }], 58);
+    expect(ctl.movements[0]).toMatchObject({
+      clampMin: 0,
+      clampMax: 1,
+      domainAuthority: 'dissolved-silica-fraction-domain',
+    });
+    for (const field of ['fluid.S', 'fluid.S_sulfide', 'fluid.S_sulfate', 'fluid.S_elemental']) {
+      expect(movementFieldRequiresSulfurBoundary(field)).toBe(true);
+      expect(() => _commissionMovementSpec({ field, startStep: 0, endStep: 5 }))
+        .toThrow(/valence-specific sulfur boundary/);
+    }
   });
 
   it('applies the canonical domain after player offsets and to cell-origin feeders', () => {

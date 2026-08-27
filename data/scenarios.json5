@@ -378,6 +378,7 @@
           "startStep": 0,
           "endStep": 120,
           "base": 50,
+          "domainAuthority": "signed-redox-potential",
           "ops": [{ "kind": "trend", "amp": -300, "ease": true }],
           "texture": { "theta": 0.3, "sigma": 15 }
         }
@@ -523,6 +524,8 @@
           "startStep": 80,
           "endStep": 200,
           "base": 180,
+          "clampMin": 0,
+          "domainAuthority": "nonnegative-dissolved-inventory",
           "ops": [
             // v192 re-pin: amps ×1.15 + width 0.06→0.08. The corrected
             // pK(T) (PB82, js/20b) mutes the pulses' recorded σ
@@ -545,6 +548,9 @@
           "startStep": 80,
           "endStep": 200,
           "base": 7.1,
+          "clampMin": 0,
+          "clampMax": 14,
+          "domainAuthority": "aqueous-pH-domain",
           "ops": [
             { "kind": "pulse", "amp": 1.2, "center": 0.12, "width": 0.06 },
             { "kind": "pulse", "amp": 1.3, "center": 0.32, "width": 0.06 },
@@ -1677,6 +1683,7 @@
           "startStep": 0,
           "endStep": 305,
           "base": -150,
+          "domainAuthority": "signed-redox-potential",
           "ops": [
             { "kind": "step",  "amp": 330,  "at": 0.23278688524590164,  "soften": 0.03934426229508197 },
             { "kind": "pulse", "amp": -60,  "center": 0.3508196721311475, "width": 0.03934426229508197 },
@@ -1965,7 +1972,9 @@
           "base": 6.8,
           "ops": [{ "kind": "trend", "amp": -2.5, "ease": true }],
           "texture": { "theta": 0.3, "sigma": 0.12 },
-          "clampMin": 3.5
+          "clampMin": 3.5,
+          "clampMax": 14,
+          "domainAuthority": "aqueous-pH-domain"
         }
       ],
       "sources": [
@@ -2030,7 +2039,8 @@
       "movements": [
         { "field": "fluid.B", "origin": "cell", "startStep": 30, "endStep": 230,
           "ops": [{ "kind": "trend", "amp": 100, "ease": true }],
-          "texture": { "theta": 0.3, "sigma": 4 }, "clampMax": 120 }
+          "texture": { "theta": 0.3, "sigma": 4 }, "clampMin": 0, "clampMax": 120,
+          "domainAuthority": "nonnegative-dissolved-inventory" }
       ],
       "notes": [
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
@@ -2461,6 +2471,8 @@
           "startStep": 20,
           "endStep": 35,
           "base": 800,
+          "clampMin": 0,
+          "domainAuthority": "nonnegative-dissolved-inventory",
           "ops": [{ "kind": "trend", "amp": -300, "ease": true }]
         },
         {
@@ -2477,6 +2489,8 @@
           // event and manufacture an unauthored terminal opal generation.
           "endStep": 160,
           "base": 950,
+          "clampMin": 0,
+          "domainAuthority": "nonnegative-dissolved-inventory",
           "ops": []
         }
       ],
@@ -2708,6 +2722,7 @@
           "startStep": 0,
           "endStep": 110,
           "base": -200,
+          "domainAuthority": "signed-redox-potential",
           "ops": [{ "kind": "step", "amp": 490, "at": 0.8, "soften": 0.07272727272727272 }]
         }
       ],
@@ -2958,6 +2973,7 @@
           "startStep": 0,
           "endStep": 160,
           "base": -20,
+          "domainAuthority": "signed-redox-potential",
           "ops": [
             { "kind": "pulse", "amp": -320, "center": 0.58, "width": 0.05 },
             { "kind": "trend", "amp": 95, "ease": true }
@@ -5074,6 +5090,8 @@
           "startStep": 0,
           "endStep": 18,
           "base": 320,
+          "clampMin": 0,
+          "domainAuthority": "nonnegative-dissolved-inventory",
           "ops": [{ "kind": "pulse", "amp": 80, "center": 0.5, "width": 0.22 }]
         },
         {
@@ -5101,6 +5119,8 @@
           "startStep": 190,
           "endStep": 240,
           "base": 175,
+          "clampMin": 0,
+          "domainAuthority": "nonnegative-dissolved-inventory",
           "ops": [{ "kind": "trend", "amp": -150, "ease": true }]
         }
       ],

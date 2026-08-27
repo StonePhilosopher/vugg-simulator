@@ -632,6 +632,21 @@ type MovementFieldDomain = Readonly<{
   authority: string;
 }>;
 
+const MOVEMENT_SULFUR_BOUNDARY_FIELDS = new Set([
+  'fluid.S',
+  'fluid.S_sulfide',
+  'fluid.S_sulfate',
+  'fluid.S_elemental',
+]);
+
+// Sulfur trajectories need valence-specific open-boundary declarations and
+// sulfur-ledger receipts. A generic MovementController row has neither, so it
+// must not present these coordinates as ordinary scalar solutes. Creative's
+// dedicated sulfur controls route through js/97-ui-fortress.ts instead.
+function movementFieldRequiresSulfurBoundary(path: string): boolean {
+  return MOVEMENT_SULFUR_BOUNDARY_FIELDS.has(path);
+}
+
 // CROSS-01 — movement schedules are an executable chemistry authoring path,
 // not a licence to bypass FluidChemistry's physical coordinate domains.
 // js/20-chemistry-fluid.ts owns the canonical coordinate vocabulary;
@@ -680,6 +695,55 @@ function _movementDomainValue(path: string, value: number): number {
   return bounded;
 }
 
+function _commissionMovementSpec(input: MovementSpec): MovementSpec {
+  if (!input || typeof input !== 'object' || typeof input.field !== 'string') {
+    throw new TypeError('movement specification is missing its field authority');
+  }
+  const movement: MovementSpec = { ...input };
+  delete movement.domainAuthority;
+  if (movementFieldRequiresSulfurBoundary(movement.field)) {
+    throw new RangeError(`movement ${movement.field} requires an authored valence-specific sulfur boundary`);
+  }
+  const domain = movementFieldDomain(movement.field);
+  if (domain) {
+    if (typeof domain.min === 'number') {
+      movement.clampMin = Math.max(domain.min, movement.clampMin ?? domain.min);
+    }
+    if (typeof domain.max === 'number') {
+      movement.clampMax = Math.min(domain.max, movement.clampMax ?? domain.max);
+    }
+    if (typeof movement.clampMin === 'number' && typeof movement.clampMax === 'number'
+        && movement.clampMin > movement.clampMax) {
+      throw new RangeError(`movement ${movement.field} has an empty canonical domain`);
+    }
+    movement.domainAuthority = domain.authority;
+  }
+  return movement;
+}
+
+function _applyMovementDomainsToSimulator(sim: any, applications: any[]): void {
+  if (!sim || !Array.isArray(applications) || !applications.length) return;
+  const handles = new Set<any>();
+  if (sim.conditions?.fluid) handles.add(sim.conditions.fluid);
+  for (const fluid of (sim.ring_fluids || [])) if (fluid) handles.add(fluid);
+  const grid = sim.wall_state?.voxelGridFor?.(sim);
+  for (const voxel of (grid?.voxels || [])) if (voxel?.fluid) handles.add(voxel.fluid);
+  const mesh = sim.wall_state?.meshFor?.(sim);
+  for (const cell of (mesh?.cells || [])) if (cell?.fluid) handles.add(cell.fluid);
+
+  for (const application of applications) {
+    const field = String(application?.field || '');
+    if (!field.startsWith('fluid.')) continue;
+    const leaf = field.slice('fluid.'.length);
+    const domain = movementFieldDomain(field);
+    if (!domain || (typeof domain.min !== 'number' && typeof domain.max !== 'number')) continue;
+    for (const fluid of handles) {
+      if (typeof fluid?.[leaf] !== 'number' || !Number.isFinite(fluid[leaf])) continue;
+      fluid[leaf] = _movementDomainValue(field, fluid[leaf]);
+    }
+  }
+}
+
 function _movementGetField(conditions: any, path: string): number {
   const parts = path.split('.');
   let o = conditions;
@@ -714,6 +778,7 @@ class MovementController {
   rng: StatefulRandom;
   _playerOffsets: Map<string, number>;
   _movementSources: ('authored-scenario' | 'player-scheduled')[];
+  _lastGlobalDomainApplications: any[];
   _state: {
     base: number;
     ou: number;
@@ -730,10 +795,12 @@ class MovementController {
     // Own the list. Creative mode can append a trajectory while older ones are
     // already active; sharing the scenario array would make a push happen
     // twice when the controller is updated explicitly.
-    this.movements = Array.isArray(movements) ? movements.slice() : [];
+    this.movements = Array.isArray(movements)
+      ? movements.map(movement => _commissionMovementSpec(movement)) : [];
     this._movementSources = this.movements.map(() => 'authored-scenario');
     this.rng = _makeMovementRng(vuggSeed);
     this._playerOffsets = new Map();
+    this._lastGlobalDomainApplications = [];
     for (const [field, value] of Object.entries(inheritedPlayerOffsets || {})) {
       if (typeof field === 'string' && field && Number.isFinite(value)) {
         this._playerOffsets.set(_movementFieldKey(field), value);
@@ -760,9 +827,10 @@ class MovementController {
   // dedicated RNG stream and discard captured baselines / OU texture for every
   // trajectory that was already under way.
   addMovement(movement: MovementSpec): void {
-    const playerOffset = movement.origin === 'cell'
-      ? 0 : (this._playerOffsets.get(_movementFieldKey(movement.field)) || 0);
-    this.movements.push(movement);
+    const commissioned = _commissionMovementSpec(movement);
+    const playerOffset = commissioned.origin === 'cell'
+      ? 0 : (this._playerOffsets.get(_movementFieldKey(commissioned.field)) || 0);
+    this.movements.push(commissioned);
     this._movementSources.push('player-scheduled');
     this._state.push({
       base: 0, ou: 0, started: false, originCell: -1, playerOffset,
@@ -843,6 +911,10 @@ class MovementController {
     return false;
   }
 
+  globalDomainApplicationsSnapshot(): any[] {
+    return this._lastGlobalDomainApplications.map(row => ({ ...row }));
+  }
+
   // Apply every active movement for this step. No-op (and zero draws) when
   // empty. Mutates `conditions` in place; the caller propagates the global
   // delta to per-ring fluids exactly as it does for discrete events.
@@ -852,6 +924,7 @@ class MovementController {
   // When absent (the legacy 2-arg call from unit tests), every movement uses
   // the global path — so origin:'cell' degrades safely to origin:'global'.
   applyStep(conditions: any, step: number, sim?: any): void {
+    this._lastGlobalDomainApplications = [];
     if (!this.movements.length) return;              // <-- the sim-neutral fast path
     for (let i = 0; i < this.movements.length; i++) {
       const m = this.movements[i];
@@ -938,6 +1011,20 @@ class MovementController {
         continue;
       }
       _movementSetField(conditions, m.field, value);
+      const domain = movementFieldDomain(m.field);
+      if (domain) {
+        const row = {
+          field: m.field,
+          min: typeof domain.min === 'number' ? domain.min : null,
+          max: typeof domain.max === 'number' ? domain.max : null,
+          authority: domain.authority,
+        };
+        const previous = this._lastGlobalDomainApplications.findIndex(
+          existing => existing.field === row.field,
+        );
+        if (previous >= 0) this._lastGlobalDomainApplications[previous] = row;
+        else this._lastGlobalDomainApplications.push(row);
+      }
     }
   }
 

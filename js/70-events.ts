@@ -1013,7 +1013,18 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
       // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
       // adds a `movements: [...]` array to one scenario's JSON5 spec.
-      movements: spec.movements,
+      // A Creative schedule belongs to one run. Copy the authored list and
+      // nested operator records so Schedule/Clear cannot mutate `_json5_spec`
+      // and silently rewrite later scenario/spec-hash evidence in memory.
+      // js/85j commissions effective field domains on this run-owned copy.
+      movements: Array.isArray(spec.movements)
+        ? spec.movements.map(movement => ({
+          ...movement,
+          ops: Array.isArray(movement.ops) ? movement.ops.map(op => ({ ...op })) : movement.ops,
+          mix: movement.mix ? { ...movement.mix } : movement.mix,
+          texture: movement.texture ? { ...movement.texture } : movement.texture,
+        }))
+        : spec.movements,
       // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) — optional per-scenario spot
       // config {count|minCount|maxCount|kinds}. Spots are SEEDED off the cavity
       // seed regardless; this only pins/biases the seeded distribution. Absent →

@@ -570,7 +570,9 @@ class VugSimulator {
       // injects into one mesh cell (not `conditions`), so the propagate below is
       // a no-op for it — the step-end _diffuseRingState spreads the cell value.
       this._movements.applyStep(this.conditions, this.step, this);
-      this._propagateGlobalDelta(mvSnap);
+      this._propagateGlobalDelta(mvSnap, {
+        movementFieldDomains: this._movements.globalDomainApplicationsSnapshot(),
+      });
     }
     // An authored weathering epilogue is an executed boundary contract, not a
     // scenario label. Activate it only after same-step events/movements have
