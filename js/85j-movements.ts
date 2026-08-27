@@ -639,12 +639,22 @@ const MOVEMENT_SULFUR_BOUNDARY_FIELDS = new Set([
   'fluid.S_elemental',
 ]);
 
+// Early movement prototypes accepted both `Ca` and `fluid.Ca` for a cell
+// injection. Canonicalize that legacy spelling at the only commissioning
+// boundary, before sulfur refusal, domain derivation, save identity, or field
+// mutation. Top-level physical coordinates (temperature/pressure/etc.) are
+// not members of FluidChemistry and remain unchanged.
+function canonicalMovementFieldPath(path: string): string {
+  if (typeof path !== 'string' || !path || path.includes('.')) return path;
+  return FLUID_CHEMISTRY_INPUT_FIELDS.has(path) ? `fluid.${path}` : path;
+}
+
 // Sulfur trajectories need valence-specific open-boundary declarations and
 // sulfur-ledger receipts. A generic MovementController row has neither, so it
 // must not present these coordinates as ordinary scalar solutes. Creative's
 // dedicated sulfur controls route through js/97-ui-fortress.ts instead.
 function movementFieldRequiresSulfurBoundary(path: string): boolean {
-  return MOVEMENT_SULFUR_BOUNDARY_FIELDS.has(path);
+  return MOVEMENT_SULFUR_BOUNDARY_FIELDS.has(canonicalMovementFieldPath(path));
 }
 
 // CROSS-01 — movement schedules are an executable chemistry authoring path,
@@ -656,6 +666,7 @@ function movementFieldRequiresSulfurBoundary(path: string): boolean {
 // Eh is intentionally signed. The three sulfur-authority coordinates are not
 // numeric movement fields and therefore have no numeric domain here.
 function movementFieldDomain(path: string): MovementFieldDomain | null {
+  path = canonicalMovementFieldPath(path);
   if (path === 'pressure') {
     return Object.freeze({
       min: FLUID_PRESSURE_MIN_KBAR,
@@ -701,6 +712,7 @@ function _commissionMovementSpec(input: MovementSpec): MovementSpec {
   }
   const movement: MovementSpec = { ...input };
   delete movement.domainAuthority;
+  movement.field = canonicalMovementFieldPath(movement.field);
   if (movementFieldRequiresSulfurBoundary(movement.field)) {
     throw new RangeError(`movement ${movement.field} requires an authored valence-specific sulfur boundary`);
   }

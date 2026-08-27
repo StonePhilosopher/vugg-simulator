@@ -17,6 +17,7 @@ declare const _mvMixFraction: any;
 declare const _evalMovementOps: any;
 declare const movementFieldDomain: any;
 declare const movementFieldRequiresSulfurBoundary: any;
+declare const canonicalMovementFieldPath: any;
 declare const _commissionMovementSpec: any;
 declare const MovementController: any;
 declare const _createMovementController: any;
@@ -234,6 +235,12 @@ describe('movements — controller: active movement drives its field', () => {
       expect(movementFieldRequiresSulfurBoundary(field)).toBe(true);
       expect(() => _commissionMovementSpec({ field, startStep: 0, endStep: 5 }))
         .toThrow(/valence-specific sulfur boundary/);
+      const bare = field.slice('fluid.'.length);
+      expect(movementFieldRequiresSulfurBoundary(bare)).toBe(true);
+      expect(() => new MovementController([{
+        field: bare, origin: 'cell', originCell: 0, startStep: 0, endStep: 2,
+        base: 0, ops: [{ kind: 'trend', amp: 200, ease: false }],
+      }], 58)).toThrow(/valence-specific sulfur boundary/);
     }
   });
 
@@ -256,6 +263,35 @@ describe('movements — controller: active movement drives its field', () => {
     }], 58);
     cell.applyStep(c, 1, sim);
     expect(cellFluid.Ca).toBe(0);
+
+    const bareCellFluid = { Ca: 4, reactiveSilicaFraction: 0.9, pH: 2 };
+    const bareSim = { wall_state: { meshFor: () => ({ cells: [{ fluid: bareCellFluid }] }) } };
+    const bareCa = new MovementController([{
+      field: 'Ca', origin: 'cell', originCell: 0,
+      startStep: 0, endStep: 2, base: 4,
+      ops: [{ kind: 'trend', amp: -20, ease: false }],
+    }], 58);
+    expect(bareCa.movements[0].field).toBe('fluid.Ca');
+    expect(canonicalMovementFieldPath('Ca')).toBe('fluid.Ca');
+    expect(movementFieldDomain('Ca')).toEqual(movementFieldDomain('fluid.Ca'));
+    bareCa.applyStep(c, 1, bareSim);
+    expect(bareCellFluid.Ca).toBe(0);
+
+    const bareFraction = new MovementController([{
+      field: 'reactiveSilicaFraction', origin: 'cell', originCell: 0,
+      startStep: 0, endStep: 2, base: 0.9,
+      ops: [{ kind: 'trend', amp: 1, ease: false }],
+    }], 58);
+    bareFraction.applyStep(c, 1, bareSim);
+    expect(bareCellFluid.reactiveSilicaFraction).toBe(1);
+
+    const barePH = new MovementController([{
+      field: 'pH', origin: 'cell', originCell: 0,
+      startStep: 0, endStep: 2, base: 2,
+      ops: [{ kind: 'trend', amp: -20, ease: false }],
+    }], 58);
+    barePH.applyStep(c, 1, bareSim);
+    expect(bareCellFluid.pH).toBe(0);
   });
 
   it('carries a player Heat delta on top of an absolute authored temperature curve', () => {
