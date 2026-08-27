@@ -15,12 +15,13 @@ declare const _mvPulse: any;
 declare const _mvStep: any;
 declare const _mvMixFraction: any;
 declare const _evalMovementOps: any;
+declare const movementFieldDomain: any;
 declare const MovementController: any;
 declare const _createMovementController: any;
 declare const _pickOriginCell: any;
 declare const FluidSpotField: any;
 
-const conds = () => ({ temperature: 200, fluid: { pH: 6, Eh: 200 } });
+const conds = () => ({ temperature: 200, fluid: { pH: 6, Eh: 200, Ca: 236.25, reactiveSilicaFraction: 1 } });
 
 describe('movements — seed-derived PRNG (reproducible randomness)', () => {
   it('same vugg seed → identical sequence; different seed → different', () => {
@@ -180,6 +181,54 @@ describe('movements — controller: active movement drives its field', () => {
     const c = conds();
     for (let s = 0; s < 5; s++) ctl.applyStep(c, s);
     expect(c.temperature).toBeGreaterThanOrEqual(25);  // floored
+  });
+
+  it('enforces canonical solute domains even when an authored schedule omits or weakens its clamp', () => {
+    expect(movementFieldDomain('fluid.Ca')).toEqual({
+      min: 0,
+      authority: 'nonnegative-dissolved-inventory',
+    });
+    expect(movementFieldDomain('fluid.pH')).toMatchObject({ min: 0, max: 14 });
+    expect(movementFieldDomain('fluid.reactiveSilicaFraction')).toMatchObject({ min: 0, max: 1 });
+    expect(movementFieldDomain('fluid.Eh')).toEqual({ authority: 'signed-redox-potential' });
+
+    const ctl = new MovementController([{
+      field: 'fluid.Ca', startStep: 0, endStep: 5, base: 236.25,
+      ops: [{ kind: 'trend', amp: -1000, ease: false }],
+      clampMin: -5000,
+    }], 58);
+    const c = conds();
+    for (let s = 0; s < 5; s++) ctl.applyStep(c, s);
+    expect(c.fluid.Ca).toBe(0);
+    expect(c.fluid.pH).toBe(6);
+
+    const signed = new MovementController([{
+      field: 'fluid.Eh', startStep: 0, endStep: 2, base: 20,
+      ops: [{ kind: 'trend', amp: -200, ease: false }],
+    }], 58);
+    signed.applyStep(c, 1);
+    expect(c.fluid.Eh).toBeLessThan(0);
+  });
+
+  it('applies the canonical domain after player offsets and to cell-origin feeders', () => {
+    const global = new MovementController([{
+      field: 'fluid.Ca', startStep: 0, endStep: 5, base: 10,
+    }], 58);
+    expect(global.applyPlayerDelta('fluid.Ca', 1, -50)).toBeTruthy();
+    const c = conds();
+    global.applyStep(c, 1);
+    expect(c.fluid.Ca).toBe(0);
+
+    const cellFluid = { Ca: 4 };
+    const mesh = { cells: [{ fluid: cellFluid }] };
+    const sim = { wall_state: { meshFor: () => mesh } };
+    const cell = new MovementController([{
+      field: 'fluid.Ca', origin: 'cell', originCell: 0,
+      startStep: 0, endStep: 2, base: 4,
+      ops: [{ kind: 'trend', amp: -20, ease: false }],
+    }], 58);
+    cell.applyStep(c, 1, sim);
+    expect(cellFluid.Ca).toBe(0);
   });
 
   it('carries a player Heat delta on top of an absolute authored temperature curve', () => {

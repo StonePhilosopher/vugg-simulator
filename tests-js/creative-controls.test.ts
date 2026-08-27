@@ -584,6 +584,30 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.porosity).toBeLessThanOrEqual(1);
   });
 
+  it('authors and executes canonical nonnegative solute bounds across the pore-fluid grid', () => {
+    (globalThis as any).setFortressInstantLines(true);
+    (globalThis as any).fortressBeginFromScenario('cooling', 8136);
+    const sim = (globalThis as any)._liveFortressSim();
+    const initialCa = sim.conditions.fluid.Ca;
+    expect(initialCa).toBeGreaterThan(0);
+
+    (globalThis as any).fortressStep('schedule_movement', {
+      field: 'fluid.Ca', operator: 'trend', value: -1000,
+      delay: 0, duration: 4, clampMin: -5000, origin: 'global',
+    });
+    expect(sim.conditions._scenario.movements.at(-1)).toMatchObject({
+      field: 'fluid.Ca',
+      clampMin: 0,
+      domainAuthority: 'nonnegative-dissolved-inventory',
+    });
+    for (let i = 0; i < 4; i++) (globalThis as any).fortressStep('wait');
+
+    expect(sim.conditions.fluid.Ca).toBe(0);
+    expect(sim.ring_fluids.every((fluid: any) => fluid.Ca >= 0)).toBe(true);
+    const mesh = sim.wall_state.meshFor(sim);
+    expect(mesh.cells.every((cell: any) => cell.fluid.Ca >= 0)).toBe(true);
+  });
+
   it('appends a trajectory without restarting an active geological history', () => {
     (globalThis as any).setFortressInstantLines(true);
     (globalThis as any).fortressBeginFromScenario('cooling', 8134);

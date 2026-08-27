@@ -87,10 +87,19 @@ function normalizeCreativeMovementSpec(payload: any, currentStep: number): any |
   else spec.ops = [{ kind: 'trend', amp: value, ease: payload.ease !== false }];
   if (Number.isFinite(payload.clampMin)) spec.clampMin = payload.clampMin;
   if (Number.isFinite(payload.clampMax)) spec.clampMax = payload.clampMax;
-  if (spec.field === 'pressure') {
-    spec.clampMin = Math.max(FLUID_PRESSURE_MIN_KBAR, spec.clampMin ?? FLUID_PRESSURE_MIN_KBAR);
-    spec.clampMax = Math.min(FLUID_PRESSURE_MAX_KBAR, spec.clampMax ?? FLUID_PRESSURE_MAX_KBAR);
+  // Project the runtime domain into the saved schedule. This breadcrumb makes
+  // the implicit chemistry boundary visible to the editor, save/replay, and
+  // reviewers; MovementController enforces the same domain independently.
+  const fieldDomain = movementFieldDomain(spec.field);
+  if (typeof fieldDomain?.min === 'number') {
+    spec.clampMin = Math.max(fieldDomain.min, spec.clampMin ?? fieldDomain.min);
   }
+  if (typeof fieldDomain?.max === 'number') {
+    spec.clampMax = Math.min(fieldDomain.max, spec.clampMax ?? fieldDomain.max);
+  }
+  if (typeof spec.clampMin === 'number' && typeof spec.clampMax === 'number'
+      && spec.clampMin > spec.clampMax) return null;
+  if (fieldDomain) spec.domainAuthority = fieldDomain.authority;
   if (Number.isFinite(payload.textureSigma) && payload.textureSigma > 0) {
     spec.texture = {
       sigma: payload.textureSigma,
@@ -280,7 +289,13 @@ function refreshCreativeGeologyEditors() {
   if (movementEl) {
     const movements = fortressSim.conditions._scenario?.movements || [];
     movementEl.textContent = movements.length
-      ? movements.map((m, i) => `${i + 1}. ${m.field} · steps ${m.startStep}–${m.endStep - 1} · ${m.origin || 'global'}`).join('\n')
+      ? movements.map((m, i) => {
+        const bounds = [
+          Number.isFinite(m.clampMin) ? `min ${m.clampMin}` : '',
+          Number.isFinite(m.clampMax) ? `max ${m.clampMax}` : '',
+        ].filter(Boolean).join(', ');
+        return `${i + 1}. ${m.field} · steps ${m.startStep}–${m.endStep - 1} · ${m.origin || 'global'}${bounds ? ` · ${bounds}` : ''}`;
+      }).join('\n')
       : 'No scheduled trajectories.';
   }
   const feederEl = document.getElementById('creative-feeder-list');

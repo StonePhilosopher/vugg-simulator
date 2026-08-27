@@ -611,6 +611,10 @@ interface MovementSpec {
   texture?: { theta: number; sigma: number };
   clampMin?: number;
   clampMax?: number;
+  // Saved authoring breadcrumb for the canonical bound merged by js/97b.
+  // The engine derives and enforces the domain from `field`; it never trusts
+  // this label as executable authority.
+  domainAuthority?: string;
   // SPATIAL origin. 'global' (default) = apply to conditions, propagated
   // evenly (current behavior). 'cell' = inject into ONE seeded origin cell's
   // mesh.cells[].fluid and let _diffuseRingState carry it out (one-sided
@@ -620,6 +624,60 @@ interface MovementSpec {
   // carries the field + the picker but applyStep still does the global path.
   origin?: 'global' | 'cell';
   originCell?: number;
+}
+
+type MovementFieldDomain = Readonly<{
+  min?: number;
+  max?: number;
+  authority: string;
+}>;
+
+// CROSS-01 — movement schedules are an executable chemistry authoring path,
+// not a licence to bypass FluidChemistry's physical coordinate domains.
+// js/20-chemistry-fluid.ts owns the canonical coordinate vocabulary;
+// js/97b-ui-geology.ts projects these bounds into player-authored schedules;
+// this engine applies them again after authored texture AND player offsets so
+// imported/scenario-authored specs cannot make a dissolved inventory negative.
+// Eh is intentionally signed. The three sulfur-authority coordinates are not
+// numeric movement fields and therefore have no numeric domain here.
+function movementFieldDomain(path: string): MovementFieldDomain | null {
+  if (path === 'pressure') {
+    return Object.freeze({
+      min: FLUID_PRESSURE_MIN_KBAR,
+      max: FLUID_PRESSURE_MAX_KBAR,
+      authority: 'fluid-pressure-domain',
+    });
+  }
+  if (path === 'porosity') {
+    return Object.freeze({ min: 0, max: 1, authority: 'porosity-fraction-domain' });
+  }
+  if (path === 'flow_rate' || path === 'fluid_surface_height_mm') {
+    return Object.freeze({ min: 0, authority: 'nonnegative-physical-coordinate' });
+  }
+  if (!path.startsWith('fluid.')) return null;
+  const field = path.slice('fluid.'.length);
+  if (!FLUID_CHEMISTRY_INPUT_FIELDS.has(field)
+      || field === 'sulfurPoolsExplicit'
+      || field === 'sulfateInherited'
+      || field === 'nativeSulfurPathway') return null;
+  if (field === 'Eh') return Object.freeze({ authority: 'signed-redox-potential' });
+  if (field === 'pH') {
+    return Object.freeze({ min: 0, max: 14, authority: 'aqueous-pH-domain' });
+  }
+  if (field === 'reactiveSilicaFraction') {
+    return Object.freeze({ min: 0, max: 1, authority: 'dissolved-silica-fraction-domain' });
+  }
+  return Object.freeze({ min: 0, authority: 'nonnegative-dissolved-inventory' });
+}
+
+function _movementDomainValue(path: string, value: number): number {
+  if (!Number.isFinite(value)) return value;
+  const domain = movementFieldDomain(path);
+  if (!domain) return value;
+  let bounded = value;
+  if (typeof domain.min === 'number') bounded = Math.max(domain.min, bounded);
+  if (typeof domain.max === 'number') bounded = Math.min(domain.max, bounded);
+  return bounded;
 }
 
 function _movementGetField(conditions: any, path: string): number {
@@ -635,9 +693,7 @@ function _movementSetField(conditions: any, path: string, value: number): void {
   let o = conditions;
   for (let i = 0; i < parts.length - 1; i++) { if (o == null) return; o = o[parts[i]]; }
   if (o != null) {
-    o[parts[parts.length - 1]] = path === 'pressure'
-      ? clampFluidPressureKbar(value)
-      : value;
+    o[parts[parts.length - 1]] = _movementDomainValue(path, value);
   }
 }
 
@@ -847,6 +903,10 @@ class MovementController {
       if (m.origin !== 'cell') {
         value += Number.isFinite(st.playerOffset) ? st.playerOffset : 0;
       }
+      // The canonical field domain is the final boundary. Explicit schedule
+      // clamps describe a trajectory preference; they cannot override the
+      // chemistry/geometry authority or be bypassed by a player offset.
+      value = _movementDomainValue(m.field, value);
 
       if (conditions?._carbonateBoundaryState
           && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
@@ -927,7 +987,7 @@ class MovementController {
     const dot = field.lastIndexOf('.');
     const leaf = dot >= 0 ? field.slice(dot + 1) : field;
     if (typeof fluid[leaf] !== 'number') return false;
-    fluid[leaf] = value;
+    fluid[leaf] = _movementDomainValue(field, value);
     return true;
   }
 }

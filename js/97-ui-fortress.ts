@@ -1867,7 +1867,8 @@ function fortressStep(action, payload) {
       }
       c._scenario.movements.push(spec);
       fortressSim._movements.addMovement(spec);
-      actionDesc = `Trajectory scheduled — ${spec.field}, steps ${spec.startStep}–${spec.endStep - 1}, ${spec.origin}`;
+      actionDesc = `Trajectory scheduled — ${spec.field}, steps ${spec.startStep}–${spec.endStep - 1}, ${spec.origin}`
+        + (spec.domainAuthority ? `; ${spec.domainAuthority}` : '');
       break;
     }
     case 'clear_movements':
