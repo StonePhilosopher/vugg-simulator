@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 284**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 285**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -231,6 +231,22 @@ and the exact-execution evidence receipt.
   closed. Breadcrumb: 99z public command/serializer -> 94 scenario constructor
   -> 93a recipe replay; 91 progressive Simulation -> 85l staged checkpoint
   envelope -> newest-valid recovery.
+- SIM 285 closes the final CROSS-01 integration seams. Formation advice now
+  preserves the `FluidChemistry` prototype when it tests a one-lever
+  counterfactual, so the panel cannot replace canonical analytical methods
+  with plain-object fallbacks. A Library specimen must retain positive signed,
+  non-phantom layer inventory at Collect, reload, Record Groove, Creative save,
+  and finish authentication; released numeric `zones` counts remain visible
+  and backup-portable but are explicitly census-only. Timeline schedules
+  canonicalize legacy bare fluid names, derive and display the executable
+  coordinate authority, and reapply pH/fraction/nonnegative-solute domains to
+  every bulk, ring, voxel, and mesh handle after propagation while leaving Eh
+  signed. Sulfur quantities and sulfur-mode/pathway authority cannot use that
+  generic schedule path: they must enter through the valence-specific boundary
+  and sulfur ledger. Breadcrumb: 97b schedule authoring -> 85j commissioning ->
+  85 run-step -> 85c spatial propagation; 93 signed specimen gate -> 93a
+  save/finish receipts -> 98 Record Groove; 97b sigma panel -> production
+  supersaturation methods.
 - The GAME-05 formation checks also close two already-landed portability
   repairs on the exact candidate: all 98 embedded authored assets, the browser
   executable, the scientific execution set, and release source receipts use
