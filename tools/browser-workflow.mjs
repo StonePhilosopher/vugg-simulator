@@ -2427,6 +2427,14 @@ async function main() {
       'unexpected browser dialog sequence',
     );
     if (process.argv.includes('--write-guided-receipt')) {
+      // Emit the controlled candidate before source-pinned semantic
+      // verification. A legitimate SIM identity bump changes deterministic
+      // fingerprints/keys; if the fail-closed verifier rejects, reviewers
+      // still need the exact owned-browser product to reconcile deliberately
+      // rather than weakening the check or guessing constants.
+      process.stdout.write(`[browser-workflow] guided receipt candidate ${JSON.stringify(
+        workflow.guidedTutorialJourneys,
+      )}\n`);
       const receipt = buildGuidedTutorialBrowserReceipt(
         ROOT, SIM_VERSION, workflow.guidedTutorialJourneys, diagnostics.browser_runtime,
       );
