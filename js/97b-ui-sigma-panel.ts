@@ -388,6 +388,16 @@ function _formationProductionSigma(name: string, c: any): number {
   }
 }
 
+// A formation counterfactual must retain the exact executable chemistry
+// surface.  Spreading FluidChemistry into `{...fluid}` drops prototype methods
+// such as reactiveSilicaPpm(), which can make an inert analytical pool look
+// reactive and fabricate a one-control remedy.  Clone own state while keeping
+// the source prototype; js/20 owns those methods and js/39 consumes them.
+function _formationCloneExecutableState(source: any): any {
+  if (!source || (typeof source !== 'object' && typeof source !== 'function')) return source;
+  return Object.assign(Object.create(Object.getPrototypeOf(source)), source);
+}
+
 function _formationCandidateValues(field: string, current: number): number[] {
   if (field === 'pH') return [0.5, 1, 2, 3, 4, 5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 10, 11, 12, 13, 14];
   if (field === 'O2') return [0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50];
@@ -447,8 +457,8 @@ function _formationCausalCounterfactuals(
     const values = Array.from(new Set(_formationCandidateValues(probe.field, probe.current)
       .filter(value => Number.isFinite(value) && value >= 0 && value !== probe.current)));
     for (const value of values) {
-      const candidate = Object.assign(Object.create(Object.getPrototypeOf(c)), c);
-      candidate.fluid = { ...c.fluid };
+      const candidate = _formationCloneExecutableState(c);
+      candidate.fluid = _formationCloneExecutableState(c.fluid);
       if (probe.scope === 'fluid') candidate.fluid[probe.field] = value;
       else candidate[probe.field] = value;
       const nextSigma = _formationProductionSigma(name, candidate);

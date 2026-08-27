@@ -432,6 +432,41 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     expect(silica.note).toContain('production supersaturation');
   });
 
+  it('keeps FluidChemistry methods on one-lever reruns instead of activating inert quartz silica', () => {
+    const conditions = new VugConditions({
+      temperature: 250,
+      pressure: 1.5,
+      fluid: new FluidChemistry({
+        SiO2: 1000,
+        reactiveSilicaFraction: 0,
+        F: 0,
+        pH: 7,
+        O2: 0.1,
+      }),
+    });
+    expect(conditions.fluid.SiO2).toBe(1000);
+    expect(conditions.fluid.reactiveSilicaPpm()).toBe(0);
+    expect(conditions.supersaturation_quartz()).toBe(0);
+
+    const why = _buildMineralFormationExplanation(
+      'quartz', conditions, { conditions, crystals: [] }, 0,
+    );
+    const causal = group(why.groups, 'Production counterfactuals').chips;
+    expect(causal.some((chip: any) => chip.text.startsWith('pH ')
+      && chip.text.includes('clears σcrit'))).toBe(false);
+    // Restoring the actually reactive fraction is a real executable lever;
+    // merely lowering pH is not.  This paired assertion would fail under the
+    // old plain-object clone, which manufactured the pH row as well.
+    expect(causal).toEqual([expect.objectContaining({
+      text: expect.stringMatching(/^reactiveSilicaFraction .*clears σcrit$/),
+    })]);
+
+    // The counterfactual observer must not mutate the canonical live fluid.
+    expect(conditions.fluid).toBeInstanceOf(FluidChemistry);
+    expect(conditions.fluid.pH).toBe(7);
+    expect(conditions.fluid.reactiveSilicaPpm()).toBe(0);
+  });
+
   it('uses raw CO3 for the three empirical carbonate routes and keeps formula capacity separate', () => {
     const conditions = new VugConditions({
       temperature: 100,
