@@ -75,6 +75,10 @@ function grooveGetAvailableCrystals() {
 function playCollectedInGroove(id) {
   const rec = loadCrystals().find(c => c.id === id);
   if (!rec) { alert('Collected crystal not found.'); return; }
+  if (!_collectionRecordHasSurvivingSolid(rec)) {
+    alert('This Library row does not contain a surviving physical specimen, so the Record Player will not resurrect it.');
+    return;
+  }
   if (!Array.isArray(rec.zones) || !rec.zones.length) {
     alert('This specimen was collected before zone data was saved, so the Record Player has nothing to spiral. Collect a fresh one to play it.');
     return;

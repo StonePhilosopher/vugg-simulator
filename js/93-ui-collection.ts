@@ -234,8 +234,11 @@ function _collectionPhysicalSolidUm(crystalOrRecord: any): number {
     const inventory = _physicalCrystalInventory(crystalOrRecord);
     return Number.isFinite(inventory?.remainingUm) ? Math.max(0, inventory.remainingUm) : 0;
   }
-  const total = Number(crystalOrRecord.total_growth_um);
-  return Number.isFinite(total) ? Math.max(0, total) : 0;
+  // A numeric `zones` value is the first-release census-only schema. It has no
+  // signed layer ledger, so neither that count nor a scalar total can prove
+  // that later dissolution left a specimen. Keep the historical row visible
+  // and backup-portable, but fail closed for Collect/Groove/live reconstruction.
+  return 0;
 }
 
 function _crystalHasCollectibleSolid(crystal: any): boolean {

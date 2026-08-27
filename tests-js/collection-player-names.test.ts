@@ -21,6 +21,7 @@ declare function collectAllCrystals(crystals: any[], meta: any, opts?: { silent?
 };
 declare function reconstructCrystalFromRecord(record: any): any;
 declare function _crystalHasCollectibleSolid(crystal: any): boolean;
+declare function _collectionRecordHasSurvivingSolid(record: any): boolean;
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -230,7 +231,7 @@ describe('player-owned collection names', () => {
 
     const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
     playCollectedInGroove(legacy.id);
-    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/before zone data was saved/i));
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/does not contain a surviving physical specimen/i));
     alertSpy.mockRestore();
 
     const backup = _saveBuildLocalExport();
@@ -318,6 +319,33 @@ describe('player-owned collection names', () => {
     expect(holder.querySelector('.collected-row-meta')?.textContent)
       .toContain('dissolved / no surviving specimen');
     expect(holder.querySelector('.collected-row-actions button')?.hasAttribute('disabled')).toBe(true);
+    promptSpy.mockRestore();
+    alertSpy.mockRestore();
+  });
+
+  it('keeps count-only legacy rows visible but never treats their scalar total as surviving solid', () => {
+    const legacy = legacyCountSpecimen({ id: 'cry-count-only-unverified' });
+    legacy.zones = 7;
+    legacy.zone_count = 7;
+    legacy.total_growth_um = 3250;
+    legacy.dissolved = false;
+    expect(_collectionRecordHasSurvivingSolid(legacy)).toBe(false);
+    expect(reconstructCrystalFromRecord(legacy).dissolved).toBe(true);
+
+    const liveShapedButUnreceipted = {
+      ...legacy,
+      crystal_id: 44,
+      zones: 7,
+    };
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+    const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('Impossible specimen');
+    expect(_crystalHasCollectibleSolid(liveShapedButUnreceipted)).toBe(false);
+    expect(collectCrystal(liveShapedButUnreceipted, { mode: 'creative' })).toBe(false);
+    expect(promptSpy).not.toHaveBeenCalled();
+
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([legacy]));
+    playCollectedInGroove(legacy.id);
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/does not contain a surviving physical specimen/i));
     promptSpy.mockRestore();
     alertSpy.mockRestore();
   });

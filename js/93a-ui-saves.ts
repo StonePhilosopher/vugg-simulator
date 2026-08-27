@@ -540,7 +540,7 @@ function _saveAssertCollectionReceipt(receipt, runId) {
 function _saveAuthenticateCollectionReceiptAgainstLive(receipt, runId) {
   _saveAssertCollectionReceipt(receipt, runId);
   const crystal = fortressSim?.crystals?.[receipt.crystal_index];
-  if (!crystal || !((crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0)) {
+  if (!_crystalHasCollectibleSolid(crystal)) {
     throw new Error(`collection receipt crystal ${receipt.crystal_index} is not collectable in replay`);
   }
   const expected = buildCrystalRecord(
@@ -641,7 +641,7 @@ function _saveAuthenticateFinishTransactionAgainstLive(tx, saveId, library, opts
   const suppressedByCrystal = new Map<number, string>();
   const collectableIndexes = [];
   fortressSim.crystals.forEach((crystal, crystalIdx) => {
-    if (crystal && ((crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0)) {
+    if (_crystalHasCollectibleSolid(crystal)) {
       const marker = crystal._collectedRecordId;
       const authenticatedDeletion = marker
         && !libraryById.has(marker)
@@ -1474,7 +1474,7 @@ function _saveBuildFinishTransaction() {
   const existingCollected = [];
   const staged = [];
   (fortressSim.crystals || []).forEach((crystal, crystalIdx) => {
-    if (!crystal || !((crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0)) return;
+    if (!_crystalHasCollectibleSolid(crystal)) return;
     if (crystal._collectedRecordId) {
       if (libraryIds.has(crystal._collectedRecordId)) {
         existingCollected.push([crystalIdx, crystal._collectedRecordId]);

@@ -55,6 +55,7 @@ declare function _saveAssertLocalExport(payload: any): boolean;
 declare function _saveApplyLocalExport(payload: any, opts?: any): boolean;
 declare function _saveRecoverLocalImportJournal(): boolean;
 declare function _saveBuildFinishTransaction(): any;
+declare function _saveAuthenticateFinishTransactionAgainstLive(tx: any, saveId: string, library: any[], opts?: any): any;
 declare function _saveMarkFinished(): { name: string; saved: boolean } | null;
 declare function deleteSaveById(id: string): boolean | void;
 declare function loadCrystals(): any[];
@@ -70,6 +71,7 @@ declare function setBrothValue(key: string, sliderVal: string): void;
 declare function updateCarbonateBoundaryReadout(): void;
 declare function simulationStateFingerprint(sim: any): string;
 declare function buildCrystalRecord(crystal: any, meta: any): any;
+declare function _crystalHasCollectibleSolid(crystal: any): boolean;
 declare const MODEL_DIGEST: string;
 declare const SIM_VERSION: number;
 declare const SCENARIOS: Record<string, any>;
@@ -184,9 +186,7 @@ function fingerprint(sim: any) {
 
 // Grown = collectable by the collectAllCrystals gate.
 function grownCount(sim: any): number {
-  return (sim.crystals || []).filter(
-    (c: any) => (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0,
-  ).length;
+  return (sim.crystals || []).filter((c: any) => _crystalHasCollectibleSolid(c)).length;
 }
 
 // Collection/WAL tests need a collectable scientific object, not a hidden
@@ -2204,6 +2204,28 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(renamed.get(collisionPair[1])).toBe('Renamed staged quartz');
     expect(renamed.get(collisionId)).toBe('Renamed baseline sentinel');
     expect(loadLifetimeStats()).toEqual(stats);
+  });
+
+  it('finish staging and authentication skip dissolved history in a mixed live inventory', () => {
+    const sim = beginFastCollectableRun();
+    const survivorCount = grownCount(sim);
+    const dissolvedIndex = sim.crystals.length;
+    sim.crystals.push({
+      mineral: 'quartz', dissolved: true, active: false,
+      total_growth_um: 0, c_length_mm: 0, a_width_mm: 0,
+      zones: [
+        { step: 1, temperature: 180, thickness_um: 10, growth_rate: 1, is_phantom: false },
+        { step: 2, temperature: 170, thickness_um: -10, growth_rate: -1, is_phantom: false },
+      ],
+    });
+    expect(grownCount(sim)).toBe(survivorCount);
+    const active = _liveSaveActiveRecord();
+    const tx = _saveBuildFinishTransaction();
+    expect(tx.collected.some((pair: any) => pair[0] === dissolvedIndex)).toBe(false);
+    expect(tx.library_records).toHaveLength(survivorCount);
+    expect(() => _saveAuthenticateFinishTransactionAgainstLive(
+      tx, active.id, [], { requireLibrary: false, runId: active.run_id },
+    )).not.toThrow();
   });
 
   it('journals Creative Collect across save/stats denial and manual branching without duplicating specimen or score', () => {
