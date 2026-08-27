@@ -19,6 +19,8 @@ declare function collectAllCrystals(crystals: any[], meta: any, opts?: { silent?
   count: number;
   newSpecies: string[];
 };
+declare function reconstructCrystalFromRecord(record: any): any;
+declare function _crystalHasCollectibleSolid(crystal: any): boolean;
 
 const HOSTILE_NAME = `<img id="player-name-pwn" src=x onerror="globalThis.__playerNamePwned=1"> & \"quoted\" 'stone'`;
 
@@ -270,6 +272,52 @@ describe('player-owned collection names', () => {
     }, { silent: true })).toEqual({ count: 0, newSpecies: [] });
     expect(oversizedBatchCrystal._collectedRecordId).toBeUndefined();
     expect(localStorage.getItem('vugg-crystals-v1')).toBe(prior);
+    promptSpy.mockRestore();
+    alertSpy.mockRestore();
+  });
+
+  it('never collects or resurrects a fully dissolved crystal from historical zones', () => {
+    const dissolved = liveCrystalWithZones(0);
+    dissolved.zones = [
+      { ...liveCrystalWithZones(1).zones[0], thickness_um: 10 },
+      { ...liveCrystalWithZones(1).zones[0], step: 2, thickness_um: -10 },
+    ];
+    dissolved.total_growth_um = 0;
+    dissolved.c_length_mm = 0;
+    dissolved.dissolved = true;
+
+    expect(_crystalHasCollectibleSolid(dissolved)).toBe(false);
+    const prior = localStorage.getItem('vugg-crystals-v1');
+    const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('Impossible specimen');
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+    expect(collectCrystal(dissolved, { mode: 'test', scenario: 'cooling', seed: 42 })).toBe(false);
+    expect(() => buildCrystalRecord(dissolved, { mode: 'test', scenario: 'cooling', seed: 42 }))
+      .toThrow(/no surviving solid specimen/i);
+    expect(collectAllCrystals([dissolved], {
+      mode: 'test', scenario: 'cooling', seed: 42,
+    }, { silent: true })).toEqual({ count: 0, newSpecies: [] });
+    expect(promptSpy).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/no surviving solid specimen/i));
+    expect(localStorage.getItem('vugg-crystals-v1')).toBe(prior);
+
+    // A record made by the old faulty gate remains inspectable/deletable, but
+    // cannot become a live Record Player specimen after reload.
+    const oldRecord = specimen('Historical dissolved quartz');
+    oldRecord.mineral = 'quartz';
+    oldRecord.zones = dissolved.zones;
+    oldRecord.zone_count = 2;
+    oldRecord.total_growth_um = 0;
+    oldRecord.mm = 0;
+    oldRecord.a_mm = 0;
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([oldRecord]));
+    const reconstructed = reconstructCrystalFromRecord(oldRecord);
+    expect(reconstructed.dissolved).toBe(true);
+    expect(reconstructed.total_growth_um).toBe(0);
+    const holder = document.createElement('div');
+    holder.innerHTML = renderCollectedForMineral('quartz');
+    expect(holder.querySelector('.collected-row-meta')?.textContent)
+      .toContain('dissolved / no surviving specimen');
+    expect(holder.querySelector('.collected-row-actions button')?.hasAttribute('disabled')).toBe(true);
     promptSpy.mockRestore();
     alertSpy.mockRestore();
   });

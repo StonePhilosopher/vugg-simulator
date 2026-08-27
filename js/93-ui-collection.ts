@@ -223,10 +223,36 @@ function collectionPlayerInlineArgumentHTML(value): string {
   return collectionPlayerTextHTML(JSON.stringify(String(value ?? '')));
 }
 
+// Collection is an inventory of surviving specimens, not a log of every
+// nucleus that ever existed.  js/85c owns the physical non-phantom inventory
+// convention used by enclosure/liberation; reuse that exact convention here
+// so historical positive zones cannot make a fully dissolved crystal
+// collectible.  Persisted records pass through the same function on reload.
+function _collectionPhysicalSolidUm(crystalOrRecord: any): number {
+  if (!crystalOrRecord) return 0;
+  if (Array.isArray(crystalOrRecord.zones)) {
+    const inventory = _physicalCrystalInventory(crystalOrRecord);
+    return Number.isFinite(inventory?.remainingUm) ? Math.max(0, inventory.remainingUm) : 0;
+  }
+  const total = Number(crystalOrRecord.total_growth_um);
+  return Number.isFinite(total) ? Math.max(0, total) : 0;
+}
+
+function _crystalHasCollectibleSolid(crystal: any): boolean {
+  return !!crystal && crystal.dissolved !== true && _collectionPhysicalSolidUm(crystal) > 0.1;
+}
+
+function _collectionRecordHasSurvivingSolid(record: any): boolean {
+  return !!record && record.dissolved !== true && _collectionPhysicalSolidUm(record) > 0.1;
+}
+
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
 // crystal later — without this the Groove would have nothing to draw.
 function buildCrystalRecord(crystal, meta) {
+  if (!_crystalHasCollectibleSolid(crystal)) {
+    throw new Error('This crystal has no surviving solid specimen to collect.');
+  }
   const titleBase = meta.archetype
     ? `${meta.archetype.replace(/_/g, ' ')} vugg`
     : (meta.scenario ? `${meta.scenario} scenario` : meta.mode || 'unknown');
@@ -335,7 +361,10 @@ function reconstructCrystalFromRecord(rec): any {
     total_growth_um: rec.total_growth_um || 0,
     radiation_damage: rec.radiation_damage || 0,
     active: false,
-    dissolved: false,
+    // Old builds could persist a fully dissolved crystal because historical
+    // zones were mistaken for remaining matter.  Preserve its history but do
+    // not resurrect it as a live specimen.
+    dissolved: !_collectionRecordHasSurvivingSolid(rec),
     enclosed_crystals: [],
     enclosed_at_step: [],
     phantom_surfaces: [],
@@ -367,8 +396,8 @@ function reconstructCrystalFromRecord(rec): any {
 
 function collectCrystal(crystal, meta) {
   if (!crystal) return false;
-  if ((crystal.total_growth_um || 0) < 0.1 && (crystal.zones || []).length === 0) {
-    alert('This crystal has no growth zones yet — let it grow first.');
+  if (!_crystalHasCollectibleSolid(crystal)) {
+    alert('This crystal has no surviving solid specimen to collect.');
     return false;
   }
   let rec;
@@ -560,7 +589,7 @@ function collectAllCrystals(crystals, metaFn, opts?: { silent?: boolean }) {
   const candidates = crystals.filter(c =>
     c
     && !c._collectedRecordId
-    && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
+    && _crystalHasCollectibleSolid(c)
   );
   if (!candidates.length) return { count: 0, newSpecies: [] };
 

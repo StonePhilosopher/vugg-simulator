@@ -155,7 +155,7 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep?: number) {
   // 0.1-mm partial specimen and the collection records would be a snapshot
   // of mid-growth rather than the final mineral.
   const already = !!crystal._collectedRecordId;
-  const canCollect = (crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0;
+  const canCollect = _crystalHasCollectibleSolid(crystal);
   const replayActive = (replayStep != null);
   const btnLabel = already ? '✓ Collected' : (replayActive ? '… growing' : '💎 Collect');
   const btnAttrs = (already || !canCollect || replayActive) ? 'disabled' : '';
@@ -182,7 +182,7 @@ function _inventoryCollectAllHTML(crystals, onCollectAllName, replayStep?: numbe
   const uncollected = (crystals || []).filter(c =>
     c
     && !c._collectedRecordId
-    && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
+    && _crystalHasCollectibleSolid(c)
   );
   const n = uncollected.length;
   if (!crystals || !crystals.length) return ''; // empty inventory — nothing to bulk

@@ -118,13 +118,14 @@ function renderCollectedForMineral(name) {
       // Groove reachable when actual zone records exist (93/98 own the shared
       // migration and playback boundaries).
       const hasPlayableZones = Array.isArray(c.zones) && c.zones.length > 0;
+      const hasSurvivingSolid = _collectionRecordHasSurvivingSolid(c);
       const zoneCount = Array.isArray(c.zones)
         ? c.zones.length
         : Number.isSafeInteger(c.zones) ? c.zones : (c.zone_count || 0);
-      const canPlay = hasPlayableZones;
+      const canPlay = hasPlayableZones && hasSurvivingSolid;
       const playBtn = canPlay
         ? `<button onclick="playCollectedInGroove(${safeIdArgument})" title="Open this crystal in the Record Player">▶ Play</button>`
-        : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;
+        : `<button disabled title="${hasSurvivingSolid ? 'No zone data saved — collect a fresh one' : 'No surviving solid specimen'}">▶ Play</button>`;
       // Zone-viz Phase 1d: bar-graph thumbnail for each collected specimen.
       // crystalThumbHTML is duck-typed — it reads .mineral + .zones, which
       // the serialized record has. For records saved before zone data was
@@ -144,7 +145,7 @@ function renderCollectedForMineral(name) {
             <span class="collected-name" title="${safeName}">${safeName}</span>
             <span class="collected-size">${c.mm.toFixed(2)} mm</span>
           </div>
-          <div class="collected-row-meta">${safeHabit}${twin} · ${safeSource}${seed} · ${zoneCount} zones</div>
+          <div class="collected-row-meta">${safeHabit}${twin} · ${safeSource}${seed} · ${zoneCount} zones${hasSurvivingSolid ? '' : ' · dissolved / no surviving specimen'}</div>
           <div class="collected-row-actions">
             ${playBtn}
             <button onclick="renameCollectedCrystal(${safeIdArgument})">✎ Rename</button>
