@@ -637,6 +637,9 @@ const MOVEMENT_SULFUR_BOUNDARY_FIELDS = new Set([
   'fluid.S_sulfide',
   'fluid.S_sulfate',
   'fluid.S_elemental',
+  'fluid.sulfurPoolsExplicit',
+  'fluid.sulfateInherited',
+  'fluid.nativeSulfurPathway',
 ]);
 
 // Early movement prototypes accepted both `Ca` and `fluid.Ca` for a cell

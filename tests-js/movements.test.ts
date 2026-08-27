@@ -231,7 +231,10 @@ describe('movements — controller: active movement drives its field', () => {
       clampMax: 1,
       domainAuthority: 'dissolved-silica-fraction-domain',
     });
-    for (const field of ['fluid.S', 'fluid.S_sulfide', 'fluid.S_sulfate', 'fluid.S_elemental']) {
+    for (const field of [
+      'fluid.S', 'fluid.S_sulfide', 'fluid.S_sulfate', 'fluid.S_elemental',
+      'fluid.sulfurPoolsExplicit', 'fluid.sulfateInherited', 'fluid.nativeSulfurPathway',
+    ]) {
       expect(movementFieldRequiresSulfurBoundary(field)).toBe(true);
       expect(() => _commissionMovementSpec({ field, startStep: 0, endStep: 5 }))
         .toThrow(/valence-specific sulfur boundary/);
