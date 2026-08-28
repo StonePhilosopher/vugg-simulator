@@ -14,7 +14,7 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "d27c362a88712a7ded0f726063a55523df590af335a142f8cfc8798611a37816",
+  "producer_contract_sha256": "ee0a6a83f5e71ddcbd56a84aa51d4a55e74382936804cdbb605a6bf2953f473d",
   "payload": {
     "source": "exact production classes, engines, and accepted-zone budget path",
     "transformation_reactivity": [

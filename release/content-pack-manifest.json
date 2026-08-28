@@ -526,7 +526,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "6a3846e3871194fd3a12a3d1bdcf7895f74df6aa78685fba946b42bd778c5e8a",
+  "producer_contract_sha256": "84870ba92a6c049c021db215758edb2015129a05cc61ff28d89dd8f2ace8aace",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "e8edd73affa87aba72b3b0d3ae693b9f2e6cda695926e3d77294c457d2157577"
+  "catalog_sha256": "9ff6c80acdd795ff96f931b24f5aaaf1cc162173e089154086e3d5e1c8da5ecb"
 }
