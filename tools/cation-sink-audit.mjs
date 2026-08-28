@@ -84,10 +84,19 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // interchangeable. The final v11 gameplay token additionally binds coupled
 // carbonate pH/DIC titration closure and action-wide bulk/voxel/ring/solver
 // rollback; Schneeberg still executes no Creative action, so the independently
-// rerun five-crystal/zero-Zn result is unchanged.
+// rerun five-crystal/zero-Zn result is unchanged. SIM 281-284 then change
+// guided-tutorial, player-storage, released-Library migration, checkpoint, and
+// agent launch/serialization authorities without changing this scenario's
+// chemistry. SIM 285 preserves FluidChemistry prototypes in formation
+// counterfactuals, rejects non-surviving collection products, and commissions
+// movement domains and aliases. Schneeberg has no player movement or
+// collection action. Its fresh SIM 285 replay again closes 161 rows, five
+// pharmacolite crystals, all 7,680 zero-Zn control volumes, and zero booked Zn;
+// bind that exact model identity instead of treating the SIM 280 checkpoint as
+// transferable.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 280,
-  model_digest_sha256: '9cf867577711095399c7b97a5a2dd73cbc88fce5743ce2f0d2351c3a741abb7f',
+  sim_version: 285,
+  model_digest_sha256: '588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
