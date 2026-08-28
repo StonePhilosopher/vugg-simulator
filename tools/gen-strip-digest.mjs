@@ -30,7 +30,12 @@ import {
 } from './strip-digest-shape.mjs';
 import { assertStripIdentity } from './strip-identity.mjs';
 import { evidenceBundleDigest } from './locality-frequency-checkpoint.mjs';
-import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  assertCommissionedEvidenceRuntime,
+  nodeRuntimeDigest,
+  producerContractDigest,
+  runtimeExecutionDigest,
+} from './evidence-runtime.mjs';
 import {
   assertEvidenceCheckpointDirectory,
   evidenceIdentity,
@@ -38,6 +43,8 @@ import {
   scenarioSpecHash,
   writeJsonAtomic,
 } from './scenario-evidence-checkpoint.mjs';
+
+assertCommissionedEvidenceRuntime();
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');

@@ -30,7 +30,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
 import { evidenceBundleDigest } from './locality-frequency-checkpoint.mjs';
-import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  assertCommissionedEvidenceRuntime,
+  nodeRuntimeDigest,
+  producerContractDigest,
+  runtimeExecutionDigest,
+} from './evidence-runtime.mjs';
 import {
   evidenceIdentity,
   loadScenarioReceipt,
@@ -39,6 +44,8 @@ import {
   scenarioSpecHash,
   writeJsonAtomic,
 } from './scenario-evidence-checkpoint.mjs';
+
+assertCommissionedEvidenceRuntime();
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');

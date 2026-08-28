@@ -79,6 +79,35 @@ describe('evidence executable and producer identities', () => {
       .toBe(COMMISSIONED_EVIDENCE_NODE_RUNTIME.node);
     expect(fs.readFileSync(path.join(ROOT, '.npmrc'), 'utf8'))
       .toContain('engine-strict=true');
+
+    const guardedWriters = [
+      'tools/gen-locality-frequency-baseline.mjs',
+      'tools/gen-strip-archive.mjs',
+      'tools/gen-js-baseline.mjs',
+      'tools/gen-strip-digest.mjs',
+      'tools/gen-mechanism-witnesses.mjs',
+      'tools/review-claim-card.mjs',
+      'tools/science-evidence-receipt.mjs',
+      'tools/gen-science-provenance-manifest.mjs',
+      'tools/release-audit.mjs',
+    ];
+    for (const relative of guardedWriters) {
+      const source = fs.readFileSync(path.join(ROOT, relative), 'utf8');
+      expect(source, relative).toContain('assertCommissionedEvidenceRuntime();');
+    }
+    const browserSource = fs.readFileSync(path.join(ROOT, 'tools/browser-workflow.mjs'), 'utf8');
+    expect(browserSource).toContain("if (process.argv.includes('--write-guided-receipt'))");
+    expect(browserSource).toContain('assertCommissionedEvidenceRuntime();');
+
+    expect(packageJson.scripts?.['gen:browser-receipt'])
+      .toBe('node tools/browser-workflow.mjs --write-guided-receipt');
+    expect(packageJson.scripts?.['audit:browser-receipt'])
+      .toBe('node tools/check-guided-tutorial-browser-receipt.mjs');
+    const workflow = fs.readFileSync(path.join(ROOT, 'tools/science-workflow.mjs'), 'utf8');
+    expect(workflow.indexOf("run('guided browser receipt preflight'"))
+      .toBeGreaterThan(workflow.indexOf("run('compile and rebuild local game bundle'"));
+    expect(workflow.indexOf("run('guided browser receipt preflight'"))
+      .toBeLessThan(workflow.indexOf("run('three-seed locality-frequency receipt'"));
   });
 
   it('binds the numeric platform and default collation runtime', () => {

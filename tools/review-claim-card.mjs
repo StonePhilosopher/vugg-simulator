@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 import { assertStripIdentity } from './strip-identity.mjs';
 import { verifyMechanismWitnessArtifact } from './gen-mechanism-witnesses.mjs';
 import { reduceEnclosureLifecycle } from './enclosure-evidence.mjs';
@@ -1636,6 +1637,7 @@ async function main() {
     console.log('node tools/review-claim-card.mjs --all [--version N] [--out DIR]');
     return;
   }
+  assertCommissionedEvidenceRuntime();
   const all = argv.includes('--all');
   const asJson = argv.includes('--json');
   const vIdx = argv.indexOf('--version');

@@ -53,13 +53,19 @@ equivalent.
 
 1. Make the source tree quiescent, select `.node-version`, run
    `npm run audit:runtime`, and run the build.
-2. Run `npm run gen:release`, then `npm run audit:release`.
-3. Run the bounded test workflow and browser workflow serially.
-4. If exact executable bytes or runtime data changed, perform one fresh science
-   evidence rebake. Verify its browser, execution, producer, runtime, artifact,
-   and content identities; never rewrite only the outer receipt.
-5. Commit generated manifests and evidence with the source that produced them.
-6. Keep every external gate open until a named human reviewer supplies the
+2. When the browser executable, execution set, runtime, or evidence-producer
+   closure changed, run `npm run gen:browser-receipt`, then
+   `npm run audit:browser-receipt`. This is the only supported writer for the
+   owned-browser evidence leaf.
+3. If exact executable bytes, runtime data, runtime formation, or any evidence
+   producer changed, perform one fresh `npm run science:rebake`. Its browser
+   receipt preflight runs before the expensive three-seed fleet. Verify the
+   browser, execution, producer, runtime, artifact, and content identities;
+   never rewrite only the outer receipt.
+4. Run `npm run gen:release`, then `npm run audit:release`.
+5. Run the bounded test workflow and remaining browser checks serially.
+6. Commit generated manifests and evidence with the source that produced them.
+7. Keep every external gate open until a named human reviewer supplies the
    prescribed evidence.
 
 Rollback is a normal Git revert plus restoration of the matching manifests and

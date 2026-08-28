@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
 import {
+  assertCommissionedEvidenceRuntime,
   browserBundleDigest,
   nodeRuntimeDigest,
   nodeRuntimeIdentity,
@@ -1173,6 +1174,7 @@ export async function buildMechanismWitnessArtifact(root = ROOT) {
 }
 
 async function main() {
+  assertCommissionedEvidenceRuntime();
   const check = process.argv.includes('--check');
   for (const arg of process.argv.slice(2)) if (arg !== '--check') throw new Error(`unknown argument: ${arg}`);
   const artifact = await buildMechanismWitnessArtifact(ROOT);

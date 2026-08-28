@@ -14,6 +14,7 @@ import {
   fileBundleAssetDigest,
   fileBundleAssetFiles,
 } from './file-bundle-assets.mjs';
+import { assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 import {
   buildGuidedTutorialBrowserReceipt,
   writeGuidedTutorialBrowserReceipt,
@@ -2214,6 +2215,9 @@ async function runWorkflow(driver, diagnostics) {
 }
 
 async function main() {
+  if (process.argv.includes('--write-guided-receipt')) {
+    assertCommissionedEvidenceRuntime();
+  }
   const browserPath = findOwnedBrowserExecutable();
   const serverPort = await freePort();
   const profileDir = await mkdtemp(path.join(os.tmpdir(), 'vugg-browser-qa-'));

@@ -66,6 +66,10 @@ function rebake() {
   const version = simVersion();
   const cardDir = path.join('archive', 'claim-cards', `v${version}`);
   run('compile and rebuild local game bundle', ['tools/build-all.mjs']);
+  // The browser receipt is a published leaf and has its own exact producer
+  // contract. Fail before the three-seed fleet if that cheaper prerequisite
+  // was not commissioned through the owned-browser workflow.
+  run('guided browser receipt preflight', ['tools/check-guided-tutorial-browser-receipt.mjs']);
   run('three-seed locality-frequency receipt', ['tools/gen-locality-frequency-baseline.mjs']);
   run('canonical seed-42 strip archive', ['tools/gen-strip-archive.mjs']);
   run('canonical seed-42 scenario baseline', ['tools/gen-js-baseline.mjs']);

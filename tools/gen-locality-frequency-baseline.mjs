@@ -17,12 +17,19 @@ import {
   prepareCheckpointDirectory,
   writeJsonAtomic,
 } from './locality-frequency-checkpoint.mjs';
-import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  assertCommissionedEvidenceRuntime,
+  nodeRuntimeDigest,
+  producerContractDigest,
+  runtimeExecutionDigest,
+} from './evidence-runtime.mjs';
 import {
   LOCALITY_FREQUENCY_SEEDS,
   localityFrequencySpecHash,
   reconstructFrequencyOccurrences,
 } from './locality-frequency-contract.mjs';
+
+assertCommissionedEvidenceRuntime();
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);

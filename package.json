@@ -24,6 +24,8 @@
     "audit:runtime": "node tools/check-evidence-runtime.mjs",
     "audit:bif": "node tools/asbestos-hills-observe.mjs --check",
     "audit:browser": "node tools/browser-workflow.mjs",
+    "gen:browser-receipt": "node tools/browser-workflow.mjs --write-guided-receipt",
+    "audit:browser-receipt": "node tools/check-guided-tutorial-browser-receipt.mjs",
     "audit:localities": "node tools/locality-envelope-audit.mjs --check",
     "gen:locality-frequency": "node tools/gen-locality-frequency-baseline.mjs",
     "science:verify": "node tools/science-workflow.mjs --verify",

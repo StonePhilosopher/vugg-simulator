@@ -49,7 +49,12 @@ import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
 import { assertStripIdentity, canonicalStripRecordedAt } from './strip-identity.mjs';
 import { evidenceBundleDigest } from './locality-frequency-checkpoint.mjs';
-import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  assertCommissionedEvidenceRuntime,
+  nodeRuntimeDigest,
+  producerContractDigest,
+  runtimeExecutionDigest,
+} from './evidence-runtime.mjs';
 import {
   evidenceIdentity,
   loadScenarioReceipt,
@@ -59,6 +64,8 @@ import {
   sha256File,
   writeJsonAtomic,
 } from './scenario-evidence-checkpoint.mjs';
+
+assertCommissionedEvidenceRuntime();
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FORCE = process.argv.includes('--force');

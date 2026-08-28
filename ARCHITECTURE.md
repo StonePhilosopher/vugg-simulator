@@ -70,6 +70,12 @@ SHA-256 values can still be inspected on any platform; regenerating or claiming
 the runtime-bound audit requires the commissioned formation. See
 `docs/RELEASE-MIGRATION-POLICY.md` for the release sequence.
 
+Every direct evidence writer calls the same formation gate before simulation or
+output. `npm run gen:browser-receipt` is the explicit owned-browser writer;
+`npm run audit:browser-receipt` is its cheap identity preflight. The serialized
+science rebake runs that preflight before starting the three-seed fleet, so a
+stale browser producer cannot waste a long bake and fail only at the aggregate.
+
 ---
 
 ## Layout
