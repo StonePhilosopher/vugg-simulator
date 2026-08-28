@@ -13,7 +13,7 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "9f7a000041810369d508f1fc145e52322ad64bff7bcce7a8cbbc77339308fd67",
+  "producer_contract_sha256": "7b2fb678b86ce824fbb1bfb448e153fd7b3f8cab8e2687c5def454fa22049e8f",
   "payload": {
     "browser_runtime": {
       "schema": "vugg-owned-devtools-browser-runtime-v2",
