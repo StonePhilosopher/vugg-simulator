@@ -15,6 +15,11 @@ import {
   runtimeExecutionDigest,
 } from '../tools/evidence-runtime.mjs';
 import { buildFileBundlePrelude } from '../tools/file-bundle-assets.mjs';
+import { checkGuidedTutorialBrowserReceipt } from '../tools/check-guided-tutorial-browser-receipt.mjs';
+import {
+  buildGuidedTutorialBrowserReceipt,
+  readGuidedTutorialBrowserReceipt,
+} from '../tools/guided-tutorial-browser-receipt.mjs';
 import {
   artifactHashMap,
   verifyArtifactHashMap,
@@ -108,6 +113,26 @@ describe('evidence executable and producer identities', () => {
       .toBeGreaterThan(workflow.indexOf("run('compile and rebuild local game bundle'"));
     expect(workflow.indexOf("run('guided browser receipt preflight'"))
       .toBeLessThan(workflow.indexOf("run('three-seed locality-frequency receipt'"));
+
+    const versionSource = fs.readFileSync(path.join(ROOT, 'js', '15-version.ts'), 'utf8');
+    const simVersion = Number(/const SIM_VERSION = (\d+);/.exec(versionSource)?.[1]);
+    const published = readGuidedTutorialBrowserReceipt(ROOT, simVersion);
+    const current = buildGuidedTutorialBrowserReceipt(
+      ROOT,
+      simVersion,
+      published.payload.journeys,
+      published.payload.browser_runtime,
+    );
+    expect(checkGuidedTutorialBrowserReceipt({ root: ROOT, simVersion, receipt: current }))
+      .toBe(true);
+    expect(() => checkGuidedTutorialBrowserReceipt({
+      root: ROOT, simVersion: simVersion + 1, receipt: current,
+    })).toThrow('identity mismatch');
+    expect(() => checkGuidedTutorialBrowserReceipt({
+      root: ROOT,
+      simVersion,
+      receipt: { ...current, producer_contract_sha256: '0'.repeat(64) },
+    })).toThrow('identity mismatch');
   });
 
   it('binds the numeric platform and default collation runtime', () => {
