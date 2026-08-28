@@ -19,6 +19,7 @@ import {
   validateFrequencyScenarioReceipt,
 } from './locality-frequency-contract.mjs';
 import {
+  assertCommissionedEvidenceRuntime,
   browserBundleDigest,
   nodeRuntimeDigest,
   nodeRuntimeIdentity,
@@ -30,6 +31,8 @@ import {
   SCIENCE_EVIDENCE_RECEIPT_SCHEMA,
   verifyArtifactHashMap,
 } from './science-evidence-receipt.mjs';
+
+assertCommissionedEvidenceRuntime();
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CHECK = process.argv.includes('--check');

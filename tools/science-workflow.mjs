@@ -15,8 +15,10 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+assertCommissionedEvidenceRuntime();
 const NODE = process.execPath;
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 const SCIENCE_TESTS = [

@@ -15,6 +15,22 @@ export const EVIDENCE_EXECUTION_SCHEMA = 'vugg-evidence-execution-set-v2';
 export const EVIDENCE_PRODUCER_SCHEMA = 'vugg-evidence-producer-contract-v3';
 export const EVIDENCE_NODE_RUNTIME_SCHEMA = 'vugg-evidence-node-runtime-v1';
 
+// The published evidence is intentionally an exact producer-formation
+// receipt, not a claim that different JS engines are numerically
+// interchangeable. Keep this authority beside nodeRuntimeIdentity(), which
+// consumes it, while package.json/.node-version make the required Node visible
+// before installation and docs/RELEASE-MIGRATION-POLICY.md maps the upstream
+// and downstream workflow boundaries.
+export const COMMISSIONED_EVIDENCE_NODE_RUNTIME = Object.freeze({
+  schema: EVIDENCE_NODE_RUNTIME_SCHEMA,
+  node: '24.15.0',
+  v8: '13.6.233.17-node.48',
+  platform: 'win32',
+  arch: 'x64',
+  icu: '78.2',
+  locale: 'en-US',
+});
+
 export function nodeRuntimeIdentity() {
   return {
     schema: EVIDENCE_NODE_RUNTIME_SCHEMA,
@@ -30,6 +46,18 @@ export function nodeRuntimeIdentity() {
 export function nodeRuntimeDigest() {
   return crypto.createHash('sha256')
     .update(JSON.stringify(nodeRuntimeIdentity())).digest('hex');
+}
+
+export function assertCommissionedEvidenceRuntime(actual = nodeRuntimeIdentity()) {
+  const expected = COMMISSIONED_EVIDENCE_NODE_RUNTIME;
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      'evidence producer runtime is not commissioned: '
+      + `expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}; `
+      + 'select the root .node-version on Windows x64 before generating or auditing exact evidence',
+    );
+  }
+  return true;
 }
 
 function walkFiles(directory, accept) {

@@ -4,6 +4,9 @@
   "private": true,
   "description": "Vugg Simulator — crystal-growth geology sim. Merged 2026-05-28: the multidimensional fork (v144→v160 carbonate SI engines, cavity-interior voxel grid + 3D diffusion, helicoid manifold, strip view) folded back in atop the twin-law schema fixes.",
   "type": "module",
+  "engines": {
+    "node": "24.15.0"
+  },
   "scripts": {
     "build": "node tools/build-all.mjs",
     "build:check": "node tools/build-all.mjs --check",
@@ -18,6 +21,7 @@
     "diagnostics:local": "node tools/local-diagnostics.mjs",
     "audit:creative": "node tools/creative-lever-audit.mjs",
     "audit:cations": "node tools/cation-sink-audit.mjs schneeberg 42 --check",
+    "audit:runtime": "node tools/check-evidence-runtime.mjs",
     "audit:bif": "node tools/asbestos-hills-observe.mjs --check",
     "audit:browser": "node tools/browser-workflow.mjs",
     "audit:localities": "node tools/locality-envelope-audit.mjs --check",
@@ -34,7 +38,7 @@
     "test:bisbee-budget": "node --max-old-space-size=384 tools/bisbee-production-budget.mjs",
     "test:cavity-memory-budget": "node --expose-gc tools/cavity-production-memory-budget.mjs",
     "test:watch": "vitest",
-    "ci": "npm run typecheck && npm run build:check && npm run audit:tutorials && npm run audit:a11y && npm run audit:scenarios && npm run audit:release && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm run audit:localities && npm test"
+    "ci": "npm run audit:runtime && npm run typecheck && npm run build:check && npm run audit:tutorials && npm run audit:a11y && npm run audit:scenarios && npm run audit:release && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm run audit:localities && npm test"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

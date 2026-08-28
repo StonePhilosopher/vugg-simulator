@@ -4,7 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  assertCommissionedEvidenceRuntime,
   assertIndexMatchesDist,
+  COMMISSIONED_EVIDENCE_NODE_RUNTIME,
   nodeRuntimeDigest,
   nodeRuntimeIdentity,
   producerContractDigest,
@@ -50,6 +52,35 @@ function makeExecutionFixture() {
 }
 
 describe('evidence executable and producer identities', () => {
+  it('declares one install-visible evidence producer formation', () => {
+    expect(COMMISSIONED_EVIDENCE_NODE_RUNTIME).toEqual({
+      schema: 'vugg-evidence-node-runtime-v1',
+      node: '24.15.0',
+      v8: '13.6.233.17-node.48',
+      platform: 'win32',
+      arch: 'x64',
+      icu: '78.2',
+      locale: 'en-US',
+    });
+    expect(assertCommissionedEvidenceRuntime()).toBe(true);
+    expect(() => assertCommissionedEvidenceRuntime({
+      ...COMMISSIONED_EVIDENCE_NODE_RUNTIME,
+      node: '22.23.2',
+      v8: '12.4.254.21-node.33',
+      platform: 'linux',
+    })).toThrow('evidence producer runtime is not commissioned');
+
+    const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const packageLock = JSON.parse(fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8'));
+    expect(packageJson.engines?.node).toBe(COMMISSIONED_EVIDENCE_NODE_RUNTIME.node);
+    expect(packageLock.packages?.['']?.engines?.node)
+      .toBe(COMMISSIONED_EVIDENCE_NODE_RUNTIME.node);
+    expect(fs.readFileSync(path.join(ROOT, '.node-version'), 'utf8').trim())
+      .toBe(COMMISSIONED_EVIDENCE_NODE_RUNTIME.node);
+    expect(fs.readFileSync(path.join(ROOT, '.npmrc'), 'utf8'))
+      .toContain('engine-strict=true');
+  });
+
   it('binds the numeric platform and default collation runtime', () => {
     const identity = nodeRuntimeIdentity();
     expect(identity).toEqual({

@@ -53,6 +53,23 @@ JS comments still cite "mirrors X in vugg.py" — these are fossil
 references and can be cleaned up incrementally; the JS itself is now
 the source of truth.
 
+### Exact evidence producer formation
+
+The browser product is portable; its checked-in scientific evidence is an
+exact producer-formation receipt. The commissioned formation lives beside the
+runtime identity consumer in `tools/evidence-runtime.mjs`: Node 24.15.0 / V8
+13.6.233.17-node.48, Windows x64, ICU 78.2, default locale `en-US`.
+`.node-version` and `package.json#engines` point installers at that Node, while
+`.npmrc` rejects a root install under a different Node. Run
+`npm run audit:runtime` before generating or auditing evidence.
+
+This boundary is visible in both directions. `tools/science-workflow.mjs`
+checks it before a verify/rebake, and the aggregate evidence, provenance, and
+release tools check it before accepting exact producer testimony. Artifact
+SHA-256 values can still be inspected on any platform; regenerating or claiming
+the runtime-bound audit requires the commissioned formation. See
+`docs/RELEASE-MIGRATION-POLICY.md` for the release sequence.
+
 ---
 
 ## Layout

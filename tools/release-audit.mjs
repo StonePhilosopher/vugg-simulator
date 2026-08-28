@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { loadSimBundle } from './_harness.mjs';
 import {
+  assertCommissionedEvidenceRuntime,
   browserBundleDigest,
   nodeRuntimeDigest,
   producerContractDigest,
@@ -237,6 +238,7 @@ function assertReleaseDocuments(simVersion) {
 }
 
 async function main() {
+  assertCommissionedEvidenceRuntime();
   const write = process.argv.includes('--write');
   const unknown = process.argv.slice(2).filter(arg => arg !== '--write' && arg !== '--check');
   if (unknown.length) throw new Error(`unknown argument: ${unknown[0]}`);

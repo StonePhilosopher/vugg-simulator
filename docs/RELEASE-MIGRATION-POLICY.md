@@ -17,6 +17,23 @@ source-file SHA-256 values, scenario/mineral/narrative counts, browser bundle,
 runtime execution set, Node runtime, SIM identity, and producer contract. A
 release is not assembled from a stale manifest.
 
+## Evidence producer formation
+
+Exact evidence is commissioned under the source-controlled runtime declared by
+`tools/evidence-runtime.mjs`: Node 24.15.0 / V8 13.6.233.17-node.48 on Windows
+x64, ICU 78.2, default locale `en-US`. The root `.node-version`, the exact
+`package.json#engines.node` constraint, and `.npmrc` make the Node requirement
+visible and fail installation early. `npm run audit:runtime` verifies the full
+formation, including the engine and operating-system fields that a Node version
+manager cannot select.
+
+The distinction is intentional: a reviewer on another platform may recompute
+portable file and artifact hashes, but must not report a runtime-bound
+`audit:science`, `audit:evidence`, or `audit:release` result as exact production
+testimony. Select the commissioned formation before those audits or before
+`npm run science:rebake`; never loosen a receipt to make a different engine look
+equivalent.
+
 ## Save compatibility
 
 - Format v3 is the current replayable format. It binds a stable run identity,
@@ -34,7 +51,8 @@ release is not assembled from a stale manifest.
 
 ## Release procedure
 
-1. Make the source tree quiescent and run the build.
+1. Make the source tree quiescent, select `.node-version`, run
+   `npm run audit:runtime`, and run the build.
 2. Run `npm run gen:release`, then `npm run audit:release`.
 3. Run the bounded test workflow and browser workflow serially.
 4. If exact executable bytes or runtime data changed, perform one fresh science

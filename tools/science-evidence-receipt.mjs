@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
 import {
+  assertCommissionedEvidenceRuntime,
   browserBundleDigest,
   nodeRuntimeDigest,
   nodeRuntimeIdentity,
@@ -197,6 +198,7 @@ export function verifyLocalEvidenceReceipts({ root, simVersion, modelDigest, sce
 }
 
 async function main() {
+  assertCommissionedEvidenceRuntime();
   const check = process.argv.includes('--check');
   for (const arg of process.argv.slice(2)) if (arg !== '--check') throw new Error(`unknown argument: ${arg}`);
   const { SIM_VERSION, MODEL_DIGEST, SCENARIOS } = await loadSimBundle({
