@@ -1,0 +1,1861 @@
+{
+  "schema": "vugg-claim-card-v2",
+  "scenario": "asbestos_hills_surficial_alteration",
+  "sim_version": 285,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6|fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+prototype-preserving-fluid-counterfactual+local-max-context+causal-supersat+calibrated-budget-v6|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+exact-authored-acid-stage-sulfate+Cu-only-enrichment+Ca-sulfate-recharge+generic-fluid-receipts+secondary-sulfides-aspirational-until-parent-replacement+TSNB301-questionable-rhodochrosite-excluded-v3|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+guided-tutorial-boundary+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v9|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound+exact-constructor-receipt+post-await-launch-generation+sim-owned-metadata+last-commissioned-visible-selection-v4|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8|creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3|save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor+monotonic-checkpoint-generation+newest-valid-staging-recovery+equal-generation-divergence-fail-closed-v12|gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+canonical-fluid-field-alias+commissioned-domain-breadcrumbs+pointwise-bulk-ring-voxel-mesh-clamp+valence-specific-sulfur-schedule-refusal+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v12|guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6|collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+census-only-numeric-zones+signed-nonphantom-remaining-solid-required-across-collect-groove-save-finish+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v4|strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2",
+  "scenario_spec_hash": "3ba5d865fbd93efeb0e91ad5c730d4f9cdf05985489bca46cb94ea753aa1d9f4",
+  "strip_steps": 120,
+  "strip_sha256": "12e946540717bce6b7e19d89a454c81e7b42dc866748abb90e1cb8571a7cd253",
+  "claim": {
+    "anchor": "Asbestos Hills, Northern Cape, South Africa — crocidolite-bearing banded iron formation; Gutzmer-Beukes-Cairncross surficial-alteration interpretation",
+    "description": "Execute the Gutzmer, Beukes & Cairncross (2004) field model: an older metamorphic crocidolite seam is exposed to near-surface silicification and oxidation. Tiger's eye can form only after the mass ledger accepts oxidative crocidolite loss.",
+    "expects_species": [
+      "crocidolite",
+      "tigers_eye",
+      "magnetite",
+      "hematite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        {
+          "mineral": "crocidolite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "tigers_eye",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "magnetite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "hematite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "amosite",
+          "reason": "Miyano and Klein's metamorphosed-iron-formation stability field permits crocidolite-to-amosite competition before exposure.",
+          "headline": false
+        },
+        {
+          "mineral": "siderite",
+          "reason": "An Fe-carbonate precursor/accessory is compatible with the older metamorphic BIF seam.",
+          "headline": false
+        },
+        {
+          "mineral": "quartz",
+          "reason": "Silica deposition accompanies the older seam and subsequent silicification, but is subordinate to the tiger's-eye replacement contract.",
+          "headline": false
+        },
+        {
+          "mineral": "goethite",
+          "reason": "A supported Fe-oxyhydroxide product of the authored near-surface oxidative alteration stage.",
+          "headline": false
+        },
+        {
+          "mineral": "opal",
+          "reason": "Hydrated silica is a plausible transient competitor during low-temperature surficial silicification.",
+          "headline": false
+        },
+        {
+          "mineral": "lepidocrocite",
+          "reason": "A minor Fe-oxyhydroxide competitor is plausible in the late vadose oxidation window, subordinate to hematite/goethite.",
+          "headline": false
+        }
+      ],
+      "deterministic_headline": [
+        "crocidolite",
+        "tigers_eye",
+        "magnetite",
+        "hematite"
+      ],
+      "deterministic_accessory": [
+        {
+          "mineral": "amosite",
+          "reason": "Miyano and Klein's metamorphosed-iron-formation stability field permits crocidolite-to-amosite competition before exposure."
+        },
+        {
+          "mineral": "siderite",
+          "reason": "An Fe-carbonate precursor/accessory is compatible with the older metamorphic BIF seam."
+        },
+        {
+          "mineral": "quartz",
+          "reason": "Silica deposition accompanies the older seam and subsequent silicification, but is subordinate to the tiger's-eye replacement contract."
+        },
+        {
+          "mineral": "goethite",
+          "reason": "A supported Fe-oxyhydroxide product of the authored near-surface oxidative alteration stage."
+        },
+        {
+          "mineral": "opal",
+          "reason": "Hydrated silica is a plausible transient competitor during low-temperature surficial silicification."
+        },
+        {
+          "mineral": "lepidocrocite",
+          "reason": "A minor Fe-oxyhydroxide competitor is plausible in the late vadose oxidation window, subordinate to hematite/goethite."
+        }
+      ],
+      "statistical": [],
+      "aspirational": []
+    },
+    "excluded_species": {},
+    "sources": [
+      "Gutzmer J., Beukes N.J. & Cairncross B. (2004) — New interpretation of the origin of tiger's-eye: Comment. Geology 32(1):e44. DOI 10.1130/0091-7613-32.1.e44. Field transition from tiger's-eye through hawk's-eye to crocidolite and restriction to the shallow silicified/goethitized zone.",
+      "Miyano T. & Klein C. (1983) — Evaluation of the Stability Relations of Amphibole Asbestos in Metamorphosed Iron-Formations. Mining Geology 33:213-222. DOI 10.11456/shigenchishitsu1951.33.213. Crocidolite/amosite stability and BIF assemblages at 150-450°C."
+    ],
+    "claim_citations": [],
+    "initial_temperature_C": 300,
+    "initial_pressure_kbar": 1,
+    "wall_architecture": "tabular",
+    "notes": [
+      "This paired scenario executes the field interpretation in Gutzmer, Beukes & Cairncross (2004, Geology 32:e44): tiger's-eye is restricted to a shallow silicified/goethitized planation surface and grades downward through hawk's-eye to unaltered crocidolite. They argue for later alteration of older crocidolite and state that the result is not a pseudomorph sensu stricto.",
+      "The initial 300°C stage grows the older BIF amphibole-asbestos seam inside the Miyano & Klein (1983) stability family. At step 58, a silica-rich oxidizing surface boundary arrives; the nucleator remains locked until a negative oxidative crocidolite zone is actually accepted by the mass-balanced growth transaction.",
+      "The simulated 40-60°C surface values are transparent process proxies. The paper constrains field depth relationships, not a unique temperature-pressure path; pressure 1.0 kbar belongs only to the precursor metamorphic stage, and the event explicitly resets fluid and rock pressure to the simulator's 0.001 kbar atmospheric floor.",
+      "Shape seed 2004 is authored independently from gameplay seed 42 and records the publication year of the modeled comment."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+canonical-catalog-deep-match+owner-bound-MVT-90sulfide-30sulfate+receipted-exact-pore-fluid-export-replacement+atomic-heat-only-default-v4|elmwood-barite:explicit-sulfate-floor+receipted-Ba-hiatus-replacement+causal-next-pulse-masked-layers+terminal-clay-rind-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+whole-scenario-authored-inputs+authenticated-midrun-activation+phase-resolved-testimony-v6|fluid-boundary:declaration-driven-exact-replacement+automatic-voxel-population+complete-raw-target+net-only-total-closure+claim-card-declaration+scenario-scale+exact-transaction-set+full-replacement-authority+schema-closed-containers-v7|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+growth-shadowing-not-chemical-seal+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-cell-local-salinity-pH-CuSO4-decay+truthful-trigger-mode+authenticated-current-enclosure-only-v4|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+omegaGT1-four-tier-locality-dispatch+heterogeneous-wall-approximation+zone-formula+dynamic-competition-stoichiometry+booked-return-v6|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores+growth-shadow-access+authenticated-current-enclosure-withhold-v4|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+prototype-preserving-fluid-counterfactual+local-max-context+causal-supersat+calibrated-budget-v6|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license-all-production-nucleators+owner-bound-events+canonical-locality-event-deep-match+causal-event-prerequisite+valence-correct-commissioning-reconciliation-v11|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+exact-authored-acid-stage-sulfate+Cu-only-enrichment+Ca-sulfate-recharge+generic-fluid-receipts+secondary-sulfides-aspirational-until-parent-replacement+TSNB301-questionable-rhodochrosite-excluded-v3|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+positive-layer-formula+returned-dissolution-inventory+habit-extent+hydration-transfer+competition-allocation+solid-solution+CDR+enclosure-liberation-lifecycle+player-movement-choice+guided-tutorial-boundary+controlled-production-engine-witness+solid-state-transformation+morphology-completeness+basis+null-confining-pressure-v9|morphology-sampling:post-step-terminal+finite-depletion-explicit+nonfinite-and-derived-and-no-interface-unavailable+complete-positive-layer-testimony+replay-bound-live-state-v2|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|enclosure:positive-nonphantom-solid-guest+same-step-net-positive-host-material+exact-substrate-contact-or-0.5mm-physical-lateral-front+substrate-first-deterministic-host+physical-solid-geometric-reach+shared-chemistry-current-topology-receipt-strict-chronological-lifecycle-authority+authenticated-same-crystal-host-phase-lineage-and-trigger-receipts+slowing-guest+physical-solid-threshold-partial-retreat-liberation+source-specific-front-film-reversal+replay-authenticated-lifecycle-v10|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar+authenticated-controlled-product-witness-v2|agent-runtime:explicit-sulfur-valence+ambiguous-S-rejected+owner-bound-MVT-90sulfide-30sulfate+narrow-physics-parity+explicit-response-scope+shared-crystal-serialization-core+browser-shape-seed-applied-and-replay-bound+exact-constructor-receipt+post-await-launch-generation+sim-owned-metadata+last-commissioned-visible-selection-v4|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+player-choice-divergence+guided-tutorial-lifecycle+full-public-control-browser-journey+collection-groove+strip-import-download-playback+topology-helix+phone-surfaces+full-stored-strip-byte-receipt+aggregate-artifact-sha256-v8|creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts+partial-flood-replacement-refused-v3|save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+player-movement-receipts+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor+monotonic-checkpoint-generation+newest-valid-staging-recovery+equal-generation-divergence-fail-closed-v12|gameplay-choice:authored-absolute-global-movement-plus-persistent-field-offset-map-after-texture-clamp+overlap-handoff+dynamic-add-and-controller-rebuild-inheritance+baseless-net-offset-capture+generic-visible-control-reconciliation+authenticated-water-state-scoped-pore-fluid-closure+declared-pointwise-add-scale-set-max-laws-including-zero-bulk-delta+coupled-carbonate-pH-DIC-exact-titration+explicit-rejected-field-exclusion+atomic-multifield-plus-carbonate-solver-ring-voxel-rollback+action-wide-nonsulfur-coordinate-propagation+nonvadose-broth-exact-replacement+vadose-drain-evaporate-oxygen+legacy-shortcuts-no-uncited-sulfur-boundary+recipe-action-cursor-coalesced-control-replay+post-action-cursor-seal+authored-vs-player-scheduled-source-testimony+canonical-fluid-field-alias+commissioned-domain-breadcrumbs+pointwise-bulk-ring-voxel-mesh-clamp+valence-specific-sulfur-schedule-refusal+cell-feeder-and-refused-carbonate-movement-exclusion+full-populated-simulation-random-v12|guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6|collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+census-only-numeric-zones+signed-nonphantom-remaining-solid-required-across-collect-groove-save-finish+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v4|strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 1,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": 1,
+        "role": "rock/confining pressure used by metamorphic phase fields"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.7708705399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 1,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 72.7,
+          "initial_water_activity": {
+            "value": 0.997,
+            "salinityPpt": 5,
+            "naclWeightPercentEquivalent": 0.5,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0.85410582,
+            "waterDensityGcm3": 1.00592748,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0.81583958,
+            "waterDensityGcm3": 1.00592748,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 250,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 2.53745479,
+            "waterDensityGcm3": 0.87666021,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-250 C fitted envelope; the nearest 250 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0.99202884,
+            "waterDensityGcm3": 0.92374079,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0.94952089,
+            "waterDensityGcm3": 0.92374079,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 300,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 1.78298007,
+            "waterDensityGcm3": 0.82317179,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +1.783 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 300,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 1.69969134,
+            "waterDensityGcm3": 0.82317179,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +1.700 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 200,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0.7997092,
+            "waterDensityGcm3": 0.92374079,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "Requested 300 C is outside this reaction's 10-200 C fitted envelope; the nearest 200 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 300,
+            "evaluatedTemperatureC": 300,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 1,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 10,
+    "paragenetic_order": [
+      {
+        "mineral": "amosite",
+        "first_step": 1,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "crocidolite",
+        "first_step": 1,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "magnetite",
+        "first_step": 1,
+        "events": 2,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "siderite",
+        "first_step": 1,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 28,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 58,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "hematite",
+        "first_step": 58,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "opal",
+        "first_step": 58,
+        "events": 5,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "tigers_eye",
+        "first_step": 59,
+        "events": 3,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "lepidocrocite",
+        "first_step": 82,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 298.26089435471107,
+        "last": 25.000000000000004,
+        "min": 25.000000000000004,
+        "max": 298.26089435471107,
+        "units": "°C",
+        "source": "raw_simulation_state"
+      },
+      "pH": {
+        "first": 9,
+        "last": 6.9,
+        "min": 6.9,
+        "max": 9,
+        "units": "",
+        "source": "raw_simulation_state"
+      },
+      "Eh": {
+        "first": 36.789507835554815,
+        "last": 220,
+        "min": 36.789507835554815,
+        "max": 220,
+        "units": "mV",
+        "source": "raw_simulation_state"
+      },
+      "salinity": {
+        "first": 5,
+        "last": 5,
+        "min": 5,
+        "max": 5,
+        "units": "psu",
+        "source": "raw_simulation_state"
+      },
+      "O2": {
+        "first": 0.28,
+        "last": 1,
+        "min": 0.28,
+        "max": 1,
+        "units": "ppm (mg/kg solvent)",
+        "source": "raw_simulation_state"
+      },
+      "concentration": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "units": "×",
+        "source": "raw_simulation_state"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -2.15,
+        "last": -3.155,
+        "min": -3.155,
+        "max": -1.78,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -2.273,
+        "last": -3.336,
+        "min": -3.339,
+        "max": -1.843,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -4.108,
+        "last": -6.108,
+        "min": -6.11,
+        "max": -3.121,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.142,
+        "last": -3.213,
+        "min": -3.213,
+        "max": -0.832,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 2.262,
+        "last": 0.567,
+        "min": 0.567,
+        "max": 2.507,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 120,
+      "fluid_pressure_kbar": {
+        "first": 1,
+        "last": 0.001,
+        "min": 0.001,
+        "max": 1,
+        "samples": 120
+      },
+      "confining_pressure_kbar": {
+        "first": 1,
+        "last": 0.001,
+        "min": 0.001,
+        "max": 1,
+        "samples": 120
+      },
+      "temperature_C": {
+        "first": 298.26089435471107,
+        "last": 25.000000000000004,
+        "min": 25.000000000000004,
+        "max": 298.26089435471107,
+        "samples": 120
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.760843793419369,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 120
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 1,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0.001,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 72.7
+        },
+        "last": {
+          "pure_water_boundary_C": 58.0147
+        }
+      },
+      "stress_events": [],
+      "transformations": [],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      },
+      "sulfur_ledger": {
+        "source": "archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256",
+        "sample_count": 0,
+        "closed_sample_count": 0,
+        "all_closed": null,
+        "max_abs_balance_error_ppm": 0,
+        "max_abs_testimony_error_ppm": 0,
+        "first_fluid_reservoir_ppm": null,
+        "last_fluid_reservoir_ppm": null,
+        "first_solid_reservoir_ppm": null,
+        "last_solid_reservoir_ppm": null,
+        "activation": null,
+        "phase_identities": [],
+        "samples": []
+      },
+      "fluid_boundary": {
+        "source": "archived declared non-sulfur fluid-boundary transactions; exact net spatial closure is authenticated by the strip SHA-256; gross per-voxel replacement exchange is intentionally not claimed",
+        "transaction_count": 2,
+        "closed_transaction_count": 2,
+        "all_closed": true,
+        "transactions": [
+          {
+            "schema": "fluid-boundary-v1",
+            "step": 58,
+            "spatial_scope": "canonical-wet-voxel-volume",
+            "declarations": [
+              {
+                "kind": "replacement",
+                "source": "Asbestos Hills planation-surface oxidizing-water replacement",
+                "fields": {
+                  "O2": 0.82
+                }
+              },
+              {
+                "kind": "addition",
+                "source": "Asbestos Hills planation-surface silicification boundary",
+                "fields": {
+                  "SiO2": 250
+                }
+              }
+            ],
+            "testimony": [
+              {
+                "field": "O2",
+                "before": 0.28,
+                "after": 0.82,
+                "declaredAddition": 0,
+                "declaredReplacementTarget": 0.82,
+                "declaredDelta": 0.5399999999999999,
+                "declaredImports": 0.5399999999999999,
+                "declaredExports": 0,
+                "actualDelta": 0.5399999999999999,
+                "error": 0,
+                "tolerance": 1e-7,
+                "unit": "mg_per_kg_solvent",
+                "spatial": {
+                  "count": 7680,
+                  "beforeFiniteCount": 7680,
+                  "unit": "mg_per_kg_solvent",
+                  "beforeValueTotal": 2149.848727674354,
+                  "expectedAfterValueTotal": 6297.599999999576,
+                  "scope": "canonical-wet-voxel-volume",
+                  "fluxBasis": "authenticated-net-only; gross-per-voxel-replacement-exchange-not-published",
+                  "afterCount": 7680,
+                  "afterFiniteCount": 7680,
+                  "afterValueTotal": 6297.599999999576,
+                  "expectedNet": 4147.751272325473,
+                  "actualNet": 4147.751272325222,
+                  "error": -2.510205376893282e-10,
+                  "tolerance": 0.000006297599999999576,
+                  "closed": true
+                },
+                "closed": true
+              },
+              {
+                "field": "SiO2",
+                "before": 650,
+                "after": 900,
+                "declaredAddition": 250,
+                "declaredReplacementTarget": null,
+                "declaredDelta": 250,
+                "declaredImports": 250,
+                "declaredExports": 0,
+                "actualDelta": 250,
+                "error": 0,
+                "tolerance": 9.000000000000001e-7,
+                "unit": "mg_per_kg_solvent",
+                "spatial": {
+                  "count": 7680,
+                  "beforeFiniteCount": 7680,
+                  "unit": "mg_per_kg_solvent",
+                  "beforeValueTotal": 4991595.768879142,
+                  "expectedAfterValueTotal": 6911595.768879148,
+                  "scope": "canonical-wet-voxel-volume",
+                  "fluxBasis": "authenticated-net-only; gross-per-voxel-replacement-exchange-not-published",
+                  "afterCount": 7680,
+                  "afterFiniteCount": 7680,
+                  "afterValueTotal": 6911595.768879148,
+                  "expectedNet": 1920000,
+                  "actualNet": 1920000.0000000065,
+                  "error": 6.51925802230835e-9,
+                  "tolerance": 0.006911595768879148,
+                  "closed": true
+                },
+                "closed": true
+              }
+            ],
+            "closed": true,
+            "sample_index": 57
+          },
+          {
+            "schema": "fluid-boundary-v1",
+            "step": 82,
+            "spatial_scope": "canonical-wet-voxel-volume",
+            "declarations": [
+              {
+                "kind": "replacement",
+                "source": "Asbestos Hills waning oxidizing-water replacement",
+                "fields": {
+                  "O2": 1
+                }
+              },
+              {
+                "kind": "addition",
+                "source": "Asbestos Hills waning silica-rich weathering boundary",
+                "fields": {
+                  "SiO2": 100
+                }
+              }
+            ],
+            "testimony": [
+              {
+                "field": "O2",
+                "before": 0.82,
+                "after": 1,
+                "declaredAddition": 0,
+                "declaredReplacementTarget": 1,
+                "declaredDelta": 0.18000000000000005,
+                "declaredImports": 0.18000000000000005,
+                "declaredExports": 0,
+                "actualDelta": 0.18000000000000005,
+                "error": 0,
+                "tolerance": 1e-7,
+                "unit": "mg_per_kg_solvent",
+                "spatial": {
+                  "count": 7680,
+                  "beforeFiniteCount": 7680,
+                  "unit": "mg_per_kg_solvent",
+                  "beforeValueTotal": 6296.600231704023,
+                  "expectedAfterValueTotal": 7680,
+                  "scope": "canonical-wet-voxel-volume",
+                  "fluxBasis": "authenticated-net-only; gross-per-voxel-replacement-exchange-not-published",
+                  "afterCount": 7680,
+                  "afterFiniteCount": 7680,
+                  "afterValueTotal": 7680,
+                  "expectedNet": 1383.399768295609,
+                  "actualNet": 1383.399768295977,
+                  "error": 3.681179805425927e-10,
+                  "tolerance": 0.000007680000000000001,
+                  "closed": true
+                },
+                "closed": true
+              },
+              {
+                "field": "SiO2",
+                "before": 900,
+                "after": 1000,
+                "declaredAddition": 100,
+                "declaredReplacementTarget": null,
+                "declaredDelta": 100,
+                "declaredImports": 100,
+                "declaredExports": 0,
+                "actualDelta": 100,
+                "error": 0,
+                "tolerance": 0.0000010000000000000002,
+                "unit": "mg_per_kg_solvent",
+                "spatial": {
+                  "count": 7680,
+                  "beforeFiniteCount": 7680,
+                  "unit": "mg_per_kg_solvent",
+                  "beforeValueTotal": 6911513.743903494,
+                  "expectedAfterValueTotal": 7679513.7439035075,
+                  "scope": "canonical-wet-voxel-volume",
+                  "fluxBasis": "authenticated-net-only; gross-per-voxel-replacement-exchange-not-published",
+                  "afterCount": 7680,
+                  "afterFiniteCount": 7680,
+                  "afterValueTotal": 7679513.7439035075,
+                  "expectedNet": 768000,
+                  "actualNet": 768000.000000013,
+                  "error": 1.30385160446167e-8,
+                  "tolerance": 0.007679513743903508,
+                  "closed": true
+                },
+                "closed": true
+              }
+            ],
+            "closed": true,
+            "sample_index": 81
+          }
+        ]
+      },
+      "player_actions": {
+        "source": "visible player interventions accepted against active authored absolute movements; exact rows are authenticated by the strip SHA-256",
+        "action_count": 0,
+        "actions": []
+      },
+      "enclosures": {
+        "source": "accepted host-over-guest and later liberation events from the archived executed run",
+        "event_count": 1,
+        "accepted_enclosure_count": 1,
+        "liberation_count": 0,
+        "current_inclusion_count": 1,
+        "current_inclusions": [
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 9,
+            "host_crystal_id": 7,
+            "host_mineral": "crocidolite",
+            "guest_crystal_id": 4,
+            "guest_mineral": "magnetite",
+            "route": "host-on-guest",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 3.859983472605066,
+            "size_ratio": 4.854420291188312,
+            "guest_recent_growth_um": 1.7847763837797956,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 50.049821940822795,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 50.049821940822795,
+            "host_physical_size_at_enclosure_um": 187.1684232397511,
+            "guest_positive_core_um": 38.55628726245585,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 38.55628726245585,
+            "guest_partially_dissolved": false,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 8
+          }
+        ],
+        "events": [
+          {
+            "schema": "enclosure-receipt-v1",
+            "event": "enclosed",
+            "step": 9,
+            "host_crystal_id": 7,
+            "host_mineral": "crocidolite",
+            "guest_crystal_id": 4,
+            "guest_mineral": "magnetite",
+            "route": "host-on-guest",
+            "adjacency_authority": "exact-substrate-id",
+            "anchor_distance_mm": 0,
+            "footprint_reach_mm": 3.859983472605066,
+            "size_ratio": 4.854420291188312,
+            "guest_recent_growth_um": 1.7847763837797956,
+            "guest_slowing_threshold_um": 3,
+            "host_same_step_positive_growth_um": 50.049821940822795,
+            "host_same_step_negative_growth_um": 0,
+            "host_same_step_net_growth_um": 50.049821940822795,
+            "host_physical_size_at_enclosure_um": 187.1684232397511,
+            "guest_positive_core_um": 38.55628726245585,
+            "guest_loss_um": 0,
+            "guest_remaining_growth_um": 38.55628726245585,
+            "guest_partially_dissolved": false,
+            "front_film_contribution": 0,
+            "host_film_before": null,
+            "host_film_after": null,
+            "sample_index": 8
+          }
+        ]
+      },
+      "crystal_layers": {
+        "source": "accepted growth-zone stack from the archived executed run",
+        "layer_count": 1364,
+        "formula_layers": [],
+        "solid_solution_layers": [],
+        "binding_competition_allocations": [],
+        "reactive_transformation_layers": [],
+        "masked_horizons": [],
+        "morphology": {
+          "source": "all positive layers for MORPH_TH-registered minerals; exact rows are authenticated by the strip SHA-256",
+          "tenant_minerals": [
+            "calcite",
+            "fluorite",
+            "halite",
+            "native_bismuth",
+            "native_copper",
+            "native_gold",
+            "pyrite",
+            "sylvite"
+          ],
+          "positive_layer_count": 0,
+          "classified_layer_count": 0,
+          "unavailable_layer_count": 0,
+          "terminal_depleted_layer_count": 0,
+          "regime_counts": {},
+          "basis_counts": {},
+          "terminal_depleted_layers": [],
+          "unavailable_layers": []
+        }
+      },
+      "habit_morphology": {
+        "source": "final physical crystal state from the archived executed run",
+        "crystals": [
+          {
+            "crystal_id": 1,
+            "mineral": "amosite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle brown silky fibers",
+              "cummingtonite-grunerite asbestos",
+              "\"brown asbestos\" of South African commerce (Penge type)",
+              "WHO-recognized health-hazard variety"
+            ],
+            "total_growth_um": 1302.6542985897802,
+            "c_length_mm": 0.8714796352865233,
+            "a_width_mm": 0.7963154615703979,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 6,
+              "record_cm": 3
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8495596722940284,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8489.65649077771,
+              "mean_thickness_um": 0.03408286101957909,
+              "booked_volume_mm3": 0.2893517822791442,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 0,
+              "nucleation_step": 1,
+              "underlying_surface_crystal_ids": [],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 57
+          },
+          {
+            "crystal_id": 2,
+            "mineral": "crocidolite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle deep blue silky fibers",
+              "riebeckite asbestos — \"BLUE ASBESTOS\"",
+              "the most carcinogenic asbestos variety per WHO + Frank et al. 2002",
+              "Wittenoom Australia + Northern Cape SA type material"
+            ],
+            "total_growth_um": 1819.6458287872624,
+            "c_length_mm": 1.146305041521237,
+            "a_width_mm": 1.146305041521237,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 8,
+              "record_cm": 4
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8499750881381829,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8493.807744577427,
+              "mean_thickness_um": 0.09285318453709787,
+              "booked_volume_mm3": 0.7886770979298788,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 1,
+              "nucleation_step": 1,
+              "underlying_surface_crystal_ids": [
+                1
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 120
+          },
+          {
+            "crystal_id": 3,
+            "mineral": "siderite",
+            "habit": "botryoidal",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal mammillary crusts",
+              "tan-brown rounded aggregates"
+            ],
+            "total_growth_um": 7105.0094082838805,
+            "c_length_mm": 4.475875456598989,
+            "a_width_mm": 4.475875456598984,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.699999999999771,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 6995.105508593037,
+              "mean_thickness_um": 6.711789596065885,
+              "booked_volume_mm3": 46.94967637595791,
+              "wall_spread": 0.7,
+              "void_reach": 0.25,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 2,
+              "nucleation_step": 1,
+              "underlying_surface_crystal_ids": [
+                1,
+                2
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 120
+          },
+          {
+            "crystal_id": 4,
+            "mineral": "magnetite",
+            "habit": "octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{111} octahedron",
+              "metallic black"
+            ],
+            "total_growth_um": 38.55628726245585,
+            "c_length_mm": 0.03855628726245584,
+            "a_width_mm": 0.019278143631227918,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 15,
+              "record_cm": 7.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 9
+          },
+          {
+            "crystal_id": 5,
+            "mineral": "amosite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle brown silky fibers",
+              "cummingtonite-grunerite asbestos",
+              "\"brown asbestos\" of South African commerce (Penge type)",
+              "WHO-recognized health-hazard variety"
+            ],
+            "total_growth_um": 1293.2505031913072,
+            "c_length_mm": 0.8660162214654133,
+            "a_width_mm": 0.7901889913960602,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 6,
+              "record_cm": 3
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8495360566084725,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8489.420499046108,
+              "mean_thickness_um": 0.033350976435230974,
+              "booked_volume_mm3": 0.2831304630124535,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 3,
+              "nucleation_step": 2,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 56
+          },
+          {
+            "crystal_id": 6,
+            "mineral": "amosite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle brown silky fibers",
+              "cummingtonite-grunerite asbestos",
+              "\"brown asbestos\" of South African commerce (Penge type)",
+              "WHO-recognized health-hazard variety"
+            ],
+            "total_growth_um": 1129.7466124638963,
+            "c_length_mm": 0.7669670807298448,
+            "a_width_mm": 0.6855722244372677,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 6,
+              "record_cm": 3
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8488493094812443,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8482.557829599413,
+              "mean_thickness_um": 0.022251277257089686,
+              "booked_volume_mm3": 0.18874774611571346,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "with magnetite #4 (BIF Fe-amphibole assemblage)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 4,
+              "nucleation_step": 5,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 53
+          },
+          {
+            "crystal_id": 7,
+            "mineral": "crocidolite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle deep blue silky fibers",
+              "riebeckite asbestos — \"BLUE ASBESTOS\"",
+              "the most carcinogenic asbestos variety per WHO + Frank et al. 2002",
+              "Wittenoom Australia + Northern Cape SA type material"
+            ],
+            "total_growth_um": 1534.4361934270169,
+            "c_length_mm": 0.9666342299096299,
+            "a_width_mm": 0.9666342299096298,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 8,
+              "record_cm": 4
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8498785087744526,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8492.842626235648,
+              "mean_thickness_um": 0.05568420913599983,
+              "booked_volume_mm3": 0.47291722495843985,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "with magnetite #4 (BIF Fe-amphibole assemblage)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 5,
+              "nucleation_step": 6,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 115
+          },
+          {
+            "crystal_id": 8,
+            "mineral": "crocidolite",
+            "habit": "fibrous_asbestiform",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "parallel-bundle deep blue silky fibers",
+              "riebeckite asbestos — \"BLUE ASBESTOS\"",
+              "the most carcinogenic asbestos variety per WHO + Frank et al. 2002",
+              "Wittenoom Australia + Northern Cape SA type material"
+            ],
+            "total_growth_um": 1506.2004076656162,
+            "c_length_mm": 0.9488467994890746,
+            "a_width_mm": 0.9488467994890741,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 8,
+              "record_cm": 4
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "fibrous_mat",
+              "coverage_fraction": 0.8498578749194382,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8492.636431960113,
+              "mean_thickness_um": 0.05266770338005261,
+              "booked_volume_mm3": 0.44728765651310354,
+              "wall_spread": 0.85,
+              "void_reach": 0.1,
+              "substrate": "with magnetite #4 (BIF Fe-amphibole assemblage)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 6,
+              "nucleation_step": 7,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 114
+          },
+          {
+            "crystal_id": 9,
+            "mineral": "magnetite",
+            "habit": "octahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{111} octahedron",
+              "metallic black"
+            ],
+            "total_growth_um": 145.20115460639934,
+            "c_length_mm": 0.14520115460639935,
+            "a_width_mm": 0.07260057730319966,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 15,
+              "record_cm": 7.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 48
+          },
+          {
+            "crystal_id": 10,
+            "mineral": "quartz",
+            "habit": "prismatic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "m{100}",
+              "r{101}",
+              "z{011} dominant"
+            ],
+            "total_growth_um": 295.20919205301476,
+            "c_length_mm": 0.29520919205301477,
+            "a_width_mm": 0.11808367682120591,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 1200,
+              "record_cm": 600
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 30
+          },
+          {
+            "crystal_id": 11,
+            "mineral": "goethite",
+            "habit": "botryoidal/stalactitic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal masses",
+              "velvety surfaces"
+            ],
+            "total_growth_um": 3085.789175852316,
+            "c_length_mm": 1.9552758471659495,
+            "a_width_mm": 1.9382748628142557,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.3999987444684161,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 3997.1906012317586,
+              "mean_thickness_um": 0.9622380523281344,
+              "booked_volume_mm3": 3.846248898913572,
+              "wall_spread": 0.4,
+              "void_reach": 0.5,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 7,
+              "nucleation_step": 58,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 63
+          },
+          {
+            "crystal_id": 12,
+            "mineral": "hematite",
+            "habit": "botryoidal",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "kidney-ore texture"
+            ],
+            "total_growth_um": 1680.3624363788042,
+            "c_length_mm": 1.6803624363788041,
+            "a_width_mm": 0.8401812181894021,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.34969639284240694,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 3494.518805582622,
+              "mean_thickness_um": 0.17772975519002307,
+              "booked_volume_mm3": 0.6210799718231312,
+              "wall_spread": 0.35,
+              "void_reach": 0.6,
+              "substrate": "on quartz #10",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 8,
+              "nucleation_step": 58,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 63
+          },
+          {
+            "crystal_id": 13,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal grape-cluster mounds",
+              "reniform terminations"
+            ],
+            "total_growth_um": 6704.544516953817,
+            "c_length_mm": 6.704544516953817,
+            "a_width_mm": 3.352272258476908,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.6999999999988638,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 6995.10550858397,
+              "mean_thickness_um": 5.639650591905947,
+              "booked_volume_mm3": 39.44995092193014,
+              "wall_spread": 0.7,
+              "void_reach": 0.3,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 9,
+              "nucleation_step": 58,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 63
+          },
+          {
+            "crystal_id": 14,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal grape-cluster mounds",
+              "reniform terminations"
+            ],
+            "total_growth_um": 6485.12676894032,
+            "c_length_mm": 6.4851267689403205,
+            "a_width_mm": 3.2425633844701607,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8999999999964864,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8993.707082444591,
+              "mean_thickness_um": 3.969678196496347,
+              "booked_volume_mm3": 35.70212291085507,
+              "wall_spread": 0.9,
+              "void_reach": 0.1,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 10,
+              "nucleation_step": 59,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 15,
+            "mineral": "tigers_eye",
+            "habit": "alteration_preserved_fabric",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "gold-brown chatoyant alteration band",
+              "quartz preserving the orientation of older crocidolite seams",
+              "near-surface silicification and oxidation fabric"
+            ],
+            "total_growth_um": 3028.820881500327,
+            "c_length_mm": 3.0288208815003266,
+            "a_width_mm": 1.514410440750163,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 15,
+              "record_cm": 7.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8499966491835402,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8494.023204273357,
+              "mean_thickness_um": 0.4281993071255671,
+              "booked_volume_mm3": 3.6371348507783408,
+              "wall_spread": 0.85,
+              "void_reach": 0.15,
+              "substrate": "after accepted oxidative alteration of crocidolite #2 (model=surficial-alteration)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 11,
+              "nucleation_step": 59,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 16,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal grape-cluster mounds",
+              "reniform terminations"
+            ],
+            "total_growth_um": 6453.37080806613,
+            "c_length_mm": 6.45337080806613,
+            "a_width_mm": 3.226685404033065,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8999999999960105,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8993.707082439836,
+              "mean_thickness_um": 3.911647874093341,
+              "booked_volume_mm3": 35.18021518924401,
+              "wall_spread": 0.9,
+              "void_reach": 0.1,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 12,
+              "nucleation_step": 60,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 61
+          },
+          {
+            "crystal_id": 17,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal grape-cluster mounds",
+              "reniform terminations"
+            ],
+            "total_growth_um": 6205.846596648621,
+            "c_length_mm": 6.205846596648621,
+            "a_width_mm": 3.1029232983243107,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.7499999999910518,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 7494.755901977,
+              "mean_thickness_um": 4.174305654155883,
+              "booked_volume_mm3": 31.285401938140765,
+              "wall_spread": 0.75,
+              "void_reach": 0.25,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 13,
+              "nucleation_step": 61,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 60
+          },
+          {
+            "crystal_id": 18,
+            "mineral": "tigers_eye",
+            "habit": "alteration_preserved_fabric",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "gold-brown chatoyant alteration band",
+              "quartz preserving the orientation of older crocidolite seams",
+              "near-surface silicification and oxidation fabric"
+            ],
+            "total_growth_um": 2945.4083905120383,
+            "c_length_mm": 2.9454083905120383,
+            "a_width_mm": 1.4727041952560191,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 15,
+              "record_cm": 7.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8999950469060919,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8993.657586173302,
+              "mean_thickness_um": 0.3719108437424066,
+              "booked_volume_mm3": 3.3448387812040092,
+              "wall_spread": 0.9,
+              "void_reach": 0.1,
+              "substrate": "after accepted oxidative alteration of crocidolite #2 (model=surficial-alteration)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 14,
+              "nucleation_step": 61,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 60
+          },
+          {
+            "crystal_id": 19,
+            "mineral": "opal",
+            "habit": "botryoidal_mound",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "botryoidal grape-cluster mounds",
+              "reniform terminations"
+            ],
+            "total_growth_um": 6089.429752521447,
+            "c_length_mm": 6.089429752521447,
+            "a_width_mm": 3.0447148762607235,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 30,
+              "record_cm": 15
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.6999999999866952,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 6995.105508462369,
+              "mean_thickness_um": 4.225462346774913,
+              "booked_volume_mm3": 29.557554937725516,
+              "wall_spread": 0.7,
+              "void_reach": 0.3,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 15,
+              "nucleation_step": 62,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 59
+          },
+          {
+            "crystal_id": 20,
+            "mineral": "tigers_eye",
+            "habit": "alteration_preserved_fabric",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "gold-brown chatoyant alteration band",
+              "quartz preserving the orientation of older crocidolite seams",
+              "near-surface silicification and oxidation fabric"
+            ],
+            "total_growth_um": 2184.7558397474695,
+            "c_length_mm": 2.1847558397474693,
+            "a_width_mm": 1.0923779198737347,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 15,
+              "record_cm": 7.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8998961837389118,
+              "cavity_area_mm2": 9993.007869421892,
+              "covered_area_mm2": 8992.669645765674,
+              "mean_thickness_um": 0.1517954374622731,
+              "booked_volume_mm3": 1.365046222832705,
+              "wall_spread": 0.9,
+              "void_reach": 0.1,
+              "substrate": "after accepted oxidative alteration of crocidolite #2 (model=surficial-alteration)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 120,
+              "stratigraphic_index": 16,
+              "nucleation_step": 71,
+              "underlying_surface_crystal_ids": [
+                1,
+                2,
+                3,
+                5,
+                6,
+                7,
+                8,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "surface_film": null,
+            "zone_count": 50
+          },
+          {
+            "crystal_id": 21,
+            "mineral": "lepidocrocite",
+            "habit": "platy_scales",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{010} platy scales",
+              "perfect basal cleavage (mica-like)"
+            ],
+            "total_growth_um": 132.0827786485497,
+            "c_length_mm": 0.1320827786485497,
+            "a_width_mm": 0.06604138932427485,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 0.5,
+              "record_cm": 0.25
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "surface_film": null,
+            "zone_count": 39
+          }
+        ],
+        "surface_films": []
+      },
+      "transformation_reactivity_commissioning": {
+        "role": "controlled production-engine boundary; not a locality trajectory",
+        "artifact_schema": "vugg-mechanism-witnesses-v5",
+        "artifact_payload_sha256": "0285366993b8599c9098ddab6aa5a35486b98d311d4cf21825917427a2e1374b",
+        "link_authority": "artifact-authored scenario route, verified against executed product or surviving parent",
+        "controls": []
+      },
+      "player_choice_commissioning": null
+    }
+  }
+}
