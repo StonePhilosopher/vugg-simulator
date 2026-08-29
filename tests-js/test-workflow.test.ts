@@ -242,28 +242,45 @@ describe('memory-bounded full-test workflow', () => {
   });
 
   it('continues monitoring and escalates when a child ignores SIGTERM', async () => {
-    const child = new EventEmitter() as any;
-    child.pid = 1234;
-    child.kill = vi.fn((signal: string) => {
-      if (signal === 'SIGKILL') queueMicrotask(() => child.emit('exit', null, 'SIGKILL'));
-      return true;
-    });
-    const rssSampler = vi.fn().mockResolvedValue(MAX_BATCH_RSS_BYTES + 1);
-    const hardKiller = vi.fn();
-    const result = await runVitestBatch({
-      batch: ['tests-js/a.test.ts'],
-      spawn: () => child,
-      rssSampler,
-      hardKiller,
-      pollIntervalMs: 1,
-      terminationGraceMs: 2,
-      hardKillGraceMs: 2,
-    });
-    expect(result.status).toBe(1);
-    expect(child.kill).toHaveBeenNthCalledWith(1, 'SIGTERM');
-    expect(child.kill).toHaveBeenNthCalledWith(2, 'SIGKILL');
-    expect(rssSampler.mock.calls.length).toBeGreaterThan(1);
-    expect(hardKiller).not.toHaveBeenCalled();
+    vi.useFakeTimers();
+    try {
+      const child = new EventEmitter() as any;
+      child.pid = 1234;
+      child.kill = vi.fn((signal: string) => {
+        if (signal === 'SIGKILL') queueMicrotask(() => child.emit('exit', null, 'SIGKILL'));
+        return true;
+      });
+      const rssSampler = vi.fn().mockResolvedValue(MAX_BATCH_RSS_BYTES + 1);
+      const hardKiller = vi.fn();
+      const resultPromise = runVitestBatch({
+        batch: ['tests-js/a.test.ts'],
+        spawn: () => child,
+        rssSampler,
+        hardKiller,
+        pollIntervalMs: 100,
+        terminationGraceMs: 500,
+        hardKillGraceMs: 500,
+      });
+
+      await vi.advanceTimersByTimeAsync(100);
+      expect(rssSampler).toHaveBeenCalledTimes(1);
+      expect(child.kill).toHaveBeenCalledTimes(1);
+      expect(child.kill).toHaveBeenNthCalledWith(1, 'SIGTERM');
+
+      // Monitoring remains live while the child ignores SIGTERM. Fake time
+      // makes this causal ordering independent of the host timer quantum.
+      await vi.advanceTimersByTimeAsync(100);
+      expect(rssSampler).toHaveBeenCalledTimes(2);
+      expect(child.kill).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(400);
+      const result = await resultPromise;
+      expect(result.status).toBe(1);
+      expect(child.kill).toHaveBeenNthCalledWith(2, 'SIGKILL');
+      expect(hardKiller).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('returns bounded and unreferences the child if every termination route fails', async () => {
