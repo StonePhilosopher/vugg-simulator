@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { policyOfReceipt, sha256File } from '../tools/hash-policy.mjs';
 import { localityFrequencySpecHash } from '../tools/locality-frequency-contract.mjs';
 import { scienceEvidenceArtifactFiles } from '../tools/science-evidence-receipt.mjs';
 
@@ -16,11 +16,12 @@ const manifest = JSON.parse(fs.readFileSync(
   path.join(ROOT, 'data', 'generated', 'science-provenance-manifest.json'),
   'utf8',
 ));
+const manifestPolicy = policyOfReceipt(manifest);
 
 describe('generated science/provenance manifest', () => {
   it('is tied to the current model and complete authored fleet', () => {
     expect(manifest).toMatchObject({
-      schema: 'vugg-science-provenance-manifest-v5',
+      schema: 'vugg-science-provenance-manifest-v6',
       sim_version: SIM_VERSION,
       model_digest: MODEL_DIGEST,
       canonical_run_seed: 42,
@@ -46,7 +47,7 @@ describe('generated science/provenance manifest', () => {
     expect(manifest.thermo_pressure_grid.reproducibility.verifier.sha256)
       .toMatch(/^[a-f0-9]{64}$/);
 
-    const frequencyBytes = fs.readFileSync(path.join(ROOT, manifest.locality_frequency.path));
+    const frequencyPath = path.join(ROOT, manifest.locality_frequency.path);
     expect(manifest.locality_frequency).toMatchObject({
       schema: 'vugg-locality-frequency-baseline-v1',
       sim_version: SIM_VERSION,
@@ -56,11 +57,11 @@ describe('generated science/provenance manifest', () => {
       sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
     expect(manifest.locality_frequency.sha256)
-      .toBe(crypto.createHash('sha256').update(frequencyBytes).digest('hex'));
+      .toBe(sha256File(frequencyPath, manifestPolicy));
 
-    const evidenceBytes = fs.readFileSync(path.join(ROOT, manifest.science_evidence.path));
+    const evidencePath = path.join(ROOT, manifest.science_evidence.path);
     expect(manifest.science_evidence).toMatchObject({
-      schema: 'vugg-science-evidence-receipt-v1',
+      schema: 'vugg-science-evidence-receipt-v2',
       browser_bundle_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       execution_set_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       node_runtime: {
@@ -81,7 +82,7 @@ describe('generated science/provenance manifest', () => {
       ).length,
     });
     expect(manifest.science_evidence.sha256)
-      .toBe(crypto.createHash('sha256').update(evidenceBytes).digest('hex'));
+      .toBe(sha256File(evidencePath, manifestPolicy));
   });
 
   it('pins citations, registered handlers, authored shape seeds, and archive metadata', () => {
@@ -99,9 +100,9 @@ describe('generated science/provenance manifest', () => {
         seed: 42,
         strip_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       });
-      const stripBytes = fs.readFileSync(path.join(ROOT, row.archive.path));
+      const stripPath = path.join(ROOT, row.archive.path);
       expect(row.archive.strip_sha256, `${row.id}: archived strip bytes`)
-        .toBe(crypto.createHash('sha256').update(stripBytes).digest('hex'));
+        .toBe(sha256File(stripPath, manifestPolicy));
       for (const type of row.event_types) {
         expect(typeof EVENT_REGISTRY[type], `${row.id}: ${type}`).toBe('function');
       }

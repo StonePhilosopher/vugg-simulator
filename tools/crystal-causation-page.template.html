@@ -1,0 +1,509 @@
+<title>The Hard Skeleton</title>
+<style>
+  :root {
+    --ground:#E9EBE8; --surface:#F5F7F3; --sunk:#DEE1DC;
+    --ink:#191D1A; --ink-soft:#5D6763; --ink-faint:#8A928D;
+    --rule:#C6CBC4; --rule-soft:#D6DAD3; --focus:#3E6B80;
+    --strict:#1F4B5C; --growth:#8A6A3A;
+    --r-required:#1F4B5C; --r-transformation:#7A3E86;
+    --r-substrate:#6E7A82; --r-replacement:#B4632F; --r-copresence:#3F8270;
+    --proved:#2F6B4F; --observed:#3E6B80; --inferred:#8A928D;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0F1211; --surface:#161A18; --sunk:#0A0D0C;
+      --ink:#E2E7E2; --ink-soft:#98A29C; --ink-faint:#6B746F;
+      --rule:#2B322E; --rule-soft:#222825; --focus:#74A6BE;
+      --strict:#7FBBD4; --growth:#C9A063;
+      --r-required:#7FBBD4; --r-transformation:#C08FCB;
+      --r-substrate:#8B9AA3; --r-replacement:#DE9257; --r-copresence:#5FB29B;
+      --proved:#6FBF92; --observed:#74A6BE; --inferred:#6B746F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0F1211; --surface:#161A18; --sunk:#0A0D0C;
+    --ink:#E2E7E2; --ink-soft:#98A29C; --ink-faint:#6B746F;
+    --rule:#2B322E; --rule-soft:#222825; --focus:#74A6BE;
+    --strict:#7FBBD4; --growth:#C9A063;
+    --r-required:#7FBBD4; --r-transformation:#C08FCB;
+    --r-substrate:#8B9AA3; --r-replacement:#DE9257; --r-copresence:#5FB29B;
+    --proved:#6FBF92; --observed:#74A6BE; --inferred:#6B746F;
+  }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--serif); line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:40px 24px 72px; }
+  header { border-bottom:1px solid var(--rule); padding-bottom:18px; margin-bottom:18px; }
+  .eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 10px; }
+  h1 { font-size:clamp(26px,4vw,40px); line-height:1.08; margin:0 0 10px; font-weight:600; text-wrap:balance; }
+  .standfirst { margin:0; max-width:68ch; color:var(--ink-soft); font-size:15.5px; }
+
+  .modes { display:flex; gap:0; margin:22px 0 0; border:1px solid var(--rule); }
+  .modes button { flex:1 1 0; font-family:var(--mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    padding:12px 14px; background:var(--surface); color:var(--ink-soft); border:0; border-right:1px solid var(--rule); cursor:pointer; text-align:left; }
+  .modes button:last-child { border-right:0; }
+  .modes button small { display:block; font-size:10px; letter-spacing:0; text-transform:none; color:var(--ink-faint); margin-top:3px; font-family:var(--serif); }
+  .modes button[aria-pressed="true"] { background:var(--ink); color:var(--ground); }
+  .modes button[aria-pressed="true"] small { color:var(--ground); opacity:.75; }
+  .modes button:focus-visible { outline:2px solid var(--focus); outline-offset:-2px; }
+
+  .tally { display:flex; flex-wrap:wrap; margin:0; border:1px solid var(--rule); border-top:0; background:var(--surface); }
+  .tally div { flex:1 1 110px; padding:10px 13px; border-right:1px solid var(--rule-soft); }
+  .tally div:last-child { border-right:0; }
+  .tally b { display:block; font-family:var(--mono); font-size:19px; font-variant-numeric:tabular-nums; font-weight:600; }
+  .tally span { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+
+  .vocab { font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); margin:8px 0 0; }
+  .vocab b { color:var(--ink-soft); font-weight:600; }
+
+  section { margin-top:26px; }
+  h2.sec { font-size:19px; margin:0 0 4px; font-weight:600; }
+  p.sec { margin:0 0 14px; color:var(--ink-soft); font-size:13.5px; max-width:72ch; }
+
+  /* ---- strict view: every hard edge shown whole, with its receipt ---- */
+  .chain { border:1px solid var(--rule); background:var(--surface); margin-bottom:9px; padding:11px 13px; }
+  .chainhead { display:flex; flex-wrap:wrap; align-items:center; gap:9px; font-family:var(--mono); font-size:13px; }
+  .sp { border:1px solid var(--rule); padding:3px 8px; background:var(--ground); }
+  .sp.host { border-left:3px solid currentColor; }
+  .arrow { color:var(--ink-faint); }
+  .mech { font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border:1px solid currentColor; }
+  .mech.required { color:var(--r-required); }
+  .mech.transformation { color:var(--r-transformation); }
+  .receipt { font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); margin-top:7px; display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .receipt b { font-weight:600; }
+  .cert { text-transform:uppercase; letter-spacing:.08em; }
+  .cert.proved { color:var(--proved); }
+  .cert.observed { color:var(--observed); }
+  .cert.inferred { color:var(--inferred); }
+  .chainnote { font-size:12.5px; color:var(--ink-soft); margin:7px 0 0; max-width:70ch; }
+
+  /* ---- growth view: the dense chart ---- */
+  .chartbox { border:1px solid var(--rule); background:var(--surface); overflow-x:auto; }
+  svg#chart { display:block; height:auto; }
+  .w { fill:none; stroke-width:.7; opacity:.34; }
+  .w.preferred_substrate { stroke:var(--r-substrate); }
+  .w.replacement_opportunity { stroke:var(--r-replacement); stroke-width:.85; opacity:.62; }
+  .w.co_presence { stroke:var(--r-copresence); stroke-width:.85; opacity:.7; }
+  .w.mut { stroke-dasharray:3.5 2.5; opacity:.8; }
+  .w.off { display:none; }
+  svg.sel .w { opacity:.05; }
+  svg.sel .w.hl { stroke-width:1.5; opacity:1; }
+  .n { cursor:pointer; }
+  .n rect.body { fill:var(--surface); stroke:var(--rule); stroke-width:.8; }
+  .n text { font-family:var(--mono); font-size:8.2px; fill:var(--ink-soft); dominant-baseline:middle; }
+  .n .wall { font-family:var(--mono); font-size:7.5px; fill:var(--ink-faint); dominant-baseline:middle; }
+  svg.sel .n rect.body, svg.sel .n text { opacity:.25; }
+  svg.sel .n.on rect.body, svg.sel .n.on text { opacity:1; }
+  .n.pick rect.body { stroke:var(--ink); stroke-width:1.6; }
+  .n.hit rect.body { stroke:var(--focus); stroke-width:1.6; }
+  .lanelabel { font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; fill:var(--ink-faint); }
+
+  .controls { display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin:0 0 10px; }
+  input[type="search"] { font-family:var(--mono); font-size:12.5px; padding:7px 10px; min-width:190px; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:0; }
+  .controls button { font-family:var(--mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; padding:7px 10px; background:var(--surface); color:var(--ink-soft); border:1px solid var(--rule); cursor:pointer; }
+  .controls button[aria-pressed="true"] { color:var(--ink); border-color:currentColor; }
+  .controls button:focus-visible, input:focus-visible { outline:2px solid var(--focus); outline-offset:1px; }
+
+  .key { border:1px solid var(--rule); background:var(--surface); padding:12px 14px; margin-top:10px; }
+  .key h3 { font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 8px; font-weight:400; }
+  .keyrow { display:grid; grid-template-columns:44px auto; gap:4px 10px; align-items:center; font-family:var(--mono); font-size:10.5px; margin-bottom:5px; }
+  .keyrow:last-child { margin-bottom:0; }
+  .keyrow b { font-weight:600; } .keyrow i { font-style:normal; color:var(--ink-soft); }
+  .keyrow em { font-style:normal; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
+
+  .stage { display:grid; grid-template-columns:minmax(0,1fr) 296px; gap:24px; align-items:start; }
+  @media (max-width:920px){ .stage { grid-template-columns:minmax(0,1fr); } }
+  aside { border:1px solid var(--rule); background:var(--surface); padding:15px 16px; }
+  aside h2 { font-size:17px; margin:0 0 2px; font-weight:600; }
+  .formula { font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin:0 0 10px; }
+  .rel h3 { font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; margin:0 0 5px; padding-bottom:3px; border-bottom:1px solid var(--rule-soft); color:var(--ink-faint); }
+  .rel ul { list-style:none; margin:0 0 13px; padding:0; font-family:var(--mono); font-size:11px; }
+  .rel li { padding:1.5px 0; }
+  .rel li button { all:unset; cursor:pointer; font-family:var(--mono); font-size:11px; border-bottom:1px dotted var(--rule); }
+  .rel li button:hover { color:var(--focus); }
+  .rel li i { font-style:normal; font-size:9.5px; }
+  .desc { font-size:13px; color:var(--ink-soft); margin:0 0 12px; }
+  .wallnote { font-family:var(--mono); font-size:10.5px; padding:7px 9px; border:1px solid var(--rule); margin:0 0 12px; }
+  footer { margin-top:38px; border-top:1px solid var(--rule); padding-top:16px; }
+  footer p { font-size:12.5px; color:var(--ink-soft); max-width:76ch; margin:0 0 9px; }
+  code { font-family:var(--mono); font-size:11.5px; background:var(--sunk); padding:1px 4px; }
+  .hide { display:none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="stamp">Vugg Simulator</p>
+    <h1 id="h1">The hard skeleton</h1>
+    <p class="standfirst" id="standfirst"></p>
+    <div class="modes">
+      <button id="m-strict" aria-pressed="true">Strict causation
+        <small>Absence-blocking or state-changing only. Dependency language allowed here.</small></button>
+      <button id="m-growth" aria-pressed="false">Growth relationships
+        <small>Preference and opportunity. Counted, never called dependencies.</small></button>
+    </div>
+    <div class="tally" id="tally"></div>
+    <p class="vocab" id="vocab"></p>
+  </header>
+
+  <section id="strictView">
+    <h2 class="sec">Every hard edge in the simulator</h2>
+    <p class="sec">These are the only relations where one crystal's absence stops another existing, or where a crystal
+      literally becomes another. Each carries the receipt that proves it. There are no chains: the deepest hard
+      dependency in the whole catalogue is one step.</p>
+    <div id="chains"></div>
+  </section>
+
+  <section id="growthView" class="hide">
+    <h2 class="sec">Where crystals prefer to sit</h2>
+    <p class="sec">Read left to right. These arrows record preference and opportunity, not requirement &mdash; nearly
+      every species here has been observed nucleating on the bare wall, so its position in a column is a habit, not a
+      prerequisite. Columns show how far a relationship chain can be followed, which is why the numbers below say
+      <em>reachable</em> and never <em>depends</em>.</p>
+    <div class="controls">
+      <input type="search" id="search" placeholder="find a species&hellip;" aria-label="Find a species" autocomplete="off" />
+      <button id="f-preferred_substrate" aria-pressed="true">preferred substrate</button>
+      <button id="f-replacement_opportunity" aria-pressed="true">replacement opportunity</button>
+      <button id="f-co_presence" aria-pressed="true">co-presence</button>
+      <button id="reset">clear</button>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="chartbox"><svg id="chart" role="img"
+          aria-label="Left-to-right chart of which species prefer to grow on which others"></svg></div>
+        <div class="key">
+          <h3>What a line means &mdash; the state the gate names for the earlier crystal</h3>
+          <div id="keyrows"></div>
+        </div>
+      </div>
+      <aside id="panel"></aside>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Why two modes.</b> An earlier version of this chart drew "must have" and "likes to sit on" as one arrow and
+      then computed roots, depth and reach over the mixture. Those numbers described a dependency structure that does
+      not exist. Splitting the modes is not presentation &mdash; it is the correction.</p>
+    <p><b>The bare-wall glyph is evidence, not inference.</b> Every scenario was run at the canonical seed and the
+      position string of each crystal read. A species seen on the bare wall has a <em>proved</em> escape route, so its
+      substrate arrows are preferences. A species never seen there is marked <b>unresolved</b> and nothing is claimed:
+      absence of an observation is not a gate. Only two edges in the entire engine set actually block.</p>
+    <p><b>What is not here.</b> Epitaxy as distinct from generic substrate preference, mandatory versus merely
+      available replacement, competition and inhibition, and ion-transfer receipts are all absent because the
+      simulator does not yet represent them separately. They are not shown as empty checkboxes, because an unticked
+      box reads as "none" when the honest answer is "not yet measured".</p>
+    <p id="prov"></p>
+  </footer>
+</div>
+
+<script>
+const FLOW = /*__FLOW_DATA__*/null;
+const NODE = new Map(FLOW.nodes.map(n => [n.id, n]));
+const pretty = id => id.replace(/_/g, ' ');
+const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const C = FLOW.counts;
+
+const STRICT = FLOW.edges.filter(e => e.mode === 'strict');
+const GROWTH = FLOW.edges.filter(e => e.mode === 'growth');
+
+/* =============== strict view =============== */
+const RELATION_LABEL = { required_prerequisite: 'required prerequisite', transformation: 'transformation' };
+document.getElementById('chains').innerHTML = STRICT
+  .slice()
+  .sort((a, b) => a.relation.localeCompare(b.relation) || a.from.localeCompare(b.from))
+  .map(e => {
+    const cls = e.relation === 'required_prerequisite' ? 'required' : 'transformation';
+    const tags = [];
+    if (e.mechanism) tags.push(e.mechanism);
+    if (e.required_precursor) tags.push('required precursor');
+    if (e.reversible) tags.push('reversible');
+    return `<div class="chain">
+      <div class="chainhead">
+        <span class="sp host" style="color:var(--r-${cls === 'required' ? 'required' : 'transformation'})">${pretty(e.from)}</span>
+        <span class="arrow">&rarr;</span>
+        <span class="sp">${pretty(e.to)}</span>
+        <span class="mech ${cls}">${RELATION_LABEL[e.relation]}</span>
+        ${tags.map(t => `<span class="mech" style="color:var(--ink-faint)">${esc(t)}</span>`).join('')}
+      </div>
+      <div class="receipt">
+        <span><b>state</b> ${esc(e.source_state)}</span>
+        <span><b>basis</b> ${esc(e.evidence.basis)}</span>
+        <span class="cert ${e.evidence.certainty}"><b>${esc(e.evidence.certainty)}</b></span>
+        <span>${e.evidence.cites.map(esc).join(' &middot; ')}</span>
+      </div>
+      ${e.note ? `<p class="chainnote">${esc(e.note)}</p>` : ''}
+    </div>`;
+  }).join('');
+
+/* =============== growth view: layered chart =============== */
+const out = new Map(), inn = new Map();
+const touch = (m, k, v) => { if (!m.has(k)) m.set(k, new Set()); m.get(k).add(v); };
+for (const e of GROWTH) { touch(out, e.from, e.to); touch(inn, e.to, e.from); }
+const involved = new Set(GROWTH.flatMap(e => [e.from, e.to]));
+const kids = id => [...(out.get(id) || [])];
+const dads = id => [...(inn.get(id) || [])];
+const REL_OF = new Map(GROWTH.map(e => [`${e.from}>${e.to}`, e]));
+const MUTUAL = new Set();
+for (const e of GROWTH) if ((out.get(e.to) || new Set()).has(e.from)) MUTUAL.add(`${e.from}>${e.to}`);
+
+const dagOut = new Map();
+for (const e of GROWTH) {
+  if (MUTUAL.has(`${e.from}>${e.to}`) && e.from > e.to) continue;
+  touch(dagOut, e.from, e.to);
+}
+const layer = new Map([...involved].map(id => [id, 0]));
+for (let pass = 0; pass < involved.size; pass++) {
+  let moved = false;
+  for (const f of involved) for (const t of (dagOut.get(f) || [])) {
+    if (layer.get(t) < layer.get(f) + 1) { layer.set(t, layer.get(f) + 1); moved = true; }
+  }
+  if (!moved) break;
+}
+const depth = Math.max(...layer.values());
+const lanes = Array.from({ length: depth + 1 }, () => []);
+for (const id of involved) lanes[layer.get(id)].push(id);
+for (const lane of lanes) lane.sort((a, b) => NODE.get(a).class.localeCompare(NODE.get(b).class) || a.localeCompare(b));
+
+const orderOf = new Map();
+const reindex = () => lanes.forEach(l => l.forEach((id, i) => orderOf.set(id, i)));
+reindex();
+const mean = (id, side) => {
+  const nb = (side === 'up' ? dads(id) : kids(id)).filter(x => orderOf.has(x));
+  return nb.length ? nb.reduce((s, x) => s + orderOf.get(x), 0) / nb.length : orderOf.get(id);
+};
+for (let s = 0; s < 14; s++) {
+  for (let l = 1; l <= depth; l++) { const k = new Map(lanes[l].map(i => [i, mean(i, 'up')])); lanes[l].sort((a,b)=>k.get(a)-k.get(b)); reindex(); }
+  for (let l = depth - 1; l >= 0; l--) { const k = new Map(lanes[l].map(i => [i, mean(i, 'down')])); lanes[l].sort((a,b)=>k.get(a)-k.get(b)); reindex(); }
+}
+
+const BOX_W = 92, BOX_H = 15, ROW = 20, COL = 138, PAD_X = 26, PAD_TOP = 42, PAD_BOT = 22;
+const widest = Math.max(...lanes.map(l => l.length));
+const W = PAD_X * 2 + depth * COL + BOX_W, H = PAD_TOP + widest * ROW + PAD_BOT;
+const at = new Map();
+lanes.forEach((lane, l) => {
+  const top = PAD_TOP + (widest - lane.length) * ROW / 2;
+  lane.forEach((id, i) => at.set(id, { x: PAD_X + l * COL, y: top + i * ROW, l }));
+});
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('chart');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W);
+const mk = (t, a) => { const el = document.createElementNS(NS, t); for (const k in a) el.setAttribute(k, a[k]); return el; };
+
+const KINDS = [
+  ['preferred_substrate', 'r-substrate', 'names it ACTIVE', 'the earlier crystal is standing there and this one prefers to sit on it'],
+  ['replacement_opportunity', 'r-replacement', 'names it DISSOLVING', 'the earlier crystal is breaking down and this one can take the space or the ions'],
+  ['co_presence', 'r-copresence', 'merely counted', 'the gate counts it without testing its state'],
+];
+const defs = mk('defs', {});
+for (const [kind, token] of KINDS) {
+  const m = mk('marker', { id: `ah-${kind}`, viewBox: '0 0 8 6', refX: '7.2', refY: '3', markerWidth: '5', markerHeight: '4', orient: 'auto-start-reverse' });
+  m.appendChild(mk('path', { d: 'M0,0 L8,3 L0,6 z', fill: `var(--${token})` }));
+  defs.appendChild(m);
+}
+svg.appendChild(defs);
+const styleEl = document.createElementNS(NS, 'style');
+styleEl.textContent = KINDS.map(([k]) => `svg.sel .w.hl.${k}{marker-end:url(#ah-${k});}`).join('');
+svg.appendChild(styleEl);
+
+const laneG = mk('g', {});
+lanes.forEach((lane, l) => {
+  const x = PAD_X + l * COL;
+  const t = mk('text', { class: 'lanelabel', x, y: 18 });
+  t.textContent = l === 0 ? 'names no other crystal' : `${l} step${l > 1 ? 's' : ''} reachable`;
+  laneG.appendChild(t);
+  const c = mk('text', { class: 'lanelabel', x, y: 29, opacity: '.7' });
+  c.textContent = `${lane.length}`;
+  laneG.appendChild(c);
+});
+svg.appendChild(laneG);
+
+const wireG = mk('g', {});
+const wires = [];
+for (const e of GROWTH) {
+  const a = at.get(e.from), b = at.get(e.to);
+  if (!a || !b) continue;
+  const mut = MUTUAL.has(`${e.from}>${e.to}`);
+  const x1 = a.x + BOX_W, y1 = a.y + BOX_H / 2, x2 = b.x, y2 = b.y + BOX_H / 2;
+  let d;
+  if (x2 >= x1) { const dx = Math.max(26, (x2 - x1) * .5); d = `M${x1},${y1}C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`; }
+  else { const lift = 12 + Math.abs(y2 - y1) * .25; d = `M${a.x},${y1}C${a.x-40},${y1-lift} ${x2+BOX_W+40},${y2-lift} ${x2+BOX_W},${y2}`; }
+  const p = mk('path', { class: `w ${e.relation}${mut ? ' mut' : ''}`, d });
+  wireG.appendChild(p);
+  wires.push({ ...e, mut, el: p });
+}
+svg.appendChild(wireG);
+
+const boxG = mk('g', {});
+const boxEl = new Map();
+for (const [id, p] of at) {
+  const n = NODE.get(id);
+  const g = mk('g', { class: 'n', tabindex: '0', role: 'button' });
+  const wallMark = n.bare_wall === 'observed' ? '\u25A4' : n.bare_wall === 'unresolved' ? '\u00B7' : '';
+  g.appendChild(mk('title', {})).textContent = `${pretty(id)} - ${n.class}`
+    + (n.bare_wall === 'observed' ? ' - bare-wall nucleation observed' : n.bare_wall === 'unresolved' ? ' - never observed on a bare wall (unresolved, not gated)' : '');
+  g.appendChild(mk('rect', { class: 'body', x: p.x, y: p.y, width: BOX_W, height: BOX_H }));
+  g.appendChild(mk('rect', { x: p.x, y: p.y, width: 2.5, height: BOX_H, fill: `var(--cls, ${'#888'})`, style: `fill:${classColour(n.class)}` }));
+  const t = mk('text', { x: p.x + 6, y: p.y + BOX_H / 2 + .5 });
+  t.textContent = pretty(id);
+  g.appendChild(t);
+  if (wallMark) {
+    const wm = mk('text', { class: 'wall', x: p.x + BOX_W - 7, y: p.y + BOX_H / 2 + .5, 'text-anchor': 'end' });
+    wm.textContent = wallMark;
+    g.appendChild(wm);
+  }
+  g.addEventListener('mouseenter', () => show(id));
+  g.addEventListener('mouseleave', () => { if (picked) show(picked); else clearSel(); });
+  g.addEventListener('click', () => pick(id));
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(id); } });
+  boxG.appendChild(g);
+  boxEl.set(id, g);
+}
+svg.appendChild(boxG);
+function classColour(cls) {
+  const map = { silicate:'#7C8FA8', sulfide:'#A98D42', phosphate:'#4F9280', carbonate:'#B08A5E', oxide:'#A8635C',
+    sulfate:'#8C7FAD', arsenate:'#A85F8B', native:'#B5912F', molybdate:'#C0752A', amphibole:'#4E6B52',
+    halide:'#7E5BA6', hydroxide:'#9A7433', borate:'#7C9098' };
+  return map[cls] || '#888';
+}
+
+function walk(id, dir) {
+  const seen = new Set(), stack = [id];
+  while (stack.length) { const v = stack.pop();
+    for (const w of (dir === 'down' ? kids(v) : dads(v))) if (!seen.has(w)) { seen.add(w); stack.push(w); } }
+  seen.delete(id); return seen;
+}
+let picked = null;
+function show(id) {
+  const down = walk(id, 'down'), up = walk(id, 'up');
+  const live = new Set([id, ...down, ...up]);
+  svg.classList.add('sel');
+  for (const w of wires) {
+    w.el.classList.remove('hl');
+    const dOK = (w.from === id || down.has(w.from)) && down.has(w.to);
+    const uOK = (w.to === id || up.has(w.to)) && up.has(w.from);
+    if (dOK || uOK) w.el.classList.add('hl');
+  }
+  for (const [mid, g] of boxEl) { g.classList.toggle('on', live.has(mid)); g.classList.toggle('pick', mid === id); }
+  panel.innerHTML = card(id, down, up);
+}
+function pick(id) { picked = id; show(id); }
+function clearSel() {
+  svg.classList.remove('sel');
+  for (const w of wires) w.el.classList.remove('hl');
+  for (const g of boxEl.values()) g.classList.remove('on', 'pick');
+  panel.innerHTML = resting();
+}
+
+const panel = document.getElementById('panel');
+function resting() {
+  const rank = [...involved].map(id => [id, walk(id, 'down').size]).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  return `<h2>Reachable relations</h2>
+    <p class="desc">Hover a species to trace the relationships that can be followed from it. These are habits and
+      opportunities &mdash; not one of them is a requirement.</p>
+    <div class="rel"><h3>Longest reach</h3><ul>${
+      rank.map(([id, n]) => `<li><button data-go="${id}">${pretty(id)}</button> <i style="color:var(--ink-faint)">reaches ${n}</i></li>`).join('')
+    }</ul></div>`;
+}
+function card(id, down, up) {
+  const n = NODE.get(id);
+  const row = (x, dir) => {
+    const e = REL_OF.get(dir === 'down' ? `${id}>${x}` : `${x}>${id}`);
+    const token = { preferred_substrate:'r-substrate', replacement_opportunity:'r-replacement', co_presence:'r-copresence' }[e?.relation];
+    return `<li><button data-go="${x}">${pretty(x)}</button>`
+      + (e ? ` <i style="color:var(--${token})">${e.relation.replace(/_/g,' ')}</i>` : '')
+      + (e ? ` <i class="cert ${e.evidence.certainty}">${e.evidence.certainty}</i>` : '') + '</li>';
+  };
+  const list = (arr, dir) => arr.length ? `<ul>${arr.sort().map(x => row(x, dir)).join('')}</ul>` : '<ul><li><i>none</i></li></ul>';
+  const wall = n.bare_wall === 'observed'
+    ? `<div class="wallnote" style="color:var(--proved)">\u25A4 bare-wall nucleation <b>observed</b> &mdash; this species does not require any of the crystals below.</div>`
+    : n.bare_wall === 'unresolved'
+    ? `<div class="wallnote" style="color:var(--inferred)">\u00B7 never observed on a bare wall at seed 42 &mdash; <b>unresolved</b>. No gate blocks it in code; absence of an observation is not evidence of one.</div>`
+    : '';
+  return `<h2>${pretty(id)}</h2>
+    <p class="formula">${esc(n.formula)}</p>
+    ${wall}
+    <div class="rel">
+      <h3>Prefers to sit on &middot; ${dads(id).length}</h3>${list(dads(id), 'up')}
+      <h3>Is preferred by &middot; ${kids(id).length}</h3>${list(kids(id), 'down')}
+    </div>
+    <p class="desc">${up.size} species are reachable upstream, ${down.size} downstream. Reachable, not required.</p>`;
+}
+panel.addEventListener('click', ev => { const g = ev.target.closest('[data-go]'); if (g) pick(g.dataset.go); });
+
+const sample = (token, dash) => `<svg width="44" height="10" aria-hidden="true"><line x1="1" y1="5" x2="43" y2="5" stroke="var(--${token})" stroke-width="1.6"${dash ? ' stroke-dasharray="3.5 2.5"' : ''} /></svg>`;
+document.getElementById('keyrows').innerHTML = KINDS
+  .map(([kind, token, short, gloss]) => `<div class="keyrow">${sample(token, false)}
+    <span><b>${kind.replace(/_/g,' ')}</b> &mdash; <i>${short}</i>: ${gloss} <em>(${C[kind] ?? ''})</em></span></div>`).join('')
+  + `<div class="keyrow">${sample('r-substrate', true)}<span><b>dashed</b> &mdash; <i>mutual</i>: each names the other</span></div>`
+  + `<div class="keyrow"><span style="font-family:var(--mono);color:var(--ink-faint)">\u25A4</span>
+      <span><b>bare-wall nucleation observed</b> &mdash; proved escape route; nothing above it is required <em>(${C.bare_wall_observed})</em></span></div>`
+  + `<div class="keyrow"><span style="font-family:var(--mono);color:var(--ink-faint)">\u00B7</span>
+      <span><b>unresolved</b> &mdash; never seen on a bare wall at seed 42; no claim made <em>(${C.bare_wall_unresolved})</em></span></div>`;
+
+for (const [kind] of KINDS) {
+  const b = document.getElementById('f-' + kind);
+  if (!b) continue;
+  b.addEventListener('click', () => {
+    const on = b.getAttribute('aria-pressed') === 'true';
+    b.setAttribute('aria-pressed', String(!on));
+    for (const w of wires) if (w.relation === kind) w.el.classList.toggle('off', on);
+  });
+}
+document.getElementById('reset').addEventListener('click', () => { picked = null; clearSel(); search.value = ''; mark(''); });
+const search = document.getElementById('search');
+const mark = q => { const t = q.trim().toLowerCase().replace(/ /g,'_');
+  for (const [id, g] of boxEl) g.classList.toggle('hit', !!t && id.includes(t)); };
+search.addEventListener('input', () => mark(search.value));
+search.addEventListener('keydown', ev => { if (ev.key !== 'Enter') return;
+  const t = search.value.trim().toLowerCase().replace(/ /g,'_');
+  const f = [...at.keys()].find(id => id.includes(t)); if (f) pick(f); });
+svg.addEventListener('click', ev => { if (!ev.target.closest('.n')) { picked = null; clearSel(); } });
+
+/* =============== modes =============== */
+const strictSpecies = new Set(STRICT.flatMap(e => [e.from, e.to]));
+const VIEWS = {
+  strict: {
+    h1: 'The hard skeleton',
+    standfirst: 'Every relation in the Vugg Simulator where one crystal genuinely cannot exist without another, or '
+      + 'where one crystal becomes another. There are twelve. That is the entire causal skeleton of a 184-species '
+      + 'catalogue &mdash; succession here is driven by broth chemistry, temperature, redox and probabilistic '
+      + 'placement, not by crystals requiring crystals.',
+    tally: [[C.strict, 'hard edges'], [C.required_prerequisite, 'required'], [C.transformation, 'transformation'],
+      [strictSpecies.size, 'species involved'], [1, 'max dependency depth'], [C.proved, 'proved']],
+    vocab: '<b>Dependency language is permitted in this mode.</b> Roots, depth and reach mean what they say, '
+      + 'because every edge here blocks or transforms.',
+  },
+  growth: {
+    h1: 'Where crystals prefer to sit',
+    standfirst: 'The other 364 relations: preference and opportunity. A gate names an earlier crystal, but the '
+      + 'species can almost always nucleate on the bare wall instead &mdash; measured, not assumed. Useful for '
+      + 'reading habit and association; useless as a dependency structure.',
+    tally: [[C.growth, 'observed relations'], [C.preferred_substrate, 'preferred substrate'],
+      [C.replacement_opportunity, 'replacement'], [C.co_presence, 'co-presence'],
+      [C.bare_wall_observed, 'bare-wall observed'], [C.inferred, 'inferred only']],
+    vocab: '<b>No dependency language in this mode.</b> Counts are reachable relations and observed relationships. '
+      + 'Nothing here is a root, a prerequisite, or a depth.',
+  },
+};
+function setMode(mode) {
+  const v = VIEWS[mode];
+  document.getElementById('h1').textContent = v.h1;
+  // innerHTML, not textContent: these strings carry entities, and the page is
+  // ASCII-only by construction so an em dash can only be written that way.
+  document.getElementById('standfirst').innerHTML = v.standfirst;
+  document.getElementById('vocab').innerHTML = v.vocab;
+  document.getElementById('tally').innerHTML = v.tally.map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+  document.getElementById('strictView').classList.toggle('hide', mode !== 'strict');
+  document.getElementById('growthView').classList.toggle('hide', mode !== 'growth');
+  document.getElementById('m-strict').setAttribute('aria-pressed', String(mode === 'strict'));
+  document.getElementById('m-growth').setAttribute('aria-pressed', String(mode === 'growth'));
+}
+document.getElementById('m-strict').addEventListener('click', () => setMode('strict'));
+document.getElementById('m-growth').addEventListener('click', () => setMode('growth'));
+document.getElementById('prov').textContent = FLOW._provenance || '';
+document.getElementById('stamp').textContent = FLOW._stamp || 'Vugg Simulator';
+clearSel();
+setMode('strict');
+</script>

@@ -1,14 +1,32 @@
+# Defence in depth. NOT the authority.
+#
+# The authority on what an evidence receipt describes is tools/hash-policy.mjs:
+# text is LF-normalised before it is hashed or counted, binary is passed through
+# untouched, and every receipt declares which rule produced it. That holds no
+# matter what a clone puts on disk, which is the property that actually matters.
+#
+# This file only reduces how often the two diverge in the first place. It cannot
+# replace the policy: it has no effect on a file a tool writes with another
+# ending, and none at all on a tree checked out before it existed.
+#
+# So: keep both. If they ever disagree, the policy is right.
+
 * text=auto eol=lf
 
-*.avif -text
-*.gif -text
-*.ico -text
-*.jpg -text
-*.jpeg -text
-*.mp3 -text
-*.ogg -text
-*.png -text
-*.webp -text
-*.woff -text
-*.woff2 -text
-
+# Binary must never be touched by EOL conversion. These files can reach release
+# receipts through the same paths as authored text, where normalising bytes
+# would corrupt the identity being pinned.
+*.avif binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.mp3  binary
+*.wav  binary
+*.ogg  binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.zip  binary
+*.pdf  binary

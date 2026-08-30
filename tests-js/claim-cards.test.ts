@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { verifyMechanismWitnessArtifact } from '../tools/gen-mechanism-witnesses.mjs';
+import { policyOfReceipt, sha256File } from '../tools/hash-policy.mjs';
 
 declare const SIM_VERSION: number;
 declare const MODEL_DIGEST: string;
@@ -651,12 +651,12 @@ describe('adversarial claim-card fleet', () => {
 
       for (const scenario of scenarioNames) {
         const spec = SCENARIOS[scenario]._json5_spec;
-        const stripBytes = fs.readFileSync(path.join(stripDir, `${scenario}.json`));
-        const strip = JSON.parse(stripBytes.toString('utf8'));
+        const stripPath = path.join(stripDir, `${scenario}.json`);
+        const strip = JSON.parse(fs.readFileSync(stripPath, 'utf8'));
         const card = JSON.parse(fs.readFileSync(path.join(outDir, `${scenario}.json`), 'utf8'));
 
       expect(card, `${scenario}: identity`).toMatchObject({
-        schema: 'vugg-claim-card-v2',
+        schema: 'vugg-claim-card-v3',
         scenario,
         sim_version: SIM_VERSION,
         model_digest: MODEL_DIGEST,
@@ -666,7 +666,7 @@ describe('adversarial claim-card fleet', () => {
       });
       expect(card.claim.expects_species, `${scenario}: authored species`).toEqual(spec.expects_species || []);
       expect(card.strip_sha256, `${scenario}: strip content binding`)
-        .toBe(crypto.createHash('sha256').update(stripBytes).digest('hex'));
+        .toBe(sha256File(stripPath, policyOfReceipt(card)));
       expect(card.claim.expectation_contract.deterministic, `${scenario}: deterministic contract`)
         .toEqual([
           ...(spec.expects_species || []).map((mineral: string) => ({

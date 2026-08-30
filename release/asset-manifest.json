@@ -1,5 +1,6 @@
 {
-  "schema": "vugg-production-asset-manifest-v1",
+  "schema": "vugg-production-asset-manifest-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
   "asset_pack_version": "1.0.0",
   "distribution_status": "development-assets-human-clearance-required",
   "assets": [
@@ -69,8 +70,8 @@
     {
       "id": "three-js",
       "path": "tools/three.module.js",
-      "bytes": 1321634,
-      "sha256": "56ae31dce39c41997351a581daa06f34e3821003d8b62cdbf7535dc420d6af2b",
+      "bytes": 1268830,
+      "sha256": "ca330dc6b8e6a0a88a0b707e40a5191110c3e86842c7c6431a7a7a2e972f08f5",
       "delivery": "runtime-library",
       "role": "WebGL renderer",
       "rights_status": "SPDX-MIT-in-file"
@@ -173,5 +174,5 @@
     "human art direction and final mineral-image coverage beyond the four current thumbnails",
     "physical-device audio loudness, clipping, interruption, and accessibility review"
   ],
-  "asset_manifest_sha256": "888b9d1a341f06eed2717c954ef6e49a1578400d98ae169857ebfe780b87830e"
+  "asset_manifest_sha256": "7f36ef9c4b6a5295dbf4cb49feb56e8cc0b3b6ae4c3e4e63fc6e98035b3b96ba"
 }

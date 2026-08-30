@@ -1,11 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildReleaseManifests,
-  canonicalSourceReceipt,
-} from '../tools/release-audit.mjs';
+import { CURRENT_HASH_POLICY, bytesForHash, sha256Bytes } from '../tools/hash-policy.mjs';
+import { buildReleaseManifests } from '../tools/release-audit.mjs';
 import { buildLocalDiagnosticReceipt } from '../tools/local-diagnostics.mjs';
 
 declare const RELEASE_RUNTIME_CONTRACT: any;
@@ -13,14 +12,27 @@ declare const SIM_VERSION: number;
 
 describe('local release systems', () => {
   it('gives LF, CRLF, and mixed authored text one portable content identity', () => {
-    const relative = 'narratives/portable.md';
-    const lf = canonicalSourceReceipt(relative, Buffer.from('alpha\nbeta\ngamma\n'));
-    const crlf = canonicalSourceReceipt(relative, Buffer.from('alpha\r\nbeta\r\ngamma\r\n'));
-    const mixed = canonicalSourceReceipt(relative, Buffer.from('alpha\rbeta\r\ngamma\n'));
+    // Release receipts consume the repository-wide hash policy. Exercise that
+    // authority directly rather than keeping a second release-only newline
+    // normaliser whose behavior can drift from every other producer.
+    const root = mkdtempSync(join(tmpdir(), 'vugg-release-policy-'));
+    try {
+      const paths = ['lf.md', 'crlf.md', 'mixed.md'].map(name => join(root, name));
+      writeFileSync(paths[0], 'alpha\nbeta\ngamma\n');
+      writeFileSync(paths[1], 'alpha\r\nbeta\r\ngamma\r\n');
+      writeFileSync(paths[2], 'alpha\rbeta\r\ngamma\n');
+      expect(readFileSync(paths[1])).not.toEqual(readFileSync(paths[0]));
 
-    expect(crlf).toEqual(lf);
-    expect(mixed).toEqual(lf);
-    expect(lf).toMatchObject({ path: relative, bytes: 17 });
+      const receipts = paths.map(file => {
+        const bytes = bytesForHash(file, CURRENT_HASH_POLICY);
+        return { bytes: bytes.length, sha256: sha256Bytes(bytes) };
+      });
+      expect(receipts[1]).toEqual(receipts[0]);
+      expect(receipts[2]).toEqual(receipts[0]);
+      expect(receipts[0]).toMatchObject({ bytes: 17 });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('reproduces exact versioned content and asset manifests', async () => {

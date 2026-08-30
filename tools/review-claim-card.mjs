@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * tools/review-claim-card.mjs — distill a scenario into an adversarial-review CARD.
  *
@@ -34,8 +33,28 @@ import { assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 import { assertStripIdentity } from './strip-identity.mjs';
 import { verifyMechanismWitnessArtifact } from './gen-mechanism-witnesses.mjs';
 import { reduceEnclosureLifecycle } from './enclosure-evidence.mjs';
+import { CURRENT_HASH_POLICY, bytesForHash } from './hash-policy.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+
+/**
+ * The bytes a card is built from, and the bytes its `strip_sha256` covers —
+ * one function so the two can never diverge.
+ *
+ * Exported so a test can hold the invariant that MATTERS: a card built from a
+ * CRLF checkout and one built from an LF checkout must publish the same strip
+ * digest. `strip_sha256` is not a private detail — the science-provenance
+ * manifest records it and tools/locality-envelope-audit.mjs compares against
+ * it, so a checkout-dependent value here goes red two artifacts away, in a
+ * verifier that has no idea line endings were involved.
+ */
+export function stripBytesForCard(stripPath, policy = CURRENT_HASH_POLICY) {
+  return bytesForHash(stripPath, policy);
+}
+
+export function cardStripDigest(stripPath, policy = CURRENT_HASH_POLICY) {
+  return crypto.createHash('sha256').update(stripBytesForCard(stripPath, policy)).digest('hex');
+}
 
 function latestStripVersion() {
   const dir = path.join(ROOT, 'archive', 'strips');
@@ -1305,7 +1324,10 @@ export function buildCard(name, spec, strip, science, {
   }
 
   return {
-    schema: 'vugg-claim-card-v2',
+    schema: 'vugg-claim-card-v3',
+    // v3 adds hash_policy. strip_sha256 is a PUBLISHED identity, so a card must
+    // say which rule produced it; a v2 card declares none and means raw bytes.
+    hash_policy: CURRENT_HASH_POLICY,
     scenario: name,
     sim_version: strip.sim_version,
     model_digest: strip.model_digest,
@@ -1680,7 +1702,7 @@ async function main() {
     const stripPath = path.join(stripDir, `${name}.json`);
     if (!spec) { console.error(`[card] no scenario def for ${name}`); continue; }
     if (!fs.existsSync(stripPath)) { console.error(`[card] no strip v${version} for ${name}`); continue; }
-    const stripRaw = fs.readFileSync(stripPath);
+    const stripRaw = stripBytesForCard(stripPath);
     const strip = JSON.parse(stripRaw.toString('utf8'));
     if (version !== science.SIM_VERSION) {
       throw new Error(`[card] requested v${version}, but the loaded science bundle is v${science.SIM_VERSION}; historical cards require their historical science bundle`);
@@ -1695,7 +1717,7 @@ async function main() {
       seed: 42,
       scenarioSpecHash,
     });
-    const stripSha256 = crypto.createHash('sha256').update(stripRaw).digest('hex');
+    const stripSha256 = cardStripDigest(stripPath);
     const card = buildCard(name, spec, strip, science, {
       stripSha256,
       mechanismWitnessArtifact,

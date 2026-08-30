@@ -11,9 +11,9 @@ import {
   FILE_BUNDLE_END_MARKER,
   FILE_BUNDLE_START_MARKER,
   buildFileBundlePrelude,
-  canonicalText,
   fileBundleAssetDigest,
   fileBundleAssetFiles,
+  readFileBundleAsset,
 } from '../tools/file-bundle-assets.mjs';
 import { parseScenarioDocument } from '../tools/scenario-authoring.mjs';
 
@@ -53,12 +53,15 @@ describe('self-contained file URL bundle', () => {
       sha256: fileBundleAssetDigest(ROOT),
     });
 
+    // Compared against the LF-normalised reader, not against raw working-tree
+    // bytes: on a CRLF checkout the two differ, and it is the normalised form
+    // the bundle is required to serve.
     const scenarioResponse = await fileGlobal.fetch('./data/scenarios.json5');
     expect(await scenarioResponse.text())
-      .toBe(canonicalText(fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')));
+      .toBe(readFileBundleAsset(ROOT, 'data/scenarios.json5'));
     const narrativeResponse = await fileGlobal.fetch('./narratives/quartz.md');
     expect(await narrativeResponse.text())
-      .toBe(canonicalText(fs.readFileSync(path.join(ROOT, 'narratives', 'quartz.md'), 'utf8')));
+      .toBe(readFileBundleAsset(ROOT, 'narratives/quartz.md'));
     expect(nativeFetch).not.toHaveBeenCalled();
 
     const unknown = await fileGlobal.fetch('./not-bundled.txt');
@@ -150,6 +153,59 @@ describe('self-contained file URL bundle', () => {
         .toEqual([]);
     } finally {
       dom.window.close();
+    }
+  });
+});
+
+// The invariant the v1 schema did not hold, pinned directly rather than through
+// this checkout: the same COMMITTED content must produce the same bundle no
+// matter what line endings a clone happens to land on disk. Testing it against
+// the real tree would only ever measure whatever endings this machine has, so
+// the fixture builds the same logical assets twice — once LF, once CRLF — and
+// demands one digest. Drop the normalisation and both assertions below go red.
+describe('file bundle is a function of content, not of checkout line endings', () => {
+  const ASSET_BODIES: Record<string, string> = {
+    'data/minerals.json': '{\n  "a": 1,\n  "b": [2, 3]\n}\n',
+    'data/scenarios.json5': '{\n  // a comment\n  scenarios: {},\n}\n',
+    'data/thermo-carbonates.json': '{\n  "calcite": -8.48\n}\n',
+    'data/thermo-sulfates.json': '{\n  "gypsum": -4.58\n}\n',
+    'narratives/quartz.md': '# Quartz\n\nA line.\nAnother line.\n',
+    'narratives/calcite.md': '# Calcite\n\nRhombs.\n',
+  };
+
+  const plant = (eol: '\n' | '\r\n') => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), `vugg-bundle-${eol === '\n' ? 'lf' : 'crlf'}-`));
+    fs.mkdirSync(path.join(root, 'data'));
+    fs.mkdirSync(path.join(root, 'narratives'));
+    for (const [relative, body] of Object.entries(ASSET_BODIES)) {
+      fs.writeFileSync(path.join(root, relative), body.replaceAll('\n', eol));
+    }
+    return root;
+  };
+
+  it('digests a CRLF checkout and an LF checkout identically', () => {
+    const lf = plant('\n');
+    const crlf = plant('\r\n');
+    try {
+      // Guard the fixture itself: if these were equal on disk the test would
+      // pass while proving nothing.
+      expect(fs.readFileSync(path.join(crlf, 'narratives/quartz.md'), 'utf8'))
+        .not.toBe(fs.readFileSync(path.join(lf, 'narratives/quartz.md'), 'utf8'));
+      expect(fileBundleAssetDigest(crlf)).toBe(fileBundleAssetDigest(lf));
+      expect(buildFileBundlePrelude(crlf)).toBe(buildFileBundlePrelude(lf));
+    } finally {
+      fs.rmSync(lf, { recursive: true, force: true });
+      fs.rmSync(crlf, { recursive: true, force: true });
+    }
+  });
+
+  it('embeds no carriage returns even from a CRLF checkout', () => {
+    const crlf = plant('\r\n');
+    try {
+      expect(readFileBundleAsset(crlf, 'narratives/quartz.md')).not.toContain('\r');
+      expect(buildFileBundlePrelude(crlf)).not.toContain('\r\n');
+    } finally {
+      fs.rmSync(crlf, { recursive: true, force: true });
     }
   });
 });

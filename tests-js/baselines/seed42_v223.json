@@ -1168,7 +1168,7 @@
       "active": 5,
       "dissolved": 0,
       "total": 5,
-      "max_um": 868.1
+      "max_um": 868.6
     },
     "aragonite": {
       "active": 0,
@@ -1204,25 +1204,25 @@
       "active": 4,
       "dissolved": 0,
       "total": 4,
-      "max_um": 4302.5
+      "max_um": 4301.4
     },
     "greenockite": {
       "active": 4,
       "dissolved": 0,
       "total": 4,
-      "max_um": 1472.5
+      "max_um": 1472.7
     },
     "pyrite": {
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 496.4
+      "max_um": 500
     },
     "quartz": {
       "active": 6,
       "dissolved": 0,
       "total": 6,
-      "max_um": 39.2
+      "max_um": 38.8
     },
     "rhodochrosite": {
       "active": 1,

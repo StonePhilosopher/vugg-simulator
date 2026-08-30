@@ -3,7 +3,6 @@
 // filename contains the current SIM number: the checked-in aggregate receipt
 // binds the file bytes to the exact browser/runtime inputs and producer code.
 
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,9 +13,10 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from '../tools/evidence-runtime.mjs';
+import { bytesForHash, policyOfReceipt, sha256Bytes } from '../tools/hash-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v1';
+const RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v2';
 
 type ProducerKind =
   | 'seed42-baseline'
@@ -26,10 +26,6 @@ type ProducerKind =
   | 'claim-cards'
   | 'science-provenance'
   | 'science-receipt';
-
-function sha256(bytes: Buffer): string {
-  return crypto.createHash('sha256').update(bytes).digest('hex');
-}
 
 /** Read identity from the authenticated executable, not the editable TS source. */
 function builtModelIdentity(): { simVersion: number; modelDigest: string } {
@@ -73,8 +69,9 @@ function loadReceipt(): any {
       || receipt.canonical_seed !== 42) {
     throw new Error('science evidence receipt identity does not match the current built model');
   }
-  if (receipt.browser_bundle_sha256 !== browserBundleDigest(ROOT)
-      || receipt.execution_set_sha256 !== runtimeExecutionDigest(ROOT)) {
+  const policy = policyOfReceipt(receipt);
+  if (receipt.browser_bundle_sha256 !== browserBundleDigest(ROOT, policy)
+      || receipt.execution_set_sha256 !== runtimeExecutionDigest(ROOT, policy)) {
     throw new Error('science evidence receipt does not match the current executable/data bytes');
   }
   if (receipt.node_runtime_sha256 !== nodeRuntimeDigest()
@@ -88,7 +85,7 @@ function loadReceipt(): any {
 function authenticateProducer(receipt: any, kind: ProducerKind): void {
   if (authenticatedProducers.has(kind)) return;
   const expected = receipt.producer_contracts?.[kind];
-  const current = producerContractDigest(ROOT, kind);
+  const current = producerContractDigest(ROOT, kind, policyOfReceipt(receipt));
   if (!expected || expected !== current) {
     throw new Error(`science evidence producer contract mismatch: ${kind}`);
   }
@@ -118,8 +115,8 @@ export function loadAuthenticatedEvidenceJson(relativePath: string, kind: Produc
   }
   const absolute = path.join(ROOT, relative);
   if (!fs.existsSync(absolute)) throw new Error(`science evidence artifact is missing: ${relative}`);
-  const bytes = fs.readFileSync(absolute);
-  if (sha256(bytes) !== expectedHash) {
+  const bytes = bytesForHash(absolute, policyOfReceipt(receipt));
+  if (sha256Bytes(bytes) !== expectedHash) {
     throw new Error(`science evidence artifact hash mismatch: ${relative}`);
   }
   const value = JSON.parse(bytes.toString('utf8'));

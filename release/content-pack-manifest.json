@@ -1,5 +1,6 @@
 {
-  "schema": "vugg-content-pack-catalog-v1",
+  "schema": "vugg-content-pack-catalog-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
   "catalog_version": "1.0.0",
   "packs": [
     {
@@ -526,7 +527,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "84870ba92a6c049c021db215758edb2015129a05cc61ff28d89dd8f2ace8aace",
+  "producer_contract_sha256": "bd2eb6f3a380c737cb295aea11c0ea3ea2e91ee49b3e26e6c1ec40328e4190ba",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "9ff6c80acdd795ff96f931b24f5aaaf1cc162173e089154086e3d5e1c8da5ecb"
+  "catalog_sha256": "478bdda99778369cddf822ca6087bd59d12725b301f5c2c4ea6383bd44989f7e"
 }

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Fast locality/species-contract audit over the canonical archived claim cards.
  *
@@ -17,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { policyOfReceipt, sha256File } from './hash-policy.mjs';
 import { fileURLToPath } from 'node:url';
 import {
   LOCALITY_FREQUENCY_SEEDS,
@@ -65,6 +65,13 @@ export function auditCard(card, manifestScenario, {
   frequencyScenario = null,
   frequencySeeds = LOCALITY_FREQUENCY_SEEDS,
   actualStripSha256 = null,
+  // The rule each artifact says it was made under. This audit compares a card's
+  // published strip digest with the manifest's, so if the two were baked under
+  // different rules the comparison is meaningless — and silently red — rather
+  // than informative. Absent means the historical raw rule, never the current
+  // one (tools/hash-policy.mjs).
+  cardPolicy = null,
+  manifestPolicy = null,
 } = {}) {
   const errors = [];
   const warnings = [];
@@ -85,8 +92,25 @@ export function auditCard(card, manifestScenario, {
     if (card.scenario !== manifestScenario.id) fail(`scenario identity differs from science manifest (${manifestScenario.id})`);
     const manifestStripSha = manifestScenario.archive?.strip_sha256;
     if (!manifestStripSha || !/^[a-f0-9]{64}$/.test(manifestStripSha)) fail('science manifest lacks a valid strip SHA-256');
-    if (card.strip_sha256 !== manifestStripSha) fail('claim-card strip digest differs from science manifest');
-    if (actualStripSha256 !== manifestStripSha) fail('archived strip bytes differ from pinned SHA-256');
+    // INSTEAD OF, not in addition to. Two hashes of the same file under two
+    // rules are simply different numbers, so once the rules disagree the digest
+    // comparisons below are not merely noisy — they are unanswerable, and
+    // emitting them would send the next reader hunting for content drift that
+    // does not exist. An earlier version reported the disagreement AND both
+    // drift errors, which made this comment a claim rather than a behaviour;
+    // the test now asserts the absence, not only the presence.
+    //
+    // Nothing passes silently: the disagreement is itself an error, so the
+    // fleet audit still fails and the digests are re-checked once the rules
+    // agree again.
+    const policiesAgree = !cardPolicy || !manifestPolicy || cardPolicy === manifestPolicy;
+    if (!policiesAgree) {
+      fail(`claim card hash policy ${cardPolicy} differs from science manifest ${manifestPolicy}`
+        + ' — strip digests are not comparable until they agree');
+    } else {
+      if (card.strip_sha256 !== manifestStripSha) fail('claim-card strip digest differs from science manifest');
+      if (actualStripSha256 !== manifestStripSha) fail('archived strip bytes differ from pinned SHA-256');
+    }
     if (frequencyScenario?.locality_frequency_spec_hash !== manifestScenario.locality_frequency_spec_hash) {
       fail('multi-seed frequency receipt differs from current behavioral scenario contract');
     }
@@ -274,10 +298,13 @@ export function auditFleet({ root = ROOT, version = null, scenarios = [] } = {})
   const manifestById = new Map((manifest.scenarios || []).map((entry) => [entry.id, entry]));
   const frequencyPath = path.join(root, 'tests-js', 'baselines', `locality_frequency_v${selectedVersion}.json`);
   if (!fs.existsSync(frequencyPath)) throw new Error(`missing multi-seed frequency receipt: ${path.relative(root, frequencyPath)}`);
-  const frequencyRaw = fs.readFileSync(frequencyPath);
-  const frequency = JSON.parse(frequencyRaw.toString('utf8'));
+  const frequency = JSON.parse(fs.readFileSync(frequencyPath, 'utf8'));
+  // Verified under the MANIFEST's declared rule, because it is the manifest's
+  // number being checked. A manifest that declares none is historical and means
+  // raw bytes — never today's rule.
+  const manifestPolicy = policyOfReceipt(manifest);
   const manifestFrequency = manifest.locality_frequency;
-  const actualFrequencySha256 = crypto.createHash('sha256').update(frequencyRaw).digest('hex');
+  const actualFrequencySha256 = sha256File(frequencyPath, manifestPolicy);
   if (!manifestFrequency || manifestFrequency.path !== path.relative(root, frequencyPath).replaceAll('\\', '/')) {
     throw new Error('science manifest does not identify the current locality-frequency receipt');
   }
@@ -299,12 +326,19 @@ export function auditFleet({ root = ROOT, version = null, scenarios = [] } = {})
     const cardPath = path.join(cardDir, `${name}.json`);
     const card = fs.existsSync(cardPath) ? JSON.parse(fs.readFileSync(cardPath, 'utf8')) : null;
     const stripPath = path.join(root, 'archive', 'strips', `v${selectedVersion}`, `${name}.json`);
+    // Hashed under the CARD's rule, since the digest is checked against the
+    // card's own published claim. auditCard fails first if the card and the
+    // manifest disagree about the rule, so this can never quietly compare two
+    // numbers that were never comparable.
+    const cardPolicy = card ? policyOfReceipt(card) : manifestPolicy;
     const actualStripSha256 = fs.existsSync(stripPath)
-      ? crypto.createHash('sha256').update(fs.readFileSync(stripPath)).digest('hex') : null;
+      ? sha256File(stripPath, cardPolicy) : null;
     return auditCard(card, manifestById.get(name), {
       frequencyScenario: frequency.scenarios?.[name],
       frequencySeeds: frequency.seeds,
       actualStripSha256,
+      cardPolicy,
+      manifestPolicy,
     });
   });
   return {
