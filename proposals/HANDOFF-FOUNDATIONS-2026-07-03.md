@@ -2705,3 +2705,157 @@ still waiting for TN457's crowdsourced verdict to seat its first tenant. The rec
 found its tenant this stretch. The mechanism is still out there in the rock, unclaimed.
 
 — the builder, twenty-fourth hand: the recognizer, not the mechanism · 2026-07-25
+
+## KEYSTONE — the twenty-fifth hand: the two arches meet (2026-08-05→30)
+
+This stretch began with a list of unreviewed concerns and one instruction from the boss:
+keep running hostile review passes; if the work does not pass, continue the loop. It ended
+with two histories meeting without either one being flattened. SIM 285 carried a month of
+science, game, evidence, and recovery repairs on one side. Canonical PR #3 carried the
+portable hash-policy authority on the other. A direct merge produced nine conflicts in the
+very files that say what an executable and its evidence *are*. Taking either side wholesale
+would have made the other side's receipts lie. The merge therefore became one last hostile
+review tranche: reconcile the authorities, rebuild the exact formation, and make every old
+and new consumer tell the same truth.
+
+The exact joining stone is `d35815ecefe7a5539a8c24a31dbfc20d7843c5ce`, with parents
+`efcb8556` (the witnessed SIM 285 candidate) and `03d758c7` (current canonical, containing
+the requested `cb9830c` portability merge plus the subsequent commit removing the three
+drift-audit instruments). Its commissioned
+Windows x64 / Node 24.15.0 run passed 250 of 250 files in 250 separate memory-bounded
+batches under one unchanged 8,320-input identity,
+`62a32f4df6635d8a878dcc035a08a1953da274e3347446215df92f28078c8100`. Peak RSS was
+1,392,631,808 bytes, 754,851,840 below the hard 2 GiB ceiling. The publication closes at
+128 of 128 artifacts, nine of nine producer contracts, 41 scenarios, 184 minerals, 94
+narratives, and 14 release assets. A separate read-only hostile recomputation in the shared
+workspace returned **SATISFIED**; it is not independent attestation. The annotated tag
+`keystone-sim285-canonical-reconciliation` marks that exact object. This later documentation
+entry is deliberately outside those attested bytes: it is the mark beside the wall and inherits
+no CI attestation from the tagged parent.
+
+### What the hostile loop actually built
+
+The loop did not merely polish the three CROSS-01 findings that finally closed it. It kept
+following each authority seam until the next consumer could no longer counterfeit the
+producer. The morphology ledger learned to account for every positive layer, including a
+layer dissolved in its own step, without leaving stale live habit state. Enclosures learned
+that topology, chemistry, event chronology, physical inventory, phase lineage, and liberation
+are different testimonies which must agree. HMC entered the same four-tier locality gate as
+every other nucleator. Replenish became a run-owned, spatial, sulfur-aware boundary operation
+instead of a bulk reset wearing a laboratory label. Player actions survived authored movement
+curves and became pointwise spatial transformations with receipts for what happened, not what
+was clicked. Tutorials stopped advancing on selectors and started advancing on exact products.
+Library, Strip View, and Record Groove learned that imported bytes, legacy provenance, durable
+commit, safe text, and a playable surviving crystal are separate gates. Checkpoints learned to
+prefer the newest valid generation and to fail closed on an authenticated tie. Finally,
+formation advice retained the real `FluidChemistry` prototype, dissolved specimens stayed
+dead across every boundary, and timeline chemistry acquired one canonical domain from bulk
+through feeder cell.
+
+The game review named these GAME-01 through GAME-05 and CROSS-01. The important thing is not
+the numbering. It is that every finding left a permanent control beside the boundary it found,
+then the review started again from the repaired bytes. “SATISFIED” was never inherited from a
+prior pass.
+
+### The marks
+
+1. **A witness belongs to an exact intersection of histories.** The Windows receipt for
+   `efcb8556` was honest and complete, but it could not authenticate a merge containing
+   canonical's independently evolved hash callers. We did not copy or re-key it. We reconciled,
+   rebuilt, rebaked, and ran the whole formation again. A clean parent is evidence about the
+   parent; ancestry is not transitive attestation.
+
+2. **Portable meaning and exact bytes are not opposites when the policy is named.** Authored
+   text is hashed through the declared LF projection; real binary assets remain raw bytes;
+   historical raw receipts remain legible under their historical policy. The bug was never
+   that Windows and Linux store lines differently. The bug was leaving the projection implicit
+   and letting each consumer invent its own answer.
+
+3. **Hostile review is an instrument, not a ceremony.** Each pass was allowed to reopen the
+   work when an equivalent bypass appeared. A forged `enclosed_by`, a numeric-string ID, a
+   stale tutorial click, a self-rehashed witness, and an old staging checkpoint all taught the
+   same lesson in different clothes: validate at the final authority boundary, then attack the
+   validator with a coordinated lie.
+
+4. **Authenticate products, not intentions.** A click is not a collected specimen. A slider
+   move is not local pore-fluid chemistry. A declared import is not a committed IndexedDB row.
+   A producer hash is not evidence that its mechanism ran. The durable receipts now bind the
+   resulting object, spatial transaction, run identity, and teardown state.
+
+5. **Legacy ambiguity must stay visible.** Old imported Strip rows could not honestly be
+   reclassified as local recordings, and old numeric-zone Library specimens could not honestly
+   be discarded as malformed. The first became LEGACY / UNVERIFIED and lost commissioning
+   authority; the second received a bounded, allocation-free migration path. Fail closed does
+   not mean erase history. It means do not grant history an authority it cannot prove.
+
+6. **Modularity needs a story about the joins.** A small module is borrowable; an unexplained
+   module is merely isolated. The breadcrumb must point both ways: who establishes this fact,
+   who consumes it, what receipt crosses the seam, and which hostile control proves the join.
+   That is the choose-your-own-adventure map of the software: each local page names the doors
+   into the pages before and after it.
+
+### Choose your own adventure — where the arches touch
+
+- **If the question is “which bytes are the same?”** begin at `tools/hash-policy.mjs`.
+  Follow it outward to `tools/file-bundle-assets.mjs`, `tools/release-audit.mjs`, and
+  `tools/science-evidence-receipt.mjs`; then follow the return path through
+  `tests-js/authenticated-evidence.ts`, `tests-js/claim-cards.test.ts`, and
+  `tests-js/science-provenance-manifest.test.ts`. `tests-js/hash-policy-callers.test.ts`
+  guards that caller census so another raw reader cannot quietly appear.
+
+- **If the question is “who is allowed to make evidence?”** begin at
+  `tools/evidence-runtime.mjs`, then read `.node-version`, `package.json`, `.npmrc`, and the
+  package lock as one formation declaration. From there visit each direct writer and its
+  earliest runtime guard; the browser writer intentionally splits portable read-only checking
+  from commissioned receipt generation. `tests-js/evidence-runtime.test.ts` is the permanent
+  census of those direct-writer and runtime-guard joins.
+
+- **If the question is “what was actually published?”** begin with
+  `archive/evidence/v285.json`, walk its producer contracts and 128 leaves, then continue to
+  the science provenance manifest and `release/content-pack-manifest.json`. The browser and
+  mechanism witnesses are controlled products, not locality trajectories; the strips and
+  claim cards are the locality stories.
+
+- **If the question is “did the tagged merge parent pass?”** begin at `tools/test-workflow.mjs`
+  and `.local-evidence/test-workflow-last-pass-v2.json`. The latter is deliberately local and
+  uncommitted: useful testimony about `d35815ec`, not independent attestation and not testimony
+  about this later docs-only child, whose project identity necessarily differs. Its load-bearing
+  properties are start-at-zero, one file per child, unchanged identity after every batch,
+  bounded RSS, no checkpoint, and no operator-resume receipt.
+
+- **If the question is “why does this game boundary refuse me?”** follow the named authority
+  beside it rather than the UI label: locality license before nucleation; current enclosure
+  authority before chemical sealing; run-owned fluid recipe before Replenish; movement domain
+  before schedule commissioning; product receipt before tutorial advancement; survivor
+  inventory before Collection; stored-record digest and provenance before Strip playback.
+  Each refuses for a different reason, and each has a paired positive control so refusal alone
+  can never masquerade as correctness.
+
+### Diagenesis
+
+The boss's modularity rule shaped the repair more than any single equation: leave breadcrumbs
+to what touches a part and what that part touches. The best repairs in this stretch therefore
+moved authority into small shared helpers *and* expanded the caller censuses around them. The
+worst near-misses were helpers that were locally exact but reached by only one consumer, or
+receipts that closed their own arithmetic while trusting mutable testimony for every term.
+Rockbot's segmented review made those joins visible one formation at a time; Curie's repeated
+hostile passes kept the freeze honest while the tree moved. The final canonical conflict was
+the same lesson at repository scale: two correct modules still need an explicit law where
+they meet.
+
+### The dream, twenty-seventh telling
+
+The two arches now meet, but the purpose of a keystone is not to stop construction. It makes
+the spans borrowable. A future project should be able to lift the hash policy without lifting
+the mineralogy, the evidence formation without lifting the game, the spatial action receipts
+without lifting Fortress, and the hostile workflow without inheriting one stale baseline.
+Each borrowed stone should arrive with the path to its producers, its consumers, its receipt,
+and the attack that once broke it. Then modular work will not be opaque. It will read like the
+boss asked: a choose-your-own-adventure story whose paths rejoin at tested boundaries.
+
+The next hand should preserve that shape. When a new module arrives, write down not only what
+it does but where its truth enters and where its truth is spent. When histories meet, do not
+choose a prettier side and call the conflict generated grit. Rebuild the joint. And when the
+joint finally holds, leave a mark where another builder can find it.
+
+— the builder, twenty-fifth hand: Keystone, where the two arches meet · 2026-08-30
