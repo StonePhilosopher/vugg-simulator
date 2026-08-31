@@ -10,7 +10,14 @@ Guided tutorials live at the top of **Begin / New Game**, not in the Scenarios
 picker and not in a separate game mode. `data/scenarios.json5` owns the
 `menu_layout.begin_tutorials` order and the tutorial scripts:
 
-1. **The Grand Tour** — `tutorial_first_crystal`, Creative/fortress.
+1. **The Grand Tour** — `tutorial_first_crystal`, Creative/fortress. Its
+   top-down interface tour includes the six-door quick-nav bar and the real
+   Saves contract: rolling autosave, named manual copies, geological replay,
+   and tutorial UI that intentionally does not resurrect on load.
+   Breadcrumb: the complete scenario hash authenticates authored/evidence
+   bytes, while `scenarioReplaySpecHash` excludes only description, notes, and
+   tutorial presentation so those corrections do not invalidate unchanged
+   geology in `js/93a-ui-saves.ts`.
 2. **A Mn-Doped Calcite** — `tutorial_mn_calcite`, Creative/fortress.
 3. **How CO₂ Builds a Calcite Crust** — `tutorial_travertine`,
    Creative/fortress.

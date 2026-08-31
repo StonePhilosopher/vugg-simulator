@@ -83,3 +83,26 @@ function sha256HexUtf8(value: string): string {
 function scenarioSpecHash(spec: any): string {
   return sha256HexUtf8(JSON.stringify(spec ?? null));
 }
+
+// A scenario has two deliberately different identities. `scenarioSpecHash`
+// above binds the complete authored artifact for strips, claim cards, and
+// release evidence. Saves need the narrower executable recipe: correcting a
+// description, note, or tutorial callout must not make byte-identical geology
+// unreplayable. Keep this list explicit and shallow so a newly introduced
+// field remains fail-closed until it is consciously classified.
+const SCENARIO_REPLAY_PRESENTATION_FIELDS = Object.freeze([
+  'description',
+  'notes',
+  'tutorial',
+]);
+
+function scenarioReplaySpecProjection(spec: any): any {
+  if (spec === null || typeof spec !== 'object' || Array.isArray(spec)) return spec ?? null;
+  const projection = { ...spec };
+  for (const field of SCENARIO_REPLAY_PRESENTATION_FIELDS) delete projection[field];
+  return projection;
+}
+
+function scenarioReplaySpecHash(spec: any): string {
+  return sha256HexUtf8(JSON.stringify(scenarioReplaySpecProjection(spec)));
+}

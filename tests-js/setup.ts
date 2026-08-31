@@ -205,6 +205,7 @@ const EXPORTS = [
   'MODEL_DIGEST',
   'sha256HexUtf8',
   'scenarioSpecHash',
+  'scenarioReplaySpecHash',
   'remainingBookedInventory',
   'getSimulationTimeScale',
   'setSimulationTimeScale',

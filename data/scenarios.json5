@@ -3342,7 +3342,7 @@
       "expects_species": ["quartz"],
       "duration_steps": 30,
       "notes": [
-        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script opens with a top-down tour of the screen before handing off to the first-crystal arc. SIM 246 corrects that arc's thermodynamic direction: quartz nucleates above the chalcedony field at 220°C, then a 420°C hot recharge raises quartz solubility enough to make the unchanged 600-ppm fluid undersaturated. The accepted quartz record switches from growth to mass-balanced dissolution. The intended learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) phase identity and saturation depend on conditions, and (4) changing conditions can reverse growth.",
+        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script opens with a top-down tour of the screen before handing off to the first-crystal arc. SIM 246 corrects that arc's thermodynamic direction: quartz nucleates above the chalcedony field at 220°C, then a 420°C hot recharge raises quartz solubility enough to make the unchanged 600-ppm fluid undersaturated. The accepted quartz record switches from growth to mass-balanced dissolution. The intended learning is: (1) what every part of the screen is, including automatic/manual saves and load policy, (2) clicking Advance moves time, (3) phase identity and saturation depend on conditions, and (4) changing conditions can reverse growth.",
         "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).",
         "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
       ],
@@ -3407,7 +3407,7 @@
             "text": "Welcome to Vugg Simulator — a realistic crystal growing and collecting game. You are inside a vug: a pocket in rock, flooded with hot mineral broth. Given conditions and time, crystals grow here — the same way every museum specimen grew. This tour walks the screen top to bottom.",
             "hint": "press Enter or Space (or click Continue) to step through" },
           { "anchor": "#mode-toggle", "side": "bottom", "spotlight": "#mode-toggle",
-            "text": "The quick-nav bar. Five doors, always at the top of the screen. Left to right: your running game, two instruments for reading finished crystals, the field guide, and Home." },
+            "text": "The quick-nav bar. Six doors, always at the top of the screen. Left to right: your running game, two instruments for reading finished crystals, the field guide, your Saves shelf, and Home." },
           { "anchor": "#mode-current", "side": "bottom", "spotlight": "#mode-toggle",
             "text": "▶ Current Game — jumps back to whatever run is live. Wander off to any other screen and this returns you to your vug, mid-story." },
           { "anchor": "#mode-groove", "side": "bottom", "spotlight": "#mode-toggle",
@@ -3416,8 +3416,10 @@
             "text": "📼 Strip View — the vug's flight recorder. Every step of a run is captured as a strip of chip readings; laid side by side they show the whole history at a glance." },
           { "anchor": "#mode-library", "side": "bottom", "spotlight": "#mode-toggle",
             "text": "📚 Library — the field guide. Every mineral species the simulator knows, with habits, chemistry, and the real localities they come from." },
+          { "anchor": "#mode-saves", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "💾 Saves — your active run keeps one rolling autosave after every accepted action, so ordinary progress is automatic. Open this shelf to make a named manual copy or load a saved geological run. Loading restores the run recipe and state; the tutorial overlay intentionally does not resume." },
           { "anchor": "#mode-home", "side": "bottom", "spotlight": "#mode-toggle",
-            "text": "🏠 Home — back to the title screen. It also ends this tutorial, so save it for when you're done." },
+            "text": "🏠 Home — back to the title screen. It ends the tutorial overlay, but your geological run remains available through Saves." },
 
           // ---- Wall Profile: the viewer stack ----
           { "anchor": "#topo-panel", "side": "top",

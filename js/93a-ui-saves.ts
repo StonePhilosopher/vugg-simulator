@@ -57,6 +57,17 @@ const SAVE_QUARANTINE_LIMIT = 8;
 const LOCAL_EXPORT_SCHEMA = 'vugg-local-backup-v1';
 const LOCAL_IMPORT_PENDING_KEY = 'vugg-local-import-v1.pending';
 const LOCAL_IMPORT_CLOSED_SCHEMA = 'vugg-local-import-closed-v1';
+// SIM285 presentation-only bridge. Before saves carried a distinct replay
+// identity, the complete Tutorial 1 spec hash also included its callout prose.
+// Accept that one exact historical presentation only while the current
+// executable projection is still the exact commissioned geology. A later
+// geological edit changes the replay hash and closes this bridge.
+const SAVE_PRESENTATION_ONLY_SCENARIO_COMPAT = Object.freeze({
+  tutorial_first_crystal: Object.freeze({
+    prior_spec_hash: '87d11ab2c78463cf4954448860b57c2a624701596ab3c0cd3ed7aa85134b1a4f',
+    replay_hash: '72dbaafd321b6018dc52b7df2df9d39b3d17d41503199a4055dcaefc663dc6ea',
+  }),
+});
 const LOCAL_EXPORT_KEYS = Object.freeze([
   SAVES_KEY,
   SAVES_PENDING_KEY,
@@ -370,6 +381,9 @@ function _saveRecipeProjection(rec) {
   if (rec?.run_id != null) projection.run_id = rec.run_id;
   if (rec?.collection_epoch != null) projection.collection_epoch = rec.collection_epoch;
   if (rec?.collection_receipts != null) projection.collection_receipts = rec.collection_receipts;
+  // Conditional keeps every pre-projection format-v3 recipe digest stable.
+  // New saves bind the executable scenario separately from presentation.
+  if (rec?.scenario_replay_hash != null) projection.scenario_replay_hash = rec.scenario_replay_hash;
   // Conditional keeps pre-transaction format-v2 recipe digests stable while
   // binding every newly staged finish transaction byte-for-byte.
   if (rec?.finish_transaction != null) projection.finish_transaction = rec.finish_transaction;
@@ -734,6 +748,11 @@ function _saveRecordShapeReason(rec) {
     if (typeof rec.run_id !== 'string' || !rec.run_id) return 'modern record run identity is missing';
     if (rec.collection_epoch !== SAVE_COLLECTION_EPOCH) return 'modern record collection epoch is missing or unsupported';
     if (!Array.isArray(rec.collection_receipts)) return 'modern record collection receipts are missing';
+  }
+  if (rec.scenario_replay_hash != null
+      && (typeof rec.scenario_replay_hash !== 'string'
+        || !/^[0-9a-f]{64}$/.test(rec.scenario_replay_hash))) {
+    return 'scenario replay identity is invalid';
   }
   if (rec.kind !== 'auto' && rec.kind !== 'manual') return 'record kind is invalid';
   if (rec.status !== 'in-progress' && rec.status !== 'finishing' && rec.status !== 'finished') return 'record status is invalid';
@@ -1403,6 +1422,23 @@ function _saveScenarioSpecHash(origin) {
     : null;
 }
 
+function _saveScenarioReplayHash(origin) {
+  if (!origin || origin.type !== 'scenario') return null;
+  const make = (typeof SCENARIOS !== 'undefined') ? SCENARIOS[origin.scenario] : null;
+  return make && typeof make._scenario_replay_hash === 'string'
+    ? make._scenario_replay_hash
+    : null;
+}
+
+function _savePresentationOnlyScenarioCompatible(rec, currentReplayHash) {
+  const scenarioId = rec?.origin?.scenario;
+  const bridge = SAVE_PRESENTATION_ONLY_SCENARIO_COMPAT[scenarioId];
+  return !!bridge
+    && rec.scenario_replay_hash == null
+    && rec.scenario_spec_hash === bridge.prior_spec_hash
+    && currentReplayHash === bridge.replay_hash;
+}
+
 // Scientific recipes use the same fail-closed identity invariant as strips.
 // Keep this pure so the load gate and Saves-menu label share one verdict.
 function _saveReplayCompatibility(rec) {
@@ -1443,8 +1479,13 @@ function _saveReplayCompatibility(rec) {
     };
   }
   if (rec.origin && rec.origin.type === 'scenario') {
-    const currentHash = _saveScenarioSpecHash(rec.origin);
-    if (!rec.scenario_spec_hash || !currentHash || rec.scenario_spec_hash !== currentHash) {
+    const currentSpecHash = _saveScenarioSpecHash(rec.origin);
+    const currentReplayHash = _saveScenarioReplayHash(rec.origin);
+    const replayMatches = typeof rec.scenario_replay_hash === 'string'
+      ? rec.scenario_replay_hash === currentReplayHash
+      : rec.scenario_spec_hash === currentSpecHash
+        || _savePresentationOnlyScenarioCompatible(rec, currentReplayHash);
+    if (!rec.scenario_spec_hash || !currentSpecHash || !currentReplayHash || !replayMatches) {
       return {
         ok: false,
         reason: `Scenario specification mismatch for "${rec.origin.scenario}": its starting geology or events changed (or were not identified). Replay is blocked.`,
@@ -1621,6 +1662,7 @@ function _saveNoteBegin(origin) {
     sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
     model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
     scenario_spec_hash: _saveScenarioSpecHash(origin),
+    scenario_replay_hash: _saveScenarioReplayHash(origin),
     kind: 'auto',
     status: 'in-progress',
     name: `Autosave — ${_saveOriginLabel(origin)}`,

@@ -23,12 +23,22 @@ describe('authenticated public-control guided tutorial journeys', () => {
   it('binds complete Creative/Simulation journeys and lifecycle policy to this executable', () => {
     const receipt = readGuidedTutorialBrowserReceipt(ROOT, SIM_VERSION);
     expect(verifyGuidedTutorialBrowserReceipt(ROOT, receipt, { simVersion: SIM_VERSION })).toBe(true);
+    expect(receipt.payload.journeys.grand_tour_saves_lesson).toMatchObject({
+      scenario: 'tutorial_first_crystal',
+      entry: 'Begin menu Tutorial 1 button',
+      quick_nav_ids: [
+        'mode-current', 'mode-groove', 'mode-stripview',
+        'mode-library', 'mode-saves', 'mode-home',
+      ],
+      saves: { trigger: 'continue', anchor_id: 'mode-saves', highlighted: true },
+      home: { trigger: 'continue', anchor_id: 'mode-home', highlighted: true },
+    });
     expect(receipt.payload.journeys.creative.authored_milestones).toEqual([4, 11, 20, 26, 41, 50]);
     expect(receipt.payload.journeys.creative.acid_product)
       .toMatchObject({ accepted_at_step: 50, carbonate_transaction_kind: 'ph_titration' });
     expect(receipt.payload.journeys.simulation.collected)
       .toEqual({
-        record_id: 'cry-16-9vm',
+        record_id: 'cry-16-33x',
         name: '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">',
         mineral: 'topaz',
         source_scenario: 'shigar_pegmatite',
@@ -72,6 +82,23 @@ describe('authenticated public-control guided tutorial journeys', () => {
     expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
       clone.payload.journeys.simulation.aquamarine_present = true;
     }), { simVersion: SIM_VERSION })).toThrow(/Simulation journey/);
+  });
+
+  it('rejects self-rehashed Grand Tour anchor, order, and policy forgeries', () => {
+    const receipt = readGuidedTutorialBrowserReceipt(ROOT, SIM_VERSION);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      clone.payload.journeys.grand_tour_saves_lesson.saves.anchor_id = 'mode-library';
+    }), { simVersion: SIM_VERSION })).toThrow(/Grand Tour Saves lesson/);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      const ids = clone.payload.journeys.grand_tour_saves_lesson.quick_nav_ids;
+      [ids[3], ids[4]] = [ids[4], ids[3]];
+    }), { simVersion: SIM_VERSION })).toThrow(/Grand Tour Saves entry/);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      clone.payload.journeys.grand_tour_saves_lesson.saves.policy_text =
+        'Autosave exists; manual copies and tutorial load policy are unspecified.';
+      clone.payload.journeys.grand_tour_saves_lesson.home.preservation_text =
+        'Home destroys the geological run.';
+    }), { simVersion: SIM_VERSION })).toThrow(/Grand Tour Saves lesson|Grand Tour Home lesson/);
   });
 
   it('rejects coordinated plausible-but-false products after payload rehash', () => {

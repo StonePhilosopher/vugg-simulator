@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   assertScenarioPreviewReceipt,
+  assertScenarioRegistryIdentity,
   buildScenarioPreview,
   parseScenarioDocument,
   scenarioPreviewPayloadDigest,
@@ -13,6 +14,8 @@ import {
 } from '../tools/scenario-authoring.mjs';
 
 declare const SIM_VERSION: number;
+declare const SCENARIOS: Record<string, any>;
+declare function scenarioReplaySpecHash(spec: any): string;
 
 function sourceDocuments() {
   const root = process.cwd();
@@ -22,6 +25,27 @@ function sourceDocuments() {
 }
 
 describe('scenario authoring workflow', () => {
+  it('fails the normal registry audit when the runtime replay projection drifts', () => {
+    const { scenarios } = sourceDocuments();
+    expect(assertScenarioRegistryIdentity({ SCENARIOS, scenarioReplaySpecHash }, scenarios)).toBe(true);
+
+    const forgedCooling = Object.assign(function forgedCoolingScenario() {}, SCENARIOS.cooling);
+    forgedCooling._scenario_replay_hash = '0'.repeat(64);
+    expect(() => assertScenarioRegistryIdentity({
+      SCENARIOS: { ...SCENARIOS, cooling: forgedCooling },
+      scenarioReplaySpecHash,
+    }, scenarios)).toThrow(/cooling.*replay identity/i);
+
+    const coordinatedCooling = Object.assign(function coordinatedCoolingScenario() {}, SCENARIOS.cooling);
+    coordinatedCooling._scenario_replay_hash = '0'.repeat(64);
+    expect(() => assertScenarioRegistryIdentity({
+      SCENARIOS: { ...SCENARIOS, cooling: coordinatedCooling },
+      scenarioReplaySpecHash: (spec: any) => spec === scenarios.scenarios.cooling
+        ? '0'.repeat(64)
+        : scenarioReplaySpecHash(spec),
+    }, scenarios)).toThrow(/cooling.*replay identity/i);
+  });
+
   it('validates the complete authored fleet and fails closed on key science identity defects', () => {
     const { scenarios, minerals } = sourceDocuments();
     expect(validateScenarioDocument(scenarios, minerals)).toEqual([]);

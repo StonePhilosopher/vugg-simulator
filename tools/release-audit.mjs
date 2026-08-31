@@ -19,6 +19,9 @@ const ASSET_MANIFEST = path.join(ROOT, 'release', 'asset-manifest.json');
 export const CONTENT_PACK_SCHEMA = 'vugg-content-pack-catalog-v2';
 export const ASSET_PACK_SCHEMA = 'vugg-production-asset-manifest-v2';
 export const RELEASE_RUNTIME_CONTRACT_SCHEMA = 'vugg-release-runtime-contract-v1';
+// Presentation/content identity is independent of SIM_VERSION. Tutorial 1's
+// commissioned Saves lesson is the first patch to the core 1.0 pack.
+export const CORE_CONTENT_VERSION = '1.0.1';
 
 const compareCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -109,7 +112,7 @@ export async function buildContentPackManifest(bundle = null) {
     catalog_version: '1.0.0',
     packs: [{
       id: 'core',
-      content_version: '1.0.0',
+      content_version: CORE_CONTENT_VERSION,
       compatibility: {
         sim_version: bundle.SIM_VERSION,
         model_digest_sha256: sha256(bundle.MODEL_DIGEST),

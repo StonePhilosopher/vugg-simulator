@@ -890,9 +890,10 @@ function assertSafeBounds(rect, width, height, insets, label) {
 async function runWorkflow(driver, diagnostics) {
   const checks = [];
   const guidedTutorialJourneys = {
-    schema: 'guided-tutorial-browser-journeys-v3',
+    schema: 'guided-tutorial-browser-journeys-v4',
     trust: 'local-owned-browser-player-controls-not-independent-attestation',
     sim_version: SIM_VERSION,
+    grand_tour_saves_lesson: null,
     creative: null,
     simulation: null,
     save_load_policy: null,
@@ -1050,6 +1051,17 @@ async function runWorkflow(driver, diagnostics) {
     assert.ok(titration.accepted?.after_pH < titration.accepted?.before_pH);
   });
 
+  // The lifecycle probes above intentionally abandon several autosaves. This
+  // owned-browser profile is disposable, but later public journeys must not
+  // inherit their storage weight or become order-dependent. Clear only the
+  // save shelf between the diagnostic preflight and the receipted journeys;
+  // every durable product below is then created by its own visible controls.
+  const diagnosticSavesRemaining = await driver.evaluate(`(() => {
+    if (!persistSaves([])) throw new Error('could not clear browser-QA diagnostic saves');
+    return loadSaves().length;
+  })()`);
+  assert.equal(diagnosticSavesRemaining, 0);
+
   await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=guided-journeys`);
 
   await check('completes public-control guided tutorial journeys and lifecycle policy', async () => {
@@ -1153,6 +1165,88 @@ async function runWorkflow(driver, diagnostics) {
         before,
         after,
       };
+    };
+
+    // Tutorial 1's navigation lesson is a player-facing product in its own
+    // right. Enter through Begin and use only the visible Continue control so
+    // the durable receipt proves the shipped Saves anchor, order, and policy
+    // rather than merely inspecting an authored script in memory.
+    await openNewGamePublic();
+    await clickBeginTutorial(1);
+    const grandTourIndices = await driver.evaluate(`(() => {
+      const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+      return {
+        saves: steps.findIndex(step => step.anchor === '#mode-saves'),
+        home: steps.findIndex(step => step.anchor === '#mode-home'),
+      };
+    })()`);
+    assert.ok(grandTourIndices.saves > 0, 'Grand Tour lacks a Saves lesson');
+    assert.equal(grandTourIndices.home, grandTourIndices.saves + 1);
+    await advanceContinueTo(grandTourIndices.saves, 'Grand Tour Saves lesson');
+    await driver.waitFor(
+      `document.querySelector('#mode-saves')
+          ?.classList.contains('tutorial-callout-anchor-highlight')
+        && !document.querySelector('#mode-library')
+          ?.classList.contains('tutorial-callout-anchor-highlight')`,
+      'Grand Tour Saves callout anchor',
+    );
+    const savesLesson = await driver.evaluate(`(() => ({
+      step_index: tutorialStateSnapshot()?.step_index ?? null,
+      trigger: tutorialStateSnapshot()?.current_trigger ?? null,
+      quick_nav_ids: Array.from(document.querySelectorAll('#mode-toggle > button'))
+        .map(button => button.id),
+      highlighted_anchor_ids: Array.from(
+        document.querySelectorAll('.tutorial-callout-anchor-highlight'),
+      ).map(node => node.id),
+      callout_text: document.querySelector('.tutorial-callout-text')?.textContent || null,
+    }))()`);
+    assert.equal(savesLesson.trigger, 'continue');
+    assert.deepEqual(savesLesson.highlighted_anchor_ids, ['mode-saves']);
+    await clickTutorialChrome('Grand Tour Saves explanation');
+    await driver.waitFor(
+      `tutorialStateSnapshot()?.step_index === ${grandTourIndices.home}
+        && document.querySelector('#mode-home')
+          ?.classList.contains('tutorial-callout-anchor-highlight')
+        && !document.querySelector('#mode-saves')
+          ?.classList.contains('tutorial-callout-anchor-highlight')`,
+      'Grand Tour Home lesson',
+    );
+    const homeLesson = await driver.evaluate(`(() => ({
+      step_index: tutorialStateSnapshot()?.step_index ?? null,
+      trigger: tutorialStateSnapshot()?.current_trigger ?? null,
+      highlighted_anchor_ids: Array.from(
+        document.querySelectorAll('.tutorial-callout-anchor-highlight'),
+      ).map(node => node.id),
+      callout_text: document.querySelector('.tutorial-callout-text')?.textContent || null,
+    }))()`);
+    assert.equal(homeLesson.trigger, 'continue');
+    assert.deepEqual(homeLesson.highlighted_anchor_ids, ['mode-home']);
+    await driver.click('.tutorial-callout-skip');
+    const grandTourCleanup = await assertTutorialCleanup('Grand Tour Saves lesson');
+    guidedTutorialJourneys.grand_tour_saves_lesson = {
+      scenario: 'tutorial_first_crystal',
+      entry: 'Begin menu Tutorial 1 button',
+      controls: ['Continue'],
+      quick_nav_ids: savesLesson.quick_nav_ids,
+      saves: {
+        step_index: savesLesson.step_index,
+        trigger: savesLesson.trigger,
+        anchor_id: savesLesson.highlighted_anchor_ids[0],
+        highlighted: savesLesson.highlighted_anchor_ids.length === 1,
+        policy_text: savesLesson.callout_text,
+      },
+      home: {
+        step_index: homeLesson.step_index,
+        trigger: homeLesson.trigger,
+        anchor_id: homeLesson.highlighted_anchor_ids[0],
+        highlighted: homeLesson.highlighted_anchor_ids.length === 1,
+        preservation_text: homeLesson.callout_text,
+      },
+      teardown: {
+        tutorial_null: grandTourCleanup.tutorial === null,
+        callouts: grandTourCleanup.callouts,
+        locks: grandTourCleanup.locks,
+      },
     };
 
     // Save/load policy: the rolling autosave owns geology, not tutorial UI.
@@ -1775,6 +1869,19 @@ async function runWorkflow(driver, diagnostics) {
     });
     await driver.key('n', 'KeyN', 78);
   });
+
+  // The guided/player-surface tranche above has already closed its durable
+  // receipts. The remaining Creative checks are a separate formation and
+  // must not depend on its save IDs, quota, or pruning order. Reset the
+  // disposable QA shelf at this explicit module boundary.
+  const guidedSavesRemaining = await driver.evaluate(`loadSaves().length`);
+  assert.ok(guidedSavesRemaining > 0, 'guided browser tranche produced no Saves testimony');
+  const isolatedCreativeSaveCount = await driver.evaluate(`(() => {
+    _saveNoteReset();
+    if (!persistSaves([])) throw new Error('could not isolate Creative browser-QA saves');
+    return loadSaves().length;
+  })()`);
+  assert.equal(isolatedCreativeSaveCount, 0);
 
   await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=creative`);
   await check('selects an authored scenario through the Creative menu at seed 42', async () => {

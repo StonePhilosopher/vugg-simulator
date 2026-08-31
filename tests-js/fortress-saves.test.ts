@@ -70,6 +70,8 @@ declare function _libraryProgressHTML(opts?: any): string;
 declare function setBrothValue(key: string, sliderVal: string): void;
 declare function updateCarbonateBoundaryReadout(): void;
 declare function simulationStateFingerprint(sim: any): string;
+declare function scenarioSpecHash(spec: any): string;
+declare function scenarioReplaySpecHash(spec: any): string;
 declare function buildCrystalRecord(crystal: any, meta: any): any;
 declare function _crystalHasCollectibleSolid(crystal: any): boolean;
 declare const MODEL_DIGEST: string;
@@ -1310,6 +1312,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(manual.replay_state_digest).toBe(simulationStateFingerprint(simA));
     expect(manual.recipe_digest).toBe(_saveRecipeDigest(manual));
     expect(manual.scenario_spec_hash).toBe(SCENARIOS.cooling._scenario_spec_hash);
+    expect(manual.scenario_replay_hash).toBe(SCENARIOS.cooling._scenario_replay_hash);
     // The broth delta for Fe must be IN the action log (not just final state).
     const hasFeDelta = manual.actions.some((a: any) => a.b && a.b.fe === '120');
     expect(hasFeDelta).toBe(true);
@@ -1321,6 +1324,58 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(loadSaveById(manual.id)).toBe(true);
     const after = fingerprint(_liveFortressSim());
     expect(after).toEqual(before);
+  });
+
+  it('separates exact authored presentation identity from geological replay identity', () => {
+    const spec = SCENARIOS.tutorial_first_crystal._json5_spec;
+    const presentationEdit = structuredClone(spec);
+    presentationEdit.description += ' Corrected presentation.';
+    presentationEdit.notes = [...presentationEdit.notes, 'Another presentation breadcrumb.'];
+    presentationEdit.tutorial.steps[0].text = 'Corrected tutorial prose.';
+    const geologyEdit = structuredClone(spec);
+    geologyEdit.initial.fluid.SiO2 += 1;
+
+    expect(scenarioSpecHash(presentationEdit)).not.toBe(scenarioSpecHash(spec));
+    expect(scenarioReplaySpecHash(presentationEdit)).toBe(scenarioReplaySpecHash(spec));
+    expect(scenarioReplaySpecHash(geologyEdit)).not.toBe(scenarioReplaySpecHash(spec));
+    expect(SCENARIOS.tutorial_first_crystal._scenario_replay_hash)
+      .toBe(scenarioReplaySpecHash(spec));
+  });
+
+  it('replays the exact pre-Saves-lesson Grand Tour recipe under unchanged geology', () => {
+    fortressBeginFromScenario('tutorial_first_crystal', 424286);
+    fortressStep('wait');
+    const before = simulationStateFingerprint(_liveFortressSim());
+    const manual = _saveManualNamed('pre-Saves-lesson presentation');
+    const records = loadSaves();
+    const stored = records.find((record: any) => record.id === manual.id);
+
+    // Exact complete-spec hash published immediately before the Tutorial 1
+    // Saves callout was added. Old format-v3 recipes did not yet carry the
+    // narrower executable projection.
+    delete stored.scenario_replay_hash;
+    stored.scenario_spec_hash = '87d11ab2c78463cf4954448860b57c2a624701596ab3c0cd3ed7aa85134b1a4f';
+    stored.recipe_digest = _saveRecipeDigest(stored);
+    expect(persistSaves(records)).toBe(true);
+
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(simulationStateFingerprint(_liveFortressSim())).toBe(before);
+  });
+
+  it('fails closed when the executable scenario replay identity is tampered', () => {
+    fortressBeginFromScenario('cooling', 424287);
+    fortressStep('wait');
+    const manual = _saveManualNamed('tampered replay projection');
+    const records = loadSaves();
+    const stored = records.find((record: any) => record.id === manual.id);
+    stored.scenario_replay_hash = 'f'.repeat(64);
+    stored.recipe_digest = _saveRecipeDigest(stored);
+    expect(persistSaves(records)).toBe(true);
+
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(false);
+    expect(_liveFortressSim()).toBeNull();
   });
 
   it('keeps a Herkimer Heat choice above the absolute cooling movement and replays it exactly', () => {
@@ -1840,12 +1895,13 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(_liveFortressSim()).toBeNull();
   });
 
-  it('fails closed before replay when an authored scenario specification hash is tampered', () => {
+  it('fails closed before replay when a legacy full scenario specification hash is tampered', () => {
     fortressBeginFromScenario('cooling', 424244);
     fortressStep('wait');
     const manual = _saveManualNamed('tampered scenario identity');
     const records = loadSaves();
     const stored = records.find((r: any) => r.id === manual.id);
+    delete stored.scenario_replay_hash;
     stored.scenario_spec_hash = 'tampered-scenario-hash';
     stored.recipe_digest = _saveRecipeDigest(stored);
     expect(persistSaves(records)).toBe(true);

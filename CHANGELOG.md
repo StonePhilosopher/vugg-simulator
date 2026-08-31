@@ -18,6 +18,11 @@ and the exact-execution evidence receipt.
 - A causal Grand Tour lesson for saturation, limiting reagents, temperature,
   pH, redox, substrate, competition, and the distinction between eligibility
   and guaranteed growth.
+- The Grand Tour now names all six quick-navigation doors and teaches the
+  Saves shelf's rolling autosave, named manual copies, deterministic geological
+  replay, and intentional tutorial-overlay teardown. Presentation-only scenario
+  edits carry a separate replay projection so unchanged geology remains
+  loadable while complete authored/evidence bytes stay exactly authenticated.
 - Persistent 100%, 125%, and 150% text settings; explicit reduced motion;
   keyboard focus restoration; global storage-failure notices; contrast and
   touch-target audits.

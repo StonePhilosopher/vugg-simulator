@@ -18,6 +18,11 @@ const MINERALS_PATH = path.join(ROOT, 'data', 'minerals.json');
 export const SCENARIO_AUTHORING_SCHEMA = 'vugg-scenario-authoring-preview-v1';
 export const SCENARIO_AUTHORING_RECEIPT_SCHEMA = 'vugg-scenario-authoring-receipt-v1';
 export const DEFAULT_AUTHORING_SEED = 42;
+const SCENARIO_REPLAY_PRESENTATION_FIELDS = Object.freeze([
+  'description',
+  'notes',
+  'tutorial',
+]);
 
 const AUTHORING_FLUID_NUMERIC_FIELDS = Object.freeze([
   'SiO2', 'reactiveSilicaFraction', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
@@ -322,6 +327,15 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+function authoredScenarioReplayHash(spec) {
+  if (spec === null || typeof spec !== 'object' || Array.isArray(spec)) {
+    return sha256(JSON.stringify(spec ?? null));
+  }
+  const projection = { ...spec };
+  for (const field of SCENARIO_REPLAY_PRESENTATION_FIELDS) delete projection[field];
+  return sha256(JSON.stringify(projection));
+}
+
 function trustedAuthoredScenario(bundle, scenarioId) {
   const make = bundle.SCENARIOS[scenarioId];
   if (!make) throw new Error(`unknown scenario: ${scenarioId}`);
@@ -330,12 +344,43 @@ function trustedAuthoredScenario(bundle, scenarioId) {
   if (!authored) throw new Error(`scenario source is missing: ${scenarioId}`);
   const sourceJson = JSON.stringify(authored);
   const sourceHash = sha256(sourceJson);
-  if (JSON.stringify(make._json5_spec) !== sourceJson || make._scenario_spec_hash !== sourceHash) {
+  const sourceReplayHash = authoredScenarioReplayHash(authored);
+  if (JSON.stringify(make._json5_spec) !== sourceJson
+      || make._scenario_spec_hash !== sourceHash
+      || bundle.scenarioReplaySpecHash(authored) !== sourceReplayHash
+      || make._scenario_replay_hash !== sourceReplayHash) {
     throw new Error(`${scenarioId}: runtime scenario authority differs from data/scenarios.json5`);
   }
   // A fresh parse is the independent authority. Nothing returned to the caller
   // aliases the mutable runtime factory metadata used to construct the sim.
   return authored;
+}
+
+// Normal `--check` and preview generation share this identity boundary. The
+// full hash authenticates every authored byte; the replay hash authenticates
+// only executable geology so presentation corrections remain save-compatible.
+export function assertScenarioRegistryIdentity(bundle, doc) {
+  if (typeof bundle?.scenarioReplaySpecHash !== 'function') {
+    throw new Error('runtime scenario replay hash authority is unavailable');
+  }
+  const authoredIds = Object.keys(doc?.scenarios || {}).sort();
+  const runtimeIds = Object.keys(bundle?.SCENARIOS || {}).sort();
+  if (JSON.stringify(authoredIds) !== JSON.stringify(runtimeIds)) {
+    throw new Error('runtime scenario registry does not match data/scenarios.json5');
+  }
+  for (const id of authoredIds) {
+    const authored = doc.scenarios[id];
+    const make = bundle.SCENARIOS[id];
+    const sourceJson = JSON.stringify(authored);
+    const sourceReplayHash = authoredScenarioReplayHash(authored);
+    if (JSON.stringify(make?._json5_spec) !== sourceJson
+        || make?._scenario_spec_hash !== sha256(sourceJson)
+        || bundle.scenarioReplaySpecHash(authored) !== sourceReplayHash
+        || make?._scenario_replay_hash !== sourceReplayHash) {
+      throw new Error(`${id}: runtime authored/replay identity differs from parsed source`);
+    }
+  }
+  return true;
 }
 
 function scenarioPreviewPayloadProjection(preview) {
@@ -396,7 +441,11 @@ export async function assertScenarioPreviewReceipt(preview, { requireCurrent = t
   if (requireCurrent) {
     const bundle = await loadSimBundle({
       toolName: 'scenario-authoring-verifier',
-      extraExports: ['simulationStateFingerprint', 'FLUID_CHEMISTRY_INPUT_FIELDS'],
+      extraExports: [
+        'simulationStateFingerprint',
+        'FLUID_CHEMISTRY_INPUT_FIELDS',
+        'scenarioReplaySpecHash',
+      ],
     });
     const make = bundle.SCENARIOS[preview.identity?.scenario];
     if (!make
@@ -486,7 +535,11 @@ function buildScenarioPreviewPayload(bundle, { scenarioId, seed = DEFAULT_AUTHOR
 export async function buildScenarioPreview({ scenarioId, seed = DEFAULT_AUTHORING_SEED, steps = null } = {}) {
   const bundle = await loadSimBundle({
     toolName: 'scenario-authoring',
-    extraExports: ['simulationStateFingerprint', 'FLUID_CHEMISTRY_INPUT_FIELDS'],
+    extraExports: [
+      'simulationStateFingerprint',
+      'FLUID_CHEMISTRY_INPUT_FIELDS',
+      'scenarioReplaySpecHash',
+    ],
   });
   const payload = buildScenarioPreviewPayload(bundle, { scenarioId, seed, steps });
   const payloadSha = scenarioPreviewPayloadDigest(payload);
@@ -531,24 +584,19 @@ async function main() {
   if (errors.length) throw new Error(`scenario validation failed:\n- ${errors.join('\n- ')}`);
   const bundle = await loadSimBundle({
     toolName: 'scenario-authoring-check',
-    extraExports: ['simulationStateFingerprint', 'FLUID_CHEMISTRY_INPUT_FIELDS'],
+    extraExports: [
+      'simulationStateFingerprint',
+      'FLUID_CHEMISTRY_INPUT_FIELDS',
+      'scenarioReplaySpecHash',
+    ],
   });
   if (!(bundle.FLUID_CHEMISTRY_INPUT_FIELDS instanceof Set)
       || JSON.stringify([...bundle.FLUID_CHEMISTRY_INPUT_FIELDS].sort())
         !== JSON.stringify([...SCENARIO_AUTHORING_FLUID_FIELDS].sort())) {
     throw new Error('scenario authoring fluid schema differs from the runtime constructor schema');
   }
+  assertScenarioRegistryIdentity(bundle, doc);
   const authoredIds = Object.keys(doc.scenarios).sort();
-  const runtimeIds = Object.keys(bundle.SCENARIOS).sort();
-  if (JSON.stringify(authoredIds) !== JSON.stringify(runtimeIds)) {
-    throw new Error('runtime scenario registry does not match data/scenarios.json5');
-  }
-  for (const id of authoredIds) {
-    if (bundle.SCENARIOS[id]._json5_spec !== doc.scenarios[id]
-        && JSON.stringify(bundle.SCENARIOS[id]._json5_spec) !== JSON.stringify(doc.scenarios[id])) {
-      throw new Error(`${id}: runtime authored spec differs from parsed source`);
-    }
-  }
   console.error(`[scenario-authoring] PASS: ${authoredIds.length} scenarios; runtime registry, schema, menu references, claims, pressure, event order, and shape_seed are valid`);
   if (!args.preview) return;
   const preview = await buildScenarioPreview({ scenarioId: args.preview, seed: args.seed, steps: args.steps });

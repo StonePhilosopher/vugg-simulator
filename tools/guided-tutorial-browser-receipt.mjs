@@ -9,9 +9,10 @@ import {
 } from './evidence-runtime.mjs';
 import { sha256Bytes, writeJsonAtomic } from './scenario-evidence-checkpoint.mjs';
 import { verifyOwnedDevToolsBrowserRuntime } from './owned-browser-runtime.mjs';
+import { parseScenarioDocument } from './scenario-authoring.mjs';
 
 export const GUIDED_TUTORIAL_BROWSER_RECEIPT_SCHEMA =
-  'vugg-guided-tutorial-browser-receipt-v4';
+  'vugg-guided-tutorial-browser-receipt-v5';
 export const GUIDED_TUTORIAL_BROWSER_PRODUCER = 'guided-tutorial-browser';
 
 const exactKeys = (value, keys) => value && typeof value === 'object'
@@ -43,17 +44,17 @@ const EXPECTED_GEOLOGY = Object.freeze({
   save_load: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 1,
     fingerprint: '90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23',
-    run_id: 'save-16-55o',
+    run_id: 'save-16-i77',
   }),
   creative_completion: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 50,
     fingerprint: '8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e',
-    run_id: 'save-16-dep',
+    run_id: 'save-16-jua',
   }),
   skip: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_mn_calcite', step: 0,
     fingerprint: '143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5',
-    run_id: 'save-16-9bv',
+    run_id: 'save-16-mhf',
   }),
   simulation_completion: Object.freeze({
     runtime: 'simulation', scenario: 'shigar_pegmatite', step: 70,
@@ -61,7 +62,7 @@ const EXPECTED_GEOLOGY = Object.freeze({
     run_id: 'd074d29098a55892e371c2ad12bc604ccb99cba6ae26bc5ae7a9fc015b73e3b6',
   }),
 });
-const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-9vm';
+const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-33x';
 const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
 // Replaced with the exact SIM 285 values after the owned-browser source freeze.
 const EXPECTED_GAME04_DATASET_SHA256 = 'd074d29098a55892e371c2ad12bc604ccb99cba6ae26bc5ae7a9fc015b73e3b6';
@@ -94,16 +95,79 @@ function assertGeologyPreservation(value, expected, label) {
   }
 }
 
-export function verifyGuidedTutorialJourneys(journeys, simVersion) {
+function grandTourSavesSourceAuthority(root) {
+  const source = fs.readFileSync(path.join(root, 'data', 'scenarios.json5'), 'utf8');
+  const tutorial = parseScenarioDocument(source)?.scenarios
+    ?.tutorial_first_crystal?.tutorial;
+  const steps = tutorial?.steps;
+  if (!Array.isArray(steps)) {
+    throw new Error('guided tutorial browser receipt cannot resolve Tutorial 1 source');
+  }
+  const savesStepIndex = steps.findIndex(step => step?.anchor === '#mode-saves');
+  const homeStepIndex = steps.findIndex(step => step?.anchor === '#mode-home');
+  const saves = steps[savesStepIndex];
+  const home = steps[homeStepIndex];
+  if (savesStepIndex < 0 || homeStepIndex !== savesStepIndex + 1
+      || saves?.spotlight !== '#mode-toggle' || home?.spotlight !== '#mode-toggle'
+      || typeof saves?.text !== 'string' || typeof home?.text !== 'string') {
+    throw new Error('guided tutorial browser receipt has invalid Tutorial 1 Saves source');
+  }
+  return {
+    savesStepIndex,
+    homeStepIndex,
+    savesText: saves.text,
+    homeText: home.text,
+  };
+}
+
+export function verifyGuidedTutorialJourneys(journeys, simVersion, { root } = {}) {
+  if (typeof root !== 'string' || !root) {
+    throw new Error('guided tutorial browser journey verifier lacks a source root');
+  }
   if (!exactKeys(journeys, [
-    'schema', 'trust', 'sim_version', 'creative', 'simulation',
+    'schema', 'trust', 'sim_version', 'grand_tour_saves_lesson', 'creative', 'simulation',
     'save_load_policy', 'skip_cleanup', 'player_surfaces',
   ])
-      || journeys.schema !== 'guided-tutorial-browser-journeys-v3'
+      || journeys.schema !== 'guided-tutorial-browser-journeys-v4'
       || journeys.trust !== 'local-owned-browser-player-controls-not-independent-attestation'
       || journeys.sim_version !== Number(simVersion)) {
     throw new Error('guided tutorial browser journey identity mismatch');
   }
+  const sourceAuthority = grandTourSavesSourceAuthority(root);
+  const grandTour = journeys.grand_tour_saves_lesson;
+  if (!exactKeys(grandTour, [
+    'scenario', 'entry', 'controls', 'quick_nav_ids', 'saves', 'home', 'teardown',
+  ])
+      || grandTour.scenario !== 'tutorial_first_crystal'
+      || grandTour.entry !== 'Begin menu Tutorial 1 button'
+      || canonicalJson(grandTour.controls) !== canonicalJson(['Continue'])
+      || canonicalJson(grandTour.quick_nav_ids) !== canonicalJson([
+        'mode-current', 'mode-groove', 'mode-stripview',
+        'mode-library', 'mode-saves', 'mode-home',
+      ])) {
+    throw new Error('guided tutorial browser receipt does not close the Grand Tour Saves entry');
+  }
+  if (!exactKeys(grandTour.saves, [
+    'step_index', 'trigger', 'anchor_id', 'highlighted', 'policy_text',
+  ])
+      || grandTour.saves.step_index !== sourceAuthority.savesStepIndex
+      || grandTour.saves.trigger !== 'continue'
+      || grandTour.saves.anchor_id !== 'mode-saves'
+      || grandTour.saves.highlighted !== true
+      || grandTour.saves.policy_text !== sourceAuthority.savesText) {
+    throw new Error('guided tutorial browser receipt does not close the Grand Tour Saves lesson');
+  }
+  if (!exactKeys(grandTour.home, [
+    'step_index', 'trigger', 'anchor_id', 'highlighted', 'preservation_text',
+  ])
+      || grandTour.home.step_index !== sourceAuthority.homeStepIndex
+      || grandTour.home.trigger !== 'continue'
+      || grandTour.home.anchor_id !== 'mode-home'
+      || grandTour.home.highlighted !== true
+      || grandTour.home.preservation_text !== sourceAuthority.homeText) {
+    throw new Error('guided tutorial browser receipt does not close the Grand Tour Home lesson');
+  }
+  assertCleanup(grandTour.teardown, 'Grand Tour');
   const creative = journeys.creative;
   if (!exactKeys(creative, [
     'scenario', 'entry', 'controls', 'geological_step', 'authored_milestones',
@@ -291,7 +355,7 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion) {
 }
 
 export function buildGuidedTutorialBrowserReceipt(root, simVersion, journeys, browserRuntime) {
-  verifyGuidedTutorialJourneys(journeys, simVersion);
+  verifyGuidedTutorialJourneys(journeys, simVersion, { root });
   verifyOwnedDevToolsBrowserRuntime(browserRuntime);
   if (canonicalJson(browserRuntime) !== canonicalJson(EXPECTED_BROWSER_RUNTIME)) {
     throw new Error('guided tutorial browser receipt does not identify the owned browser executable');
@@ -333,7 +397,7 @@ export function verifyGuidedTutorialBrowserReceipt(root, receipt, { simVersion }
     throw new Error('guided tutorial browser receipt identity mismatch');
   }
   verifyOwnedDevToolsBrowserRuntime(receipt.payload.browser_runtime);
-  return verifyGuidedTutorialJourneys(receipt.payload.journeys, simVersion);
+  return verifyGuidedTutorialJourneys(receipt.payload.journeys, simVersion, { root });
 }
 
 export function writeGuidedTutorialBrowserReceipt(root, receipt) {

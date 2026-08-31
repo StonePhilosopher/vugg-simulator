@@ -173,6 +173,49 @@ describe('guided tutorial target authority', () => {
     }
   });
 
+  it('teaches Saves as the sixth quick-nav door with the real save/load policy', () => {
+    const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+    const intro = steps.find((step: any) => step.anchor === '#mode-toggle');
+    const libraryIndex = steps.findIndex((step: any) => step.anchor === '#mode-library');
+    const savesIndex = steps.findIndex((step: any) => step.anchor === '#mode-saves');
+    const homeIndex = steps.findIndex((step: any) => step.anchor === '#mode-home');
+    const saves = steps[savesIndex];
+    const home = steps[homeIndex];
+
+    expect(intro?.text).toContain('Six doors');
+    expect(savesIndex).toBeGreaterThan(libraryIndex);
+    expect(savesIndex).toBeLessThan(homeIndex);
+    expect(readFileSync(join(process.cwd(), 'index.html'), 'utf8')).toContain('id="mode-saves"');
+    expect(saves?.spotlight).toBe('#mode-toggle');
+    expect(saves?.text).toContain('rolling autosave after every accepted action');
+    expect(saves?.text).toContain('named manual copy');
+    expect(saves?.text).toContain('Loading restores the run recipe and state');
+    expect(saves?.text).toContain('tutorial overlay intentionally does not resume');
+    expect(home?.text).toContain('ends the tutorial overlay');
+    expect(home?.text).toContain('geological run remains available through Saves');
+  });
+
+  it('renders the Saves lesson as a real continue step anchored to its quick-nav control', async () => {
+    const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+    const savesIndex = steps.findIndex((step: any) => step.anchor === '#mode-saves');
+    const savesButton = document.createElement('button');
+    savesButton.id = 'mode-saves';
+    savesButton.dataset.tutorialTest = 'saves-anchor';
+    document.body.appendChild(savesButton);
+
+    await startTutorial('tutorial_first_crystal');
+    advanceTutorialTo(savesIndex);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    expect(tutorialStateSnapshot()).toMatchObject({
+      step_index: savesIndex,
+      current_trigger: 'continue',
+    });
+    expect(savesButton?.classList.contains('tutorial-callout-anchor-highlight')).toBe(true);
+    expect(document.querySelector('.tutorial-callout-text')?.textContent)
+      .toContain('rolling autosave after every accepted action');
+  });
+
   it('keeps the Shigar lesson aligned with authenticated seed-42 products', () => {
     const strip = JSON.parse(readFileSync(
       join(process.cwd(), 'archive', 'strips', 'v280', 'shigar_pegmatite.json'),

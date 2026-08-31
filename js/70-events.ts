@@ -909,6 +909,7 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
 
 function _buildScenarioFromSpec(scenarioId, spec) {
   const specHash = scenarioSpecHash(spec);
+  const replayHash = scenarioReplaySpecHash(spec);
   _registerAuthoredScenarioEventPayloads(scenarioId, spec, specHash);
   const initial = spec.initial || {};
   if (!initial.wall || typeof initial.wall.composition !== 'string'
@@ -1085,6 +1086,9 @@ function _buildScenarioFromSpec(scenarioId, spec) {
   scenarioCallable._json5_spec = spec;
   scenarioCallable._scenario_id = scenarioId;
   scenarioCallable._scenario_spec_hash = specHash;
+  // Saves consume the executable projection; evidence continues to consume
+  // the complete authored spec hash above. See js/14-scenario-identity.ts.
+  scenarioCallable._scenario_replay_hash = replayHash;
   return scenarioCallable;
 }
 

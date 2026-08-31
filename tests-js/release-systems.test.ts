@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { CURRENT_HASH_POLICY, bytesForHash, sha256Bytes } from '../tools/hash-policy.mjs';
-import { buildReleaseManifests } from '../tools/release-audit.mjs';
+import { buildReleaseManifests, CORE_CONTENT_VERSION } from '../tools/release-audit.mjs';
 import { buildLocalDiagnosticReceipt } from '../tools/local-diagnostics.mjs';
 
 declare const RELEASE_RUNTIME_CONTRACT: any;
@@ -43,10 +43,11 @@ describe('local release systems', () => {
     expect(assets).toEqual(JSON.parse(readFileSync(join(root, 'release', 'asset-manifest.json'), 'utf8')));
     expect(content.packs[0]).toMatchObject({
       id: 'core',
-      content_version: '1.0.0',
+      content_version: CORE_CONTENT_VERSION,
       compatibility: { sim_version: SIM_VERSION, save_format: RELEASE_RUNTIME_CONTRACT.save_format },
       counts: { scenarios: 41, minerals: 184, narratives: 94 },
     });
+    expect(CORE_CONTENT_VERSION).toBe('1.0.1');
     expect(assets.renderer_lod_contract.scientific_authority)
       .toEqual(RELEASE_RUNTIME_CONTRACT.scientific_authority);
     expect(assets.renderer_lod_contract.presentation)
