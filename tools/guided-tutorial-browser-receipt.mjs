@@ -12,7 +12,7 @@ import { verifyOwnedDevToolsBrowserRuntime } from './owned-browser-runtime.mjs';
 import { parseScenarioDocument } from './scenario-authoring.mjs';
 
 export const GUIDED_TUTORIAL_BROWSER_RECEIPT_SCHEMA =
-  'vugg-guided-tutorial-browser-receipt-v5';
+  'vugg-guided-tutorial-browser-receipt-v6';
 export const GUIDED_TUTORIAL_BROWSER_PRODUCER = 'guided-tutorial-browser';
 
 const exactKeys = (value, keys) => value && typeof value === 'object'
@@ -34,6 +34,40 @@ function assertCleanup(value, label) {
       || value.tutorial_null !== true || value.callouts !== 0 || value.locks !== 0) {
     throw new Error(`guided tutorial browser receipt has open ${label} teardown`);
   }
+}
+
+function _finiteTuple(value, length) {
+  return Array.isArray(value) && value.length === length
+    && value.every(entry => typeof entry === 'number' && Number.isFinite(entry));
+}
+
+function _rectInside(inner, outer) {
+  return _finiteTuple(inner, 4) && _finiteTuple(outer, 4)
+    && inner[0] >= outer[0] && inner[1] >= outer[1]
+    && inner[2] <= outer[2] && inner[3] <= outer[3]
+    && inner[2] >= inner[0] && inner[3] >= inner[1];
+}
+
+function _flatTopologyLayoutCloses(layout) {
+  if (!exactKeys(layout, [
+    'schema', 'canvas_dimensions_px', 'visible_bounds_px', 'plot_bounds_px',
+    'label_bounds_px', 'plot_inside_visible_bounds', 'labels_inside_visible_bounds',
+  ])
+      || layout.schema !== 'cavity-field-cross-section-layout-v1'
+      || !_finiteTuple(layout.canvas_dimensions_px, 2)
+      || layout.canvas_dimensions_px.some(value => value <= 0)
+      || !_finiteTuple(layout.visible_bounds_px, 4)
+      || !_finiteTuple(layout.plot_bounds_px, 4)
+      || !Array.isArray(layout.label_bounds_px)
+      || layout.label_bounds_px.length < 2
+      || layout.label_bounds_px.some(bounds => !_finiteTuple(bounds, 4))) return false;
+  const plotInside = _rectInside(layout.plot_bounds_px, layout.visible_bounds_px);
+  const labelsInside = layout.label_bounds_px.every(
+    bounds => _rectInside(bounds, layout.visible_bounds_px),
+  );
+  return plotInside === layout.plot_inside_visible_bounds
+    && labelsInside === layout.labels_inside_visible_bounds
+    && plotInside && labelsInside;
 }
 
 // These are deterministic products of the exact controlled public-control
@@ -67,6 +101,19 @@ const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror
 // Replaced with the exact SIM 285 values after the owned-browser source freeze.
 const EXPECTED_GAME04_DATASET_SHA256 = 'd074d29098a55892e371c2ad12bc604ccb99cba6ae26bc5ae7a9fc015b73e3b6';
 const EXPECTED_GAME04_DOWNLOAD_SHA256 = 'fc1a173eb221bff3f4c621232f2c1ec66692a53ec16655ba5478f4375d56db0b';
+// Replaced with the exact controlled Shigar product after the renderer source
+// freezes. These values are independently pinned so a self-rehashed receipt
+// cannot merely invent a plausible flat view while the public control is dead.
+const EXPECTED_FLAT_TOPOLOGY_PRODUCT = Object.freeze({
+  grid_index: null,
+  plane_world_mm: null,
+  dimensions: Object.freeze([]),
+  spacing_mm: null,
+  layout: null,
+  field_snapshot_digest: '__REGENERATE__',
+  surface_buffer_digest: '__REGENERATE__',
+  receipt_digest: '__REGENERATE__',
+});
 const EXPECTED_BROWSER_RUNTIME = Object.freeze({
   schema: 'vugg-owned-devtools-browser-runtime-v2',
   executable_name: 'chrome.exe',
@@ -280,7 +327,7 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion, { root } = {}
   const surfaces = journeys.player_surfaces;
   if (!exactKeys(surfaces, [
     'schema', 'collection_record_groove', 'topology_helix', 'strip_view', 'phone',
-  ]) || surfaces.schema !== 'game04-player-surfaces-v1') {
+  ]) || surfaces.schema !== 'game04-player-surfaces-v2') {
     throw new Error('guided tutorial browser receipt has invalid GAME-04 player surfaces');
   }
   const collection = surfaces.collection_record_groove;
@@ -302,13 +349,60 @@ export function verifyGuidedTutorialJourneys(journeys, simVersion, { root } = {}
   const topology = surfaces.topology_helix;
   if (!exactKeys(topology, [
     'scenario', 'public_control_sequence', 'pointer_hit_tested_controls',
-    'final_three_enabled', 'final_helix_enabled',
+    'flat_product', 'restored_product', 'final_three_enabled', 'final_helix_enabled',
   ])
       || topology.scenario !== 'shigar_pegmatite'
       || canonicalJson(topology.public_control_sequence) !== canonicalJson([
-        'three:on', 'helix:off', 'three:off', 'helix:on', 'helix:off', 'three:on',
+        'three:on', 'helix:off', 'three:off', 'three:on', 'helix:on', 'helix:off',
       ])
       || topology.pointer_hit_tested_controls !== true
+      || !exactKeys(topology.flat_product, [
+        'schema', 'presentation', 'axis', 'grid_index', 'plane_world_mm',
+        'dimensions', 'spacing_mm', 'field_snapshot_digest',
+        'surface_buffer_digest', 'receipt_digest', 'crystal_policy',
+        'three_canvas_display', 'flat_canvas_visibility', 'slice_controls_display',
+        'zoom_controls_display', 'inapplicable_camera_controls_disabled', 'layout',
+      ])
+      || topology.flat_product.schema !== 'cavity-field-cross-section-v1'
+      || topology.flat_product.presentation
+        !== 'capability-independent-cpu-sampled-cross-section'
+      || topology.flat_product.axis !== 'z'
+      || !Number.isSafeInteger(topology.flat_product.grid_index)
+      || !Number.isFinite(topology.flat_product.plane_world_mm)
+      || !Array.isArray(topology.flat_product.dimensions)
+      || topology.flat_product.dimensions.length !== 2
+      || topology.flat_product.dimensions.some(value => !Number.isSafeInteger(value) || value <= 0)
+      || !Number.isFinite(topology.flat_product.spacing_mm)
+      || topology.flat_product.spacing_mm <= 0
+      || topology.flat_product.grid_index
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.grid_index
+      || topology.flat_product.plane_world_mm
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.plane_world_mm
+      || canonicalJson(topology.flat_product.dimensions)
+        !== canonicalJson(EXPECTED_FLAT_TOPOLOGY_PRODUCT.dimensions)
+      || topology.flat_product.spacing_mm
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.spacing_mm
+      || topology.flat_product.field_snapshot_digest
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.field_snapshot_digest
+      || topology.flat_product.surface_buffer_digest
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.surface_buffer_digest
+      || topology.flat_product.receipt_digest
+        !== EXPECTED_FLAT_TOPOLOGY_PRODUCT.receipt_digest
+      || topology.flat_product.crystal_policy
+        !== 'withheld-with-explicit-label-without-authenticated-cpu-field-clipping'
+      || topology.flat_product.three_canvas_display !== 'none'
+      || topology.flat_product.flat_canvas_visibility !== 'visible'
+      || topology.flat_product.slice_controls_display !== 'none'
+      || topology.flat_product.zoom_controls_display !== 'none'
+      || topology.flat_product.inapplicable_camera_controls_disabled !== true
+      || !_flatTopologyLayoutCloses(topology.flat_product.layout)
+      || canonicalJson(topology.flat_product.layout)
+        !== canonicalJson(EXPECTED_FLAT_TOPOLOGY_PRODUCT.layout)
+      || !exactKeys(topology.restored_product, [
+        'three_canvas_display', 'flat_canvas_visibility',
+      ])
+      || topology.restored_product.three_canvas_display !== 'block'
+      || topology.restored_product.flat_canvas_visibility !== 'hidden'
       || topology.final_three_enabled !== true
       || topology.final_helix_enabled !== false) {
     throw new Error('guided tutorial browser receipt does not close topology and Helicoid controls');

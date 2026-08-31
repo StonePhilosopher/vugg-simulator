@@ -58,6 +58,26 @@ describe('authenticated public-control guided tutorial journeys', () => {
         durable_commit_before_render: true,
         playback_started_and_stopped: true,
       },
+      topology_helix: {
+        flat_product: {
+          schema: 'cavity-field-cross-section-v1',
+          presentation: 'capability-independent-cpu-sampled-cross-section',
+          three_canvas_display: 'none',
+          flat_canvas_visibility: 'visible',
+          slice_controls_display: 'none',
+          zoom_controls_display: 'none',
+          inapplicable_camera_controls_disabled: true,
+          layout: {
+            schema: 'cavity-field-cross-section-layout-v1',
+            plot_inside_visible_bounds: true,
+            labels_inside_visible_bounds: true,
+          },
+        },
+        restored_product: {
+          three_canvas_display: 'block',
+          flat_canvas_visibility: 'hidden',
+        },
+      },
       phone: { width: 390, height: 844 },
     });
   });
@@ -146,6 +166,30 @@ describe('authenticated public-control guided tutorial journeys', () => {
       strip.imported_key = `imported:${strip.production_key}@sha256-${'b'.repeat(64)}`;
       clone.payload.journeys.player_surfaces.phone.width = 412;
     }), { simVersion: SIM_VERSION })).toThrow(/Library and Record Groove|Strip View|phone/);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      const flat = clone.payload.journeys.player_surfaces.topology_helix.flat_product;
+      flat.field_snapshot_digest = 'fabricated-field';
+      flat.surface_buffer_digest = 'fabricated-surface';
+      flat.receipt_digest = 'fabricated-receipt';
+      flat.three_canvas_display = 'block';
+      flat.flat_canvas_visibility = 'hidden';
+    }), { simVersion: SIM_VERSION })).toThrow(/topology and Helicoid controls/);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      const flat = clone.payload.journeys.player_surfaces.topology_helix.flat_product;
+      flat.grid_index += 1;
+      flat.plane_world_mm += flat.spacing_mm;
+      flat.dimensions = [flat.dimensions[0] + 1, flat.dimensions[1] + 1];
+      flat.spacing_mm *= 2;
+    }), { simVersion: SIM_VERSION })).toThrow(/topology and Helicoid controls/);
+    expect(() => verifyGuidedTutorialBrowserReceipt(ROOT, rehash(receipt, clone => {
+      const layout = clone.payload.journeys.player_surfaces.topology_helix
+        .flat_product.layout;
+      layout.visible_bounds_px = [0, 0, 10, 10];
+      layout.plot_bounds_px = [1, 1, 9, 9];
+      layout.label_bounds_px = [[1, 1, 9, 2], [1, 3, 9, 4]];
+      layout.plot_inside_visible_bounds = true;
+      layout.labels_inside_visible_bounds = true;
+    }), { simVersion: SIM_VERSION })).toThrow(/topology and Helicoid controls/);
   });
 
   it('verifies published browser evidence without requiring that browser on the review host', () => {

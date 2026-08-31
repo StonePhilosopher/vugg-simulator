@@ -58,6 +58,7 @@ let _topoThreeState: any = null;
 // first enable attempt — the script tag's async load might still be
 // in flight at boot.
 let _topoThreeUnavailable = false;
+let _topoThreeInitializationFailure: string | null = null;
 const _CAVITY_R32F_PROBE_CACHE = new WeakMap<object, any>();
 
 function _topoThreeAvailable(): boolean {
@@ -73,11 +74,20 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
     _topoThreeUnavailable = true;
     return null;
   }
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-  });
+  let renderer: any;
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+    });
+  } catch (error) {
+    _topoThreeInitializationFailure = error instanceof Error
+      ? error.message : String(error || 'webgl-initialization-failed');
+    return null;
+  }
+  _topoThreeUnavailable = false;
+  _topoThreeInitializationFailure = null;
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setClearColor(0x050504, 1.0);
 
@@ -907,7 +917,17 @@ function _topoResetCavityFieldFailures(state: any): void {
 }
 
 function _topoThreeRendererEffective(state = _topoThreeState): boolean {
-  return !!(_topoUseThreeRenderer || state?.cavityAuthorityActive)
+  // The exact Cartesian cavity authority chooses which geometry is truthful;
+  // it must not choose the player's presentation. A prior repair used
+  // `cavityAuthorityActive` as an implicit WebGL override so the legacy polar
+  // painter could never misrepresent a Cartesian cavity. That also made the
+  // visible ⬚ control lie: its state flipped to off while WebGL stayed on.
+  // js/99b owns the complementary fail-closed route: when the operator selects
+  // flat presentation for an exact cavity it draws the authenticated CPU
+  // Cartesian cross-section, never the legacy polar/unwrapped wall.
+  return _topoUseThreeRenderer === true
+    && _topoThreeAvailable()
+    && _topoThreeInitializationFailure === null
     && !(state && (state.threeShaderUnusable || state.cavityAuthorityUnrenderable));
 }
 
@@ -6743,6 +6763,7 @@ function _topoApplyWallDisplay(state: any) {
 // display states; amber button color marks the non-default states (the
 // topo-three-btn convention).
 function topoToggleWallDisplay() {
+  if (_topoExactFlatPresentationActive) return false;
   const state = _topoThreeState;
   if (!state) return;
   state.wallDisplay = ((state.wallDisplay | 0) + 1) % 3;
@@ -6764,8 +6785,7 @@ function topoToggleWallDisplay() {
 function _topoApplyThreeDefaultOnce() {
   if (_topoThreeDefaultApplied) return;
   _topoThreeDefaultApplied = true;
-  const btn = document.getElementById('topo-three-btn');
-  if (btn) (btn as HTMLElement).style.color = '#f0c050';
+  _topoSyncThreeButtonState();
   if (typeof topoSetDragMode === 'function' && _topoDragMode !== 'rotate') {
     topoSetDragMode('rotate');
   }
@@ -7226,6 +7246,7 @@ function _topoSyncThreeCanvasVisibility(state = _topoThreeState) {
     c3.style.display = 'none';
     c2.style.visibility = '';
   }
+  _topoSyncThreeButtonState();
 }
 
 // Toggle button handler — wired in index.html to the ⬚ button. Flips
@@ -7233,7 +7254,26 @@ function _topoSyncThreeCanvasVisibility(state = _topoThreeState) {
 // clicking once and dragging immediately orbits the scene. Disabled
 // when Three.js failed to load (CDN blocked / offline file://).
 function topoThreeRendererEnabled(): boolean {
-  return _topoUseThreeRenderer === true;
+  return _topoThreeRendererEffective();
+}
+
+function _topoSyncThreeButtonState(): void {
+  const btn = document.getElementById('topo-three-btn');
+  if (!btn) return;
+  const available = _topoThreeAvailable();
+  const presented = topoThreeRendererEnabled();
+  const tutorialLocked = (btn as HTMLElement).dataset.tutorialLocked === 'true';
+  (btn as HTMLElement).style.color = presented ? '#f0c050' : '';
+  (btn as HTMLButtonElement).disabled = !available || tutorialLocked;
+  (btn as HTMLElement).style.opacity = available ? '' : '0.4';
+  btn.setAttribute('aria-pressed', String(presented));
+  const label = !available
+    ? 'Three.js renderer unavailable (offline or unsupported)'
+    : presented
+    ? 'Show authenticated flat cavity cross-section'
+    : 'Show 3D cavity mesh';
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
 }
 
 // Exact state setter shared by the toolbar and the guided-tour commissioner.
@@ -7242,34 +7282,47 @@ function topoThreeRendererEnabled(): boolean {
 function topoSetThreeRendererEnabled(enabled: boolean, emitProduct = true): boolean {
   const desired = enabled === true;
   const before = topoThreeRendererEnabled();
+  if (desired) _topoSyncFlatPresentationControls(false);
+  else if (typeof helixSetOverlayEnabled === 'function') {
+    // Helicoid is Three-owned. Do not carry an invisible enabled overlay
+    // behind the authenticated CPU slice and surprise the player on return.
+    helixSetOverlayEnabled(false, false);
+  }
   _topoUseThreeRenderer = desired;
+  if (desired) _topoThreeInitializationFailure = null;
   if (_topoUseThreeRenderer && _topoThreeState?.threeShaderUnusable) {
     _topoResetCavityFieldFailures(_topoThreeState);
     _topoThreeState.cavitySig = '';
     _topoThreeState.crystalsSig = '';
   }
   const btn = document.getElementById('topo-three-btn');
-  if (btn) {
-    (btn as HTMLElement).style.color = _topoUseThreeRenderer ? '#f0c050' : '';
-    btn.setAttribute('aria-pressed', String(_topoUseThreeRenderer));
-  }
+  _topoSyncThreeButtonState();
   if (_topoUseThreeRenderer && typeof topoSetDragMode === 'function'
       && _topoDragMode !== 'rotate') {
     topoSetDragMode('rotate');
+  } else if (!_topoUseThreeRenderer && typeof topoSetDragMode === 'function'
+      && _topoDragMode !== 'default') {
+    // A flat product must not retain a highlighted orbit tool whose drags have
+    // no honest meaning in the CPU cross-section. Default mode restores the
+    // ordinary canvas pan behavior; exact-field dispatch separately withholds
+    // the legacy ring stepper because this is one fixed Cartesian plane.
+    topoSetDragMode('default');
   }
-  _topoSyncThreeCanvasVisibility();
   topoRender();
-  const changed = before !== _topoUseThreeRenderer;
+  _topoSyncThreeCanvasVisibility();
+  _topoSyncThreeButtonState();
+  const after = topoThreeRendererEnabled();
+  const changed = before !== after;
   if (changed && emitProduct && typeof _dispatchTutorialViewStateProduct === 'function') {
     _dispatchTutorialViewStateProduct(
-      btn, 'topo-three-renderer', before, _topoUseThreeRenderer,
+      btn, 'topo-three-renderer', before, after,
     );
   }
   return changed;
 }
 
 function topoToggleThreeRenderer() {
-  if (!_topoUseThreeRenderer && !_topoThreeAvailable()) {
+  if (!topoThreeRendererEnabled() && !_topoThreeAvailable()) {
     _topoThreeUnavailable = true;
     const btn = document.getElementById('topo-three-btn') as HTMLButtonElement | null;
     if (btn) {
@@ -7279,5 +7332,8 @@ function topoToggleThreeRenderer() {
     }
     return;
   }
-  topoSetThreeRendererEnabled(!_topoUseThreeRenderer, true);
+  // Retry an unavailable/failed 3-D presentation in one click. The requested
+  // preference may still be true after WebGL initialization failed, while the
+  // player is truthfully looking at the CPU cross-section.
+  topoSetThreeRendererEnabled(!topoThreeRendererEnabled(), true);
 }

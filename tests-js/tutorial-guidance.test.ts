@@ -21,10 +21,17 @@ declare function openNewGameMenu(): void;
 declare function showTitleScreen(): void;
 declare function showCallout(opts: any): void;
 declare function _tutorialAdvance(): void;
+declare function endTutorial(): void;
 declare function _tutorialRunBoundaryForAction(selector: string): boolean;
 declare function fortressStep(action: string, payload?: any): void;
 declare function topoThreeRendererEnabled(): boolean;
 declare function topoSetThreeRendererEnabled(enabled: boolean, emitProduct?: boolean): boolean;
+declare function _topoSyncFlatPresentationControls(enabled: boolean): void;
+declare function _topoSyncThreeButtonState(): void;
+declare function tutorialViewerCommissioningReceipt(): any;
+declare function _dispatchTutorialViewStateProduct(
+  target: Element, control: string, beforeEnabled: boolean, afterEnabled: boolean,
+): boolean;
 declare function helixOverlayEnabled(): boolean;
 declare function helixSetOverlayEnabled(enabled: boolean, emitProduct?: boolean): boolean;
 declare function _liveSaveActiveRecord(): any;
@@ -50,6 +57,38 @@ afterEach(() => {
 
 function advanceTutorialTo(index: number): void {
   while (tutorialStateSnapshot()?.step_index < index) _tutorialAdvance();
+}
+
+function mountTutorialTopoChrome() {
+  const root = document.createElement('div');
+  root.dataset.tutorialTest = 'viewer-state';
+  root.innerHTML = `
+    <div class="topo-zoom-ctrls"><button id="topo-zoom-in">+</button></div>
+    <div class="topo-slice-ctrls"><button id="topo-slice-next">next</button></div>
+    <div class="topo-camera-ctrls">
+      <button id="topo-rotate-btn">rotate</button>
+      <button id="topo-pan-btn">pan</button>
+      <button id="topo-recenter-btn">center</button>
+      <button id="topo-wall-btn">wall</button>
+      <button id="topo-three-btn">three</button>
+      <button id="helix-overlay-btn">helix</button>
+    </div>
+    <canvas id="topo-canvas"></canvas>
+    <canvas id="topo-canvas-three"></canvas>
+    <div id="topo-panel"></div>`;
+  document.body.appendChild(root);
+  const flat = root.querySelector('#topo-canvas') as HTMLCanvasElement;
+  Object.defineProperty(flat, 'clientWidth', { configurable: true, value: 420 });
+  Object.defineProperty(flat, 'clientHeight', { configurable: true, value: 300 });
+  return {
+    root,
+    topo: root.querySelector('#topo-three-btn') as HTMLButtonElement,
+    helix: root.querySelector('#helix-overlay-btn') as HTMLButtonElement,
+    rotate: root.querySelector('#topo-rotate-btn') as HTMLButtonElement,
+    flat,
+    mesh: root.querySelector('#topo-canvas-three') as HTMLCanvasElement,
+    panel: root.querySelector('#topo-panel') as HTMLElement,
+  };
 }
 
 function specimen(mineral = 'topaz'): any {
@@ -357,24 +396,46 @@ describe('guided tutorial run ownership', () => {
   });
 
   it('canonicalizes and receipts the exact Grand Tour viewer transitions', async () => {
-    const topo = document.createElement('button');
-    topo.id = 'topo-three-btn';
-    topo.dataset.tutorialTest = 'viewer-state';
-    const helix = document.createElement('button');
-    helix.id = 'helix-overlay-btn';
-    helix.dataset.tutorialTest = 'viewer-state';
-    document.body.append(topo, helix);
+    const { topo, helix, flat, mesh, panel } = mountTutorialTopoChrome();
+    const flatContext: any = {
+      canvas: flat,
+      setTransform: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(),
+      strokeRect: vi.fn(), fillText: vi.fn(), save: vi.fn(), restore: vi.fn(),
+      measureText: vi.fn(() => ({ width: 10 })),
+      fillStyle: '', strokeStyle: '', lineWidth: 0, font: '', textAlign: '',
+      textBaseline: '',
+    };
+    vi.spyOn(flat, 'getContext').mockReturnValue(flatContext);
 
+    panel.style.display = 'none';
     topoSetThreeRendererEnabled(false, false);
     helixSetOverlayEnabled(true, false);
     expect(topoThreeRendererEnabled()).toBe(false);
     expect(helixOverlayEnabled()).toBe(true);
 
-    await startTutorial('tutorial_first_crystal');
+    // jsdom has no WebGL context. Withhold the panel render while the tutorial
+    // commissions its normal capable state; the browser receipt separately
+    // proves the real Three product. This test owns the authored transition
+    // chain and must not accidentally turn into the flat-only capability path.
+    const getById = document.getElementById;
+    const hiddenPanel: any = {
+      style: Object.defineProperty({}, 'display', {
+        configurable: true, get: () => 'none', set: () => {},
+      }),
+    };
+    document.getElementById = function (id: string): any {
+      return id === 'topo-panel' ? hiddenPanel : getById.call(document, id);
+    };
+    try {
+      await startTutorial('tutorial_first_crystal');
+    } finally {
+      document.getElementById = getById;
+    }
     expect(topoThreeRendererEnabled()).toBe(true);
     expect(helixOverlayEnabled()).toBe(false);
     expect(topo.getAttribute('aria-pressed')).toBe('true');
     expect(helix.getAttribute('aria-pressed')).toBe('false');
+    panel.style.display = 'block';
 
     const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
     const firstTopo = steps.findIndex((step: any) =>
@@ -388,9 +449,21 @@ describe('guided tutorial run ownership', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(tutorialStateSnapshot()?.step_index).toBe(firstTopo + 1);
     expect(topoThreeRendererEnabled()).toBe(false);
+    expect(topo.title).toMatch(/3D cavity mesh/i);
+    expect(flat._cavityFieldCrossSectionReceipt?.schema)
+      .toBe('cavity-field-cross-section-v1');
+    expect(steps[firstTopo].text).toMatch(/authenticated flat cross-section/i);
+    expect(steps[firstTopo + 1].text).toMatch(/central Cartesian slice/i);
+    expect(steps[firstTopo + 1].text).toMatch(/Crystals are deliberately withheld/i);
 
     advanceTutorialTo(firstTopo + 2);
-    expect(topoSetThreeRendererEnabled(true, true)).toBe(true);
+    panel.style.display = 'none';
+    expect(topoSetThreeRendererEnabled(true, false)).toBe(true);
+    mesh.style.display = 'block';
+    flat.style.visibility = 'hidden';
+    expect(_dispatchTutorialViewStateProduct(
+      topo, 'topo-three-renderer', false, true,
+    )).toBe(true);
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(tutorialStateSnapshot()?.step_index).toBe(firstTopo + 3);
 
@@ -408,6 +481,154 @@ describe('guided tutorial run ownership', () => {
     expect(tutorialStateSnapshot()?.step_index).toBe(closeHelix + 1);
     expect(helixOverlayEnabled()).toBe(false);
   });
+
+  it.each(['home', 'reset', 'skip'])(
+    'composes tutorial and flat-presentation ownership through %s', async boundary => {
+      const chrome = mountTutorialTopoChrome();
+      const { topo, helix, rotate, flat, panel } = chrome;
+      const flatContext: any = {
+        canvas: flat,
+        setTransform: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(),
+        strokeRect: vi.fn(), fillText: vi.fn(), save: vi.fn(), restore: vi.fn(),
+        measureText: vi.fn((text: string) => ({
+          width: text.length * 6,
+          actualBoundingBoxAscent: 8,
+          actualBoundingBoxDescent: 2,
+        })),
+        fillStyle: '', strokeStyle: '', lineWidth: 0, font: '', textAlign: '',
+        textBaseline: '',
+      };
+      vi.spyOn(flat, 'getContext').mockReturnValue(flatContext);
+      for (const [control, suffix] of [[helix, 'helix'], [rotate, 'rotate']] as const) {
+        control.disabled = false;
+        control.title = `pre-tutorial-${suffix}`;
+        control.setAttribute('aria-disabled', 'false');
+        control.setAttribute('tabindex', suffix === 'helix' ? '4' : '5');
+      }
+
+      panel.style.display = 'none';
+      topoSetThreeRendererEnabled(true, false);
+      const getById = document.getElementById;
+      const hiddenPanel: any = {
+        style: Object.defineProperty({}, 'display', {
+          configurable: true, get: () => 'none', set: () => {},
+        }),
+      };
+      document.getElementById = function (id: string): any {
+        return id === 'topo-panel' ? hiddenPanel : getById.call(document, id);
+      };
+      try {
+        await startTutorial('tutorial_first_crystal');
+      } finally {
+        document.getElementById = getById;
+      }
+      panel.style.display = 'block';
+      const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+      const flatAction = steps.findIndex((step: any) =>
+        step.action?.productState?.control === 'topo-three-renderer'
+        && step.action.productState.afterEnabled === false);
+      advanceTutorialTo(flatAction);
+      expect(topoSetThreeRendererEnabled(false, true)).toBe(true);
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect((flat as any)._cavityFieldCrossSectionReceipt?.schema)
+        .toBe('cavity-field-cross-section-v1');
+      expect(helix.dataset.tutorialLocked).toBe('true');
+      expect(helix.dataset.exactFlatPriorDisabled).toBe('true');
+
+      if (boundary === 'home') showTitleScreen();
+      else if (boundary === 'reset') fortressReset();
+      else {
+        endTutorial();
+        // Skip ends only tutorial ownership. The player remains in the flat
+        // presentation until they choose 3D; release that second owner here
+        // before comparing the original attributes.
+        expect(helix.dataset.tutorialLocked).toBeUndefined();
+        expect(helix.dataset.exactFlatPriorDisabled).toBe('false');
+        panel.style.display = 'none';
+        topoSetThreeRendererEnabled(true, false);
+      }
+
+      for (const [control, suffix, tabIndex] of [
+        [helix, 'helix', '4'], [rotate, 'rotate', '5'],
+      ] as const) {
+        expect(control.disabled).toBe(false);
+        expect(control.title).toBe(`pre-tutorial-${suffix}`);
+        expect(control.getAttribute('aria-disabled')).toBe('false');
+        expect(control.getAttribute('tabindex')).toBe(tabIndex);
+        expect(control.dataset.tutorialLocked).toBeUndefined();
+        expect(control.dataset.exactFlatPriorDisabled).toBeUndefined();
+      }
+      expect((flat as any)._cavityFieldCrossSectionReceipt).toBeUndefined();
+      expect((flat as any)._cavityFieldCrossSectionLayout).toBeUndefined();
+    },
+  );
+
+  it.each(['missing Three', 'WebGL constructor failure'])(
+    'uses the authored flat-only lesson instead of deadlocking on %s', async failure => {
+      const { topo, flat, panel } = mountTutorialTopoChrome();
+      const flatContext: any = {
+        canvas: flat,
+        setTransform: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(),
+        strokeRect: vi.fn(), fillText: vi.fn(), save: vi.fn(), restore: vi.fn(),
+        measureText: vi.fn((text: string) => ({
+          width: text.length * 6,
+          actualBoundingBoxAscent: 8,
+          actualBoundingBoxDescent: 2,
+        })),
+        fillStyle: '', strokeStyle: '', lineWidth: 0, font: '', textAlign: '',
+        textBaseline: '',
+      };
+      vi.spyOn(flat, 'getContext').mockReturnValue(flatContext);
+      panel.style.display = 'block';
+
+      const sourceSteps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+      const expectedSteps = sourceSteps.filter(
+        (step: any) => step.requiresCapability !== 'three-renderer',
+      );
+      const flatInfoIndex = expectedSteps.findIndex(
+        (step: any) => typeof step.capabilityFallbackText === 'string',
+      );
+      const savedThree = (globalThis as any).THREE;
+      if (failure === 'missing Three') {
+        delete (globalThis as any).THREE;
+      } else {
+        (globalThis as any).THREE = {
+          ...savedThree,
+          WebGLRenderer: class {
+            constructor() { throw new Error('tutorial hostile WebGL failure'); }
+          },
+        };
+      }
+      try {
+        await startTutorial('tutorial_first_crystal');
+        expect(tutorialViewerCommissioningReceipt()).toMatchObject({
+          after: { topo_three_renderer_enabled: false },
+        });
+        expect(tutorialStateSnapshot()?.step_count).toBe(expectedSteps.length);
+        expect(topoThreeRendererEnabled()).toBe(false);
+        expect(topo.disabled).toBe(true);
+        expect(flat._cavityFieldCrossSectionReceipt?.schema)
+          .toBe('cavity-field-cross-section-v1');
+
+        advanceTutorialTo(flatInfoIndex);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        expect(tutorialStateSnapshot()).toMatchObject({
+          step_index: flatInfoIndex,
+          current_trigger: 'continue',
+        });
+        expect(document.querySelector('.tutorial-callout-text')?.textContent)
+          .toContain('cannot present the 3D cavity');
+      } finally {
+        fortressReset();
+        (globalThis as any).THREE = savedThree;
+        _topoSyncFlatPresentationControls(false);
+        panel.style.display = 'none';
+        topoSetThreeRendererEnabled(true, false);
+        _topoSyncThreeButtonState();
+        expect(topo.disabled).toBe(false);
+      }
+    },
+  );
 
   it('emits carbonate success only after the titration and spatial authority close', async () => {
     const grid = document.createElement('div');

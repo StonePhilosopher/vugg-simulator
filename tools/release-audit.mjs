@@ -20,8 +20,9 @@ export const CONTENT_PACK_SCHEMA = 'vugg-content-pack-catalog-v2';
 export const ASSET_PACK_SCHEMA = 'vugg-production-asset-manifest-v2';
 export const RELEASE_RUNTIME_CONTRACT_SCHEMA = 'vugg-release-runtime-contract-v1';
 // Presentation/content identity is independent of SIM_VERSION. Tutorial 1's
-// commissioned Saves lesson is the first patch to the core 1.0 pack.
-export const CORE_CONTENT_VERSION = '1.0.1';
+// Saves lesson commissioned 1.0.1; its truthful 3D/flat cavity presentation
+// contract commissions the second patch to the core 1.0 pack.
+export const CORE_CONTENT_VERSION = '1.0.2';
 
 const compareCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');

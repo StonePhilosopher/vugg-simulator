@@ -2437,6 +2437,10 @@ function fortressReset() {
   document.getElementById('f-ph').value = 65;
   document.getElementById('f-ph-val').textContent = '6.5';
   selectPreset('silica');
+  // Reset retires the exact renderer product together with its simulator.
+  // Repaint only after fortressSim is null so the common no-sim exit clears
+  // the slice receipt/layout and releases its control ownership.
+  if (typeof topoRender === 'function') topoRender();
 }
 
 function copyFortressLog() {

@@ -232,7 +232,18 @@ for (const [id, spec] of scenarios) {
       console.error(`[tutorial-lint] ${id} step[${i}]: viewer action must bind an exact changing product state`);
       errors++;
     }
-    for (const field of ['text', 'hint']) {
+    if (Object.prototype.hasOwnProperty.call(st, 'requiresCapability')
+        && st.requiresCapability !== 'three-renderer') {
+      console.error(`[tutorial-lint] ${id} step[${i}]: unknown tutorial capability ${String(st.requiresCapability)}`);
+      errors++;
+    }
+    if (Object.prototype.hasOwnProperty.call(st, 'capabilityFallbackText')
+        && (typeof st.capabilityFallbackText !== 'string'
+          || !st.capabilityFallbackText.trim())) {
+      console.error(`[tutorial-lint] ${id} step[${i}]: capability fallback text must be nonempty`);
+      errors++;
+    }
+    for (const field of ['text', 'hint', 'capabilityFallbackText']) {
       if (findDoubleSlash(st[field])) {
         console.error(`[tutorial-lint] ${id} step[${i}]: ${field} contains '//' — the JSONC strip eats it (URL gotcha)`);
         errors++;

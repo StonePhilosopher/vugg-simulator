@@ -23,6 +23,13 @@ and the exact-execution evidence receipt.
   replay, and intentional tutorial-overlay teardown. Presentation-only scenario
   edits carry a separate replay projection so unchanged geology remains
   loadable while complete authored/evidence bytes stay exactly authenticated.
+- The Grand Tour's ⬚ Wall Profile control once again lands on a visible flat
+  product. Exact Cartesian cavities use the authenticated CPU central
+  cross-section (rock/void/water, crystals explicitly withheld) rather than
+  silently retaining WebGL or falling back to the obsolete polar wall map.
+  Dead camera/ring/zoom/Helicoid controls are refused while that fixed slice
+  is on; Three/WebGL-incapable devices receive an authored flat-only lesson
+  rather than an impossible toggle step.
 - Persistent 100%, 125%, and 150% text settings; explicit reduced motion;
   keyboard focus restoration; global storage-failure notices; contrast and
   touch-target audits.

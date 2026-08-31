@@ -211,6 +211,29 @@ function _dispatchTutorialViewStateProduct(target, control, beforeEnabled, after
   return true;
 }
 
+function _tutorialTopoPresentationMatches(afterEnabled: boolean): boolean {
+  const flat = document.getElementById('topo-canvas') as any;
+  const mesh = document.getElementById('topo-canvas-three') as any;
+  if (!flat || !mesh) return false;
+  if (afterEnabled) {
+    return mesh.style?.display === 'block'
+      && flat.style?.visibility === 'hidden'
+      && typeof _topoThreeRendererEffective === 'function'
+      && _topoThreeRendererEffective() === true;
+  }
+  const sim = typeof topoActiveSim === 'function' ? topoActiveSim() : null;
+  const active = sim?.wall_state?.activeCavitySurfaceAnchorProvider?.();
+  const receipt = flat._cavityFieldCrossSectionReceipt;
+  return mesh.style?.display === 'none'
+    && flat.style?.visibility !== 'hidden'
+    && active?.receipt?.kind === 'cavity-field'
+    && receipt?.schema === 'cavity-field-cross-section-v1'
+    && receipt.field_snapshot_digest === active.field?.snapshotDigest
+    && receipt.surface_buffer_digest === active.surface?.buffer_digest
+    && receipt.crystal_policy
+      === 'withheld-with-explicit-label-without-authenticated-cpu-field-clipping';
+}
+
 // One commissioner is shared by live tutorial boot and the controlled
 // mechanism witness. This makes the persistent prior-run state and the exact
 // post-boot product visible without emitting a player-action receipt.
@@ -240,6 +263,18 @@ function _tutorialCanonicalizeViewerState() {
 
 function tutorialViewerCommissioningReceipt() {
   return _tutorialViewerCommissioningReceipt;
+}
+
+function _tutorialStepsForViewerCapability(steps, commissioning) {
+  if (!Array.isArray(steps)) return [];
+  const hasThree = commissioning?.after?.topo_three_renderer_enabled === true;
+  if (hasThree) return steps.slice();
+  return steps
+    .filter(step => step?.requiresCapability !== 'three-renderer')
+    .map(step => {
+      if (typeof step?.capabilityFallbackText !== 'string') return step;
+      return Object.freeze({ ...step, text: step.capabilityFallbackText });
+    });
 }
 
 
@@ -475,11 +510,15 @@ async function startTutorial(scenarioName) {
   // start from one commissioned state rather than whatever the previous run
   // left behind. These silent setters change presentation only; the player's
   // later accepted toggles emit the product receipts that advance the lesson.
+  let commissionedSteps = tut.steps.slice();
   if (scenarioName === 'tutorial_first_crystal') {
-    _tutorialCanonicalizeViewerState();
+    const viewerCommissioning = _tutorialCanonicalizeViewerState();
+    commissionedSteps = _tutorialStepsForViewerCapability(
+      commissionedSteps, viewerCommissioning,
+    );
   }
   _tutorialState = {
-    steps: tut.steps.slice(), stepIdx: 0, renderedIdx: -1, pausedAt: -1,
+    steps: commissionedSteps, stepIdx: 0, renderedIdx: -1, pausedAt: -1,
     mode: tutMode, legendsRunClaimed: false,
   };
   document.body.classList.add('tutorial-active');
@@ -517,6 +556,17 @@ async function startTutorial(scenarioName) {
 }
 
 function endTutorial() {
+  // Tutorial locking and exact-flat presentation can own the same controls.
+  // Release the inner flat snapshot before restoring the tutorial snapshot,
+  // then reacquire it from the restored values when the player merely Skips
+  // or finishes while keeping the same geological presentation. Run-lifecycle
+  // boundaries release flat first in _tutorialRunBoundary, so they do not
+  // reacquire a product belonging to the retired run.
+  const resumeExactFlatPresentation =
+    typeof _topoExactFlatPresentationActive === 'boolean'
+    && _topoExactFlatPresentationActive
+    && typeof _topoSyncFlatPresentationControls === 'function';
+  if (resumeExactFlatPresentation) _topoSyncFlatPresentationControls(false);
   _tutorialState = null;
   _tutorialViewerCommissioningReceipt = null;
   document.body.classList.remove('tutorial-active');
@@ -537,6 +587,7 @@ function endTutorial() {
   document.removeEventListener('vugg:fortress-fluid-action-committed', _tutorialActionEvent, true);
   document.removeEventListener('vugg:tutorial-view-state-committed', _tutorialActionEvent, true);
   hideCallout();
+  if (resumeExactFlatPresentation) _topoSyncFlatPresentationControls(true);
 }
 
 // Shared by 94/97 run constructors and Reset. Only the exact pending token
@@ -548,6 +599,15 @@ function _tutorialRunBoundary(tutorialBootToken?, runLaunchToken?) {
   const ownsPendingBoot = Number.isSafeInteger(tutorialBootToken)
     && tutorialBootToken === _tutorialStartEpoch;
   if (!ownsPendingBoot) _tutorialStartEpoch++;
+  // A run replacement/Home/Reset retires the flat product as well as the
+  // tutorial. Release the newer (inner) owner first so endTutorial restores
+  // the older tutorial snapshot second. This prevents a stale disabled=true
+  // exact-flat snapshot from being replayed after both owners have ended.
+  if (typeof _topoExactFlatPresentationActive === 'boolean'
+      && _topoExactFlatPresentationActive
+      && typeof _topoSyncFlatPresentationControls === 'function') {
+    _topoSyncFlatPresentationControls(false);
+  }
   endTutorial();
   return ownsPendingBoot;
 }
@@ -955,7 +1015,9 @@ function _tutorialProductEventMatches(event, action, hit) {
         && typeof helixOverlayEnabled !== 'function') return false;
     const current = detail.control === 'topo-three-renderer'
       ? topoThreeRendererEnabled() : helixOverlayEnabled();
-    return current === detail.after_enabled;
+    if (current !== detail.after_enabled) return false;
+    return detail.control !== 'topo-three-renderer'
+      || _tutorialTopoPresentationMatches(detail.after_enabled);
   }
   return true;
 }

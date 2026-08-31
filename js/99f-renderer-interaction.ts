@@ -6,6 +6,10 @@
 // Phase B12 of PROPOSAL-MODULAR-REFACTOR — split renderer.
 
 function _topoTooltipFromEvent(ev) {
+  if (_topoExactFlatPresentationActive) {
+    _topoHideTooltip();
+    return;
+  }
   const canvas = document.getElementById('topo-canvas');
   const tip = document.getElementById('topo-tooltip');
   const sim = topoActiveSim();
@@ -98,6 +102,7 @@ function _topoHideTooltip() {
 // legend propagate up to canvas if not stopped; the legend handler
 // calls stopPropagation to prevent that crossover.
 function _topoClickFromEvent(ev) {
+  if (_topoExactFlatPresentationActive) return;
   const hit = _topoHitTest(ev);
   topoToggleLockTarget(
     hit && hit.mineral ? { type: 'mineral', value: hit.mineral } : null
@@ -106,6 +111,7 @@ function _topoClickFromEvent(ev) {
 
 // Zoom — multiplies mmToPx in the renderer. `dir` is +1 (in) or -1 (out).
 function topoZoom(dir) {
+  if (_topoExactFlatPresentationActive) return false;
   const factor = dir > 0 ? TOPO_ZOOM_STEP : (1 / TOPO_ZOOM_STEP);
   _topoZoom = Math.max(TOPO_ZOOM_MIN, Math.min(TOPO_ZOOM_MAX, _topoZoom * factor));
   const label = document.getElementById('topo-zoom-label');
@@ -118,6 +124,7 @@ function topoZoom(dir) {
 // flips _topoView3D for the renderer, and applies/clears the CSS 3D
 // transform on the canvas.
 function topoSetDragMode(mode) {
+  if (_topoExactFlatPresentationActive) return false;
   // Toggle behavior: re-clicking the active mode returns to default.
   if (_topoDragMode === mode) mode = 'default';
   _topoDragMode = mode;
@@ -138,6 +145,7 @@ function topoSetDragMode(mode) {
 // Reset pan and tilt to zero. Zoom is preserved (user probably wants
 // to keep their zoom level when recentering).
 function topoRecenter() {
+  if (_topoExactFlatPresentationActive) return false;
   _topoPanX = 0;
   _topoPanY = 0;
   _topoTiltX = 0;
@@ -164,10 +172,26 @@ function _topoApplyTransform() {
 // Wire hover + zoom wheel + click-drag pan once — called from the
 // panel's first show. Idempotent.
 let _topoWired = false;
+function _topoWheelFromEvent(ev: WheelEvent | any): boolean {
+  // The authenticated Cartesian cross-section is a fixed product. Do not eat
+  // the page's wheel gesture for a zoom operation that this presentation
+  // intentionally refuses.
+  if (_topoExactFlatPresentationActive) return false;
+  ev.preventDefault();
+  return topoZoom(ev.deltaY < 0 ? +1 : -1) !== false;
+}
+
 function topoEnsureWired() {
   if (_topoWired) return;
   const canvas = document.getElementById('topo-canvas');
   if (!canvas) return;
+  // 99i owns the ⬚ presentation state and its truthful dynamic label. Keep
+  // the authored HTML's boot placeholder from becoming stale UI copy when the
+  // renderer contract evolves; the panel's first public show commissions the
+  // current state before any pointer handler can use the control.
+  if (typeof _topoSyncThreeButtonState === 'function') {
+    _topoSyncThreeButtonState();
+  }
   // Both the canvas-vector canvas and the Phase E Three.js canvas
   // need the same pointer handlers — when the user toggles renderer
   // tier, the Three canvas claims pointer-events from the 2D canvas
@@ -180,10 +204,7 @@ function topoEnsureWired() {
     el.addEventListener('mousemove', _topoTooltipFromEvent);
     el.addEventListener('mouseleave', _topoHideTooltip);
     el.addEventListener('click', _topoClickFromEvent);
-    el.addEventListener('wheel', (ev) => {
-      ev.preventDefault();
-      topoZoom(ev.deltaY < 0 ? +1 : -1);
-    }, { passive: false });
+    el.addEventListener('wheel', _topoWheelFromEvent, { passive: false });
     // Click-drag pan / rotate. Pointer events handle BOTH mouse and
     // touch from one code path (vs. the old mousedown/mousemove/
     // mouseup which never fired during touch gestures). Modern
@@ -215,6 +236,7 @@ let _topoDragOriginTiltY = 0;
 // even in rotate mode, and pointerup clears it.
 let _topoMidPanDrag = false;
 function _topoPanMouseDown(ev) {
+  if (_topoExactFlatPresentationActive) return;
   // For pointer events, button=0 is the primary button (left mouse,
   // first touch contact, primary stylus) and button=1 is the middle
   // button (scroll-wheel press) — held middle button pans. Right-click
@@ -256,6 +278,10 @@ function _topoPanMouseDown(ev) {
 // in 3D mode updates tilts (rotateX = vertical drag, rotateY = horiz).
 const TOPO_DRAG_ROTATE_RAD_PER_PX = 0.5 * Math.PI / 180;  // 0.5° per px
 function _topoPanMouseMove(ev) {
+  if (_topoExactFlatPresentationActive) {
+    _topoPanMouseUp();
+    return;
+  }
   const dx = ev.clientX - _topoDragStartClientX;
   const dy = ev.clientY - _topoDragStartClientY;
   if (!_topoDragging) {
@@ -299,6 +325,10 @@ function _topoPanMouseUp() {
     const canvas = document.getElementById('topo-canvas');
     if (canvas) canvas.style.cursor = '';
   }
+}
+
+function _topoCancelActiveDragForPresentationBoundary(): void {
+  _topoPanMouseUp();
 }
 
 // Replay: walk the per-step ring[0] snapshots captured during the run,
