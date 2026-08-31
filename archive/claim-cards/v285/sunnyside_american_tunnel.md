@@ -108,7 +108,7 @@
   - Al2SiO5 executed phase counts: {"unconstrained":200}; first=unconstrained, last=unconstrained
   - Executed stress: no stress event recorded by the run.
   - Mineral transformations: none executed.
-  - Transformation reactivity commissioning: controlled production-engine boundary; not a locality trajectory; artifact vugg-mechanism-witnesses-v5/0285366993b8599c9098ddab6aa5a35486b98d311d4cf21825917427a2e1374b.
+  - Transformation reactivity commissioning: controlled production-engine boundary; not a locality trajectory; artifact vugg-mechanism-witnesses-v5/afc31e32786240d98b5b8cf0c97d7a6417f3ceeeda64f31ac12084382d9681e8.
     - No controlled reactivity witness is applicable to a transformation product in this locality run.
   - Conserved carbonate boundary: not enabled for this archived run.
 

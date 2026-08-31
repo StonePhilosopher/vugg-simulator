@@ -5,7 +5,7 @@
   "packs": [
     {
       "id": "core",
-      "content_version": "1.0.0",
+      "content_version": "1.0.1",
       "compatibility": {
         "sim_version": 285,
         "model_digest_sha256": "588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e",
@@ -16,8 +16,8 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "7bec970f0c7fc58d924faf00dd9e907f3285c27985df8e234716465f9c4fc04d",
-      "runtime_execution_sha256": "49109accb4f458c2d85161ddebe9e553a12f60ae11647dbc70b2ef06fb650ea2",
+      "browser_bundle_sha256": "4c2914fcbe199cbe9e5c243123bb99bc4ef8fb198aa4183d1e2d6f9d5c8067af",
+      "runtime_execution_sha256": "851e3a6d935514f5e4f1246b16f443b401104214a9014a51d0cdf102b8419e05",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
@@ -36,8 +36,8 @@
         },
         {
           "path": "data/scenarios.json5",
-          "bytes": 514230,
-          "sha256": "948cd3f785966976f688483a8c17278bb4a7db4cb321ec5d0c1e832a2aa83b7e"
+          "bytes": 514725,
+          "sha256": "aa194e816b84c3082f38d0a8cc853135efd56c77840c95d49ab362a744c1e61e"
         },
         {
           "path": "data/structural.json",
@@ -527,7 +527,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "bd2eb6f3a380c737cb295aea11c0ea3ea2e91ee49b3e26e6c1ec40328e4190ba",
+  "producer_contract_sha256": "cadf44184fdd990f5ee05dd0e57e03f5ba29af595c4b9ecf431b8e8927e423be",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "478bdda99778369cddf822ca6087bd59d12725b301f5c2c4ea6383bd44989f7e"
+  "catalog_sha256": "946a35b9ea2b8158bd3c91a18061a75880b864b93702c9d7797f7e86c9bca04d"
 }

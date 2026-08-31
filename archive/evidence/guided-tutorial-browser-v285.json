@@ -1,8 +1,8 @@
 {
-  "schema": "vugg-guided-tutorial-browser-receipt-v4",
+  "schema": "vugg-guided-tutorial-browser-receipt-v5",
   "sim_version": 285,
-  "browser_bundle_sha256": "7bec970f0c7fc58d924faf00dd9e907f3285c27985df8e234716465f9c4fc04d",
-  "execution_set_sha256": "49109accb4f458c2d85161ddebe9e553a12f60ae11647dbc70b2ef06fb650ea2",
+  "browser_bundle_sha256": "4c2914fcbe199cbe9e5c243123bb99bc4ef8fb198aa4183d1e2d6f9d5c8067af",
+  "execution_set_sha256": "851e3a6d935514f5e4f1246b16f443b401104214a9014a51d0cdf102b8419e05",
   "node_runtime": {
     "schema": "vugg-evidence-node-runtime-v1",
     "node": "24.15.0",
@@ -13,7 +13,7 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "6e578b09c2f80acae2dd296e7c6f294d54dd5d41e66420a9572899235e3c2588",
+  "producer_contract_sha256": "a34468e9704ace4662056be4c567866c58bdf75098725b645b20dde51c850a04",
   "payload": {
     "browser_runtime": {
       "schema": "vugg-owned-devtools-browser-runtime-v2",
@@ -23,9 +23,43 @@
       "devtools_protocol_version": "1.3"
     },
     "journeys": {
-      "schema": "guided-tutorial-browser-journeys-v3",
+      "schema": "guided-tutorial-browser-journeys-v4",
       "trust": "local-owned-browser-player-controls-not-independent-attestation",
       "sim_version": 285,
+      "grand_tour_saves_lesson": {
+        "scenario": "tutorial_first_crystal",
+        "entry": "Begin menu Tutorial 1 button",
+        "controls": [
+          "Continue"
+        ],
+        "quick_nav_ids": [
+          "mode-current",
+          "mode-groove",
+          "mode-stripview",
+          "mode-library",
+          "mode-saves",
+          "mode-home"
+        ],
+        "saves": {
+          "step_index": 6,
+          "trigger": "continue",
+          "anchor_id": "mode-saves",
+          "highlighted": true,
+          "policy_text": "💾 Saves — your active run keeps one rolling autosave after every accepted action, so ordinary progress is automatic. Open this shelf to make a named manual copy or load a saved geological run. Loading restores the run recipe and state; the tutorial overlay intentionally does not resume."
+        },
+        "home": {
+          "step_index": 7,
+          "trigger": "continue",
+          "anchor_id": "mode-home",
+          "highlighted": true,
+          "preservation_text": "🏠 Home — back to the title screen. It ends the tutorial overlay, but your geological run remains available through Saves."
+        },
+        "teardown": {
+          "tutorial_null": true,
+          "callouts": 0,
+          "locks": 0
+        }
+      },
       "creative": {
         "scenario": "tutorial_travertine",
         "entry": "Begin menu Tutorial 3 button",
@@ -73,14 +107,14 @@
             "scenario": "tutorial_travertine",
             "step": 50,
             "fingerprint": "8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e",
-            "run_id": "save-16-dep"
+            "run_id": "save-16-jua"
           },
           "after": {
             "runtime": "fortress",
             "scenario": "tutorial_travertine",
             "step": 50,
             "fingerprint": "8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e",
-            "run_id": "save-16-dep"
+            "run_id": "save-16-jua"
           }
         },
         "teardown": {
@@ -108,7 +142,7 @@
           "Finish tutorial"
         ],
         "collected": {
-          "record_id": "cry-16-9vm",
+          "record_id": "cry-16-33x",
           "name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "mineral": "topaz",
           "source_scenario": "shigar_pegmatite",
@@ -148,14 +182,14 @@
             "scenario": "tutorial_travertine",
             "step": 1,
             "fingerprint": "90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23",
-            "run_id": "save-16-55o"
+            "run_id": "save-16-i77"
           },
           "after": {
             "runtime": "fortress",
             "scenario": "tutorial_travertine",
             "step": 1,
             "fingerprint": "90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23",
-            "run_id": "save-16-55o"
+            "run_id": "save-16-i77"
           }
         },
         "tutorial_resurrected": false,
@@ -171,14 +205,14 @@
             "scenario": "tutorial_mn_calcite",
             "step": 0,
             "fingerprint": "143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5",
-            "run_id": "save-16-9bv"
+            "run_id": "save-16-mhf"
           },
           "after": {
             "runtime": "fortress",
             "scenario": "tutorial_mn_calcite",
             "step": 0,
             "fingerprint": "143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5",
-            "run_id": "save-16-9bv"
+            "run_id": "save-16-mhf"
           }
         },
         "callouts": 0,
@@ -187,7 +221,7 @@
       "player_surfaces": {
         "schema": "game04-player-surfaces-v1",
         "collection_record_groove": {
-          "record_id": "cry-16-9vm",
+          "record_id": "cry-16-33x",
           "stored_name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "library_name_text": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "groove_name_text": "“<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">”",
@@ -241,5 +275,5 @@
       }
     }
   },
-  "payload_sha256": "c2ecf0baf2c7a8a9532c9d92ecfb6fb8076908a55c663e9e72dfe948142faf6e"
+  "payload_sha256": "2592ed5ccf83f9d2a77c7d71fb0ed67b3583f8cd1d1ee5ba20a1914eccbe1c7a"
 }
