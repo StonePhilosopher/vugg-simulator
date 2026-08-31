@@ -23,9 +23,10 @@ import {
 } from './evidence-runtime.mjs';
 import { writeJsonAtomic } from './scenario-evidence-checkpoint.mjs';
 import { parseScenarioDocument } from './scenario-authoring.mjs';
+import { verifyGuidedTutorialBrowserReceipt } from './guided-tutorial-browser-receipt.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v5';
+export const MECHANISM_WITNESS_SCHEMA = 'vugg-mechanism-witnesses-v6';
 
 const canonicalJson = value => {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -196,13 +197,49 @@ const guidedTutorialProductSourceAuthority = root => {
   if (canonicalJson(acid) !== canonicalJson(expectedAcid)) {
     throw new Error('guided tutorial acid step does not bind committed titration product');
   }
+  const unavailableCapability = 'three-renderer';
+  const removedStepCount = tour.steps.filter(
+    step => step?.requiresCapability === unavailableCapability,
+  ).length;
+  const removedProductStepCount = tour.steps.filter(
+    step => step?.requiresCapability === unavailableCapability
+      && step?.action?.event === 'vugg:tutorial-view-state-committed',
+  ).length;
+  const commissionedStepCount = tour.steps.length - removedStepCount;
+  if (!Number.isSafeInteger(commissionedStepCount) || commissionedStepCount <= 0
+      || removedProductStepCount !== expectedViewerProducts.length) {
+    throw new Error('guided tutorial headless capability filter is not source-complete');
+  }
   return {
     commissioned_viewer_boot_state: {
       topo_three_renderer_enabled: true,
       helix_overlay_enabled: false,
     },
+    headless_capability_authority: {
+      unavailable_capability: unavailableCapability,
+      authored_step_count: tour.steps.length,
+      removed_step_count: removedStepCount,
+      removed_product_step_count: removedProductStepCount,
+      commissioned_step_count: commissionedStepCount,
+    },
     viewer_products: expectedViewerProducts,
     carbonate_titration_product: expectedAcid,
+  };
+};
+
+// The Node mechanism harness deliberately has no WebGL/Three formation. It
+// proves that capability-gated tutorial actions fail closed there; the owned
+// browser journey is the executable authority for the capable transitions and
+// exact flat product. Bind that separately produced receipt into this witness
+// rather than fabricating a partial THREE object in jsdom.
+const guidedTutorialBrowserAuthority = (root, simVersion) => {
+  const file = path.join(root, 'archive', 'evidence',
+    `guided-tutorial-browser-v${simVersion}.json`);
+  const receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+  verifyGuidedTutorialBrowserReceipt(root, receipt, { simVersion });
+  return {
+    schema: receipt.schema,
+    payload_sha256: receipt.payload_sha256,
   };
 };
 
@@ -630,19 +667,31 @@ async function guidedTutorialInteractionProducts(science) {
   const recordViewer = event => viewerReceipts.push(copy(event.detail));
   topo.addEventListener('vugg:tutorial-view-state-committed', recordViewer);
   helix.addEventListener('vugg:tutorial-view-state-committed', recordViewer);
-  science.topoSetThreeRendererEnabled(false, false);
-  science.helixSetOverlayEnabled(true, false);
-  await science.startTutorial('tutorial_first_crystal');
-  const commissioning = copy(science.tutorialViewerCommissioningReceipt());
-  const bootState = copy(science.tutorialStateSnapshot());
-  if (!commissioning) throw new Error('guided tutorial boot emitted no viewer commissioning receipt');
-  science.topoSetThreeRendererEnabled(false, true);
-  science.topoSetThreeRendererEnabled(true, true);
-  science.helixSetOverlayEnabled(true, true);
-  science.helixSetOverlayEnabled(false, true);
-  topo.remove();
-  helix.remove();
-  science.fortressReset();
+  const hadThree = Object.prototype.hasOwnProperty.call(globalThis, 'THREE');
+  const priorThree = globalThis.THREE;
+  let commissioning;
+  let bootState;
+  try {
+    // Force the exact offline/headless formation. All four capable-only
+    // setters are still attempted below: none may emit a successful product.
+    delete globalThis.THREE;
+    science.topoSetThreeRendererEnabled(false, false);
+    science.helixSetOverlayEnabled(true, false);
+    await science.startTutorial('tutorial_first_crystal');
+    commissioning = copy(science.tutorialViewerCommissioningReceipt());
+    bootState = copy(science.tutorialStateSnapshot());
+    if (!commissioning) throw new Error('guided tutorial boot emitted no viewer commissioning receipt');
+    science.topoSetThreeRendererEnabled(false, true);
+    science.topoSetThreeRendererEnabled(true, true);
+    science.helixSetOverlayEnabled(true, true);
+    science.helixSetOverlayEnabled(false, true);
+  } finally {
+    if (hadThree) globalThis.THREE = priorThree;
+    else delete globalThis.THREE;
+    topo.remove();
+    helix.remove();
+    science.fortressReset();
+  }
 
   const grid = document.createElement('div');
   grid.className = 'action-grid';
@@ -696,7 +745,9 @@ async function guidedTutorialInteractionProducts(science) {
   }
   return {
     source_authority: guidedTutorialProductSourceAuthority(ROOT),
+    capable_browser_authority: guidedTutorialBrowserAuthority(ROOT, science.SIM_VERSION),
     viewer_control: {
+      formation: 'headless-three-unavailable-fail-closed-control',
       boot_state: bootState,
       commissioning,
       emitted_products: viewerReceipts,
@@ -995,44 +1046,39 @@ export function verifyMechanismWitnessArtifact(root, artifact, expected = {}) {
   const sourceAuthority = guidedTutorialSourceAuthority(root);
   const productSourceAuthority = guidedTutorialProductSourceAuthority(root);
   const interaction = guided?.interaction_products;
+  const browserAuthority = guidedTutorialBrowserAuthority(root, artifact.sim_version);
   const viewer = interaction?.viewer_control;
   const carbonate = interaction?.carbonate_titration_control;
-  const viewerReceiptKeys = [
-    'schema', 'control', 'before_enabled', 'after_enabled',
-  ];
-  const expectedViewerReceipts = productSourceAuthority.viewer_products.map(row => ({
-    schema: 'tutorial-view-state-product-v1',
-    control: row.control,
-    before_enabled: row.beforeEnabled,
-    after_enabled: row.afterEnabled,
-  }));
   if (!exactKeys(interaction, [
-    'source_authority', 'viewer_control', 'carbonate_titration_control',
+    'source_authority', 'capable_browser_authority',
+    'viewer_control', 'carbonate_titration_control',
   ])
       || canonicalJson(interaction.source_authority) !== canonicalJson(productSourceAuthority)
-      || !exactKeys(viewer, ['boot_state', 'commissioning', 'emitted_products'])
+      || canonicalJson(interaction.capable_browser_authority) !== canonicalJson(browserAuthority)
+      || !exactKeys(viewer, ['formation', 'boot_state', 'commissioning', 'emitted_products'])
+      || viewer.formation !== 'headless-three-unavailable-fail-closed-control'
       || !exactKeys(viewer.boot_state, [
         'mode', 'step_index', 'step_count', 'rendered_index', 'paused_at', 'current_trigger',
       ])
       || viewer.boot_state.mode !== 'fortress'
       || viewer.boot_state.step_index !== 0
-      || !Number.isSafeInteger(viewer.boot_state.step_count) || viewer.boot_state.step_count <= 0
+      || viewer.boot_state.step_count
+        !== productSourceAuthority.headless_capability_authority.commissioned_step_count
       || viewer.boot_state.rendered_index !== 0
+      || viewer.boot_state.paused_at !== -1
       || viewer.boot_state.current_trigger !== 'continue'
       || !exactKeys(viewer.commissioning, ['schema', 'before', 'after'])
       || viewer.commissioning.schema !== 'tutorial-viewer-commissioning-v1'
       || canonicalJson(viewer.commissioning.before) !== canonicalJson({
-        topo_three_renderer_enabled: false, helix_overlay_enabled: true,
+        topo_three_renderer_enabled: false, helix_overlay_enabled: false,
       })
       || canonicalJson(viewer.commissioning.after) !== canonicalJson({
-        topo_three_renderer_enabled: true, helix_overlay_enabled: false,
+        topo_three_renderer_enabled: false, helix_overlay_enabled: false,
       })
       || !Array.isArray(viewer.emitted_products)
-      || viewer.emitted_products.length !== expectedViewerReceipts.length
-      || !viewer.emitted_products.every(row => exactKeys(row, viewerReceiptKeys))
-      || canonicalJson(viewer.emitted_products) !== canonicalJson(expectedViewerReceipts)
+      || viewer.emitted_products.length !== 0
       || !exactKeys(carbonate, ['rejected', 'accepted'])) {
-    throw new Error('guided tutorial witness does not prove executed viewer products');
+    throw new Error('guided tutorial witness does not prove capable-browser ownership and headless refusal');
   }
   const rejected = carbonate.rejected;
   const accepted = carbonate.accepted;

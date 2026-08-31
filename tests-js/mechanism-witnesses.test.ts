@@ -147,6 +147,13 @@ describe('authenticated production mechanism witnesses', () => {
             topo_three_renderer_enabled: true,
             helix_overlay_enabled: false,
           },
+          headless_capability_authority: {
+            unavailable_capability: 'three-renderer',
+            authored_step_count: 37,
+            removed_step_count: 10,
+            removed_product_step_count: 4,
+            commissioned_step_count: 27,
+          },
           viewer_products: [
             { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: true, afterEnabled: false },
             { selector: '#topo-three-btn', control: 'topo-three-renderer', beforeEnabled: false, afterEnabled: true },
@@ -159,21 +166,22 @@ describe('authenticated production mechanism witnesses', () => {
             productAction: 'carbonate-acid-titration',
           },
         },
+        capable_browser_authority: {
+          schema: 'vugg-guided-tutorial-browser-receipt-v6',
+          payload_sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
+        },
         viewer_control: {
+          formation: 'headless-three-unavailable-fail-closed-control',
           boot_state: {
-            mode: 'fortress', step_index: 0, current_trigger: 'continue',
+            mode: 'fortress', step_index: 0, step_count: 27,
+            rendered_index: 0, paused_at: -1, current_trigger: 'continue',
           },
           commissioning: {
             schema: 'tutorial-viewer-commissioning-v1',
-            before: { topo_three_renderer_enabled: false, helix_overlay_enabled: true },
-            after: { topo_three_renderer_enabled: true, helix_overlay_enabled: false },
+            before: { topo_three_renderer_enabled: false, helix_overlay_enabled: false },
+            after: { topo_three_renderer_enabled: false, helix_overlay_enabled: false },
           },
-          emitted_products: [
-            { schema: 'tutorial-view-state-product-v1', control: 'topo-three-renderer', before_enabled: true, after_enabled: false },
-            { schema: 'tutorial-view-state-product-v1', control: 'topo-three-renderer', before_enabled: false, after_enabled: true },
-            { schema: 'tutorial-view-state-product-v1', control: 'helix-overlay', before_enabled: false, after_enabled: true },
-            { schema: 'tutorial-view-state-product-v1', control: 'helix-overlay', before_enabled: true, after_enabled: false },
-          ],
+          emitted_products: [],
         },
         carbonate_titration_control: {
           rejected: {
@@ -256,7 +264,19 @@ describe('authenticated production mechanism witnesses', () => {
 
     for (const mutate of [
       (value: any) => { value.viewer_control.boot_state.step_index = 1; },
-      (value: any) => { value.viewer_control.emitted_products[0].after_enabled = true; },
+      (value: any) => { value.viewer_control.boot_state.step_count = 37; },
+      (value: any) => { value.viewer_control.boot_state.paused_at = 3; },
+      (value: any) => {
+        value.viewer_control.emitted_products.push({
+          schema: 'tutorial-view-state-product-v1',
+          control: 'topo-three-renderer',
+          before_enabled: false,
+          after_enabled: true,
+        });
+      },
+      (value: any) => {
+        value.capable_browser_authority.payload_sha256 = '0'.repeat(64);
+      },
       (value: any) => {
         value.carbonate_titration_control.accepted.emitted_products[0]
           .spatial_authority_count = 1;
