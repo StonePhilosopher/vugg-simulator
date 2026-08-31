@@ -105,14 +105,25 @@ const EXPECTED_GAME04_DOWNLOAD_SHA256 = 'fc1a173eb221bff3f4c621232f2c1ec66692a53
 // freezes. These values are independently pinned so a self-rehashed receipt
 // cannot merely invent a plausible flat view while the public control is dead.
 const EXPECTED_FLAT_TOPOLOGY_PRODUCT = Object.freeze({
-  grid_index: null,
-  plane_world_mm: null,
-  dimensions: Object.freeze([]),
-  spacing_mm: null,
-  layout: null,
-  field_snapshot_digest: '__REGENERATE__',
-  surface_buffer_digest: '__REGENERATE__',
-  receipt_digest: '__REGENERATE__',
+  grid_index: 24,
+  plane_world_mm: -0.1221521661082079,
+  dimensions: Object.freeze([48, 48]),
+  spacing_mm: 6.606103985246776,
+  layout: Object.freeze({
+    schema: 'cavity-field-cross-section-layout-v1',
+    canvas_dimensions_px: Object.freeze([1741, 676]),
+    visible_bounds_px: Object.freeze([435.25, 169, 1305.75, 507]),
+    plot_bounds_px: Object.freeze([733.5, 187, 1007.5, 461]),
+    label_bounds_px: Object.freeze([
+      Object.freeze([799.4140625, 479, 941.5859375, 488]),
+      Object.freeze([810.03125, 495, 930.96875, 504]),
+    ]),
+    plot_inside_visible_bounds: true,
+    labels_inside_visible_bounds: true,
+  }),
+  field_snapshot_digest: '17e11336b040dfc0cbdc12e8207e5394',
+  surface_buffer_digest: 'cavity-surface-buffers-v2|Float32Array:228984:c2f1c90decc829bd|Float32Array:228984:397f58f553a99011|Float32Array:228984:3229382bd3a42621|Float32Array:152656:7bc3efc07d1af0da|Uint16Array:228960:d79e8c331c16b28b|',
+  receipt_digest: 'be479746fe0dc8ba',
 });
 const EXPECTED_BROWSER_RUNTIME = Object.freeze({
   schema: 'vugg-owned-devtools-browser-runtime-v2',

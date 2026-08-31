@@ -1,8 +1,8 @@
 {
-  "schema": "vugg-guided-tutorial-browser-receipt-v5",
+  "schema": "vugg-guided-tutorial-browser-receipt-v6",
   "sim_version": 285,
-  "browser_bundle_sha256": "4c2914fcbe199cbe9e5c243123bb99bc4ef8fb198aa4183d1e2d6f9d5c8067af",
-  "execution_set_sha256": "851e3a6d935514f5e4f1246b16f443b401104214a9014a51d0cdf102b8419e05",
+  "browser_bundle_sha256": "7147aba2c827610a8d8d5dd9fc3ff90f15007e114c0cdbee97a67efbba4270f1",
+  "execution_set_sha256": "9c453fbd32209287291adcb33b596d4c87870bc80d6f6dc4703020019878de93",
   "node_runtime": {
     "schema": "vugg-evidence-node-runtime-v1",
     "node": "24.15.0",
@@ -13,7 +13,7 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "a34468e9704ace4662056be4c567866c58bdf75098725b645b20dde51c850a04",
+  "producer_contract_sha256": "378cee28029ced4b5ac815ba0144f62591798b6902588284ce42655e27aeb1fb",
   "payload": {
     "browser_runtime": {
       "schema": "vugg-owned-devtools-browser-runtime-v2",
@@ -219,7 +219,7 @@
         "locks": 0
       },
       "player_surfaces": {
-        "schema": "game04-player-surfaces-v1",
+        "schema": "game04-player-surfaces-v2",
         "collection_record_groove": {
           "record_id": "cry-16-33x",
           "stored_name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
@@ -236,11 +236,71 @@
             "three:on",
             "helix:off",
             "three:off",
+            "three:on",
             "helix:on",
-            "helix:off",
-            "three:on"
+            "helix:off"
           ],
           "pointer_hit_tested_controls": true,
+          "flat_product": {
+            "schema": "cavity-field-cross-section-v1",
+            "presentation": "capability-independent-cpu-sampled-cross-section",
+            "axis": "z",
+            "grid_index": 24,
+            "plane_world_mm": -0.1221521661082079,
+            "dimensions": [
+              48,
+              48
+            ],
+            "spacing_mm": 6.606103985246776,
+            "field_snapshot_digest": "17e11336b040dfc0cbdc12e8207e5394",
+            "surface_buffer_digest": "cavity-surface-buffers-v2|Float32Array:228984:c2f1c90decc829bd|Float32Array:228984:397f58f553a99011|Float32Array:228984:3229382bd3a42621|Float32Array:152656:7bc3efc07d1af0da|Uint16Array:228960:d79e8c331c16b28b|",
+            "receipt_digest": "be479746fe0dc8ba",
+            "crystal_policy": "withheld-with-explicit-label-without-authenticated-cpu-field-clipping",
+            "three_canvas_display": "none",
+            "flat_canvas_visibility": "visible",
+            "slice_controls_display": "none",
+            "zoom_controls_display": "none",
+            "inapplicable_camera_controls_disabled": true,
+            "layout": {
+              "schema": "cavity-field-cross-section-layout-v1",
+              "canvas_dimensions_px": [
+                1741,
+                676
+              ],
+              "visible_bounds_px": [
+                435.25,
+                169,
+                1305.75,
+                507
+              ],
+              "plot_bounds_px": [
+                733.5,
+                187,
+                1007.5,
+                461
+              ],
+              "label_bounds_px": [
+                [
+                  799.4140625,
+                  479,
+                  941.5859375,
+                  488
+                ],
+                [
+                  810.03125,
+                  495,
+                  930.96875,
+                  504
+                ]
+              ],
+              "plot_inside_visible_bounds": true,
+              "labels_inside_visible_bounds": true
+            }
+          },
+          "restored_product": {
+            "three_canvas_display": "block",
+            "flat_canvas_visibility": "hidden"
+          },
           "final_three_enabled": true,
           "final_helix_enabled": false
         },
@@ -275,5 +335,5 @@
       }
     }
   },
-  "payload_sha256": "2592ed5ccf83f9d2a77c7d71fb0ed67b3583f8cd1d1ee5ba20a1914eccbe1c7a"
+  "payload_sha256": "21e446133ac893fbae981f5aa6926d053fb1bc926e4f23fdf0beb0c8b11004e7"
 }
