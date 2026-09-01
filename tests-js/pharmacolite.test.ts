@@ -177,7 +177,10 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     // the stronger capability pin and still passes; the direct chemistry
     // assertions above pin the engine math.
 
-    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 300000 }, () => {
+    /* The active widened-seed capability pin was extracted to
+       pharmacolite-seeds.test.ts so it receives an independent process in
+       experimental parallel runs. Its full history remains here. */
+    it.skip('widened-seed capability pin lives in pharmacolite-seeds.test.ts', () => {
       // v214 timeout bump (150s → 240s): this 32-seed × ~200-step sweep is
       // CONTENTION-bound, not logic-bound — schneeberg output is byte-identical
       // (the v214 open_system change is great_salt_plains-only), but that change

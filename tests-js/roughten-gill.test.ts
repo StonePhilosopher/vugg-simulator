@@ -58,6 +58,9 @@ function crystals(sim: any, mineral: string) {
 }
 
 describe('Roughton Gill mine-specific scenario', () => {
+  // Widened sphalerite and brochantite capability sweeps are split into
+  // dedicated files so the memory-bounded workflow can checkpoint them
+  // independently and experimental runners can schedule them separately.
   it('preserves the historical id, authored shape seed, duration, and six-stage sequence', () => {
     expect(typeof SCENARIOS.roughten_gill).toBe('function');
     const { conditions, defaultSteps } = SCENARIOS.roughten_gill();

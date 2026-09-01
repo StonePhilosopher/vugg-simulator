@@ -3,8 +3,8 @@
  * tools/gen-strip-digest.mjs — write the strip-view chemistry-trajectory
  * tripwire baseline to tests-js/baselines/strip_digest_v<N>.json.
  *
- * Companion to tests-js/strip-digest.test.ts (the tripwire) the way
- * gen-js-baseline.mjs is to calibration.test.ts. Reduces each already
+ * Companion to tests-js/strip-digest-*.test.ts (the split tripwire) the way
+ * gen-js-baseline.mjs is to calibration-shard-*.test.ts. Reduces each already
  * authenticated canonical strip story to a compact digest (per key chip:
  * {min,max,samples[8]} at wall + center) and writes it keyed to the current
  * SIM_VERSION. The archive is the full-fidelity authority, so this stage must

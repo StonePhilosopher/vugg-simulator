@@ -13,8 +13,9 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests-js/**/*.test.ts'],
     setupFiles: ['tests-js/setup.ts'],
-    // Run bundle setup once per file rather than per test — eval is
-    // expensive (~109 module concat + jsdom init).
+    // Reuse workers across files. setup.ts caches the concatenated
+    // source string per worker and re-`Function()`s per file so mutable
+    // sim state stays isolated without re-walking dist/.
     isolate: false,
     // Each worker evaluates the full multi-megabyte simulator bundle. The old
     // eight-worker cap was still unsafe on the local workstation: a measured

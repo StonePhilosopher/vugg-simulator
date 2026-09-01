@@ -605,7 +605,16 @@ const EXPORTS = [
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
-let _bundleLoaded = false;
+// Bundle source cache. Vitest re-imports setup.ts every file even with
+// `isolate: false`, so a module-local flag never survived. We cache the
+// concatenated source + export-name list on globalThis (and prefer the
+// pretest-written dist/.test-bundle.js) so workers don't re-walk ~150
+// files — but we ALWAYS re-`Function()` eval. Skipping eval reused the
+// same closures across files and leaked mutable sim state; vm.Script +
+// runInNewContext was tried and made the suite substantially slower
+// (context setup tax dominated any compile-once savings).
+const BUNDLE_SRC_KEY = '__vuggTestBundleSrc';
+const BUNDLE_NAMES_KEY = '__vuggTestBundleNames';
 
 // Load the vendored Three.js module into the test global scope so the
 // 99i renderer's geometry builders (which reference THREE.BufferGeometry,
@@ -660,25 +669,35 @@ function autoDeriveExportNames(files: string[]): string[] {
 }
 
 async function loadBundle() {
-  if (_bundleLoaded) return;
+  // Always reinstall the cheap stubs — jsdom may be fresh per file even
+  // when the process (and our cached source string) are reused.
   installFetchMock();
-  await installThreeGlobal();
-  const files = walkDistSorted();
-  if (!files.length) {
-    throw new Error(
-      `[setup] dist/ is empty — run \`npx tsc -p tsconfig.json\` (or \`npm run build\`) before \`npm test\``,
-    );
-  }
-  // Pre-populate jsdom with a minimal DOM stub so the bundle's
-  // top-level UI wiring (addEventListener calls keyed off
-  // getElementById) doesn't throw. We don't need the DOM to actually
-  // work — just to not crash on null.X. Override getElementById /
-  // querySelector to fall back to a no-op mock element so missing
-  // ids return SOMETHING.
   installDomStub();
-  const concatenated = files
-    .map(f => fs.readFileSync(f, 'utf8'))
-    .join('\n\n');
+  await installThreeGlobal();
+
+  let concatenated: string | undefined = (globalThis as any)[BUNDLE_SRC_KEY];
+  let autoDerived: string[] | undefined = (globalThis as any)[BUNDLE_NAMES_KEY];
+
+  if (!concatenated || !autoDerived) {
+    const files = walkDistSorted();
+    if (!files.length) {
+      throw new Error(
+        `[setup] dist/ is empty — run \`npx tsc -p tsconfig.json\` (or \`npm run build\`) before \`npm test\``,
+      );
+    }
+    const concatCache = path.join(DIST, '.test-bundle.js');
+    const namesCache = path.join(DIST, '.test-bundle-exports.json');
+    if (fs.existsSync(concatCache) && fs.existsSync(namesCache)) {
+      concatenated = fs.readFileSync(concatCache, 'utf8');
+      autoDerived = JSON.parse(fs.readFileSync(namesCache, 'utf8'));
+    } else {
+      concatenated = files.map(f => fs.readFileSync(f, 'utf8')).join('\n\n');
+      autoDerived = autoDeriveExportNames(files);
+    }
+    (globalThis as any)[BUNDLE_SRC_KEY] = concatenated;
+    (globalThis as any)[BUNDLE_NAMES_KEY] = autoDerived;
+  }
+
   // Epilogue: inject a setSeed helper that reassigns the bundle's
   // global `rng` from outside — the bundle never exposed one because
   // the UI handlers set `rng = new SeededRandom(seed)` inline. Tests
@@ -698,10 +717,12 @@ async function loadBundle() {
   `;
   // EXPORTS ∪ auto-derived names — dedupe via Set. Explicit list comes
   // first so its ordering is preserved in the literal (cosmetic only).
-  const autoDerived = autoDeriveExportNames(files);
   const ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
   const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
   const body = `${concatenated}\n${epilogue}\n;return ${exportObject};`;
+  // Fresh Function() every file — preserves per-file closure isolation
+  // (mutable flags / rng / calibration knobs) while the source string
+  // above is reused across files in this worker.
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const fn = new Function(body);
   const exports = fn();
@@ -710,7 +731,6 @@ async function loadBundle() {
       (globalThis as any)[name] = exports[name];
     }
   }
-  _bundleLoaded = true;
 }
 
 // ---- Wait for scenarios ----
