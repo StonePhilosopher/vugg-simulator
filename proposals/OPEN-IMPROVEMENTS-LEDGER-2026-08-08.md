@@ -4,6 +4,11 @@ This file supersedes stale “open” labels in `BACKLOG.md`, old handoffs, and
 individual proposals. Those documents remain historical evidence; this is the
 single execution ledger for the science-first AAA completion branch.
 
+> **Current compact debt view (2026-09-06):**
+> [`VUGG-DEBT-LEDGER-2026-09-06.md`](VUGG-DEBT-LEDGER-2026-09-06.md)
+> carries the active post-SIM-285 release, R1–R7, science/content, and
+> instrumentation debts without reviving stale historical “OPEN” labels.
+
 ## Already delivered — do not reimplement
 
 - Creative mode exposes the full authored geological control surface; the

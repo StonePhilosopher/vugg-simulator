@@ -7,6 +7,11 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> **Current debt ledger:** use
+> [`VUGG-DEBT-LEDGER-2026-09-06.md`](VUGG-DEBT-LEDGER-2026-09-06.md) for
+> executable post-SIM-285 debt. This file is historical provenance and its old
+> “OPEN” labels do not independently revive work.
+
 > ## 📷 HOSTILE REVIEW — VISUAL REALISM (2026-09-04) — **`PROPOSAL-HOSTILE-REVIEW-VISUAL-REALISM-2026-09-04.md`**
 >
 > Boss ask: how true to life do the rendered crystals look (10 = a photograph; target 7)?
