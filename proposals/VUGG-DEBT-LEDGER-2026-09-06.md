@@ -158,10 +158,12 @@ TN457 is deliberately excluded from cross-simulator realism acceptance. Its
 historical label supports “barite on sphalerite, England,” but the pink
 columnar/lamellar overgrowth remains unresolved among baryte-family and
 Ba-carbonate/replacement possibilities, and the live catalog has also carried
-a conflicting record. It may remain a bounded scenario regression fixture; it
-must not act as mineralogical ground truth or judge the rest of the renderer
-until the physical specimen is definitively identified and the catalog record
-is reconciled.
+a conflicting record. More fundamentally, the assemblage is obscure enough
+that its exact morphology is not a repeatable target from which to judge the
+general renderer, even if the physical specimen is eventually identified. It
+may remain a bounded scenario regression fixture or later exploratory stress
+case; it must not act as mineralogical ground truth or a general realism
+benchmark.
 
 ## D2 — Science and content surfaced by the render campaign
 
