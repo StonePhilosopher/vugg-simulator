@@ -78,7 +78,7 @@ aggregate.
 - [ ] Repair the rig's weak druse camera and the half-cut prototype's
   dark-side orientation while building the production view.
 - [ ] Gate default-view edge fraction to the reference band (0.03–0.12) and
-  obtain the boss eye-check on Elmwood, TN457, and MVT specimen views.
+  obtain the boss eye-check on Elmwood, Bisbee, and MVT specimen views.
 
 ### R5 — A wall that is rock
 
@@ -150,8 +150,18 @@ aggregate.
   transmission.
 - **Grimsel/Tormiq:** sub-parallel alpine-cleft families, sceptre renewal, and
   older-versus-younger quartz should read without textual explanation.
-- **TN457:** sphalerite/barite population scale and overgrowth sequence should
-  remain legible without turning coatings into oversized tokens.
+- **Bisbee:** distinct sulfide, carbonate, and oxide generations plus their
+  coatings should remain compositionally and chronologically legible rather
+  than collapsing into one decorative copper-coloured population.
+
+TN457 is deliberately excluded from cross-simulator realism acceptance. Its
+historical label supports “barite on sphalerite, England,” but the pink
+columnar/lamellar overgrowth remains unresolved among baryte-family and
+Ba-carbonate/replacement possibilities, and the live catalog has also carried
+a conflicting record. It may remain a bounded scenario regression fixture; it
+must not act as mineralogical ground truth or judge the rest of the renderer
+until the physical specimen is definitively identified and the catalog record
+is reconciled.
 
 ## D2 — Science and content surfaced by the render campaign
 
