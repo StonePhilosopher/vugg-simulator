@@ -9,6 +9,9 @@
  * The vitest setup reads these so each worker's first file pays one
  * read + Function() instead of 150× readFileSync + a regex scan.
  * Harmless no-op if dist/ is empty (setup.ts will throw the usual hint).
+ *
+ * Test Quarry cost measurements start after this pretest cache is built;
+ * the bundle itself is not a science or packing input.
  */
 import fs from 'node:fs';
 import path from 'node:path';
