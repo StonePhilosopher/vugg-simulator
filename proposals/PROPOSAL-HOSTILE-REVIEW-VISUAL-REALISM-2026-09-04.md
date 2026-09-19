@@ -465,8 +465,9 @@ Verification run: `npm run typecheck`, `build:check` (bundle current), 28 render
 files / 310 tests green on the fork base and 319 on the canonical base (`vitest run` on the files
 named in §9). Baking: on the fork base (SIM 271) `science:rebake` reproduced every seed-42
 artifact byte for byte; on canonical (SIM 285) it moved only the corrected surface-growth
-testimony (F13 has the leaf audit) and passed its verify phase. Cold CI was run on the canonical
-transplant after that bake; its verdict is recorded in PR #7.
+testimony (F13 has the leaf audit) and passed its verify phase. Cold CI on the canonical
+transplant passed at `6a82949b` in GitHub Actions run `33953918483`; repository PR #7 is an
+unrelated older canvas-lockfile change and is not evidence for this review.
 
 ---
 
@@ -1249,7 +1250,7 @@ R4–R6 carry it to 7.
   guided-tutorial receipt had to be regenerated first (`npm run gen:browser-receipt`) and four
   of its pinned constants re-pinned — two stream-position ids, the testimony dataset digest, and
   the box's Chrome version (F13) — then the rebake moved the corrected testimony only. Cold CI
-  on the canonical transplant: verdict in PR #7.
+  on the canonical transplant passed at `6a82949b` in GitHub Actions run `33953918483`.
 - The laminated lining still tiles (R3); the druse camera is weak (F12). (The `halfcut` prototype
   is superseded by R6's specimen view, whose key rides the camera and faces the opening.)
 - Amethyst geode and deccan chalcedony rinds are *booked* too thin to be fabrics — a science gap
