@@ -337,6 +337,27 @@ describe('memory-bounded full-test workflow', () => {
     expect(onBatchPass).toHaveBeenCalledWith(expect.objectContaining({
       batch: ['tests-js/a.test.ts'],
       peakRssBytes: 100,
+      elapsedMs: expect.any(Number),
     }));
+    expect(onBatchPass.mock.calls[0][0].elapsedMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('forwards measured elapsed_ms to the Test Quarry ledger hook', async () => {
+    const onBatchPass = vi.fn();
+    const batchRunner = vi.fn().mockImplementation(async () => {
+      await new Promise(resolve => setTimeout(resolve, 5));
+      return {
+        status: 0, peakRssBytes: 100, exceededRssBytes: null,
+        monitorError: null, terminationError: null,
+      };
+    });
+    const status = await runTestWorkflow({
+      files: ['tests-js/a.test.ts'],
+      batchSize: 1,
+      batchRunner,
+      onBatchPass,
+    });
+    expect(status).toBe(0);
+    expect(onBatchPass.mock.calls[0][0].elapsedMs).toBeGreaterThan(0);
   });
 });

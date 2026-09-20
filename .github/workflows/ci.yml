@@ -65,7 +65,8 @@ jobs:
       # canonical Windows box; the generous job timeout is for this step.
       # The full 232-file suite is NOT run here — a cold run is ~3.5 h under
       # tools/test-workflow.mjs and belongs to the foreman-controlled local
-      # workflow, not a shared runner.
+      # workflow, not a shared runner. Test Quarry packing keeps this
+      # sentinel on shard 0; it does not change the committed baseline.
       - run: npx vitest run tests-js/calibration-shard-0.test.ts -t supergene_oxidation
 
       # agent-api surface (PR #7): the lockfile install must succeed without
