@@ -41,6 +41,7 @@
     "test:quick": "vitest run --exclude 'tests-js/strip-digest-*.test.ts' --exclude 'tests-js/calibration-shard-*.test.ts' --exclude 'tests-js/stale-mineral-retunes.test.ts' --exclude 'tests-js/pharmacolite-seeds.test.ts' --exclude 'tests-js/roughten-gill-*-seeds.test.ts'",
     "test:parallel:experimental": "node tools/test-parallel.mjs",
     "test:bisbee-budget": "node --max-old-space-size=384 tools/bisbee-production-budget.mjs",
+    "test:quarry-packing": "node tools/test-quarry-ledger.mjs --print-packing",
     "test:cavity-memory-budget": "node --expose-gc tools/cavity-production-memory-budget.mjs",
     "test:watch": "vitest",
     "ci": "npm run audit:runtime && npm run typecheck && npm run build:check && npm run audit:tutorials && npm run audit:a11y && npm run audit:scenarios && npm run audit:release && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm run audit:localities && npm test"

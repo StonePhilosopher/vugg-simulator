@@ -1,4 +1,6 @@
 // Calibration sweep shard 0/8 — see calibration-lib.ts for why this is sharded.
+// Shard membership is cost-weighted (Test Quarry); this file still hosts the
+// CI sentinel `supergene_oxidation`.
 import { describe, expect, it } from 'vitest';
 import { runScenario, scenarioNames } from './helpers';
 import {

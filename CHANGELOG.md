@@ -40,6 +40,11 @@ and the exact-execution evidence receipt.
 - A memory-bounded full-suite runner that checks the complete project identity
   between batches. Resume checkpoints are explicitly untrusted operator
   conveniences and cannot issue an uninterrupted full-suite PASS.
+- A measurement-only Test Quarry cost ledger on the existing shard/foreman
+  harness. Passing `npm test` batches record wall time and RSS; calibration
+  shards pack heavy scenarios by authored `duration_steps` (Bisbee 340, then
+  Naica / Searles / Sabkha / Roughten Gill). The ledger does not change
+  science, baselines, or receipts.
 
 ### Scientific identity
 

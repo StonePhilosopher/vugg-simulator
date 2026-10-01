@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
+/**
+ * Bisbee production-cavity budget witness (canary-tier Test Quarry work).
+ * The 70-step receipt is a measurement + bound check for the acidic
+ * interval only. Evidence-tier Bisbee remains 340 steps × 3 seeds; see
+ * tools/test-quarry-ledger.mjs. This script does not write science
+ * baselines.
+ */
+
 import { loadSimBundle } from './_harness.mjs';
 import {
   bisbeeElapsedAllowanceMs,

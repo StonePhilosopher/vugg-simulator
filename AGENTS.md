@@ -48,13 +48,12 @@ this section only records the non-obvious startup/run caveats.
 ## Verification
 
 - Use **Node 24** for anything that compares against committed baselines or
-  receipts — it is the calibration-authority runtime (every baseline in the
-  v169→v271 lineage was baked on it; current: `seed42_v271.json`, merged with
-  the SIM-270/271 receipts in `cb9830c`). The committed `supergene_oxidation`
+  receipts — it is the calibration-authority runtime. Current tip authority
+  is **SIM 285 / `seed42_v285.json`**. The committed `supergene_oxidation`
   seed-42 check is green under Node 24 and flips deterministic counts under
-  Node 20/22/23 (measured at v237 — duftite 8→9, erythrite 5→4; see
-  `BUG-supergene-calibration-v237.md`). Never rebake a baseline or receipt
-  under another runtime, and never rebake from CI.
+  Node 20/22/23 (historically measured at v237 — duftite 8→9, erythrite 5→4;
+  see `BUG-supergene-calibration-v237.md`). Never rebake a baseline or
+  receipt under another runtime, and never rebake from CI.
 - `npm test` runs one test file and one worker per child with an RSS watchdog.
   Do not replace it with an unbounded all-files Vitest command.
 - Run one exact file with `npm test -- --file tests-js/name.test.ts`.
@@ -63,6 +62,27 @@ this section only records the non-obvious startup/run caveats.
 - Use `npm run typecheck` and `npm run build:check` for fast checks.
 - Evidence binds exact runtime bytes. Runtime, runtime-data, or producer changes
   require a fresh `npm run science:rebake`; never rewrite receipts by hand.
+
+### Test Quarry (measurement-only cost ledger)
+
+The quarry extends the existing shard/foreman harness. It is not a second
+scheduler and it does not change science or baselines.
+
+- **Packing:** `tests-js/calibration-lib.ts` assigns scenarios to the eight
+  `calibration-shard-*.test.ts` files by authored `duration_steps` (longest
+  processing time). Bisbee is 340 steps; Naica, Searles, Sabkha, and
+  Roughten Gill use the same proxy. `supergene_oxidation` stays on shard 0
+  so CI's `-t supergene_oxidation` sentinel keeps working.
+- **Ledger:** passing `npm test` batches append
+  `.local-evidence/test-quarry-cost-ledger-v1.json` with `elapsed_ms` and
+  `peak_rss_bytes`. Trust is `measurement-only-does-not-authenticate-science`.
+  `--fresh` clears it. The file is gitignored with the rest of
+  `.local-evidence/`.
+- **How to read it:** each `batches[]` row is one foreman child. `tiers`
+  is a label hook (`presubmit` / `canary` / `evidence`) — not a runner.
+  Bisbee's 70-step production budget (`npm run test:bisbee-budget`) is the
+  canary-tier witness; evidence-tier Bisbee is 340 steps × seeds 1, 2, 42.
+- **Inspect packing without running the suite:** `npm run test:quarry-packing`.
 
 ## Workstation safety
 

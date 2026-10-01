@@ -12,6 +12,10 @@
  * that starts at file zero, observes one unchanged project identity after
  * every batch, and reaches the end may publish an uninterrupted PASS record.
  * Even that record is a local test result, not cryptographic release evidence.
+ *
+ * Passing batches also append a measurement-only Test Quarry cost ledger
+ * (elapsed_ms + peak RSS) at `.local-evidence/test-quarry-cost-ledger-v1.json`.
+ * That ledger does not authenticate science and does not change file order.
  */
 
 import { execFile, spawn as spawnChild } from 'node:child_process';
@@ -20,6 +24,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import {
+  TEST_QUARRY_LEDGER_PATH,
+  appendQuarryMeasurements,
+} from './test-quarry-ledger.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
@@ -449,7 +457,9 @@ export async function runTestWorkflow({
     const first = path.basename(batch[0]);
     const last = path.basename(batch[batch.length - 1]);
     console.log(`\n[test-workflow] batch ${index + 1}/${batches.length}: ${first} .. ${last}`);
+    const started = performance.now();
     const result = await batchRunner({ batch });
+    const elapsedMs = Number((performance.now() - started).toFixed(1));
     const peakMb = Math.ceil(result.peakRssBytes / 1024 / 1024);
     if (result.terminationError) {
       console.error(`[test-workflow] FAIL: ${result.terminationError.message}`);
@@ -473,12 +483,13 @@ export async function runTestWorkflow({
       batchIndex: index,
       batchCount: batches.length,
     });
-    console.log(`[test-workflow] batch ${index + 1}/${batches.length} PASS (peak ${peakMb} MB RSS)`);
+    console.log(`[test-workflow] batch ${index + 1}/${batches.length} PASS (peak ${peakMb} MB RSS, ${elapsedMs} ms)`);
     if (onBatchPass) await onBatchPass({
       batch: [...batch],
       batchIndex: index,
       batchCount: batches.length,
       peakRssBytes: result.peakRssBytes,
+      elapsedMs,
     });
   }
   console.log(`\n[test-workflow] COMPLETE: ${files.length} files across ${batches.length} memory-bounded batches`);
@@ -492,6 +503,8 @@ if (invokedDirectly) {
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
       console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
+      console.log('Passing batches append a measurement-only cost ledger at .local-evidence/test-quarry-cost-ledger-v1.json');
+      console.log('That ledger does not change science, baselines, receipts, or batch order.');
     } else {
       const allFiles = collectTestFiles();
       for (const file of args.selectedFiles) {
@@ -501,6 +514,9 @@ if (invokedDirectly) {
       const identity = automaticCheckpoint ? testWorkflowIdentity() : null;
       if (automaticCheckpoint && args.fresh && fs.existsSync(TEST_CHECKPOINT_PATH)) {
         fs.unlinkSync(TEST_CHECKPOINT_PATH);
+      }
+      if (args.fresh && fs.existsSync(TEST_QUARRY_LEDGER_PATH)) {
+        fs.unlinkSync(TEST_QUARRY_LEDGER_PATH);
       }
       const resumed = automaticCheckpoint && !args.fresh
         ? readTestCheckpoint({ identity, allFiles })
@@ -534,13 +550,17 @@ if (invokedDirectly) {
         assertStable: automaticCheckpoint
           ? () => assertTestWorkflowIdentityUnchanged(identity)
           : null,
-        onBatchPass: automaticCheckpoint ? ({ batch, peakRssBytes }) => {
+        onBatchPass: ({ batch, peakRssBytes, elapsedMs }) => {
+          appendQuarryMeasurements({
+            files: batch, elapsedMs, peakRssBytes,
+          });
+          if (!automaticCheckpoint) return;
           completedFiles.push(...batch);
           completedBatches.push({ files: batch, peak_rss_bytes: peakRssBytes });
           writeJsonAtomic(TEST_CHECKPOINT_PATH, makeTestCheckpoint({
             identity, completedFiles, batches: completedBatches,
           }));
-        } : null,
+        },
       }) : 0;
       if (automaticCheckpoint && status === 0 && completedFiles.length === allFiles.length) {
         assertTestWorkflowIdentityUnchanged(identity);

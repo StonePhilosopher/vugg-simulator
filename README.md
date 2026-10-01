@@ -15,12 +15,15 @@ npm test
 one worker per child, with an RSS watchdog). A full cold run is measured at
 ~3.5 h on the canonical machine — see `AGENTS.md` for targeted single-file
 runs and the fast checks (`npm run typecheck`, `npm run build:check`).
+Passing batches append a measurement-only Test Quarry cost ledger; inspect
+packing with `npm run test:quarry-packing`. The ledger does not change
+science or baselines.
 
 GitHub Actions CI (`.github/workflows/ci.yml`) runs on **Node 24**, the
-calibration-authority runtime for the committed baselines (v169→v271 lineage;
-SIM-270/271 baselines and receipts merged in `cb9830c`). Node 20/22/23 flip
-deterministic crystal counts against the committed `supergene_oxidation`
-seed-42 baseline (measured at v237: duftite 8→9, erythrite 5→4); see
+calibration-authority runtime for the committed baselines (SIM 285 /
+`seed42_v285.json`). Node 20/22/23 flip deterministic crystal counts against
+the committed `supergene_oxidation` seed-42 baseline (measured at v237:
+duftite 8→9, erythrite 5→4); see
 [BUG-supergene-calibration-v237.md](BUG-supergene-calibration-v237.md). CI
 validates the committed science — receipt audits plus a calibration
 sentinel — and never rebakes baselines or receipts.

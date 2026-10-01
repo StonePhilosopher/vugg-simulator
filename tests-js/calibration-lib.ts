@@ -1,8 +1,19 @@
 // Shared helpers for the sharded calibration sweep.
 // Split across calibration-shard-*.test.ts so ~39 scenario runs fan out
 // across vitest workers instead of sitting sequential on one file.
+//
+// Shard membership is cost-weighted (Test Quarry LPT over authored
+// duration_steps) rather than name-modulo. Name-modulo stacked Naica,
+// Sabkha, and the CI sentinel on shard 0. Packing does not change which
+// scenarios are tested — only which shard file owns them. See
+// tools/test-quarry-ledger.mjs.
 
 import { currentEvidenceIdentity, loadAuthenticatedEvidenceJson } from './authenticated-evidence';
+import {
+  CALIBRATION_CI_SENTINEL,
+  authoredScenarioDurationSteps,
+  packedNamesForShard,
+} from '../tools/test-quarry-ledger.mjs';
 
 /** Finer than 4: more files → better work-stealing when scenario costs differ. */
 export const CALIBRATION_SHARD_COUNT = 8;
@@ -35,13 +46,15 @@ export function summarize(sim: any): Record<string, any> {
   return sorted;
 }
 
-/** Scenario names for one shard (stable sort, then modulo). */
+/** Scenario names for one shard (cost-weighted LPT, CI sentinel on shard 0). */
 export function scenariosForShard(
   baseline: Record<string, any>,
   shard: number,
   shardCount = CALIBRATION_SHARD_COUNT,
 ): string[] {
-  return Object.keys(baseline)
-    .sort()
-    .filter((_, i) => i % shardCount === shard);
+  const durations = authoredScenarioDurationSteps();
+  return packedNamesForShard(Object.keys(baseline), shard, shardCount, {
+    costOf: (name: string) => durations[name] || 100,
+    pinToShard0: CALIBRATION_CI_SENTINEL,
+  });
 }
