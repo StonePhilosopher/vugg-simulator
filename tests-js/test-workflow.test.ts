@@ -48,6 +48,7 @@ describe('memory-bounded full-test workflow', () => {
       startIndex: 115,
       selectedFiles: [],
       fresh: false,
+      chipBase: null,
     });
     expect(parseArgs(['--file', 'tests-js/a.test.ts', '--file', 'tests-js/b.test.ts']))
       .toEqual({
@@ -56,6 +57,7 @@ describe('memory-bounded full-test workflow', () => {
         startIndex: 0,
         selectedFiles: ['tests-js/a.test.ts', 'tests-js/b.test.ts'],
         fresh: false,
+        chipBase: null,
       });
     expect(parseArgs(['--fresh'])).toMatchObject({ fresh: true });
     expect(() => parseArgs(['--start-index', '-1'])).toThrow('non-negative integer');

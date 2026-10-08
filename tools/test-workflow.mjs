@@ -28,6 +28,9 @@ import {
   TEST_QUARRY_LEDGER_PATH,
   appendQuarryMeasurements,
 } from './test-quarry-ledger.mjs';
+import {
+  CHIP_SELECTION_EXIT_CODE, ChipSelectionRequiredError, planChipCheck, requireChipSelection,
+} from './test-chip-check.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
@@ -430,6 +433,7 @@ export function parseArgs(argv) {
   let batchSize = DEFAULT_TEST_BATCH_SIZE;
   let startIndex = 0;
   let fresh = false;
+  let chipBase = null;
   const selectedFiles = [];
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
@@ -437,7 +441,12 @@ export function parseArgs(argv) {
     else if (arg === '--start-index') startIndex = Number(argv[++index]);
     else if (arg === '--file') selectedFiles.push(String(argv[++index] || '').replaceAll('\\', '/'));
     else if (arg === '--fresh') fresh = true;
-    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles, fresh };
+    else if (arg === '--chip-base') {
+      if (chipBase !== null) throw new Error('--chip-base may only be specified once');
+      chipBase = argv[++index];
+      if (!chipBase || chipBase.startsWith('-')) throw new Error('--chip-base requires a Git commit reference');
+    }
+    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles, fresh, chipBase };
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!Number.isInteger(startIndex) || startIndex < 0) {
@@ -447,7 +456,11 @@ export function parseArgs(argv) {
   if (selectedFiles.length && startIndex !== 0) {
     throw new Error('--file and --start-index cannot be combined');
   }
-  return { help: false, batchSize, startIndex, selectedFiles, fresh };
+  if (chipBase !== null && (selectedFiles.length || argv.includes('--start-index') || fresh
+      || argv.includes('--batch-size'))) {
+    throw new Error('--chip-base cannot be combined with --file, --start-index, --fresh, or --batch-size');
+  }
+  return { help: false, batchSize, startIndex, selectedFiles, fresh, chipBase };
 }
 
 export async function runTestWorkflow({
@@ -512,15 +525,29 @@ if (invokedDirectly) {
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
       console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
+      console.log('npm test -- --chip-base REF selects authored Test Quarry tooling tests; never a full-suite verdict.');
       console.log('Passing batches append a measurement-only cost ledger at .local-evidence/test-quarry-cost-ledger-v1.json');
       console.log('That ledger does not change science, baselines, receipts, or batch order.');
     } else {
       const allFiles = collectTestFiles();
+      const chipPlan = args.chipBase === null ? null : requireChipSelection(planChipCheck({ base: args.chipBase }));
+      if (chipPlan) {
+        for (const file of chipPlan.tests) {
+          if (!allFiles.includes(file)) throw new Error(`chip test file is not registered: ${file}`);
+        }
+      }
       for (const file of args.selectedFiles) {
         if (!allFiles.includes(file)) throw new Error(`selected test file is not registered: ${file}`);
       }
-      const automaticCheckpoint = !args.selectedFiles.length && args.startIndex === 0;
-      const identity = automaticCheckpoint ? testWorkflowIdentity() : null;
+      const automaticCheckpoint = !chipPlan && !args.selectedFiles.length && args.startIndex === 0;
+      const identity = automaticCheckpoint || chipPlan ? testWorkflowIdentity() : null;
+      if (chipPlan) {
+        // Close the selection/identity race before launching any child. Later
+        // changes are caught by the existing whole-project identity guard.
+        const rechecked = requireChipSelection(planChipCheck({ base: args.chipBase }));
+        if (JSON.stringify(rechecked) !== JSON.stringify(chipPlan)) throw new Error('chip selection changed during planning');
+        assertTestWorkflowIdentityUnchanged(identity);
+      }
       if (automaticCheckpoint && args.fresh && fs.existsSync(TEST_CHECKPOINT_PATH)) {
         fs.unlinkSync(TEST_CHECKPOINT_PATH);
       }
@@ -536,10 +563,13 @@ if (invokedDirectly) {
       const completedFiles = plan ? plan.completedFiles : [];
       const completedBatches = plan ? plan.completedBatches : [];
       const resumeIndex = plan ? plan.resumeIndex : args.startIndex;
-      const files = args.selectedFiles.length
+      const files = chipPlan ? chipPlan.tests : args.selectedFiles.length
         ? [...new Set(args.selectedFiles)]
         : plan ? plan.files : selectResumeFiles(allFiles, resumeIndex);
-      if (args.startIndex > 0) {
+      if (chipPlan) {
+        console.log(`[test-chip] ${chipPlan.changed_files.length} changed paths; ${files.length} selected test files (${chipPlan.scope})`);
+        console.log('[test-chip] Partial tooling check; no full-suite PASS or checkpoint will be issued.');
+      } else if (args.startIndex > 0) {
         console.log(`[test-workflow] resuming at sorted file index ${args.startIndex} of ${allFiles.length}`);
       } else if (args.selectedFiles.length) {
         console.log(`[test-workflow] selected ${files.length} exact test file(s)`);
@@ -556,7 +586,7 @@ if (invokedDirectly) {
       const status = files.length ? await runTestWorkflow({
         batchSize: args.batchSize,
         files,
-        assertStable: automaticCheckpoint
+        assertStable: identity
           ? () => assertTestWorkflowIdentityUnchanged(identity)
           : null,
         onBatchPass: ({ batch, peakRssBytes, elapsedMs }) => {
@@ -571,6 +601,10 @@ if (invokedDirectly) {
           }));
         },
       }) : 0;
+      if (chipPlan && status === 0) {
+        assertTestWorkflowIdentityUnchanged(identity);
+        console.log('[test-chip] CHIP PASS: selected tooling checks only; full-suite status remains unknown.');
+      }
       if (automaticCheckpoint && status === 0 && completedFiles.length === allFiles.length) {
         assertTestWorkflowIdentityUnchanged(identity);
         const uninterrupted = plan.uninterrupted;
@@ -590,7 +624,7 @@ if (invokedDirectly) {
       process.exitCode = status;
     }
   } catch (error) {
-    console.error(`[test-workflow] FAIL: ${error.message}`);
-    process.exitCode = 1;
+    console.error(`[test-workflow] ${error instanceof ChipSelectionRequiredError ? 'NO CHIP VERDICT' : 'FAIL'}: ${error.message}`);
+    process.exitCode = error instanceof ChipSelectionRequiredError ? CHIP_SELECTION_EXIT_CODE : 1;
   }
 }
