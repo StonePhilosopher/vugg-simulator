@@ -11,6 +11,7 @@ import { collectTestFiles, parseArgs } from '../tools/test-workflow.mjs';
 const runner = 'tests-js/test-workflow.test.ts';
 const ledger = 'tests-js/test-quarry-ledger.test.ts';
 const selector = 'tests-js/test-chip-check.test.ts';
+const build = 'tests-js/build-all.test.ts';
 const allPresent = { exists: () => true };
 
 describe('bounded authored chip selection', () => {
@@ -24,6 +25,9 @@ describe('bounded authored chip selection', () => {
     ['tools/test-chip-check.mjs', [runner, ledger, selector]],
     ['tools/test-chip-map.json', [runner, ledger, selector]],
     [selector, [runner, ledger, selector]],
+    ['tools/build-all-lib.mjs', [build]],
+    ['tools/build-all.mjs', [build]],
+    [build, [build]],
   ])('maps %s to its required witnesses', (file, required) => {
     const plan = selectChipTests([file], allPresent);
     expect(plan.status).toBe('chip');
@@ -38,7 +42,7 @@ describe('bounded authored chip selection', () => {
     expect(plan.status).toBe('chip');
     expect(plan).toEqual(selectChipTests([...changes].reverse()));
     expect(plan.tests.every(test => collectTestFiles().includes(test))).toBe(true);
-    expect(plan.tests).toEqual([selector, ledger, runner].sort());
+    expect(plan.tests).toEqual([build, selector, ledger, runner].sort());
   });
 
   it.each([
@@ -48,12 +52,28 @@ describe('bounded authored chip selection', () => {
     'index.html', 'package.json', 'package-lock.json', 'tsconfig.json',
     'tools/prep-test-bundle.mjs', 'tools/new-helper.mjs', 'agent-api/vugg-agent.js',
     '.github/workflows/ci.yml', 'proposals/unknown.md',
+    'tools/build.mjs', 'tools/narrative-workflow.mjs', 'tools/file-bundle-assets.mjs',
+    'tools/new-build-helper.mjs',
   ])('requires a full check when %s accompanies a covered edit', (file) => {
     const plan = selectChipTests(['tools/test-workflow.mjs', file], allPresent);
     expect(plan.status).toBe('requires-full-check');
     expect(plan.uncovered).toContainEqual({ path: file, reason: 'outside authored map' });
     expect(() => requireChipSelection(plan)).toThrow('Full check required');
     expect(plan.full_suite_pass).toBe(false);
+  });
+
+  it.each(['tools/build.mjs', 'tools/narrative-workflow.mjs', 'js/15-version.ts', 'tsconfig.json'])(
+    'does not extend build orchestration coverage to %s', file => {
+      const plan = selectChipTests(['tools/build-all-lib.mjs', file], allPresent);
+      expect(plan.status).toBe('requires-full-check');
+      expect(plan.tests).toEqual([build, selector].sort());
+      expect(() => requireChipSelection(plan)).toThrow('Full check required');
+    },
+  );
+
+  it.each(['tools/build-all-lib.mjs', 'tools/build-all.mjs', build])('refuses build selection with missing %s', file => {
+    const plan = selectChipTests([file === build ? 'tools/build-all-lib.mjs' : file], { exists: name => name !== file });
+    expect(plan.status).toBe('requires-full-check');
   });
 
   it('does not turn an empty or documentation-only diff into a PASS', () => {

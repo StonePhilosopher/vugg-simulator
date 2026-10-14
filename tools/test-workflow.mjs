@@ -525,7 +525,7 @@ if (invokedDirectly) {
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
       console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
-      console.log('npm test -- --chip-base REF selects authored Test Quarry tooling tests; never a full-suite verdict.');
+      console.log('npm test -- --chip-base REF selects authored tooling tests; never a full-suite verdict.');
       console.log('Passing batches append a measurement-only cost ledger at .local-evidence/test-quarry-cost-ledger-v1.json');
       console.log('That ledger does not change science, baselines, receipts, or batch order.');
     } else {
