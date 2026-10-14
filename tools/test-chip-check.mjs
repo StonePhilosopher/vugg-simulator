@@ -21,7 +21,7 @@ export function loadChipMap(root = ROOT) {
 }
 
 export function validateChipMap(map) {
-  if (map?.schema !== 'vugg-chip-map-v1' || map.scope !== 'test-quarry-tooling-only'
+  if (map?.schema !== 'vugg-chip-map-v1' || map.scope !== 'audited-development-tooling'
       || !Array.isArray(map.groups) || !map.groups.length || !Array.isArray(map.documentation)) {
     throw new Error('invalid chip map schema or scope');
   }

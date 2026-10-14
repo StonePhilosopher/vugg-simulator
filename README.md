@@ -28,8 +28,8 @@ an `outcome` field; child test exit codes are preserved, so an exit code alone i
 not a unique diagnosis. No scientific receipt or baseline is changed by these
 runner outcomes.
 
-Test Quarry also has a bounded chip check for its own runner, ledger, and test
-selector. Preview the authored selection with
+Test Quarry also has a bounded chip check for its own runner, ledger, test
+selector, and build orchestration. Preview the authored selection with
 `node tools/test-chip-check.mjs --base origin/main`, then execute it with
 `npm test -- --chip-base origin/main`. The comparison includes branch commits
 since the merge base, staged and unstaged edits, and nonignored untracked files.
@@ -38,7 +38,10 @@ Renames check both names. The explicit map is `tools/test-chip-map.json`.
 Any unmapped change (including scientific source/data, build configuration,
 shared test helpers, or new test files) requires a full check and refuses a chip
 verdict. Empty/documentation-only changes also issue no PASS (exit 2). A chip
-PASS covers only its selected tooling tests; it does not replace calibration,
+PASS covers only its selected tooling tests. Build orchestration coverage checks
+phase ordering, cleanup, exit codes, and check-mode forwarding; changes to the
+narrative generator, compiler configuration, and bundle splicer still require
+the full check. A chip PASS does not replace calibration,
 release/evidence audits, or `npm run ci`. The runner keeps one file per child,
 the RSS watchdog, and the project-identity guard. Chip runs never resume or
 write a full-suite checkpoint/result. Passing batches still record advisory

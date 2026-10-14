@@ -1,6 +1,6 @@
 {
   "schema": "vugg-chip-map-v1",
-  "scope": "test-quarry-tooling-only",
+  "scope": "audited-development-tooling",
   "groups": [
     {
       "id": "workflow",
@@ -19,10 +19,17 @@
       "reason": "The authored map, Git change discovery, conservative selection, and workflow integration.",
       "paths": ["tools/test-chip-map.json", "tools/test-chip-check.mjs", "tests-js/test-chip-check.test.ts"],
       "tests": ["tests-js/test-chip-check.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+    },
+    {
+      "id": "build-orchestration",
+      "reason": "Build command ordering, failure propagation, dist cleanup, and --check forwarding. Does not certify narrative generation, TypeScript output, or bundle contents.",
+      "paths": ["tools/build-all-lib.mjs", "tools/build-all.mjs", "tests-js/build-all.test.ts"],
+      "tests": ["tests-js/build-all.test.ts"]
     }
   ],
   "documentation": [
     "README.md",
-    "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md"
+    "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md",
+    "proposals/HANDOFF-TEST-QUARRY-BUILD-CHIP-2026-10-14.md"
   ]
 }
