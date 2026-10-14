@@ -28,8 +28,24 @@ an `outcome` field; child test exit codes are preserved, so an exit code alone i
 not a unique diagnosis. No scientific receipt or baseline is changed by these
 runner outcomes.
 
+`node tools/cold-ci.mjs` runs the full CI guard and stamps a local verdict.
+GREEN requires a result from that invocation covering every discovered test
+file in one uninterrupted run, an unchanged project/runtime identity, and a
+clean, unchanged HEAD. Successful resumed or selected runs are partial and
+produce INCONCLUSIVE / exit 2. A previous shared last-pass report cannot supply
+the missing result. Child failures retain their exit codes; monitor loss is
+inconclusive only when the runner explicitly identifies it, not merely because
+a child returned 2. Duration always describes this invocation, never an
+accumulated suite total.
+
+`node tools/cold-ci.mjs --check` validates the stamp against current project
+bytes (including ignored dist), runtime, HEAD, and suite membership without
+launching CI. Legacy stamps must be replaced by a new full-guard result. These
+stamps and invocation records are local operator results, not scientific
+receipts or independent attestation. No full guard is run by the chip tests.
+
 Test Quarry also has a bounded chip check for its own runner, ledger, test
-selector, and build orchestration. Preview the authored selection with
+selector, build orchestration, and cold-CI verdict wrapper. Preview the authored selection with
 `node tools/test-chip-check.mjs --base origin/main`, then execute it with
 `npm test -- --chip-base origin/main`. The comparison includes branch commits
 since the merge base, staged and unstaged edits, and nonignored untracked files.

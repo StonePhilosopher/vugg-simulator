@@ -312,6 +312,20 @@ describe('memory-bounded full-test workflow', () => {
   });
 
   it.each([
+    [{ status: 0, monitorError: new Error('sampler lost') }, 'monitor-unavailable', 2],
+    [{ status: 0, monitorError: new Error('lost'), exceededRssBytes: MAX_BATCH_RSS_BYTES + 1 }, 'rss-limit-exceeded', 1],
+    [{ status: 0, monitorError: new Error('lost'), terminationError: new Error('denied') }, 'termination-failed', 1],
+    [{ status: 2 }, 'test-process-failed', 2],
+  ])('reports the typed failure to wrappers without advancing progress (%j)', async (result, outcome, status) => {
+    const onFailure = vi.fn();
+    const onBatchPass = vi.fn();
+    const batchRunner = vi.fn(async () => ({ peakRssBytes: 100, ...result }));
+    expect(await runTestWorkflow({ files: ['tests-js/a.test.ts'], batchRunner, onFailure, onBatchPass })).toBe(status);
+    expect(onFailure).toHaveBeenCalledExactlyOnceWith({ outcome, status });
+    expect(onBatchPass).not.toHaveBeenCalled();
+  });
+
+  it.each([
     { terminationError: new Error('child still alive'), label: 'termination-failed' },
     { exceededRssBytes: MAX_BATCH_RSS_BYTES + 1, label: 'rss-limit-exceeded' },
   ])('keeps $label more urgent than monitor loss', async ({ label, ...failure }) => {

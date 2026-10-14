@@ -48,6 +48,9 @@ export const TERMINATION_GRACE_MS = 2000;
 export const HARD_KILL_GRACE_MS = 2000;
 export const TEST_CHECKPOINT_SCHEMA = 2;
 export const TEST_CHECKPOINT_TRUST = 'untrusted-operator-convenience';
+export const TEST_RESULT_TRUST = 'local-uninterrupted-result-not-independent-attestation';
+export const TEST_INVOCATION_ENV = 'VUGG_TEST_INVOCATION_ID';
+export const TEST_INVOCATION_SCHEMA = 'vugg-test-invocation-v1';
 export const TEST_CHECKPOINT_PATH = path.join(
   ROOT, '.local-evidence', 'test-workflow-checkpoint-v2.json',
 );
@@ -157,6 +160,23 @@ export function writeJsonAtomic(filePath, value) {
   fs.renameSync(temporary, filePath);
 }
 
+// A wrapper gets a result from its own invocation, never the shared last-pass
+// file. UUID-only names keep this operator channel inside .local-evidence.
+export function testInvocationReportPath(invocationId, root = ROOT) {
+  if (typeof invocationId !== 'string'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(invocationId)) {
+    throw new Error('test invocation id must be a UUID v4');
+  }
+  return path.join(root, '.local-evidence', 'test-workflow-invocations', `${invocationId}.json`);
+}
+
+export function writeTestInvocationResult({ invocationId, status, outcome, completion = null }, root = ROOT) {
+  if (!invocationId) return;
+  writeJsonAtomic(testInvocationReportPath(invocationId, root), {
+    schema: TEST_INVOCATION_SCHEMA, invocation_id: invocationId, status, outcome, completion,
+  });
+}
+
 export function makeTestCheckpoint({ identity, completedFiles = [], batches = [] } = {}) {
   return {
     schema: TEST_CHECKPOINT_SCHEMA,
@@ -182,7 +202,7 @@ export function makeTestCompletionReport({
     status: uninterrupted ? 'pass' : 'operator-resume-complete',
     full_suite_pass: uninterrupted,
     trust: uninterrupted
-      ? 'local-uninterrupted-result-not-independent-attestation'
+      ? TEST_RESULT_TRUST
       : TEST_CHECKPOINT_TRUST,
   };
 }
@@ -469,6 +489,7 @@ export async function runTestWorkflow({
   batchRunner = runVitestBatch,
   assertStable = null,
   onBatchPass = null,
+  onFailure = null,
 } = {}) {
   const batches = partitionTests(files, batchSize);
   console.log(`[test-workflow] ${files.length} files in ${batches.length} sequential batch(es) of at most ${batchSize}`);
@@ -484,20 +505,24 @@ export async function runTestWorkflow({
     const peakMb = Math.ceil(result.peakRssBytes / 1024 / 1024);
     if (result.terminationError) {
       console.error(`[test-workflow] FAIL [termination-failed]: ${result.terminationError.message}`);
+      if (onFailure) await onFailure({ outcome: 'termination-failed', status: 1 });
       return 1;
     }
     if (result.exceededRssBytes != null) {
       const exceededMb = Math.ceil(result.exceededRssBytes / 1024 / 1024);
       console.error(`[test-workflow] FAIL [rss-limit-exceeded]: batch ${index + 1}/${batches.length} reached ${exceededMb} MB RSS (limit 2048 MB) and was terminated`);
+      if (onFailure) await onFailure({ outcome: 'rss-limit-exceeded', status: 1 });
       return 1;
     }
     if (result.monitorError) {
       console.error(`[test-workflow] INCONCLUSIVE [monitor-unavailable]: RSS watchdog unavailable in batch ${index + 1}/${batches.length}: ${result.monitorError.message}`);
       console.error('[test-workflow] Batch stopped without a trustworthy monitored result; no PASS or cost measurement recorded. Restore RSS monitoring and rerun this batch.');
+      if (onFailure) await onFailure({ outcome: 'monitor-unavailable', status: MONITOR_UNAVAILABLE_EXIT_CODE });
       return MONITOR_UNAVAILABLE_EXIT_CODE;
     }
     if (result.status !== 0) {
       console.error(`[test-workflow] FAIL [test-process-failed] in batch ${index + 1}/${batches.length} (peak ${peakMb} MB RSS)`);
+      if (onFailure) await onFailure({ outcome: 'test-process-failed', status: result.status ?? 1 });
       return result.status ?? 1;
     }
     if (assertStable) await assertStable({
@@ -521,7 +546,13 @@ export async function runTestWorkflow({
 const invokedDirectly = process.argv[1]
   && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
 if (invokedDirectly) {
+  let invocationId = null;
   try {
+    const requestedId = process.env[TEST_INVOCATION_ENV];
+    if (requestedId) {
+      testInvocationReportPath(requestedId);
+      invocationId = requestedId;
+    }
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
       console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
@@ -583,9 +614,12 @@ if (invokedDirectly) {
           identity, completedFiles, batches: completedBatches,
         }));
       }
+      let failureOutcome = null;
+      let completion = null;
       const status = files.length ? await runTestWorkflow({
         batchSize: args.batchSize,
         files,
+        onFailure: ({ outcome }) => { failureOutcome = outcome; },
         assertStable: identity
           ? () => assertTestWorkflowIdentityUnchanged(identity)
           : null,
@@ -609,9 +643,10 @@ if (invokedDirectly) {
         assertTestWorkflowIdentityUnchanged(identity);
         const uninterrupted = plan.uninterrupted;
         const reportPath = uninterrupted ? TEST_REPORT_PATH : TEST_RESUME_REPORT_PATH;
-        writeJsonAtomic(reportPath, makeTestCompletionReport({
+        completion = makeTestCompletionReport({
           identity, completedFiles, batches: completedBatches, uninterrupted,
-        }));
+        });
+        writeJsonAtomic(reportPath, completion);
         fs.unlinkSync(TEST_CHECKPOINT_PATH);
         if (uninterrupted) {
           console.log(`[test-workflow] UNINTERRUPTED PASS: ${allFiles.length} files under one unchanged project identity`);
@@ -621,10 +656,14 @@ if (invokedDirectly) {
           console.log('[test-workflow] no full-suite PASS was issued; rerun with --fresh for one uninterrupted result');
         }
       }
+      writeTestInvocationResult({
+        invocationId, status, outcome: failureOutcome || 'completed', completion,
+      });
       process.exitCode = status;
     }
   } catch (error) {
     console.error(`[test-workflow] ${error instanceof ChipSelectionRequiredError ? 'NO CHIP VERDICT' : 'FAIL'}: ${error.message}`);
     process.exitCode = error instanceof ChipSelectionRequiredError ? CHIP_SELECTION_EXIT_CODE : 1;
+    writeTestInvocationResult({ invocationId, status: process.exitCode, outcome: 'workflow-error' });
   }
 }
