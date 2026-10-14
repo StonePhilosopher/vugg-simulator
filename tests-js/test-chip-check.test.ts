@@ -13,6 +13,7 @@ const ledger = 'tests-js/test-quarry-ledger.test.ts';
 const selector = 'tests-js/test-chip-check.test.ts';
 const build = 'tests-js/build-all.test.ts';
 const cold = 'tests-js/cold-ci.test.ts';
+const census = 'tests-js/process-census.test.ts';
 const allPresent = { exists: () => true };
 
 describe('bounded authored chip selection', () => {
@@ -32,6 +33,9 @@ describe('bounded authored chip selection', () => {
     ['tools/cold-ci-lib.mjs', [cold, runner, ledger]],
     ['tools/cold-ci.mjs', [cold, runner, ledger]],
     [cold, [cold, runner, ledger]],
+    ['tools/process-census.mjs', [census]],
+    ['tools/process-census-lib.mjs', [census]],
+    [census, [census]],
   ])('maps %s to its required witnesses', (file, required) => {
     const plan = selectChipTests([file], allPresent);
     expect(plan.status).toBe('chip');
@@ -46,7 +50,7 @@ describe('bounded authored chip selection', () => {
     expect(plan.status).toBe('chip');
     expect(plan).toEqual(selectChipTests([...changes].reverse()));
     expect(plan.tests.every(test => collectTestFiles().includes(test))).toBe(true);
-    expect(plan.tests).toEqual([build, cold, selector, ledger, runner].sort());
+    expect(plan.tests).toEqual([build, cold, census, selector, ledger, runner].sort());
   });
 
   it.each([
@@ -88,6 +92,19 @@ describe('bounded authored chip selection', () => {
       expect(() => requireChipSelection(plan)).toThrow('No PASS is issued');
     }
   });
+
+  it.each(['tools/process-census.mjs', 'tools/process-census-lib.mjs', census])('refuses census selection with missing %s', file => {
+    const plan = selectChipTests([file === census ? 'tools/process-census.mjs' : file], { exists: name => name !== file });
+    expect(plan.status).toBe('requires-full-check');
+  });
+
+  it.each(['tools/foreman.mjs', 'tools/host-sampler.mjs'])(
+    'does not extend observation coverage to %s', file => {
+      const plan = selectChipTests(['tools/process-census.mjs', file], allPresent);
+      expect(plan.status).toBe('requires-full-check');
+      expect(() => requireChipSelection(plan)).toThrow('Full check required');
+    },
+  );
 
   it.each(['tools/cold-ci-lib.mjs', 'tools/cold-ci.mjs', cold])('refuses cold-CI selection with missing %s', file => {
     const plan = selectChipTests([file === cold ? 'tools/cold-ci-lib.mjs' : file], { exists: name => name !== file });

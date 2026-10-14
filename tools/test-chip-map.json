@@ -31,12 +31,19 @@
       "reason": "Invocation-bound full-suite verdict, failure precedence, stamp reuse, and runner result publication. Does not certify the gates or scientific tests invoked by npm run ci.",
       "paths": ["tools/cold-ci-lib.mjs", "tools/cold-ci.mjs", "tests-js/cold-ci.test.ts"],
       "tests": ["tests-js/cold-ci.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+    },
+    {
+      "id": "process-census",
+      "reason": "One-shot Windows process acquisition, metadata sanitization, creation-time-aware ancestry, and explicit observed-busy/unknown outcomes. Does not certify host cleanliness, ownership, or scheduling.",
+      "paths": ["tools/process-census.mjs", "tools/process-census-lib.mjs", "tests-js/process-census.test.ts"],
+      "tests": ["tests-js/process-census.test.ts"]
     }
   ],
   "documentation": [
     "README.md",
     "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md",
     "proposals/HANDOFF-TEST-QUARRY-BUILD-CHIP-2026-10-14.md",
-    "proposals/HANDOFF-TEST-QUARRY-COLD-CI-2026-10-14.md"
+    "proposals/HANDOFF-TEST-QUARRY-COLD-CI-2026-10-14.md",
+    "proposals/HANDOFF-TEST-QUARRY-CENSUS-2026-10-14.md"
   ]
 }
