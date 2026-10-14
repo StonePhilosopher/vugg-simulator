@@ -12,22 +12,26 @@ const runner = 'tests-js/test-workflow.test.ts';
 const ledger = 'tests-js/test-quarry-ledger.test.ts';
 const selector = 'tests-js/test-chip-check.test.ts';
 const build = 'tests-js/build-all.test.ts';
+const cold = 'tests-js/cold-ci.test.ts';
 const allPresent = { exists: () => true };
 
 describe('bounded authored chip selection', () => {
   // These expectations are deliberately authored independently of the JSON map.
   // Dropping a dependency from the map must fail a selected chip test.
   it.each([
-    ['tools/test-workflow.mjs', [runner, ledger]],
-    ['tests-js/test-workflow.test.ts', [runner, ledger]],
-    ['tools/test-quarry-ledger.mjs', [runner, ledger]],
-    ['tests-js/test-quarry-ledger.test.ts', [runner, ledger]],
-    ['tools/test-chip-check.mjs', [runner, ledger, selector]],
-    ['tools/test-chip-map.json', [runner, ledger, selector]],
-    [selector, [runner, ledger, selector]],
+    ['tools/test-workflow.mjs', [runner, ledger, cold]],
+    ['tests-js/test-workflow.test.ts', [runner, ledger, cold]],
+    ['tools/test-quarry-ledger.mjs', [runner, ledger, cold]],
+    ['tests-js/test-quarry-ledger.test.ts', [runner, ledger, cold]],
+    ['tools/test-chip-check.mjs', [runner, ledger, selector, cold]],
+    ['tools/test-chip-map.json', [runner, ledger, selector, cold]],
+    [selector, [runner, ledger, selector, cold]],
     ['tools/build-all-lib.mjs', [build]],
     ['tools/build-all.mjs', [build]],
     [build, [build]],
+    ['tools/cold-ci-lib.mjs', [cold, runner, ledger]],
+    ['tools/cold-ci.mjs', [cold, runner, ledger]],
+    [cold, [cold, runner, ledger]],
   ])('maps %s to its required witnesses', (file, required) => {
     const plan = selectChipTests([file], allPresent);
     expect(plan.status).toBe('chip');
@@ -42,7 +46,7 @@ describe('bounded authored chip selection', () => {
     expect(plan.status).toBe('chip');
     expect(plan).toEqual(selectChipTests([...changes].reverse()));
     expect(plan.tests.every(test => collectTestFiles().includes(test))).toBe(true);
-    expect(plan.tests).toEqual([build, selector, ledger, runner].sort());
+    expect(plan.tests).toEqual([build, cold, selector, ledger, runner].sort());
   });
 
   it.each([
@@ -84,6 +88,19 @@ describe('bounded authored chip selection', () => {
       expect(() => requireChipSelection(plan)).toThrow('No PASS is issued');
     }
   });
+
+  it.each(['tools/cold-ci-lib.mjs', 'tools/cold-ci.mjs', cold])('refuses cold-CI selection with missing %s', file => {
+    const plan = selectChipTests([file === cold ? 'tools/cold-ci-lib.mjs' : file], { exists: name => name !== file });
+    expect(plan.status).toBe('requires-full-check');
+  });
+
+  it.each(['package.json', 'tools/science-workflow.mjs', 'js/15-version.ts'])(
+    'does not extend verdict coverage to CI gate contents in %s', file => {
+      const plan = selectChipTests(['tools/cold-ci-lib.mjs', file], allPresent);
+      expect(plan.status).toBe('requires-full-check');
+      expect(() => requireChipSelection(plan)).toThrow('Full check required');
+    },
+  );
 
   it.each(['tools/test-workflow.mjs', runner, selector])('fails closed on a missing %s', file => {
     const plan = selectChipTests(['tools/test-workflow.mjs'], { exists: name => name !== file });

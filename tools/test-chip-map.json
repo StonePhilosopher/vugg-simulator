@@ -4,32 +4,39 @@
   "groups": [
     {
       "id": "workflow",
-      "reason": "Batch execution, monitoring, checkpointing, and its passing-batch ledger hook.",
+      "reason": "Batch execution, monitoring, checkpointing, its passing-batch ledger hook, and the cold-CI result consumer.",
       "paths": ["tools/test-workflow.mjs", "tests-js/test-workflow.test.ts"],
-      "tests": ["tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+      "tests": ["tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts", "tests-js/cold-ci.test.ts"]
     },
     {
       "id": "ledger-and-packing",
       "reason": "Cost recording and authored-duration packing; the packing tests cover membership and the CI sentinel. This is not a calibration sweep.",
       "paths": ["tools/test-quarry-ledger.mjs", "tests-js/test-quarry-ledger.test.ts"],
-      "tests": ["tests-js/test-quarry-ledger.test.ts", "tests-js/test-workflow.test.ts"]
+      "tests": ["tests-js/test-quarry-ledger.test.ts", "tests-js/test-workflow.test.ts", "tests-js/cold-ci.test.ts"]
     },
     {
       "id": "chip-selection",
       "reason": "The authored map, Git change discovery, conservative selection, and workflow integration.",
       "paths": ["tools/test-chip-map.json", "tools/test-chip-check.mjs", "tests-js/test-chip-check.test.ts"],
-      "tests": ["tests-js/test-chip-check.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+      "tests": ["tests-js/test-chip-check.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts", "tests-js/cold-ci.test.ts"]
     },
     {
       "id": "build-orchestration",
       "reason": "Build command ordering, failure propagation, dist cleanup, and --check forwarding. Does not certify narrative generation, TypeScript output, or bundle contents.",
       "paths": ["tools/build-all-lib.mjs", "tools/build-all.mjs", "tests-js/build-all.test.ts"],
       "tests": ["tests-js/build-all.test.ts"]
+    },
+    {
+      "id": "cold-ci-verdict",
+      "reason": "Invocation-bound full-suite verdict, failure precedence, stamp reuse, and runner result publication. Does not certify the gates or scientific tests invoked by npm run ci.",
+      "paths": ["tools/cold-ci-lib.mjs", "tools/cold-ci.mjs", "tests-js/cold-ci.test.ts"],
+      "tests": ["tests-js/cold-ci.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
     }
   ],
   "documentation": [
     "README.md",
     "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md",
-    "proposals/HANDOFF-TEST-QUARRY-BUILD-CHIP-2026-10-14.md"
+    "proposals/HANDOFF-TEST-QUARRY-BUILD-CHIP-2026-10-14.md",
+    "proposals/HANDOFF-TEST-QUARRY-COLD-CI-2026-10-14.md"
   ]
 }
