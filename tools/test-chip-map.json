@@ -1,0 +1,28 @@
+{
+  "schema": "vugg-chip-map-v1",
+  "scope": "test-quarry-tooling-only",
+  "groups": [
+    {
+      "id": "workflow",
+      "reason": "Batch execution, monitoring, checkpointing, and its passing-batch ledger hook.",
+      "paths": ["tools/test-workflow.mjs", "tests-js/test-workflow.test.ts"],
+      "tests": ["tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+    },
+    {
+      "id": "ledger-and-packing",
+      "reason": "Cost recording and authored-duration packing; the packing tests cover membership and the CI sentinel. This is not a calibration sweep.",
+      "paths": ["tools/test-quarry-ledger.mjs", "tests-js/test-quarry-ledger.test.ts"],
+      "tests": ["tests-js/test-quarry-ledger.test.ts", "tests-js/test-workflow.test.ts"]
+    },
+    {
+      "id": "chip-selection",
+      "reason": "The authored map, Git change discovery, conservative selection, and workflow integration.",
+      "paths": ["tools/test-chip-map.json", "tools/test-chip-check.mjs", "tests-js/test-chip-check.test.ts"],
+      "tests": ["tests-js/test-chip-check.test.ts", "tests-js/test-workflow.test.ts", "tests-js/test-quarry-ledger.test.ts"]
+    }
+  ],
+  "documentation": [
+    "README.md",
+    "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md"
+  ]
+}
