@@ -56,11 +56,44 @@ same result as structured data. A metadata-only diagnostic is saved under
 This census certifies neither host cleanliness nor process ownership. It does
 not reserve the machine, terminate processes, or gate test runs. Unrecognized
 workloads remain outside its observation scope. Other platforms explicitly
-return unknown until their process-identity adapters are implemented. The older
-foreman lease and telemetry still need separate reconciliation.
+return unknown until their process-identity adapters are implemented.
+
+`node tools/test-lease.mjs --status --json` inspects the cooperative machine
+lease without acquiring or changing it. Exit 1 means a live owner holds it;
+exit 2 means identity, storage, or journal state is unresolved. Exit 0 means
+available or reclaimable, not permission to start work. Windows clients share
+`%ProgramData%\VuggSimulator\test-lease-v1`; denied access never falls back to a
+checkout or user temp directory. The directory requires shared write access and
+a trusted local filesystem supporting hard links. Other platforms fail closed.
+
+The `createMachineLease()` API in `tools/test-lease-lib.mjs` provides asynchronous
+`acquire({ runId, checkout })`, `inspect()`, and `release(handle)`. Start work only
+after `status === 'acquired'`, retain its handle, and finish all owned work before
+release. Check release results: unavailable observation/storage leaves the claim
+unresolved. The owner is the calling process's exact PID and seven-digit Windows
+creation timestamp. A live owner never expires due to heartbeat age; reclaim
+requires a fresh observation proving that lifetime ended. A token alone cannot
+release another process's open claim.
+
+Claims and completion records are immutable, numbered files. Publication uses
+a fully written, synced staging file and a non-overwriting hard link. Delayed
+release/reclaim operations address only their original generation. History is
+retained; malformed, partial, or mismatched committed records block acquisition.
+Private `pending-*` staging residue has no authority. There is no automatic
+journal deletion/compaction; 10,000 generations require coordinated offline
+maintenance. Never remove the journal while any client could still use it.
+
+This tranche provides the lease primitive, not runner admission. Existing
+`npm test` and cold CI do not yet acquire it; the older foreman protocol does not
+participate. The next integration must hold the lease across the full asynchronous
+child lifecycle and combine it with fresh census checks. An ended lease owner
+can leave children behind, so reclaim alone cannot certify an idle host. This
+API grants no ownership of other processes, termination authority, or green CI
+verdict. It has no watcher, heartbeat timer, telemetry collector, or retained
+helper process.
 
 Test Quarry also has a bounded chip check for its own runner, ledger, test
-selector, build orchestration, cold-CI verdict wrapper, and process census.
+selector, build orchestration, cold-CI verdict wrapper, process census, and lease.
 Preview the authored selection with
 `node tools/test-chip-check.mjs --base origin/main`, then execute it with
 `npm test -- --chip-base origin/main`. The comparison includes branch commits
