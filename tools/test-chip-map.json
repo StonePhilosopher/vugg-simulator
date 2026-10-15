@@ -36,7 +36,13 @@
       "id": "process-census",
       "reason": "One-shot Windows process acquisition, metadata sanitization, creation-time-aware ancestry, and explicit observed-busy/unknown outcomes. Does not certify host cleanliness, ownership, or scheduling.",
       "paths": ["tools/process-census.mjs", "tools/process-census-lib.mjs", "tests-js/process-census.test.ts"],
-      "tests": ["tests-js/process-census.test.ts"]
+      "tests": ["tests-js/process-census.test.ts", "tests-js/test-lease.test.ts"]
+    },
+    {
+      "id": "machine-test-lease",
+      "reason": "Shared immutable claim publication, exact owner identity, conservative reclaim, token-bound release, and read-only status. Does not certify test admission, child adoption, host cleanliness, or termination.",
+      "paths": ["tools/test-lease-lib.mjs", "tools/test-lease.mjs", "tests-js/test-lease.test.ts"],
+      "tests": ["tests-js/test-lease.test.ts", "tests-js/process-census.test.ts"]
     }
   ],
   "documentation": [
@@ -44,6 +50,7 @@
     "proposals/HANDOFF-TEST-QUARRY-CHIP-2026-10-08.md",
     "proposals/HANDOFF-TEST-QUARRY-BUILD-CHIP-2026-10-14.md",
     "proposals/HANDOFF-TEST-QUARRY-COLD-CI-2026-10-14.md",
-    "proposals/HANDOFF-TEST-QUARRY-CENSUS-2026-10-14.md"
+    "proposals/HANDOFF-TEST-QUARRY-CENSUS-2026-10-14.md",
+    "proposals/HANDOFF-TEST-QUARRY-LEASE-2026-10-14.md"
   ]
 }

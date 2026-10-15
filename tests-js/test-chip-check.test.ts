@@ -14,6 +14,7 @@ const selector = 'tests-js/test-chip-check.test.ts';
 const build = 'tests-js/build-all.test.ts';
 const cold = 'tests-js/cold-ci.test.ts';
 const census = 'tests-js/process-census.test.ts';
+const lease = 'tests-js/test-lease.test.ts';
 const allPresent = { exists: () => true };
 
 describe('bounded authored chip selection', () => {
@@ -33,9 +34,12 @@ describe('bounded authored chip selection', () => {
     ['tools/cold-ci-lib.mjs', [cold, runner, ledger]],
     ['tools/cold-ci.mjs', [cold, runner, ledger]],
     [cold, [cold, runner, ledger]],
-    ['tools/process-census.mjs', [census]],
-    ['tools/process-census-lib.mjs', [census]],
-    [census, [census]],
+    ['tools/process-census.mjs', [census, lease]],
+    ['tools/process-census-lib.mjs', [census, lease]],
+    [census, [census, lease]],
+    ['tools/test-lease.mjs', [lease, census]],
+    ['tools/test-lease-lib.mjs', [lease, census]],
+    [lease, [lease, census]],
   ])('maps %s to its required witnesses', (file, required) => {
     const plan = selectChipTests([file], allPresent);
     expect(plan.status).toBe('chip');
@@ -50,7 +54,7 @@ describe('bounded authored chip selection', () => {
     expect(plan.status).toBe('chip');
     expect(plan).toEqual(selectChipTests([...changes].reverse()));
     expect(plan.tests.every(test => collectTestFiles().includes(test))).toBe(true);
-    expect(plan.tests).toEqual([build, cold, census, selector, ledger, runner].sort());
+    expect(plan.tests).toEqual([build, cold, census, lease, selector, ledger, runner].sort());
   });
 
   it.each([
@@ -105,6 +109,11 @@ describe('bounded authored chip selection', () => {
       expect(() => requireChipSelection(plan)).toThrow('Full check required');
     },
   );
+
+  it.each(['tools/test-lease.mjs', 'tools/test-lease-lib.mjs', lease, census])('refuses lease selection with missing %s', file => {
+    const plan = selectChipTests([file === lease || file === census ? 'tools/test-lease-lib.mjs' : file], { exists: name => name !== file });
+    expect(plan.status).toBe('requires-full-check');
+  });
 
   it.each(['tools/cold-ci-lib.mjs', 'tools/cold-ci.mjs', cold])('refuses cold-CI selection with missing %s', file => {
     const plan = selectChipTests([file === cold ? 'tools/cold-ci-lib.mjs' : file], { exists: name => name !== file });
