@@ -44,8 +44,24 @@ launching CI. Legacy stamps must be replaced by a new full-guard result. These
 stamps and invocation records are local operator results, not scientific
 receipts or independent attestation. No full guard is run by the chip tests.
 
+`node tools/process-census.mjs --preflight` takes one Windows process snapshot
+for the foreman work. Exit 1 means recognized JavaScript test/build work was
+observed outside a verified caller tree; exit 2 means observation is incomplete
+or unavailable. Exit 0 means no such work was observed in this snapshot.
+Shell intermediates and exact creation times are retained for ancestry checks;
+a parent created after its child cannot exempt that worker. `--json` emits the
+same result as structured data. A metadata-only diagnostic is saved under
+`.local-evidence/process-preflight-v1.json`; raw command lines are discarded.
+
+This census certifies neither host cleanliness nor process ownership. It does
+not reserve the machine, terminate processes, or gate test runs. Unrecognized
+workloads remain outside its observation scope. Other platforms explicitly
+return unknown until their process-identity adapters are implemented. The older
+foreman lease and telemetry still need separate reconciliation.
+
 Test Quarry also has a bounded chip check for its own runner, ledger, test
-selector, build orchestration, and cold-CI verdict wrapper. Preview the authored selection with
+selector, build orchestration, cold-CI verdict wrapper, and process census.
+Preview the authored selection with
 `node tools/test-chip-check.mjs --base origin/main`, then execute it with
 `npm test -- --chip-base origin/main`. The comparison includes branch commits
 since the merge base, staged and unstaged edits, and nonignored untracked files.
