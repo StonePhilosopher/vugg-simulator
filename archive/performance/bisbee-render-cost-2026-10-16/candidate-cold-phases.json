@@ -1,0 +1,13 @@
+{
+  "_wallReliefAOMap": 7.4000000059604645,
+  "_wallGrainNormalMap": 303.7999999821186,
+  "_topoInstallLightingRig": 109.60000002384186,
+  "_topoInitThree": 431.5,
+  "_matrixSkinTexture": 0.800000011920929,
+  "_wallReliefNormalMap": 6.799999982118607,
+  "_topoConfigureCavityWallMaterial": 10.400000005960464,
+  "_topoBuildCavityGeometry": 35.80000001192093,
+  "_topoSyncCrystalMeshes": 10419.299999982119,
+  "_topoCompileCavityShaderPrograms": 300.89999997615814,
+  "_topoRenderFrame": 228.10000002384186
+}

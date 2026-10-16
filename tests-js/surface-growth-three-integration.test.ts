@@ -51,6 +51,49 @@ function emit(state: any, crystal: any, wall: any, sim: any, layers: any[]) {
 }
 
 describe('SIM 250 executed Three.js surface-fabric contract', () => {
+  it('inherits the latest matching contact and reconstructs the same mesh after disposal', () => {
+    const surface = { sig: 'bounded-contact', positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      normals: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]) };
+    const triangle = { ia: 0, ib: 1, ic: 2, triangle_index: 0, area_mm2: 0.5,
+      weight_mm2: 0.5, void_normal: [0, 0, -1] };
+    const wall = { rings: [[]], surfaceForCrystal: () => surface,
+      surfaceAnchorDirection: () => [0, 0, 1],
+      surfacePatchForCrystal: () => ({ source_signature: surface.sig, area_mm2: 0.5,
+        triangle_indices: [0], triangles: [triangle] }) };
+    const crystal = Object.freeze({ crystal_id: 1, mineral: 'chalcedony', c_length_mm: 1,
+      _surfaceGrowth: Object.freeze({ regime: 'laminated_lining', coverage_fraction: 0.9,
+        mean_thickness_um: 2 }) });
+    const input = JSON.stringify(crystal), originalSurface = Array.from(surface.positions);
+    const layer = (height: number, signature = surface.sig) => ({
+      source_signature: signature, triangle_keys: new Set([signature + ':0']),
+      partitions: new Map([[0, [[
+        { uv: [0, 0], top: [0, 0, -height] },
+        { uv: [1, 0], top: [1, 0, -height] },
+        { uv: [0, 1], top: [0, 1, -height] },
+      ]]]]),
+    });
+    const build = () => emit({ crystals: new THREE.Group(), geomCache: new Map(), clipUniforms: {} },
+      crystal, wall, {}, [layer(0.1), layer(0.4), layer(7, 'other-surface'),
+        { triangle_keys: new Set([surface.sig + ':0']) }]);
+    const first = build();
+    expect(first.userData.unresolved_folds).toBe(0);
+    expect(first.userData.top_vertex_count).toBe(3);
+    for (let vertex = 0; vertex < 3; vertex++) {
+      expect(first.geometry.attributes.position.getZ(vertex)).toBeCloseTo(-0.402, 7);
+    }
+    const positions = first.geometry.attributes.position.array.slice();
+    const normals = first.geometry.attributes.normal.array.slice();
+    const indices = first.geometry.index.array.slice();
+    first.geometry.dispose(); first.material.dispose();
+    const rebuilt = build();
+    expect(rebuilt.geometry.attributes.position.array).toEqual(positions);
+    expect(rebuilt.geometry.attributes.normal.array).toEqual(normals);
+    expect(rebuilt.geometry.index.array).toEqual(indices);
+    expect(JSON.stringify(crystal)).toBe(input);
+    expect(Array.from(surface.positions)).toEqual(originalSurface);
+    rebuilt.geometry.dispose(); rebuilt.material.dispose();
+  });
+
   it('draws a continuous, raycastable lining at physical thickness, invariant across viewport LOD', () => {
     const wall = new WallState({ cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70, shape_seed: 5150 });
     const crystal = makeAggregate(wall, 500, 'chalcedony', 'banded_agate');

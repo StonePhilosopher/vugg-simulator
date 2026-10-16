@@ -1,0 +1,206 @@
+{
+  "schema": "bisbee-science-preservation-v1",
+  "trust": "preservation-of-commissioned-model-not-independent-geological-validation",
+  "reference_commit": "ce93e2fd20d2d50d7f4ffcfa82c67ae1b95737f5",
+  "node": "v24.15.0",
+  "platform": "win32",
+  "arch": "x64",
+  "fresh_science_workflow": {
+    "finished_utc": "2026-10-16T23:27:58.0661365Z",
+    "exit_code": 0,
+    "started_utc": "2026-10-16T22:23:25.1719419Z"
+  },
+  "scenario_count": 41,
+  "files": {
+    "tests-js/baselines/seed42_v285.json": {
+      "lf_sha256": "0e3ede6f79765fe617c90661ba2b80ded0640fae7e333d28b1bbe1c0dde5f77b",
+      "unchanged": true
+    },
+    "tests-js/baselines/locality_frequency_v285.json": {
+      "lf_sha256": "fc62d9269cfc467b5c53c311987babc01a739e848d6cb175ad29cae79a8a2416",
+      "unchanged": true
+    },
+    "tests-js/baselines/strip_digest_v285.json": {
+      "lf_sha256": "54d0e013e60b0649ee8f816f5b5d0f38050a0add41c5f95403603de3e326f277",
+      "unchanged": true
+    },
+    "js/15-version.ts": {
+      "lf_sha256": "5e2638be546e402562b0459201b3937756c298148d4756629be6e39801e44540",
+      "unchanged": true
+    },
+    "archive/strips/v285/amethyst_geode.json": {
+      "lf_sha256": "294ec0c518f769d863d31db9ec532e5e7ddaf21798b2bbbf0341b384b4fd32e4",
+      "unchanged": true
+    },
+    "archive/strips/v285/asbestos_hills_crack_seal.json": {
+      "lf_sha256": "f0afc7660d145445b23cac4fb93caeb5952df9b947ab5f1526b5ede7c19796ce",
+      "unchanged": true
+    },
+    "archive/strips/v285/asbestos_hills_surficial_alteration.json": {
+      "lf_sha256": "8d1fbbb75334c115a28644d4b8dde527ec5fe3b4eb5d9be8b40238dca540fdd8",
+      "unchanged": true
+    },
+    "archive/strips/v285/bisbee.json": {
+      "lf_sha256": "0ea19cf8e2319d5e8acd4e2851ff76229ffbc05b10275f9d615fcf17e221bc37",
+      "unchanged": true
+    },
+    "archive/strips/v285/chiastolite_hornfels.json": {
+      "lf_sha256": "a76dc3e94c0d277d2cf635baf7e286499b71cf68f4aa3bf0832abfb740ac7301",
+      "unchanged": true
+    },
+    "archive/strips/v285/colorado_plateau.json": {
+      "lf_sha256": "3dc975d6f470208b80dfb9fd5f35365c1c731ce75f4b402d0c9ed240e97f2a1d",
+      "unchanged": true
+    },
+    "archive/strips/v285/cooling.json": {
+      "lf_sha256": "abf97f58c4ecf72c29ceed6712faff7183bda96661bcd1127d7aa82d9202de66",
+      "unchanged": true
+    },
+    "archive/strips/v285/deccan_zeolite.json": {
+      "lf_sha256": "f7f925e3978ea8312e54a6831314db8e1f544c088d616fcc3dac2f664f266879",
+      "unchanged": true
+    },
+    "archive/strips/v285/elmwood.json": {
+      "lf_sha256": "c2a3bd3ba8d0df6eff675c653748a77f08666038efd24df4396430d25da06910",
+      "unchanged": true
+    },
+    "archive/strips/v285/epithermal_telluride.json": {
+      "lf_sha256": "e499cb23932f1da4deda2966cfa316117def71d7fa59aa3a459a2916dc77ef3c",
+      "unchanged": true
+    },
+    "archive/strips/v285/gem_pegmatite.json": {
+      "lf_sha256": "d63a96c810b274ff77681162f0841bc9dbb22ef34ed3016e25206df0ac4ea750",
+      "unchanged": true
+    },
+    "archive/strips/v285/great_salt_plains.json": {
+      "lf_sha256": "7ccc98e86ffde326ce1479fd66a2d8c0c15c460bded46705489d82ab4651a6bd",
+      "unchanged": true
+    },
+    "archive/strips/v285/grimsel_alpine_cleft.json": {
+      "lf_sha256": "e9e6da5d5d36e09a09de235dcdd2499dca0e4b0880e9fc0f3463537a0c95a251",
+      "unchanged": true
+    },
+    "archive/strips/v285/jeffrey_mine.json": {
+      "lf_sha256": "14f64e720931f2287798d78385ac3a513487eb1979d84362361eb99b0a0c6640",
+      "unchanged": true
+    },
+    "archive/strips/v285/marble_contact_metamorphism.json": {
+      "lf_sha256": "a226a6f2a2d76456a72189867f68f8dd1dbba6cd638a27c49ef1d08e1194055d",
+      "unchanged": true
+    },
+    "archive/strips/v285/mvt.json": {
+      "lf_sha256": "8070d45ad418feb634ab2160056de808fde990644ad82c20d1c234a3f57f28ea",
+      "unchanged": true
+    },
+    "archive/strips/v285/naica_geothermal.json": {
+      "lf_sha256": "aeeac89b4b3f9f78dbe7c3dcfac099f81d3c01c5a38cb70af9b0cf2405ade92f",
+      "unchanged": true
+    },
+    "archive/strips/v285/ouro_preto.json": {
+      "lf_sha256": "a6d164671d68b1ba994777f059aad9d6af0936d2ea1c5315680afd1e3882c419",
+      "unchanged": true
+    },
+    "archive/strips/v285/porphyry.json": {
+      "lf_sha256": "accee2d7c69b3049e8f2515ec646229635af5aaf0c560aabfe16a1b7391ec66e",
+      "unchanged": true
+    },
+    "archive/strips/v285/pulse.json": {
+      "lf_sha256": "29e0d8b490dc6900550cff59d3c2a208362999cff5c05d8751d3532195145726",
+      "unchanged": true
+    },
+    "archive/strips/v285/radioactive_pegmatite.json": {
+      "lf_sha256": "4f513b755b627d84c7cf1ec6f3def1008a23a1353f9b70b87bd438c8de2f10aa",
+      "unchanged": true
+    },
+    "archive/strips/v285/reactivated_fluorite_vein.json": {
+      "lf_sha256": "4f44555e9393b2d7870a929d864a9bc46e3a8f19b3664f6623712bf5838606e7",
+      "unchanged": true
+    },
+    "archive/strips/v285/reactive_wall.json": {
+      "lf_sha256": "42fd8e1ed108415d522a9572a601dcea0a5c18f0656f45f4f7bcb10ff5e4045d",
+      "unchanged": true
+    },
+    "archive/strips/v285/roughten_gill.json": {
+      "lf_sha256": "2fb02053a7c8fb376f99f2cb35d0523c532f2c315f29760befdb885f1d141614",
+      "unchanged": true
+    },
+    "archive/strips/v285/sabkha_dolomitization.json": {
+      "lf_sha256": "21fb5874b632cd81eb82716ceba5c8623e2784bb1a3a3d1f92c506d4b539fc1b",
+      "unchanged": true
+    },
+    "archive/strips/v285/schneeberg.json": {
+      "lf_sha256": "6dd3393d8de03e8eb3c51052299f642b563862b0edb1620eff060fe490a56bbb",
+      "unchanged": true
+    },
+    "archive/strips/v285/searles_lake.json": {
+      "lf_sha256": "b38280d3ea254e583d59a110407b4276f4a94de6e6dbc370dba37853af1c2962",
+      "unchanged": true
+    },
+    "archive/strips/v285/shigar_pegmatite.json": {
+      "lf_sha256": "9ab43efca7e30cceb8a989c4ded03c99690264f8ca8904e2a6f9d6c832e4191f",
+      "unchanged": true
+    },
+    "archive/strips/v285/sicily_solfifera.json": {
+      "lf_sha256": "439fe48d8ed1e6e49d1f12e32f0712e5f33d7aa2269b36df04087d23e7767b16",
+      "unchanged": true
+    },
+    "archive/strips/v285/stalactite_demo.json": {
+      "lf_sha256": "2e04c5c7079e249e24301eb5b359e8ce319fc43fde993b5942cec9afbcb4182c",
+      "unchanged": true
+    },
+    "archive/strips/v285/sulphur_bank.json": {
+      "lf_sha256": "5df050195a1bb5850750839aa47ee22dce92fc982f4b855b13a79db3204e8b29",
+      "unchanged": true
+    },
+    "archive/strips/v285/sunnyside_american_tunnel.json": {
+      "lf_sha256": "acbd4c39a2841b0921a187be573dc38db3fdc9ad0f8a65b780c8c5e1bb5b1b21",
+      "unchanged": true
+    },
+    "archive/strips/v285/supergene_oxidation.json": {
+      "lf_sha256": "4372503daa4feb00392c8b9ddf2d182413a8ba25eb16856e5ec84599e488e4ed",
+      "unchanged": true
+    },
+    "archive/strips/v285/tn457_barite_pulses.json": {
+      "lf_sha256": "ea526617e2ad36faf30a6eacf690d57b4cae651dd12f468596df31321b99ea9f",
+      "unchanged": true
+    },
+    "archive/strips/v285/tormiq_alpine_cleft.json": {
+      "lf_sha256": "1e8fdc9cc991b649b913ff5024152d9b30c45199257e18f87b3310e3c67dd303",
+      "unchanged": true
+    },
+    "archive/strips/v285/tutorial_first_crystal.json": {
+      "lf_sha256": "d1201b06b4321998257aeb59f6a1b1f79dd0676a0b4d53283d6c0334186a1fcc",
+      "unchanged": true
+    },
+    "archive/strips/v285/tutorial_mn_calcite.json": {
+      "lf_sha256": "62c0b4229dc8aad26054dc30237ebbd7a5175a2b0d6c97e79da476dee7ea04a9",
+      "unchanged": true
+    },
+    "archive/strips/v285/tutorial_travertine.json": {
+      "lf_sha256": "ba5c1b6a355cdf8fb4cb84afa454331c229b883a457c2ad9448a686daee7f929",
+      "unchanged": true
+    },
+    "archive/strips/v285/ultramafic_supergene.json": {
+      "lf_sha256": "9f569505fbc7ad1faa2e552d8f0c18e4d5a9ee13173f9e1a616d912513564a93",
+      "unchanged": true
+    },
+    "archive/strips/v285/wittichen.json": {
+      "lf_sha256": "bb032b1dab7e7285cd4657ef8a1cc4188105b3bc30e0ebac2732c508f1dac15c",
+      "unchanged": true
+    },
+    "archive/strips/v285/zoned_dripstone_cave.json": {
+      "lf_sha256": "68a0560210701d20fadabeac57ef8e5fd87bb8ddb72e15d2aa74e6bd37846b1c",
+      "unchanged": true
+    }
+  },
+  "mechanism_results_unchanged": true,
+  "browser_authority_reference_update": {
+    "path": "payload.guided_tutorial.interaction_products.capable_browser_authority.payload_sha256",
+    "before": "fdf47e0630c3a4d4c52b335b02e75fa09f3039add15dd035e3648c664735657d",
+    "after": "bbae563b173d20b7a3f1b7939eacbd361c83e3c9e565854d176c06d2699c0ffa",
+    "each_matches_corresponding_browser_receipt": true
+  },
+  "all_41_claim_cards_only_update_verified_mechanism_reference": true,
+  "browser_journeys_unchanged": true,
+  "measured_production_bytes_unchanged": true
+}

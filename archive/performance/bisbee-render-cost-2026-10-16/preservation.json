@@ -1,0 +1,28 @@
+{
+  "trust": "preservation-of-existing-results-not-geological-validation",
+  "cold_scientific_record_equal": true,
+  "all_paired_scientific_records_unchanged": true,
+  "cold_meshes_equal": true,
+  "all_paired_meshes_equal": true,
+  "matched_pngs_equal": true,
+  "scientific_record_sha256": "85305bfcaf541c62fcab7cef572469b52af472445d64fa9bf88ac5c8bbeae61e",
+  "cold_meshes_sha256": "0ebb512c4d82776428ae6151600c4256356573254ef490b80904516e15e7639f",
+  "reconstructed_meshes_sha256": "a5dc7d0950c8fcdfb293c2f80f6c9402d003f08befed31055a7f5c6a360d3344",
+  "matched_png_sha256": "632aaecc9d9aca7439ccdabefe105c9b729e01baba9c1eac4037d9cdfb932a9e",
+  "mesh_objects": 241,
+  "geometry_texture_program_counts": {
+    "memory": {
+      "geometries": 50,
+      "textures": 7
+    },
+    "render": {
+      "frame": 72,
+      "calls": 415,
+      "triangles": 1145910,
+      "points": 0,
+      "lines": 0
+    },
+    "programs": 8
+  },
+  "owned_browsers_and_servers_closed": true
+}
