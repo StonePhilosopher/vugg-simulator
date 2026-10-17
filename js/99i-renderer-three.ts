@@ -6516,8 +6516,16 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
   const positions: number[] = [], indices: number[] = [];
   const sourcePoints: number[][] = [], basalPositions: number[][] = [];
   const newContactVertices: any[] = [], displacementSamples: any[][] = [];
-  const nodeMap = new Map<string, number>(), edges = new Map<string, any>();
+  const nodeMap = new Map<string, number>(), edges = new Map<number | string, any>();
   const displacedContacts = new Map<string, any>();
+  const addEdge = (a: number, b: number) => {
+    // Pack the same unordered pair exactly into a safe integer. Large meshes
+    // retain the string path rather than risk a numeric collision.
+    const low = Math.min(a, b), high = Math.max(a, b);
+    const edgeKey = high < 0x200000 ? high * 0x100000000 + low : low + ':' + high;
+    const edge = edges.get(edgeKey);
+    if (edge) edge.count++; else edges.set(edgeKey, { a, b, count: 1 });
+  };
   const cross2 = (a: number[], b: number[], q: number[]) => (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]);
   const mixVertex = (a: any, b: any, f: number) => ({
     uv: a.uv.map((v: number, k: number) => v + (b.uv[k] - v) * f),
@@ -6545,6 +6553,9 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
     return faces;
   };
   const addNode = (v: any, t: any, base: number[]) => {
+    // A contact vertex is shared by several faces in this build. Its assigned
+    // node is stable until the fold repair below; avoid re-encoding its position.
+    if (v.renderNode != null) return v.renderNode;
     const key = pointKey(v.top);
     const found = nodeMap.get(key);
     if (found != null) { v.renderNode = found; return found; }
@@ -6558,9 +6569,11 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
   for (const t of patch.triangles) {
     const key = sourceKeys.get(t.triangle_index);
     let previous: any[] | undefined;
-    for (const layer of earlierLayers) if (layer.triangle_keys.has(key)) {
+    for (let layerIndex = earlierLayers.length - 1; layerIndex >= 0; layerIndex--) {
+      const layer = earlierLayers[layerIndex];
+      if (!layer.triangle_keys.has(key)) continue;
       const inherited = layer.partitions?.get(t.triangle_index);
-      if (inherited) previous = inherited;
+      if (inherited) { previous = inherited; break; }
       // Scattered teeth/fibres have no continuous top to inherit. Their nominal
       // instance height must not lift a whole later coating into a false blanket.
     }
@@ -6612,7 +6625,10 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
               top: bases[i].map((x: number, k: number) => Math.fround(x + displacement.vector[k])) };
             displacedContacts.set(contactKey, contact);
           }
-          const result = { uv: v.uv, ...contact };
+          // A fixed object shape avoids a spread/copy and later shape changes
+          // for every contact vertex; all geometric values remain shared.
+          const result = { uv: v.uv, samples: contact.samples, growthProfile: contact.growthProfile,
+            top: contact.top, renderNode: undefined as number | undefined };
           topVertices.set(v, result);
           newContactVertices.push(result);
           return result;
@@ -6620,11 +6636,7 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
         output.push(top);
         const ids = top.map((v: any, i: number) => addNode(v, t, bases[i]));
         indices.push(ids[0], ids[2], ids[1]);
-        for (const [a, b] of [[ids[0], ids[2]], [ids[2], ids[1]], [ids[1], ids[0]]]) {
-          const edgeKey = a < b ? a + ':' + b : b + ':' + a;
-          const edge = edges.get(edgeKey);
-          if (edge) edge.count++; else edges.set(edgeKey, { a, b, count: 1 });
-        }
+        addEdge(ids[0], ids[2]); addEdge(ids[2], ids[1]); addEdge(ids[1], ids[0]);
       }
     }
     partitions.set(t.triangle_index, output);
@@ -6644,7 +6656,9 @@ function _emitSurfaceGrowthLining(state: any, crystal: any, parentMat: any,
   const repairedTops = basalPositions.map((_, id) => positions.slice(id * 3, id * 3 + 3));
   for (const v of newContactVertices) {
     v.top = repairedTops[v.renderNode];
-    delete v.samples; delete v.renderNode;
+    // Release transient references without deleting fields from every shared
+    // contact vertex (which turns these hot objects into dictionary objects).
+    v.samples = undefined; v.renderNode = undefined;
   }
   let interiorOpenEdges = 0;
   for (const edge of edges.values()) if (edge.count === 1) {

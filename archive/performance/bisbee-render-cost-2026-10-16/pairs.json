@@ -1,0 +1,2570 @@
+[
+  {
+    "variant": "baseline",
+    "pair": 0,
+    "ms": 17064.40000000596,
+    "heap": 2141290196,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 10.700000017881393,
+        "gpu_ms": 8.526848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 13.900000005960464,
+        "gpu_ms": 7.918592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.800000011920929,
+        "gpu_ms": 10.81856,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 12.400000005960464,
+        "gpu_ms": 7.139328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.5,
+        "gpu_ms": 17.061888,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 10.886144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.800000011920929,
+        "gpu_ms": 8.233984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.900000005960464,
+        "gpu_ms": 17.08032,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 6.928384,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 7.755776,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 5.800000011920929,
+        "gpu_ms": 5.920768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.299999982118607,
+        "gpu_ms": 12.806144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 7.58784,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.600000023841858,
+        "gpu_ms": 9.137152,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 11.945984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 12.142592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 5.766144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 11.496448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 13.868032,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 6.56384,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 13.800448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 6.84544,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 8.731648,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.5,
+        "gpu_ms": 13.279232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.5,
+        "gpu_ms": 11.106304,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 6.730752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.300000011920929,
+        "gpu_ms": 8.833024,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.200000017881393,
+        "gpu_ms": 13.2096,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 6.1952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.599999994039536,
+        "gpu_ms": 6.112256,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 25.592832,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.700000017881393,
+        "gpu_ms": 7.584768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 5.960704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 13.504512,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 8.91904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 5.801984,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 765839136,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 72,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.4370046741449073,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42492633088,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 0,
+    "ms": 13908.100000023842,
+    "heap": 1725234863,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 14.799999982118607,
+        "gpu_ms": 11.092992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.799999982118607,
+        "gpu_ms": 13.708288,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.599999994039536,
+        "gpu_ms": 7.176192,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.100000023841858,
+        "gpu_ms": 6.366208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.900000005960464,
+        "gpu_ms": 6.910976,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.099999994039536,
+        "gpu_ms": 6.895616,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.25824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.800000011920929,
+        "gpu_ms": 6.651904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 5.71904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 4.767744,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 4.245504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 6.243328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.899999976158142,
+        "gpu_ms": 5.747712,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 5.417984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.099999994039536,
+        "gpu_ms": 6.678528,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.400000005960464,
+        "gpu_ms": 7.568384,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.300000011920929,
+        "gpu_ms": 7.576576,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.300000011920929,
+        "gpu_ms": 6.877184,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11,
+        "gpu_ms": 5.996544,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.77696,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 5.926912,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.5,
+        "gpu_ms": 7.45984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.200000017881393,
+        "gpu_ms": 6.370304,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.299999982118607,
+        "gpu_ms": 6.72768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.735424,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 5.75488,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 5.98016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.799999982118607,
+        "gpu_ms": 5.581824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.700000017881393,
+        "gpu_ms": 4.174848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.699999988079071,
+        "gpu_ms": 4.447232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 5.152768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.900000005960464,
+        "gpu_ms": 6.180864,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.455872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.399999976158142,
+        "gpu_ms": 5.121024,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.4000000059604645,
+        "gpu_ms": 3.707904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 4.740096,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522390804,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 109,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.426816398512031,
+      "logical_cpus": 16,
+      "free_physical_bytes": 43021881344,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 1,
+    "ms": 13500.09999999404,
+    "heap": 1475629095,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 10.599999994039536,
+        "gpu_ms": 3.890176,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.800000011920929,
+        "gpu_ms": 7.431168,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.899999976158142,
+        "gpu_ms": 5.374976,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.757952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 4.250624,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.900000005960464,
+        "gpu_ms": 6.064128,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.399999976158142,
+        "gpu_ms": 5.476352,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 6.057984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5999999940395355,
+        "gpu_ms": 4.666368,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 4.94592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 6.61504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 4.872192,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.799999982118607,
+        "gpu_ms": 5.653504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.700000017881393,
+        "gpu_ms": 5.338112,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 4.764672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.899999976158142,
+        "gpu_ms": 6.53824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.600000023841858,
+        "gpu_ms": 4.518912,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 5.74976,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.400000005960464,
+        "gpu_ms": 7.355392,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.300000011920929,
+        "gpu_ms": 4.243456,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 11.200000017881393,
+        "gpu_ms": 4.998144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.300224,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.709824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.185536,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 4.640768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 5.943296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.163008,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 5.163008,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.078016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7,
+        "gpu_ms": 6.257664,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.213184,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 5.087232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.784576,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.299999982118607,
+        "gpu_ms": 6.602752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.100000023841858,
+        "gpu_ms": 5.645312,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.9000000059604645,
+        "gpu_ms": 4.15232,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522278688,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 146,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.4709053374864137,
+      "logical_cpus": 16,
+      "free_physical_bytes": 43099869184,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "baseline",
+    "pair": 1,
+    "ms": 16797.600000023842,
+    "heap": 1902748315,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 14.300000011920929,
+        "gpu_ms": 8.231936,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.899999976158142,
+        "gpu_ms": 11.350016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.199999988079071,
+        "gpu_ms": 6.981632,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 8.430592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 8.818688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 5.472256,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.900000005960464,
+        "gpu_ms": 6.03136,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.15072,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.699999988079071,
+        "gpu_ms": 7.04,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 6.551552,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 6.2464,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.899999976158142,
+        "gpu_ms": 5.428224,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.362688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 6.216704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.0999999940395355,
+        "gpu_ms": 4.527104,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.800000011920929,
+        "gpu_ms": 6.82496,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.199999988079071,
+        "gpu_ms": 7.134208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.299999982118607,
+        "gpu_ms": 5.768192,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 5.075968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 6.117376,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.692416,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 6.029312,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 5.653504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.691392,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.299999982118607,
+        "gpu_ms": 6.289408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.599999994039536,
+        "gpu_ms": 6.093824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 5.968896,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 6.147072,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 5.566464,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.199999988079071,
+        "gpu_ms": 4.45952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.892672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 13.300000011920929,
+        "gpu_ms": 9.84576,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.5,
+        "gpu_ms": 5.03296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.899999976158142,
+        "gpu_ms": 5.3248,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.831232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6,
+        "gpu_ms": 3.787776,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 766507788,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 183,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.450215048508101,
+      "logical_cpus": 16,
+      "free_physical_bytes": 43087167488,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "baseline",
+    "pair": 2,
+    "ms": 15402.200000017881,
+    "heap": 2142365791,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 11.76064,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 5.221376,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.799999982118607,
+        "gpu_ms": 8.158208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 8.165376,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 10.570752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 9.909248,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 4.936704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.300000011920929,
+        "gpu_ms": 5.727232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 5.5296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.93568,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.300000011920929,
+        "gpu_ms": 3.75808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.9000000059604645,
+        "gpu_ms": 4.557824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 4.803584,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.100000023841858,
+        "gpu_ms": 3.641344,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.015552,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.600000023841858,
+        "gpu_ms": 4.8384,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 5.52448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.037056,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.699999988079071,
+        "gpu_ms": 4.465664,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.249024,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 4.995072,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.799999982118607,
+        "gpu_ms": 5.39136,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 5.5552,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.699999988079071,
+        "gpu_ms": 5.167104,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.300000011920929,
+        "gpu_ms": 5.543936,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.343232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.699999988079071,
+        "gpu_ms": 4.47488,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.293056,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.31968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.673984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.899999976158142,
+        "gpu_ms": 6.50752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.0999999940395355,
+        "gpu_ms": 4.888576,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 5.143552,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 5.088256,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.200000017881393,
+        "gpu_ms": 4.313088,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.471232,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 766364924,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 220,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.36204023758339265,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42980061184,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 2,
+    "ms": 12511,
+    "heap": 1740639627,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 12.199999988079071,
+        "gpu_ms": 4.216832,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 5.528576,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 7.314432,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.300000011920929,
+        "gpu_ms": 8.118272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 9.228288,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.400000005960464,
+        "gpu_ms": 9.36448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 10.04032,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 8.454144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7,
+        "gpu_ms": 8.932352,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 11.42272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 5.899999976158142,
+        "gpu_ms": 9.249792,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.799999982118607,
+        "gpu_ms": 6.473728,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.800000011920929,
+        "gpu_ms": 8.00768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.900000005960464,
+        "gpu_ms": 8.76032,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 6.918144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 8.324096,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 4.617216,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.223424,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.636096,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.400000005960464,
+        "gpu_ms": 7.317504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.600000023841858,
+        "gpu_ms": 4.31616,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.600000023841858,
+        "gpu_ms": 5.77536,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.687296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.161984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.891072,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.4000000059604645,
+        "gpu_ms": 4.426752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.100000023841858,
+        "gpu_ms": 3.555328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.0999999940395355,
+        "gpu_ms": 3.525632,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 5.536768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.299999982118607,
+        "gpu_ms": 3.550208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 5.5,
+        "gpu_ms": 3.104768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.800000011920929,
+        "gpu_ms": 5.972992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 4.535296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 5.148672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.5999999940395355,
+        "gpu_ms": 4.575232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 6.15936,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522680836,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 257,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.3611350459874534,
+      "logical_cpus": 16,
+      "free_physical_bytes": 43270971392,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 3,
+    "ms": 11990.90000000596,
+    "heap": 1500071143,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 11.80672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 8.259584,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 6.367232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.700000017881393,
+        "gpu_ms": 4.381696,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 5.404672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.399999976158142,
+        "gpu_ms": 5.592064,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 6.193152,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.9000000059604645,
+        "gpu_ms": 4.315136,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.962752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 3.700736,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 5.326848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 5.62688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.675008,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 5.723136,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 4.289536,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.200000017881393,
+        "gpu_ms": 4.219904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.310464,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 4.6848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.558272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 5.244928,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.799999982118607,
+        "gpu_ms": 5.13536,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.05856,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.199999988079071,
+        "gpu_ms": 3.127296,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 5.599232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.475328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 6.332416,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.399999976158142,
+        "gpu_ms": 5.53984,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.501952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.699999988079071,
+        "gpu_ms": 4.30592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 4.896768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.4000000059604645,
+        "gpu_ms": 5.07904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 4.808704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 4.7872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.96128,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.5,
+        "gpu_ms": 4.135936,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 4.694016,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522527464,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 294,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.368069410103152,
+      "logical_cpus": 16,
+      "free_physical_bytes": 43176689664,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "baseline",
+    "pair": 3,
+    "ms": 15017.300000011921,
+    "heap": 1901555671,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 13.299999982118607,
+        "gpu_ms": 9.096192,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.099999994039536,
+        "gpu_ms": 7.995392,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 7.565312,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.300000011920929,
+        "gpu_ms": 6.98368,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 5.187584,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 4.072448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.299999982118607,
+        "gpu_ms": 6.571008,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 6.233088,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 5.382144,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.400000005960464,
+        "gpu_ms": 5.86752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 5.879808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.526528,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 6.230016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 6.299648,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.199999988079071,
+        "gpu_ms": 3.762176,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 6.099968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 6.111232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5999999940395355,
+        "gpu_ms": 4.745216,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 5.361664,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.7344,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.552128,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.799999982118607,
+        "gpu_ms": 5.661696,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.200000017881393,
+        "gpu_ms": 5.937152,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 5.613568,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.229568,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.200000017881393,
+        "gpu_ms": 3.810304,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.699999988079071,
+        "gpu_ms": 4.455424,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 4.702208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 4.851712,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.299999982118607,
+        "gpu_ms": 6.472704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.399999976158142,
+        "gpu_ms": 5.965824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.200000017881393,
+        "gpu_ms": 4.425728,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 5.371904,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.100544,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.700000017881393,
+        "gpu_ms": 4.816896,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 5.255168,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 766727572,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 331,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.3648141626483177,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42769006592,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "baseline",
+    "pair": 4,
+    "ms": 16585.59999999404,
+    "heap": 2140914967,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 9.427968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 4.001792,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.804608,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 4.921344,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 6.355968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 4.217856,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 4.604928,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 5.231616,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 4.98688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.300000011920929,
+        "gpu_ms": 5.62688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.955584,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.799999982118607,
+        "gpu_ms": 5.321728,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 4.99712,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 4.834304,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 5.2992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 4.801536,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.699999988079071,
+        "gpu_ms": 5.72416,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.100000023841858,
+        "gpu_ms": 5.332992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 5.72928,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 5.088256,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 6.647808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.409792,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9,
+        "gpu_ms": 6.279168,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 5.0944,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 5.312512,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.800000011920929,
+        "gpu_ms": 3.861504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 6.409216,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.800000011920929,
+        "gpu_ms": 5.541888,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 5.209088,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 4.850688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.710848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.44768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.399999976158142,
+        "gpu_ms": 4.497408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.100000023841858,
+        "gpu_ms": 5.306368,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.4000000059604645,
+        "gpu_ms": 4.687872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.312512,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 766526516,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 368,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.41614576937246717,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42207158272,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 4,
+    "ms": 13018.09999999404,
+    "heap": 1732146711,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 12.300000011920929,
+        "gpu_ms": 8.03328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 9.613312,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 7.318528,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 7.031808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 9.688064,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 6.879232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 5.234688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7,
+        "gpu_ms": 5.392384,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 6.2464,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.700000017881393,
+        "gpu_ms": 5.199872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.198848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 5.366784,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.90848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.455872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 4.943872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 5.704704,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 5.767168,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 6.36416,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.750336,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 5.513216,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.397504,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.600000023841858,
+        "gpu_ms": 7.441408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.599999994039536,
+        "gpu_ms": 6.326272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.600000023841858,
+        "gpu_ms": 6.646784,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.799999982118607,
+        "gpu_ms": 6.529024,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 5.0944,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.838848,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 5.507072,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 5.430272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.299999982118607,
+        "gpu_ms": 5.098496,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 5.060608,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 5.920768,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.48352,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.200000017881393,
+        "gpu_ms": 5.056512,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.800000011920929,
+        "gpu_ms": 4.258816,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.299999982118607,
+        "gpu_ms": 4.744192,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522868496,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 405,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.40757421902809887,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42894376960,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "candidate",
+    "pair": 5,
+    "ms": 12315.699999988079,
+    "heap": 1501092675,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 11.400000005960464,
+        "gpu_ms": 10.576896,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.0999999940395355,
+        "gpu_ms": 8.211456,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7,
+        "gpu_ms": 7.569408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 7.989248,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 9.428992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 7.742464,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.983808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.200000017881393,
+        "gpu_ms": 3.678208,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.907008,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.731328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 4.82816,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.5,
+        "gpu_ms": 6.575104,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.799999982118607,
+        "gpu_ms": 5.16608,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 5.39648,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 5.122048,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.299999982118607,
+        "gpu_ms": 6.116352,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 4.950016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 5.102592,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.099999994039536,
+        "gpu_ms": 5.347328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 4.890624,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.699999988079071,
+        "gpu_ms": 6.157312,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 4.641792,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5999999940395355,
+        "gpu_ms": 4.85376,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 5.327872,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.899999976158142,
+        "gpu_ms": 5.935104,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.300000011920929,
+        "gpu_ms": 5.636096,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.799999982118607,
+        "gpu_ms": 4.835328,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 6.161408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.561344,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.900000005960464,
+        "gpu_ms": 5.709824,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 5.22752,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.800000011920929,
+        "gpu_ms": 4.733952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.5,
+        "gpu_ms": 4.605952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 5.328896,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.305344,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.553152,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 522651440,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 442,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.39231660582859085,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42695192576,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  },
+  {
+    "variant": "baseline",
+    "pair": 5,
+    "ms": 14993.399999976158,
+    "heap": 1908811071,
+    "meshes_equal": true,
+    "orbit": [
+      {
+        "cpu_ms": 11.599999994039536,
+        "gpu_ms": 2.972672,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.699999988079071,
+        "gpu_ms": 6.016,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.992,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 9.494528,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.700000017881393,
+        "gpu_ms": 5.727232,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.400000005960464,
+        "gpu_ms": 5.594112,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.199999988079071,
+        "gpu_ms": 4.72064,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 6.764544,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 5.99552,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.5,
+        "gpu_ms": 4.534272,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.700000017881393,
+        "gpu_ms": 7.058432,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.300000011920929,
+        "gpu_ms": 5.009408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.599999994039536,
+        "gpu_ms": 3.968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 5.93408,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 6.9000000059604645,
+        "gpu_ms": 4.24448,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.899999976158142,
+        "gpu_ms": 7.248896,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.700000017881393,
+        "gpu_ms": 6.245376,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.300000011920929,
+        "gpu_ms": 4.90496,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.300000011920929,
+        "gpu_ms": 7.130112,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.800000011920929,
+        "gpu_ms": 5.885952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.199999988079071,
+        "gpu_ms": 6.197248,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.700000017881393,
+        "gpu_ms": 8.178688,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10,
+        "gpu_ms": 6.36928,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.5,
+        "gpu_ms": 3.836928,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 10.199999988079071,
+        "gpu_ms": 4.67456,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.300000011920929,
+        "gpu_ms": 5.946368,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.299999982118607,
+        "gpu_ms": 5.085184,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 6.956032,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8,
+        "gpu_ms": 6.948864,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.099999994039536,
+        "gpu_ms": 4.599808,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 12.699999988079071,
+        "gpu_ms": 5.740544,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 9.799999982118607,
+        "gpu_ms": 4.179968,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.9000000059604645,
+        "gpu_ms": 6.837248,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.5,
+        "gpu_ms": 6.2976,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 7.899999976158142,
+        "gpu_ms": 4.45952,
+        "gpu_unavailable": null
+      },
+      {
+        "cpu_ms": 8.600000023841858,
+        "gpu_ms": 5.341184,
+        "gpu_unavailable": null
+      }
+    ],
+    "science_unchanged": true,
+    "retained": {
+      "heap": 766817120,
+      "heap_source": "CDP Runtime.getHeapUsage after HeapProfiler.collectGarbage",
+      "info": {
+        "memory": {
+          "geometries": 50,
+          "textures": 7
+        },
+        "render": {
+          "frame": 479,
+          "calls": 415,
+          "triangles": 1145910,
+          "points": 0,
+          "lines": 0
+        },
+        "programs": 8
+      }
+    },
+    "host_cpu": {
+      "busy_fraction": 0.3503644428745134,
+      "logical_cpus": 16,
+      "free_physical_bytes": 42578935808,
+      "interval": "construction, witness collection, orbit and retained-heap sampling"
+    }
+  }
+]
