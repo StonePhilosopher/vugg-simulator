@@ -1,0 +1,107 @@
+
+> vugg-simulator@0.0.0 pretest
+> node tools/narrative-workflow.mjs --check && node tools/tutorial-lint.mjs --quiet && node tools/accessibility-audit.mjs && tsc -p tsconfig.json && node tools/prep-test-bundle.mjs
+
+[narratives] PASS: 94 files, 589 statically validated calls, 0 dynamic variants, 0 inline fallbacks
+[accessibility-audit] PASS: 7 contrast pairs plus zoom, focus, touch, motion, text-scale, tutorial, and audio-equivalence contracts
+[prep-test-bundle] wrote dist/.test-bundle.js (6203 KiB, 182 files, 2802 exports)
+
+> vugg-simulator@0.0.0 test
+> node tools/test-workflow.mjs --file tests-js/o2-render-wiring.test.ts
+
+[test-workflow] selected 1 exact test file(s)
+[test-workflow] 1 files in 1 sequential batch(es) of at most 1
+[test-workflow] explicit threads=1; file parallelism off; RSS ceiling 2048 MB
+
+[test-workflow] batch 1/1: o2-render-wiring.test.ts .. o2-render-wiring.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/o2-render-wiring.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+····xx
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests-js/o2-render-wiring.test.ts > W-F O2 — the render pipeline fires on real scenarios > gem_pegmatite: rebuilds dispose replaced contacts and preserve cached shapes
+AssertionError: every retired contact must be disposed once: expected [ Array(12) ] to deeply equal [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+- Expected
++ Received
+
+  [
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
+-   1,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
++   0,
+  ]
+
+ ❯ tests-js/o2-render-wiring.test.ts:191:86
+    189|       state.crystalsSig = null;
+    190|       _topoSyncCrystalMeshes(state, sim, sim.wall_state);
+    191|       expect([...disposals.values()], 'every retired contact must be d…
+       |                                                                                      ^
+    192|       expect([...cacheDisposals.values()], 'cached shapes remain borro…
+    193|       for (const [key, geometry] of cached) expect(state.geomCache.get…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests-js/o2-render-wiring.test.ts > W-F O2 — the render pipeline fires on real scenarios > mvt: rebuilds dispose replaced contacts and preserve cached shapes
+AssertionError: every retired contact must be disposed once: expected [ +0, +0, +0 ] to deeply equal [ 1, 1, 1 ]
+
+- Expected
++ Received
+
+  [
+-   1,
+-   1,
+-   1,
++   0,
++   0,
++   0,
+  ]
+
+ ❯ tests-js/o2-render-wiring.test.ts:191:86
+    189|       state.crystalsSig = null;
+    190|       _topoSyncCrystalMeshes(state, sim, sim.wall_state);
+    191|       expect([...disposals.values()], 'every retired contact must be d…
+       |                                                                                      ^
+    192|       expect([...cacheDisposals.values()], 'cached shapes remain borro…
+    193|       for (const [key, geometry] of cached) expect(state.geomCache.get…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  20:52:45
+   Duration  116.94s (transform 1.68s, setup 361ms, import 194ms, tests 113.59s, environment 1.90s)
+
+[test-workflow] FAIL [test-process-failed] in batch 1/1 (peak 708 MB RSS)

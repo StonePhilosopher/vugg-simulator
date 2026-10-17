@@ -1,0 +1,719 @@
+[
+  {
+    "ok": true,
+    "elapsed_ms": 237.2000000178814,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 36,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "baseline",
+    "iteration": 0,
+    "pixel_comparisons_to_prior_baselines": []
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 226,
+    "memory": {
+      "geometries": 26,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 37,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "baseline",
+    "iteration": 1,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 436,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 227.30000001192093,
+    "memory": {
+      "geometries": 29,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 38,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "baseline",
+    "iteration": 2,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 458,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 562,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 206.10000002384186,
+    "memory": {
+      "geometries": 32,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 39,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "baseline",
+    "iteration": 3,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 729,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 783,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 735,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 205.59999999403954,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 40,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "candidate",
+    "iteration": 0,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 446,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 599,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 442,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 590,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 211.59999999403954,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 41,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "candidate",
+    "iteration": 1,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 509,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 667,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 291,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 590,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 235.89999997615814,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 42,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "candidate",
+    "iteration": 2,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 479,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 573,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 571,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 626,
+        "alpha_equal": true
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 202.80000001192093,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 43,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "quality": {
+      "width": 1000,
+      "height": 760,
+      "dpr": 1,
+      "toneMapping": 4,
+      "exposure": 1,
+      "shadows": true,
+      "shadow_type": 2,
+      "shadow_map": 2048,
+      "optics_tier": "transmission",
+      "camera_projection": [
+        2.088082838785513,
+        0,
+        0,
+        0,
+        0,
+        2.7474774194546225,
+        0,
+        0,
+        0,
+        0,
+        -1.000040000800016,
+        -1,
+        0,
+        0,
+        -0.2000040000800016,
+        0
+      ],
+      "camera_world": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        128.29156583922253,
+        1
+      ]
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "camera_and_quality_equal": true,
+    "geometry_sha256": "c5e2fb899439d4a05b18534c3371c825b6b7e5d65df663c89b2401f282129ae6",
+    "variant": "candidate",
+    "iteration": 3,
+    "pixel_comparisons_to_prior_baselines": [
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 536,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 524,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 398,
+        "alpha_equal": true
+      },
+      {
+        "max_rgb_delta": 1,
+        "changed_pixels": 659,
+        "alpha_equal": true
+      }
+    ]
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "method": "Independent decoding of all 24 archived PNGs; six baseline pairs and sixteen candidate/baseline pairs per specimen",
+  "python": "3.12.14",
+  "pillow": "12.3.0",
+  "numpy": "2.3.5",
+  "results": [
+    {
+      "scenario": "mvt",
+      "baseline_max_rgb_delta": 1,
+      "candidate_max_rgb_delta": 1,
+      "alpha_equal": true,
+      "baseline_max_changed_pixels": 609,
+      "candidate_max_changed_pixels": 653,
+      "total_pixels": 760000,
+      "matches_browser_measurement": true
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "baseline_max_rgb_delta": 3,
+      "candidate_max_rgb_delta": 3,
+      "alpha_equal": true,
+      "baseline_max_changed_pixels": 1346,
+      "candidate_max_changed_pixels": 1618,
+      "total_pixels": 760000,
+      "matches_browser_measurement": true
+    },
+    {
+      "scenario": "bisbee",
+      "baseline_max_rgb_delta": 0,
+      "candidate_max_rgb_delta": 0,
+      "alpha_equal": true,
+      "baseline_max_changed_pixels": 0,
+      "candidate_max_changed_pixels": 0,
+      "total_pixels": 760000,
+      "matches_browser_measurement": true
+    }
+  ],
+  "passed": true
+}

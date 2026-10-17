@@ -1,0 +1,138 @@
+{
+  "results": [
+    {
+      "scenario": "mvt",
+      "workload": {
+        "steps": 120,
+        "shape_seed": 3,
+        "three": "163"
+      },
+      "science_fingerprint": "382914f77886d6aff092ce5df82944d783f42f2769bd7ec4c1c35eb2051a4e28",
+      "baseline_geometries": [
+        23,
+        26,
+        29,
+        32
+      ],
+      "candidate_geometries": [
+        23,
+        23,
+        23,
+        23
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "f691546578814d31d5673a4934a9b681d52e101d405439073153c2e194a29cc3",
+        "candidate": "47793ece3ffc026a9fec07795d65c57925545b7b4a9bb75f4eaa9e84ddcf7506"
+      },
+      "frames_byte_identical": false,
+      "pixel_repeatability": {
+        "baseline_max_rgb_delta": 1,
+        "candidate_max_rgb_delta": 1,
+        "alpha_equal": true,
+        "baseline_max_changed_pixels": 609,
+        "candidate_max_changed_pixels": 653,
+        "total_pixels": 760000
+      },
+      "frames_within_baseline_repeatability": true,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "camera_and_quality_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": true
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "workload": {
+        "steps": 230,
+        "shape_seed": 8,
+        "three": "163"
+      },
+      "science_fingerprint": "3c0107bf85849f03a08fb815e3781d78f996e5a2ce717e2803a657c553c3ddbd",
+      "baseline_geometries": [
+        23,
+        35,
+        47,
+        59
+      ],
+      "candidate_geometries": [
+        23,
+        23,
+        23,
+        23
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "269910a3104d2b29169f8d234ab0612a3461ecb6aa05236e0f777cac2d9a9d39",
+        "candidate": "df65a93bdbe7254ac81c1ace373bcef6e35f075c966d8d1b250327ae74bb8184"
+      },
+      "frames_byte_identical": false,
+      "pixel_repeatability": {
+        "baseline_max_rgb_delta": 3,
+        "candidate_max_rgb_delta": 3,
+        "alpha_equal": true,
+        "baseline_max_changed_pixels": 1346,
+        "candidate_max_changed_pixels": 1618,
+        "total_pixels": 760000
+      },
+      "frames_within_baseline_repeatability": true,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "camera_and_quality_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": true
+    },
+    {
+      "scenario": "bisbee",
+      "workload": {
+        "steps": 340,
+        "shape_seed": 13,
+        "three": "163"
+      },
+      "science_fingerprint": "a9b1f6436e65fb39c86842b9a653fdf13dc2b6a76f7e29b40e883739570648d5",
+      "baseline_geometries": [
+        50,
+        62,
+        74,
+        86
+      ],
+      "candidate_geometries": [
+        50,
+        50,
+        50,
+        50
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "44a95d428c2d25ee388e0279d89db09a6dfbab2d5633ff05eddef8759ee781b4",
+        "candidate": "44a95d428c2d25ee388e0279d89db09a6dfbab2d5633ff05eddef8759ee781b4"
+      },
+      "frames_byte_identical": true,
+      "pixel_repeatability": {
+        "baseline_max_rgb_delta": 0,
+        "candidate_max_rgb_delta": 0,
+        "alpha_equal": true,
+        "baseline_max_changed_pixels": 0,
+        "candidate_max_changed_pixels": 0,
+        "total_pixels": 760000
+      },
+      "frames_within_baseline_repeatability": true,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "camera_and_quality_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

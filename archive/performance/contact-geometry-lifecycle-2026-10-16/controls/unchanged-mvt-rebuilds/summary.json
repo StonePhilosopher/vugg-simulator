@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "scenario": "mvt",
+      "workload": {
+        "steps": 120,
+        "shape_seed": 3,
+        "three": "163"
+      },
+      "science_fingerprint": "382914f77886d6aff092ce5df82944d783f42f2769bd7ec4c1c35eb2051a4e28",
+      "baseline_geometries": [
+        23,
+        26,
+        29,
+        32
+      ],
+      "candidate_geometries": [
+        23,
+        23,
+        23,
+        23
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "95966e45f8f9f9dc310f4404791607701f87d802fd9e0009b06df05a796950e5",
+        "candidate": "a804b0f0c0e85b4ca3ee59cbe21d53e63f82eb55bcbaabd50dffeef2e5fbc942"
+      },
+      "frames_byte_identical": false,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": false
+    }
+  ],
+  "errors": [],
+  "passed": false
+}

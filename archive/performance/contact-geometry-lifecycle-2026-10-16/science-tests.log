@@ -1,0 +1,266 @@
+
+> vugg-simulator@0.0.0 science:rebake
+> node tools/science-workflow.mjs --rebake
+
+
+[science-workflow] compile and rebuild local game bundle
+[build-all] auditing narrative manifest…
+[narratives] PASS: 94 files, 589 statically validated calls, 0 dynamic variants, 0 inline fallbacks
+[build-all] cleaning dist/ before exact compilation…
+[build-all] running tsc…
+[build-all] running tools/build.mjs…
+[build] rebuilt index.html from 182 module(s) (8,128,309 chars)
+
+[science-workflow] guided browser receipt preflight
+[guided-browser-receipt] PASS: exact SIM 285 owned-browser testimony is current
+
+[science-workflow] three-seed locality-frequency receipt
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+  amethyst_geode                   2 panel species, 0 statistical target(s), 11.4s
+  asbestos_hills_crack_seal        9 panel species, 0 statistical target(s), 7.4s
+  asbestos_hills_surficial_alteration 10 panel species, 0 statistical target(s), 6.0s
+  bisbee                           32 panel species, 0 statistical target(s), 133.7s
+  chiastolite_hornfels             3 panel species, 0 statistical target(s), 6.8s
+  colorado_plateau                 4 panel species, 0 statistical target(s), 9.9s
+  cooling                          1 panel species, 0 statistical target(s), 5.6s
+  deccan_zeolite                   14 panel species, 0 statistical target(s), 12.3s
+  elmwood                          6 panel species, 0 statistical target(s), 20.8s
+  epithermal_telluride             9 panel species, 0 statistical target(s), 12.2s
+  gem_pegmatite                    7 panel species, 0 statistical target(s), 11.3s
+  great_salt_plains                2 panel species, 0 statistical target(s), 9.1s
+  grimsel_alpine_cleft             10 panel species, 0 statistical target(s), 14.8s
+  jeffrey_mine                     13 panel species, 0 statistical target(s), 14.4s
+  marble_contact_metamorphism      0 panel species, 0 statistical target(s), 7.0s
+  mvt                              9 panel species, 0 statistical target(s), 12.2s
+  naica_geothermal                 2 panel species, 0 statistical target(s), 19.5s
+  ouro_preto                       4 panel species, 0 statistical target(s), 15.5s
+  porphyry                         20 panel species, 0 statistical target(s), 9.5s
+  pulse                            3 panel species, 1 statistical target(s), 7.0s
+  radioactive_pegmatite            12 panel species, 0 statistical target(s), 10.5s
+  reactivated_fluorite_vein        12 panel species, 1 statistical target(s), 20.7s
+  reactive_wall                    5 panel species, 0 statistical target(s), 149.7s
+  roughten_gill                    23 panel species, 0 statistical target(s), 29.9s
+  sabkha_dolomitization            7 panel species, 0 statistical target(s), 36.6s
+  schneeberg                       33 panel species, 2 statistical target(s), 17.4s
+  searles_lake                     7 panel species, 0 statistical target(s), 20.0s
+  shigar_pegmatite                 5 panel species, 0 statistical target(s), 8.0s
+  sicily_solfifera                 5 panel species, 0 statistical target(s), 27.4s
+  stalactite_demo                  1 panel species, 0 statistical target(s), 9.5s
+  sulphur_bank                     8 panel species, 0 statistical target(s), 29.0s
+  sunnyside_american_tunnel        16 panel species, 0 statistical target(s), 24.6s
+  supergene_oxidation              30 panel species, 0 statistical target(s), 448.1s
+  tn457_barite_pulses              2 panel species, 0 statistical target(s), 387.2s
+  tormiq_alpine_cleft              6 panel species, 0 statistical target(s), 9.4s
+  tutorial_first_crystal           1 panel species, 0 statistical target(s), 3.7s
+  tutorial_mn_calcite              4 panel species, 0 statistical target(s), 3.8s
+  tutorial_travertine              2 panel species, 0 statistical target(s), 5.0s
+  ultramafic_supergene             4 panel species, 0 statistical target(s), 10.4s
+  wittichen                        13 panel species, 0 statistical target(s), 22.1s
+  zoned_dripstone_cave             3 panel species, 0 statistical target(s), 9.1s
+
+[gen-locality-frequency] wrote tests-js\baselines\locality_frequency_v285.json (41 scenarios, seeds 1, 2, 42)
+
+[science-workflow] canonical seed-42 strip archive
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+  amethyst_geode               240 steps, 71 chips, 3 nucleations, 649 KB
+  asbestos_hills_crack_seal    110 steps, 71 chips, 20 nucleations, 1315 KB
+  asbestos_hills_surficial_alteration 120 steps, 71 chips, 21 nucleations, 1664 KB
+  bisbee                       340 steps, 71 chips, 117 nucleations, 10742 KB
+  chiastolite_hornfels         120 steps, 71 chips, 7 nucleations, 949 KB
+  colorado_plateau             180 steps, 71 chips, 17 nucleations, 2587 KB
+  cooling                      100 steps, 71 chips, 1 nucleations, 281 KB
+  deccan_zeolite               200 steps, 71 chips, 31 nucleations, 2573 KB
+  elmwood                      200 steps, 71 chips, 16 nucleations, 2606 KB
+  epithermal_telluride         180 steps, 71 chips, 27 nucleations, 3394 KB
+  gem_pegmatite                230 steps, 71 chips, 17 nucleations, 546 KB
+  great_salt_plains            250 steps, 71 chips, 21 nucleations, 1754 KB
+  grimsel_alpine_cleft         200 steps, 71 chips, 33 nucleations, 3678 KB
+  jeffrey_mine                 200 steps, 71 chips, 42 nucleations, 5234 KB
+  marble_contact_metamorphism  180 steps, 71 chips, 0 nucleations, 327 KB
+  mvt                          120 steps, 71 chips, 58 nucleations, 2084 KB
+  naica_geothermal             320 steps, 71 chips, 7 nucleations, 2711 KB
+  ouro_preto                   260 steps, 71 chips, 17 nucleations, 2624 KB
+  porphyry                     120 steps, 71 chips, 46 nucleations, 2902 KB
+  pulse                        100 steps, 71 chips, 3 nucleations, 236 KB
+  radioactive_pegmatite        120 steps, 71 chips, 47 nucleations, 1962 KB
+  reactivated_fluorite_vein    160 steps, 71 chips, 34 nucleations, 3598 KB
+  reactive_wall                120 steps, 71 chips, 9 nucleations, 593 KB
+  roughten_gill                240 steps, 71 chips, 61 nucleations, 5638 KB
+  sabkha_dolomitization        260 steps, 71 chips, 98 nucleations, 5997 KB
+  schneeberg                   160 steps, 71 chips, 82 nucleations, 3675 KB
+  searles_lake                 300 steps, 71 chips, 69 nucleations, 2801 KB
+  shigar_pegmatite              70 steps, 71 chips, 18 nucleations, 913 KB
+  sicily_solfifera             200 steps, 71 chips, 17 nucleations, 2801 KB
+  stalactite_demo              100 steps, 71 chips, 2 nucleations, 321 KB
+  sulphur_bank                 200 steps, 71 chips, 27 nucleations, 5012 KB
+  sunnyside_american_tunnel    200 steps, 71 chips, 42 nucleations, 3078 KB
+  supergene_oxidation          200 steps, 71 chips, 98 nucleations, 10849 KB
+  tn457_barite_pulses          110 steps, 71 chips, 7 nucleations, 951 KB
+  tormiq_alpine_cleft          200 steps, 71 chips, 17 nucleations, 3275 KB
+  tutorial_first_crystal        30 steps, 71 chips, 1 nucleations, 92 KB
+  tutorial_mn_calcite           30 steps, 71 chips, 4 nucleations, 164 KB
+  tutorial_travertine           60 steps, 71 chips, 2 nucleations, 334 KB
+  ultramafic_supergene         200 steps, 71 chips, 21 nucleations, 1906 KB
+  wittichen                    220 steps, 71 chips, 43 nucleations, 3681 KB
+  zoned_dripstone_cave         150 steps, 71 chips, 9 nucleations, 1234 KB
+
+[gen-strip-archive] wrote 41 stories to archive\strips\v285 (105.2 MB total)
+
+[science-workflow] canonical seed-42 scenario baseline
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+  amethyst_geode                         3 crystals,  2 species
+  asbestos_hills_crack_seal             20 crystals,  9 species
+  asbestos_hills_surficial_alteration   21 crystals, 10 species
+  bisbee                               117 crystals, 31 species
+  chiastolite_hornfels                   7 crystals,  3 species
+  colorado_plateau                      17 crystals,  4 species
+  cooling                                1 crystals,  1 species
+  deccan_zeolite                        31 crystals, 14 species
+  elmwood                               16 crystals,  6 species
+  epithermal_telluride                  27 crystals,  9 species
+  gem_pegmatite                         17 crystals,  7 species
+  great_salt_plains                     21 crystals,  2 species
+  grimsel_alpine_cleft                  33 crystals, 10 species
+  jeffrey_mine                          42 crystals, 13 species
+  marble_contact_metamorphism            0 crystals,  0 species
+  mvt                                   58 crystals,  9 species
+  naica_geothermal                       7 crystals,  2 species
+  ouro_preto                            17 crystals,  4 species
+  porphyry                              46 crystals, 19 species
+  pulse                                  3 crystals,  3 species
+  radioactive_pegmatite                 47 crystals, 12 species
+  reactivated_fluorite_vein             34 crystals, 11 species
+  reactive_wall                          9 crystals,  5 species
+  roughten_gill                         61 crystals, 23 species
+  sabkha_dolomitization                 98 crystals,  6 species
+  schneeberg                            82 crystals, 30 species
+  searles_lake                          69 crystals,  7 species
+  shigar_pegmatite                      18 crystals,  5 species
+  sicily_solfifera                      17 crystals,  5 species
+  stalactite_demo                        2 crystals,  1 species
+  sulphur_bank                          27 crystals,  7 species
+  sunnyside_american_tunnel             42 crystals, 16 species
+  supergene_oxidation                   98 crystals, 30 species
+  tn457_barite_pulses                    7 crystals,  2 species
+  tormiq_alpine_cleft                   17 crystals,  6 species
+  tutorial_first_crystal                 1 crystals,  1 species
+  tutorial_mn_calcite                    4 crystals,  4 species
+  tutorial_travertine                    2 crystals,  2 species
+  ultramafic_supergene                  21 crystals,  4 species
+  wittichen                             43 crystals, 13 species
+  zoned_dripstone_cave                   9 crystals,  3 species
+
+[gen-baseline] wrote tests-js\baselines\seed42_v285.json (41 scenarios)
+
+[science-workflow] strip digest tripwire
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+  sabkha_dolomitization        260 steps, 17 key chips, depth 4 [archived story]
+  reactive_wall                120 steps, 17 key chips, depth 4 [archived story]
+  cooling                      100 steps, 17 key chips, depth 4 [archived story]
+  mvt                          120 steps, 17 key chips, depth 4 [archived story]
+  tutorial_travertine           60 steps, 17 key chips, depth 4 [archived story]
+  searles_lake                 300 steps, 17 key chips, depth 4 [archived story]
+  wittichen                    220 steps, 17 key chips, depth 4 [archived story]
+  elmwood                      200 steps, 17 key chips, depth 4 [archived story]
+  supergene_oxidation          200 steps, 17 key chips, depth 4 [archived story]
+  naica_geothermal             320 steps, 17 key chips, depth 4 [archived story]
+  sicily_solfifera             200 steps, 17 key chips, depth 4 [archived story]
+  sulphur_bank                 200 steps, 17 key chips, depth 4 [archived story]
+
+[gen-strip-digest] wrote tests-js\baselines\strip_digest_v285.json (12 scenarios)
+
+[science-workflow] production mechanism boundary witnesses
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[mechanism-witnesses] wrote archive\evidence\mechanism-witnesses-v285.json
+
+[science-workflow] byte-bound hostile-review claim cards
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[card] wrote 41 cards → archive\claim-cards\v285
+
+[science-workflow] clean-checkout aggregate science evidence receipt
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-evidence] wrote archive/evidence/v285.json (128 artifacts)
+
+[science-workflow] science provenance manifest
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-manifest] wrote data\generated\science-provenance-manifest.json — 41 scenarios, 244 citations
+
+[science-workflow] compile current sources and check bundled index drift
+[build-all] auditing narrative manifest…
+[narratives] PASS: 94 files, 589 statically validated calls, 0 dynamic variants, 0 inline fallbacks
+[build-all] cleaning dist/ before exact compilation…
+[build-all] running tsc…
+[build-all] running tools/build.mjs…
+[build] index.html is up to date with 182 module(s)
+
+[science-workflow] aggregate science evidence authentication
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-evidence] PASS: 128 artifacts, exact execution + producers, hash policy vugg-hash-policy-lf-normalised-v1
+
+[science-workflow] science provenance check
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-manifest] PASS — 41 scenarios, generated manifest current
+
+[science-workflow] locality envelope check
+[locality-envelope] v285: 41 scenario(s)
+[locality-envelope] 0 unclassified product(s) in 0 scenario(s); 0 contract violation(s)
+
+[science-workflow] focused science tests (one worker)
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+
+ Test Files  7 passed (7)
+      Tests  55 passed (55)
+   Start at  22:15:45
+   Duration  391.92s (transform 1.65s, setup 206ms, import 466ms, tests 388.41s, environment 2.16s)
+
+
+[science-workflow] PASS

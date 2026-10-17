@@ -8085,10 +8085,9 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
   if (sig === state.crystalsSig) return;
   state.crystalsSig = sig;
 
-  // Clear out the old children. Geometries are cached at the state
-  // level (geomCache) so we keep them; only materials per crystal
-  // need disposing — but materials are MeshStandardMaterial with no
-  // textures, so the GC handles the rest.
+  // Cached shapes are borrowed and survive rebuilds. Lining meshes and
+  // contact-clipped parents own their fresh geometry and must release its
+  // GPU buffers when replaced; garbage collection alone does not do that.
   while (state.crystals.children.length) {
     const child = state.crystals.children.pop();
     if (child.userData?.ownsGeometry && child.geometry?.dispose) child.geometry.dispose();
@@ -8919,6 +8918,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // Falls back to current-size (reach, Diggle first-order) when either body
     // lacks a growth scalar. Render-only: replaces mesh.geometry with a fresh
     // clipped geom, leaving the cached form intact for the satellites + geomCache.
+    let ownsContactGeometry = false;
     if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
         && !isEtched && !isSectorZoned && !isGypsumHourglass
         && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
@@ -8958,6 +8958,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
           }
           if (mesh.geometry.userData.bariteR4) clipped.geom.userData.bariteR4 = mesh.geometry.userData.bariteR4;
           mesh.geometry = clipped.geom;
+          ownsContactGeometry = true;
           mesh.material = [mat, _o2ContactMaterial(mat, state)];
         }
       }
@@ -8971,6 +8972,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // findable by id via sim.crystals if a consumer needs more.
     mesh.userData = {
       crystal_id: crystal.crystal_id,
+      ownsGeometry: ownsContactGeometry,
       // v66: report the effectiveMineral (paramorph-rewound during
       // replay) so hit-test tooltips match what the user sees.
       mineral: effectiveMineral,
