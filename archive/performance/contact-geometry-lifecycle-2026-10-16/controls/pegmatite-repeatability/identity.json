@@ -1,0 +1,36 @@
+{
+  "baseline": "59d9c409a79d9631792e789c63248262e5519150",
+  "head": "59d9c409a79d9631792e789c63248262e5519150",
+  "inputs": {
+    "index.html": "1689966e2894bb12584d992fdcff2bb62666b185e5226ce65a759954fef8cdc4",
+    "js/99i-renderer-three.ts": "84158e4fb093d04c34962b6ff2f10635b3810a73dd9eeec918a9a43956337dda",
+    "tools/three.module.js": "ca330dc6b8e6a0a88a0b707e40a5191110c3e86842c7c6431a7a7a2e972f08f5",
+    "data/scenarios.json5": "0e647f74265dc6f87d6d3d00158bb786d027686a8074de4a3a4d39de55820c95",
+    "data/minerals.json": "9e426c0a32fd2009b11f42b9edbe8813bb5c80a4912a32e6c38fddd6c5f42a09",
+    "tools/contact-geometry-lifecycle-benchmark.mjs": "4512fabb701c11b413c945dd40dc14a86f97c12a5b2fda3536c4848854267b95",
+    "tools/browser-workflow.mjs": "d1348cc3815405bb6c00fdcfa8901fc5dd4061cdd55fa70a2a7ea6e3317ca69e",
+    "tools/owned-browser-runtime.mjs": "dc52b188357ce302c138b482e4fb99d00f2c959e6c853af0e0e020d4ec3b72d8",
+    "tools/evidence-runtime.mjs": "acfde9e92dd4548d75aacee0b8bc7407c5bc0860d0d4ea4d617a70d08cc1d7e6"
+  },
+  "runtime": {
+    "node": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 7 5800X 8-Core Processor             "
+  },
+  "workload": {
+    "scenarios": [
+      "mvt",
+      "gem_pegmatite",
+      "bisbee"
+    ],
+    "seed": 42,
+    "authored_shape_seeds": true,
+    "full_authored_runs": true,
+    "constructions_per_variant": 4,
+    "width": 1000,
+    "height": 760,
+    "dpr": 1
+  },
+  "trust": "Resource-lifecycle measurement and preservation of existing output; not geological validation, VRAM bytes, or a speed benchmark"
+}

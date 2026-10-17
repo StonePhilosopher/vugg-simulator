@@ -1,0 +1,54 @@
+
+> vugg-simulator@0.0.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> vugg-simulator@0.0.0 build:check
+> node tools/build-all.mjs --check
+
+[build-all] auditing narrative manifest…
+[narratives] PASS: 94 files, 589 statically validated calls, 0 dynamic variants, 0 inline fallbacks
+[build-all] cleaning dist/ before exact compilation…
+[build-all] running tsc…
+[build-all] running tools/build.mjs…
+[build] index.html is up to date with 182 module(s)
+
+> vugg-simulator@0.0.0 gen:release
+> node tools/release-audit.mjs --write
+
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[release-audit] PASS: 41 scenarios, 184 minerals, 94 narratives, 14 receipted assets; local P4 manifests and policies are current
+
+> vugg-simulator@0.0.0 audit:release
+> node tools/release-audit.mjs --check
+
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[release-audit] PASS: 41 scenarios, 184 minerals, 94 narratives, 14 receipted assets; local P4 manifests and policies are current
+
+> vugg-simulator@0.0.0 audit:evidence
+> node tools/science-evidence-receipt.mjs --check
+
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-evidence] PASS: 128 artifacts, exact execution + producers, hash policy vugg-hash-policy-lf-normalised-v1
+
+> vugg-simulator@0.0.0 audit:science
+> node tools/gen-science-provenance-manifest.mjs --check
+
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+[science-manifest] PASS — 41 scenarios, generated manifest current

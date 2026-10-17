@@ -1,0 +1,419 @@
+
+> vugg-simulator@0.0.0 gen:browser-receipt
+> node tools/browser-workflow.mjs --write-guided-receipt
+
+✓ boots the exact SIM and lists authored scenarios
+✓ owns guided tutorial progress by one exact run lifecycle
+✓ completes public-control guided tutorial journeys and lifecycle policy
+✓ traverses Library, Record Groove, Strip View, topology, and phone surfaces
+✓ cancels a progressive Simulation run through the N shortcut
+✓ completes a deterministic short Simulation run
+✓ binds tutorial strip success to committed IndexedDB bytes
+✓ selects an authored scenario through the Creative menu at seed 42
+✓ edits live Creative chemistry and advances by button and keyboard
+✓ shows causal mineral formation evidence by pointer and keyboard
+✓ shows storage denial globally during active Creative play and retries durably
+✓ manual-saves, recovers corruption, reloads, and restores Creative state
+✓ pauses and resumes authenticated wall replay
+✓ keeps the active Creative workspace inside a phone viewport
+✓ honors reduced motion without altering the simulation state
+✓ persists accessible text scale and explicit motion controls without changing geology
+✓ fits title and Creative setup across the responsive viewport matrix
+[browser-workflow] guided receipt candidate {"schema":"guided-tutorial-browser-journeys-v4","trust":"local-owned-browser-player-controls-not-independent-attestation","sim_version":285,"grand_tour_saves_lesson":{"scenario":"tutorial_first_crystal","entry":"Begin menu Tutorial 1 button","controls":["Continue"],"quick_nav_ids":["mode-current","mode-groove","mode-stripview","mode-library","mode-saves","mode-home"],"saves":{"step_index":6,"trigger":"continue","anchor_id":"mode-saves","highlighted":true,"policy_text":"💾 Saves — your active run keeps one rolling autosave after every accepted action, so ordinary progress is automatic. Open this shelf to make a named manual copy or load a saved geological run. Loading restores the run recipe and state; the tutorial overlay intentionally does not resume."},"home":{"step_index":7,"trigger":"continue","anchor_id":"mode-home","highlighted":true,"preservation_text":"🏠 Home — back to the title screen. It ends the tutorial overlay, but your geological run remains available through Saves."},"teardown":{"tutorial_null":true,"callouts":0,"locks":0}},"creative":{"scenario":"tutorial_travertine","entry":"Begin menu Tutorial 3 button","controls":["Continue","Advance","0.2s narrative speed","Tweak acid","Finish tutorial"],"geological_step":50,"authored_milestones":[4,11,20,26,41,50],"pause":{"step_index":10,"paused_at":10,"trigger":"continue"},"acid_product":{"schema":"fortress-fluid-action-product-v1","product":"carbonate-acid-titration","action":"tweak_acidify","accepted_at_step":50,"before_pH":8.228259199917794,"after_pH":7.928259199917797,"spatial_authority_schema":"player-fluid-spatial-intervention-v1","spatial_authority_scope":"canonical-nonvadose-voxel-volume","spatial_authority_count":7680,"spatial_authority_closed":true,"carbonate_transaction_kind":"ph_titration","carbonate_transaction_index":141,"carbonate_transactions_before_action":139,"carbonate_preparation_transfer_count":2},"geology_preservation":{"schema":"guided-tutorial-geology-preservation-v1","before":{"runtime":"fortress","scenario":"tutorial_travertine","step":50,"fingerprint":"8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e","run_id":"save-16-33h"},"after":{"runtime":"fortress","scenario":"tutorial_travertine","step":50,"fingerprint":"8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e","run_id":"save-16-33h"}},"teardown":{"tutorial_null":true,"callouts":0,"locks":0}},"simulation":{"scenario":"shigar_pegmatite","seed":42,"steps":70,"shape_seed_override":"","cavity_size":"any","entry":"Begin menu Tutorial 4 button","controls":["Continue","Grow","0.2s narrative speed","prologue gate","epilogue gate","Collect topaz","Library","search topaz","Finish tutorial"],"collected":{"record_id":"cry-16-wr2","name":"<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">","mineral":"topaz","source_scenario":"shigar_pegmatite","source_seed":42},"library_result":"topaz","geology_preservation":{"schema":"guided-tutorial-geology-preservation-v1","before":{"runtime":"simulation","scenario":"shigar_pegmatite","step":70,"fingerprint":"1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6","run_id":"c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"},"after":{"runtime":"simulation","scenario":"shigar_pegmatite","step":70,"fingerprint":"1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6","run_id":"c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"}},"teardown":{"tutorial_null":true,"callouts":0,"locks":0}},"save_load_policy":{"origin":"tutorial_travertine","autosave_step":1,"geology_preservation":{"schema":"guided-tutorial-geology-preservation-v1","before":{"runtime":"fortress","scenario":"tutorial_travertine","step":1,"fingerprint":"90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23","run_id":"save-16-2w5"},"after":{"runtime":"fortress","scenario":"tutorial_travertine","step":1,"fingerprint":"90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23","run_id":"save-16-2w5"}},"tutorial_resurrected":false,"policy":"geological-run-restored-tutorial-overlay-intentionally-not-restored"},"skip_cleanup":{"scenario":"tutorial_mn_calcite","tutorial_removed":true,"geology_preservation":{"schema":"guided-tutorial-geology-preservation-v1","before":{"runtime":"fortress","scenario":"tutorial_mn_calcite","step":0,"fingerprint":"143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5","run_id":"save-16-evi"},"after":{"runtime":"fortress","scenario":"tutorial_mn_calcite","step":0,"fingerprint":"143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5","run_id":"save-16-evi"}},"callouts":0,"locks":0},"player_surfaces":{"schema":"game04-player-surfaces-v2","collection_record_groove":{"record_id":"cry-16-wr2","stored_name":"<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">","library_name_text":"<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">","groove_name_text":"“<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">”","hostile_dom_nodes":0,"hostile_code_executed":false,"zone_count":17,"playback_started_and_stopped":true},"topology_helix":{"scenario":"shigar_pegmatite","public_control_sequence":["three:on","helix:off","three:off","three:on","helix:on","helix:off"],"pointer_hit_tested_controls":true,"flat_product":{"schema":"cavity-field-cross-section-v1","presentation":"capability-independent-cpu-sampled-cross-section","axis":"z","grid_index":24,"plane_world_mm":-0.1221521661082079,"dimensions":[48,48],"spacing_mm":6.606103985246776,"field_snapshot_digest":"17e11336b040dfc0cbdc12e8207e5394","surface_buffer_digest":"cavity-surface-buffers-v2|Float32Array:228984:c2f1c90decc829bd|Float32Array:228984:397f58f553a99011|Float32Array:228984:3229382bd3a42621|Float32Array:152656:7bc3efc07d1af0da|Uint16Array:228960:d79e8c331c16b28b|","receipt_digest":"be479746fe0dc8ba","crystal_policy":"withheld-with-explicit-label-without-authenticated-cpu-field-clipping","three_canvas_display":"none","flat_canvas_visibility":"visible","slice_controls_display":"none","zoom_controls_display":"none","inapplicable_camera_controls_disabled":true,"layout":{"schema":"cavity-field-cross-section-layout-v1","canvas_dimensions_px":[1741,676],"visible_bounds_px":[435.25,169,1305.75,507],"plot_bounds_px":[733.5,187,1007.5,461],"label_bounds_px":[[799.4140625,479,941.5859375,488],[810.03125,495,930.96875,504]],"plot_inside_visible_bounds":true,"labels_inside_visible_bounds":true}},"restored_product":{"three_canvas_display":"block","flat_canvas_visibility":"hidden"},"final_three_enabled":true,"final_helix_enabled":false},"strip_view":{"scenario":"shigar_pegmatite","seed":42,"download_filename":"shigar_pegmatite@seed42.stripview","download_sha256":"2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b","production_key":"shigar_pegmatite@42#42","production_origin":"production-run","imported_key":"imported:shigar_pegmatite@42#42@sha256-c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2","imported_origin":"imported-file","dataset_digest_sha256":"c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2","imported_digest_sha256":"c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2","visible_import_label":"IMPORTED FILE","upload_via_visible_file_chooser":true,"durable_commit_before_render":true,"playback_started_and_stopped":true},"phone":{"width":390,"height":844,"modes":["library","groove","stripview","current"],"no_horizontal_document_overflow":true,"panels_inside_viewport":true}}}
+[browser-workflow] wrote archive/evidence/guided-tutorial-browser-v285.json
+{
+  "ok": true,
+  "schema": 1,
+  "sim_version": 285,
+  "seed": 42,
+  "browser": "Chrome/155.0.8059.41",
+  "browser_runtime": {
+    "schema": "vugg-owned-devtools-browser-runtime-v2",
+    "executable_name": "chrome.exe",
+    "executable_sha256": "9ca2beaa7a9fd1109f01e562788c22e045a01cec0f6015ade689325af7f8a521",
+    "devtools_browser_product": "Chrome/155.0.8059.41",
+    "devtools_protocol_version": "1.3"
+  },
+  "checks": [
+    {
+      "name": "boots the exact SIM and lists authored scenarios",
+      "duration_ms": 2
+    },
+    {
+      "name": "owns guided tutorial progress by one exact run lifecycle",
+      "duration_ms": 5357
+    },
+    {
+      "name": "completes public-control guided tutorial journeys and lifecycle policy",
+      "duration_ms": 370790
+    },
+    {
+      "name": "traverses Library, Record Groove, Strip View, topology, and phone surfaces",
+      "duration_ms": 3830
+    },
+    {
+      "name": "cancels a progressive Simulation run through the N shortcut",
+      "duration_ms": 2575
+    },
+    {
+      "name": "completes a deterministic short Simulation run",
+      "duration_ms": 1929
+    },
+    {
+      "name": "binds tutorial strip success to committed IndexedDB bytes",
+      "duration_ms": 243
+    },
+    {
+      "name": "selects an authored scenario through the Creative menu at seed 42",
+      "duration_ms": 1955
+    },
+    {
+      "name": "edits live Creative chemistry and advances by button and keyboard",
+      "duration_ms": 1684
+    },
+    {
+      "name": "shows causal mineral formation evidence by pointer and keyboard",
+      "duration_ms": 2037
+    },
+    {
+      "name": "shows storage denial globally during active Creative play and retries durably",
+      "duration_ms": 1164
+    },
+    {
+      "name": "manual-saves, recovers corruption, reloads, and restores Creative state",
+      "duration_ms": 11252
+    },
+    {
+      "name": "pauses and resumes authenticated wall replay",
+      "duration_ms": 5105
+    },
+    {
+      "name": "keeps the active Creative workspace inside a phone viewport",
+      "duration_ms": 96
+    },
+    {
+      "name": "honors reduced motion without altering the simulation state",
+      "duration_ms": 4
+    },
+    {
+      "name": "persists accessible text scale and explicit motion controls without changing geology",
+      "duration_ms": 90
+    },
+    {
+      "name": "fits title and Creative setup across the responsive viewport matrix",
+      "duration_ms": 1861
+    }
+  ],
+  "guided_tutorial_journeys": {
+    "schema": "guided-tutorial-browser-journeys-v4",
+    "trust": "local-owned-browser-player-controls-not-independent-attestation",
+    "sim_version": 285,
+    "grand_tour_saves_lesson": {
+      "scenario": "tutorial_first_crystal",
+      "entry": "Begin menu Tutorial 1 button",
+      "controls": [
+        "Continue"
+      ],
+      "quick_nav_ids": [
+        "mode-current",
+        "mode-groove",
+        "mode-stripview",
+        "mode-library",
+        "mode-saves",
+        "mode-home"
+      ],
+      "saves": {
+        "step_index": 6,
+        "trigger": "continue",
+        "anchor_id": "mode-saves",
+        "highlighted": true,
+        "policy_text": "💾 Saves — your active run keeps one rolling autosave after every accepted action, so ordinary progress is automatic. Open this shelf to make a named manual copy or load a saved geological run. Loading restores the run recipe and state; the tutorial overlay intentionally does not resume."
+      },
+      "home": {
+        "step_index": 7,
+        "trigger": "continue",
+        "anchor_id": "mode-home",
+        "highlighted": true,
+        "preservation_text": "🏠 Home — back to the title screen. It ends the tutorial overlay, but your geological run remains available through Saves."
+      },
+      "teardown": {
+        "tutorial_null": true,
+        "callouts": 0,
+        "locks": 0
+      }
+    },
+    "creative": {
+      "scenario": "tutorial_travertine",
+      "entry": "Begin menu Tutorial 3 button",
+      "controls": [
+        "Continue",
+        "Advance",
+        "0.2s narrative speed",
+        "Tweak acid",
+        "Finish tutorial"
+      ],
+      "geological_step": 50,
+      "authored_milestones": [
+        4,
+        11,
+        20,
+        26,
+        41,
+        50
+      ],
+      "pause": {
+        "step_index": 10,
+        "paused_at": 10,
+        "trigger": "continue"
+      },
+      "acid_product": {
+        "schema": "fortress-fluid-action-product-v1",
+        "product": "carbonate-acid-titration",
+        "action": "tweak_acidify",
+        "accepted_at_step": 50,
+        "before_pH": 8.228259199917794,
+        "after_pH": 7.928259199917797,
+        "spatial_authority_schema": "player-fluid-spatial-intervention-v1",
+        "spatial_authority_scope": "canonical-nonvadose-voxel-volume",
+        "spatial_authority_count": 7680,
+        "spatial_authority_closed": true,
+        "carbonate_transaction_kind": "ph_titration",
+        "carbonate_transaction_index": 141,
+        "carbonate_transactions_before_action": 139,
+        "carbonate_preparation_transfer_count": 2
+      },
+      "geology_preservation": {
+        "schema": "guided-tutorial-geology-preservation-v1",
+        "before": {
+          "runtime": "fortress",
+          "scenario": "tutorial_travertine",
+          "step": 50,
+          "fingerprint": "8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e",
+          "run_id": "save-16-33h"
+        },
+        "after": {
+          "runtime": "fortress",
+          "scenario": "tutorial_travertine",
+          "step": 50,
+          "fingerprint": "8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e",
+          "run_id": "save-16-33h"
+        }
+      },
+      "teardown": {
+        "tutorial_null": true,
+        "callouts": 0,
+        "locks": 0
+      }
+    },
+    "simulation": {
+      "scenario": "shigar_pegmatite",
+      "seed": 42,
+      "steps": 70,
+      "shape_seed_override": "",
+      "cavity_size": "any",
+      "entry": "Begin menu Tutorial 4 button",
+      "controls": [
+        "Continue",
+        "Grow",
+        "0.2s narrative speed",
+        "prologue gate",
+        "epilogue gate",
+        "Collect topaz",
+        "Library",
+        "search topaz",
+        "Finish tutorial"
+      ],
+      "collected": {
+        "record_id": "cry-16-wr2",
+        "name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+        "mineral": "topaz",
+        "source_scenario": "shigar_pegmatite",
+        "source_seed": 42
+      },
+      "library_result": "topaz",
+      "geology_preservation": {
+        "schema": "guided-tutorial-geology-preservation-v1",
+        "before": {
+          "runtime": "simulation",
+          "scenario": "shigar_pegmatite",
+          "step": 70,
+          "fingerprint": "1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6",
+          "run_id": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"
+        },
+        "after": {
+          "runtime": "simulation",
+          "scenario": "shigar_pegmatite",
+          "step": 70,
+          "fingerprint": "1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6",
+          "run_id": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"
+        }
+      },
+      "teardown": {
+        "tutorial_null": true,
+        "callouts": 0,
+        "locks": 0
+      }
+    },
+    "save_load_policy": {
+      "origin": "tutorial_travertine",
+      "autosave_step": 1,
+      "geology_preservation": {
+        "schema": "guided-tutorial-geology-preservation-v1",
+        "before": {
+          "runtime": "fortress",
+          "scenario": "tutorial_travertine",
+          "step": 1,
+          "fingerprint": "90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23",
+          "run_id": "save-16-2w5"
+        },
+        "after": {
+          "runtime": "fortress",
+          "scenario": "tutorial_travertine",
+          "step": 1,
+          "fingerprint": "90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23",
+          "run_id": "save-16-2w5"
+        }
+      },
+      "tutorial_resurrected": false,
+      "policy": "geological-run-restored-tutorial-overlay-intentionally-not-restored"
+    },
+    "skip_cleanup": {
+      "scenario": "tutorial_mn_calcite",
+      "tutorial_removed": true,
+      "geology_preservation": {
+        "schema": "guided-tutorial-geology-preservation-v1",
+        "before": {
+          "runtime": "fortress",
+          "scenario": "tutorial_mn_calcite",
+          "step": 0,
+          "fingerprint": "143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5",
+          "run_id": "save-16-evi"
+        },
+        "after": {
+          "runtime": "fortress",
+          "scenario": "tutorial_mn_calcite",
+          "step": 0,
+          "fingerprint": "143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5",
+          "run_id": "save-16-evi"
+        }
+      },
+      "callouts": 0,
+      "locks": 0
+    },
+    "player_surfaces": {
+      "schema": "game04-player-surfaces-v2",
+      "collection_record_groove": {
+        "record_id": "cry-16-wr2",
+        "stored_name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+        "library_name_text": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
+        "groove_name_text": "“<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">”",
+        "hostile_dom_nodes": 0,
+        "hostile_code_executed": false,
+        "zone_count": 17,
+        "playback_started_and_stopped": true
+      },
+      "topology_helix": {
+        "scenario": "shigar_pegmatite",
+        "public_control_sequence": [
+          "three:on",
+          "helix:off",
+          "three:off",
+          "three:on",
+          "helix:on",
+          "helix:off"
+        ],
+        "pointer_hit_tested_controls": true,
+        "flat_product": {
+          "schema": "cavity-field-cross-section-v1",
+          "presentation": "capability-independent-cpu-sampled-cross-section",
+          "axis": "z",
+          "grid_index": 24,
+          "plane_world_mm": -0.1221521661082079,
+          "dimensions": [
+            48,
+            48
+          ],
+          "spacing_mm": 6.606103985246776,
+          "field_snapshot_digest": "17e11336b040dfc0cbdc12e8207e5394",
+          "surface_buffer_digest": "cavity-surface-buffers-v2|Float32Array:228984:c2f1c90decc829bd|Float32Array:228984:397f58f553a99011|Float32Array:228984:3229382bd3a42621|Float32Array:152656:7bc3efc07d1af0da|Uint16Array:228960:d79e8c331c16b28b|",
+          "receipt_digest": "be479746fe0dc8ba",
+          "crystal_policy": "withheld-with-explicit-label-without-authenticated-cpu-field-clipping",
+          "three_canvas_display": "none",
+          "flat_canvas_visibility": "visible",
+          "slice_controls_display": "none",
+          "zoom_controls_display": "none",
+          "inapplicable_camera_controls_disabled": true,
+          "layout": {
+            "schema": "cavity-field-cross-section-layout-v1",
+            "canvas_dimensions_px": [
+              1741,
+              676
+            ],
+            "visible_bounds_px": [
+              435.25,
+              169,
+              1305.75,
+              507
+            ],
+            "plot_bounds_px": [
+              733.5,
+              187,
+              1007.5,
+              461
+            ],
+            "label_bounds_px": [
+              [
+                799.4140625,
+                479,
+                941.5859375,
+                488
+              ],
+              [
+                810.03125,
+                495,
+                930.96875,
+                504
+              ]
+            ],
+            "plot_inside_visible_bounds": true,
+            "labels_inside_visible_bounds": true
+          }
+        },
+        "restored_product": {
+          "three_canvas_display": "block",
+          "flat_canvas_visibility": "hidden"
+        },
+        "final_three_enabled": true,
+        "final_helix_enabled": false
+      },
+      "strip_view": {
+        "scenario": "shigar_pegmatite",
+        "seed": 42,
+        "download_filename": "shigar_pegmatite@seed42.stripview",
+        "download_sha256": "2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b",
+        "production_key": "shigar_pegmatite@42#42",
+        "production_origin": "production-run",
+        "imported_key": "imported:shigar_pegmatite@42#42@sha256-c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+        "imported_origin": "imported-file",
+        "dataset_digest_sha256": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+        "imported_digest_sha256": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+        "visible_import_label": "IMPORTED FILE",
+        "upload_via_visible_file_chooser": true,
+        "durable_commit_before_render": true,
+        "playback_started_and_stopped": true
+      },
+      "phone": {
+        "width": 390,
+        "height": 844,
+        "modes": [
+          "library",
+          "groove",
+          "stripview",
+          "current"
+        ],
+        "no_horizontal_document_overflow": true,
+        "panels_inside_viewport": true
+      }
+    }
+  }
+}

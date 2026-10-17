@@ -1,0 +1,217 @@
+
+> vugg-simulator@0.0.0 pretest
+> node tools/narrative-workflow.mjs --check && node tools/tutorial-lint.mjs --quiet && node tools/accessibility-audit.mjs && tsc -p tsconfig.json && node tools/prep-test-bundle.mjs
+
+[narratives] PASS: 94 files, 589 statically validated calls, 0 dynamic variants, 0 inline fallbacks
+[accessibility-audit] PASS: 7 contrast pairs plus zoom, focus, touch, motion, text-scale, tutorial, and audio-equivalence contracts
+[prep-test-bundle] wrote dist/.test-bundle.js (6203 KiB, 182 files, 2802 exports)
+
+> vugg-simulator@0.0.0 test
+> node tools/test-workflow.mjs --file tests-js/o2-render-wiring.test.ts --file tests-js/o2-contact.test.ts --file tests-js/o5-band-render.test.ts --file tests-js/surface-growth-three-integration.test.ts --file tests-js/cavity-field-clip-contract.test.ts --file tests-js/cavity-field-fallback.test.ts --file tests-js/calcite-morphology.test.ts --file tests-js/native-metal-morphology.test.ts --file tests-js/selenite-swallowtail-three.test.ts
+
+[test-workflow] selected 9 exact test file(s)
+[test-workflow] 9 files in 9 sequential batch(es) of at most 1
+[test-workflow] explicit threads=1; file parallelism off; RSS ceiling 2048 MB
+
+[test-workflow] batch 1/9: o2-render-wiring.test.ts .. o2-render-wiring.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/o2-render-wiring.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+······
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  20:56:06
+   Duration  110.39s (transform 2.28s, setup 809ms, import 385ms, tests 105.74s, environment 2.46s)
+
+[test-workflow] batch 1/9 PASS (peak 717 MB RSS, 114111.3 ms)
+
+[test-workflow] batch 2/9: o2-contact.test.ts .. o2-contact.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/o2-contact.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+················
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  20:57:58
+   Duration  3.19s (transform 891ms, setup 154ms, import 35ms, tests 1.33s, environment 1.40s)
+
+[test-workflow] batch 2/9 PASS (peak 292 MB RSS, 4386 ms)
+
+[test-workflow] batch 3/9: o5-band-render.test.ts .. o5-band-render.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/o5-band-render.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+···········
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  20:58:02
+   Duration  2.96s (transform 778ms, setup 80ms, import 23ms, tests 1.17s, environment 1.39s)
+
+[test-workflow] batch 3/9 PASS (peak 318 MB RSS, 3899.4 ms)
+
+[test-workflow] batch 4/9: surface-growth-three-integration.test.ts .. surface-growth-three-integration.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/surface-growth-three-integration.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+··············
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  20:58:06
+   Duration  24.21s (transform 843ms, setup 84ms, import 60ms, tests 22.55s, environment 1.27s)
+
+[test-workflow] batch 4/9 PASS (peak 918 MB RSS, 25360.7 ms)
+
+[test-workflow] batch 5/9: cavity-field-clip-contract.test.ts .. cavity-field-clip-contract.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/cavity-field-clip-contract.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+·······
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  20:58:31
+   Duration  2.89s (transform 706ms, setup 70ms, import 19ms, tests 1.39s, environment 1.21s)
+
+[test-workflow] batch 5/9 PASS (peak 433 MB RSS, 3833.4 ms)
+
+[test-workflow] batch 6/9: cavity-field-fallback.test.ts .. cavity-field-fallback.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/cavity-field-fallback.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+·········
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  20:58:35
+   Duration  12.75s (transform 679ms, setup 81ms, import 22ms, tests 11.20s, environment 1.23s)
+
+[test-workflow] batch 6/9 PASS (peak 589 MB RSS, 13620.5 ms)
+
+[test-workflow] batch 7/9: calcite-morphology.test.ts .. calcite-morphology.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/calcite-morphology.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+···········
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  20:58:49
+   Duration  150.12s (transform 729ms, setup 75ms, import 28ms, tests 148.62s, environment 1.22s)
+
+[test-workflow] batch 7/9 PASS (peak 866 MB RSS, 151176.7 ms)
+
+[test-workflow] batch 8/9: native-metal-morphology.test.ts .. native-metal-morphology.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/native-metal-morphology.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+······
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  21:01:20
+   Duration  78.81s (transform 396ms, setup 48ms, import 13ms, tests 77.85s, environment 775ms)
+
+[test-workflow] batch 8/9 PASS (peak 938 MB RSS, 80180 ms)
+
+[test-workflow] batch 9/9: selenite-swallowtail-three.test.ts .. selenite-swallowtail-three.test.ts
+
+ RUN  v4.1.5 [repository]
+
+Not implemented: HTMLMediaElement's play() method
+stdout | tests-js/selenite-swallowtail-three.test.ts
+[scenarios] loaded 41 from ./data/scenarios.json5
+[spec] loaded 184 minerals from ./data/minerals.json
+[thermo] loaded 15 carbonate entries from ./data/thermo-carbonates.json
+[thermo] loaded 4 sulfate entries from ./data/thermo-sulfates.json
+[narratives] loaded 94 species
+
+·············
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  21:02:40
+   Duration  1.55s (transform 367ms, setup 44ms, import 9ms, tests 626ms, environment 741ms)
+
+[test-workflow] batch 9/9 PASS (peak 219 MB RSS, 2200.6 ms)
+
+[test-workflow] COMPLETE: 9 files across 9 memory-bounded batches

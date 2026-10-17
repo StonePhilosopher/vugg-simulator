@@ -1,0 +1,210 @@
+[
+  {
+    "ok": true,
+    "elapsed_ms": 276.59999999403954,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 36,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "baseline",
+    "iteration": 0
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 277.30000001192093,
+    "memory": {
+      "geometries": 26,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 37,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "baseline",
+    "iteration": 1
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 274.69999998807907,
+    "memory": {
+      "geometries": 29,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 38,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "baseline",
+    "iteration": 2
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 256.30000001192093,
+    "memory": {
+      "geometries": 32,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 39,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      0,
+      0,
+      0
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "baseline",
+    "iteration": 3
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 244.39999997615814,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 40,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "candidate",
+    "iteration": 0
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 243.5,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 41,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "candidate",
+    "iteration": 1
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 239.90000000596046,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 42,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "candidate",
+    "iteration": 2
+  },
+  {
+    "ok": true,
+    "elapsed_ms": 235.60000002384186,
+    "memory": {
+      "geometries": 23,
+      "textures": 7
+    },
+    "programs": 11,
+    "render": {
+      "frame": 43,
+      "calls": 233,
+      "triangles": 112622,
+      "points": 0,
+      "lines": 0
+    },
+    "retired_contact_dispose_events": [
+      1,
+      1,
+      1
+    ],
+    "current_contacts": 3,
+    "science_unchanged": true,
+    "geometry_material_metadata_equal": true,
+    "geometry_sha256": "ca27b4de0b660eec4f120a393806a6d7b31053e9cee1d53e5db8d9a51be5c4bb",
+    "variant": "candidate",
+    "iteration": 3
+  }
+]
