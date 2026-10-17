@@ -22,7 +22,7 @@ function _topoTooltipFromEvent(ev) {
 
   let html;
   if (hit.isInclusion) {
-    const crystal = sim.crystals.find(c => c.mineral === hit.mineral);
+    const crystal = celestinePresentation(sim.crystals.find(c => c.mineral === hit.mineral), _topoReplayActiveSnap?.step ?? Infinity);
     if (!crystal) { tip.style.display = 'none'; return; }
     const host = sim.crystals.find(c => c.crystal_id === crystal.enclosed_by);
     const spec = MINERAL_SPEC[crystal.mineral] || {};
@@ -30,6 +30,7 @@ function _topoTooltipFromEvent(ev) {
     const lines = [];
     lines.push(`<b style="color:${color}">◆ ${crystal.mineral} #${crystal.crystal_id}</b>`);
     lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+    if (crystal.celestine_disclosure) lines.push(crystal.celestine_disclosure);
     lines.push(`${crystal.c_length_mm.toFixed(2)} mm — inclusion`);
     if (host) lines.push(`inside ${host.mineral} #${host.crystal_id}`);
     html = lines.join('<br>');
@@ -48,13 +49,14 @@ function _topoTooltipFromEvent(ev) {
       html = `<b style="color:${TOPO_WALL_COLOR}">${sim.conditions.wall.composition || 'wall'}</b><br>` +
              `bare wall${depthNote}`;
     } else {
-      const crystal = sim.crystals.find(c => c.crystal_id === cell.crystal_id);
+      const crystal = celestinePresentation(sim.crystals.find(c => c.crystal_id === cell.crystal_id), _topoReplayActiveSnap?.step ?? Infinity);
       const spec = MINERAL_SPEC[cell.mineral] || {};
       const color = spec.class_color || TOPO_WALL_COLOR;
       const lines = [];
       lines.push(`<b style="color:${color}">${cell.mineral} #${cell.crystal_id}</b>`);
       if (crystal) {
         lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+        if (crystal.celestine_disclosure) lines.push(crystal.celestine_disclosure);
         lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
         if (crystal._surfaceGrowth) {
           const sg = crystal._surfaceGrowth;

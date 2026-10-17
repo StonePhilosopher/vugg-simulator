@@ -7725,6 +7725,11 @@ function _topoParseColor(s: string): any {
 // together.
 function _topoHistoricalCrystalSize(crystal: any, replayStep: number): { c_length_mm: number; a_width_mm: number } | null {
   if (!crystal) return null;
+  if (celestineGrowthHistoryAtStep(crystal, replayStep)) {
+    const view = celestinePresentation(crystal, replayStep);
+    return view.c_length_mm > 0
+      ? { c_length_mm: view.c_length_mm, a_width_mm: view.a_width_mm } : null;
+  }
   if (crystal.nucleation_step != null && crystal.nucleation_step > replayStep) return null;
   if (!crystal.zones || !crystal.zones.length) return null;
   let totalUm = 0;
@@ -7824,6 +7829,7 @@ function _topoCAxisForCrystal(
 // the historical c_length per crystal. When undefined (live render),
 // the signature reduces to the v64 form so live caching is unchanged.
 function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): string {
+  sim = celestinePresentationSim(sim, replayStep ?? Infinity);
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
   for (const c of sim.crystals) {
@@ -7877,7 +7883,9 @@ function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): strin
     // Gypsum's fixed-plane shape develops with width as well as length.
     const bladeAspectKey = c.mineral === 'selenite' || c.mineral === 'gypsum'
       ? `:b${c.a_width_mm || 0}:${c.c_length_mm || 0}` : '';
-    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}${quartzHistoryKey}${bladeAspectKey}`);
+    const celestineKey = c.mineral === 'celestine'
+      ? `:cel${c.celestine_presentation_step ?? 'legacy'}:${c.a_width_mm}` : '';
+    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}${quartzHistoryKey}${bladeAspectKey}${celestineKey}`);
   }
   return parts.join('|');
 }
@@ -7892,6 +7900,7 @@ function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): strin
 // (dissolved non-perimorphs, un-anchored floaters, not-yet-nucleated in replay).
 function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, ringCount: number, N: number, initR: number): any {
   if (!crystal) return null;
+  crystal = celestinePresentation(crystal, replayStep ?? Infinity);
   let renderC = crystal.c_length_mm, renderA = crystal.a_width_mm;
   if (replayStep != null) {
     const hist = _topoHistoricalCrystalSize(crystal, replayStep);
@@ -8081,6 +8090,7 @@ function _o2ContactMaterial(mat: any, state: any): any {
 // MINERAL_SPEC[mineral].class_color.
 function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: number) {
   if (!sim || !wall || !wall.rings || !wall.rings.length) return;
+  sim = celestinePresentationSim(sim, replayStep ?? Infinity);
   const sig = _topoCrystalsSignature(sim, wall, replayStep);
   if (sig === state.crystalsSig) return;
   state.crystalsSig = sig;

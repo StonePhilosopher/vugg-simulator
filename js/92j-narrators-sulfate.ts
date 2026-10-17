@@ -43,6 +43,11 @@ Object.assign(VugSimulator.prototype, {
 },
 
   _narrate_celestine(c) {
+  // The fluid classifier still serves legacy arithmetic, but cannot narrate
+  // the whole accumulated specimen as its latest locality analogy.
+  if (celestineGrowthHistoryAtStep(c)) {
+    return `Celestine #${c.crystal_id}: ${celestineMorphologyDescription(c)}`;
+  }
   // Prose lives in narratives/celestine.md. JS narrator added in this
   // commit to close a JS-side gap.
   const parts = [`Celestine #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];

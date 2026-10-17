@@ -756,6 +756,7 @@
         "layer_count": 1046,
         "formula_layers": [],
         "solid_solution_layers": [],
+        "celestine_history_layers": [],
         "binding_competition_allocations": [],
         "reactive_transformation_layers": [],
         "masked_horizons": [],

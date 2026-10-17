@@ -443,6 +443,7 @@ class StripRecorder {
             returned_budget_inventory: z._returned_budget_inventory || null,
             formula_stoichiometry: z.formula_stoichiometry || null,
             solid_solution: z.solid_solution || null,
+            ...(z.celestine_history ? { celestine_history: z.celestine_history } : {}),
             competition_allocation: allocation && (
               Number(allocation.scaling) < 1 - 1e-12
               || Number(allocation.allocation_rounds) > 1
@@ -479,6 +480,12 @@ class StripRecorder {
           crystal_id: crystalId,
           mineral: String(c.mineral || ''),
           habit: String(c.habit || ''),
+          ...(c.mineral === 'celestine' ? {
+            habit_authority: 'legacy-numerical-classifier-not-lineage-identity',
+            celestine_origin: c.celestine_origin || null,
+            celestine_morphology: celestineGrowthHistoryAtStep(c)?.morphology || null,
+            celestine_disclosure: celestineMorphologyDescription(c),
+          } : {}),
           extent_kind: c.extent_kind || size?.extent_kind || 'individual',
           dominant_forms: Array.isArray(c.dominant_forms) ? [...c.dominant_forms] : [],
           total_growth_um: Number(c.total_growth_um) || 0,

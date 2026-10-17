@@ -39648,6 +39648,9 @@ class Crystal {
         // Removed in v61.
     }
     describe_morphology() {
+        const celestine = celestineMorphologyDescription(this);
+        if (celestine)
+            return celestine;
         const forms = this.dominant_forms.length ? this.dominant_forms.join(', ') : this.habit;
         const twin_str = this.twinned ? `, ${this.twin_law} twin` : '';
         // Show in µm if crystal is < 0.1mm, otherwise mm
@@ -39838,6 +39841,210 @@ class Crystal {
         }
         return 'unknown';
     }
+}
+
+// ── 28-celestine-lineage.js ──
+
+// Celestine growth with memory. These receipts observe the existing engine;
+// they do not supply a Ba partition coefficient or a new morphology law.
+// In particular Crystal.habit remains the legacy NUMERICAL classifier input
+// (volume, splitting, coverage). It is not this lineage's scientific identity.
+// See proposals/ELMWOOD-CELESTINE-LINEAGE.md for the authority boundary.
+function _celestineFrozenCopy(value) {
+    if (value == null || typeof value !== 'object')
+        return value;
+    const copy = Array.isArray(value) ? value.map(_celestineFrozenCopy)
+        : Object.fromEntries(Object.entries(value).map(([key, item]) => [key, _celestineFrozenCopy(item)]));
+    return Object.freeze(copy);
+}
+// Imported Library records are data, not authenticated simulation evidence.
+// Validate fields consumed by history readers before making them available.
+function assertCelestineGrowthHistory(history, step, zoneIndex) {
+    const fail = () => { throw new Error('Library specimen has invalid celestine history'); };
+    if (history?.schema !== 'celestine-growth-history-v1' || history.step !== step
+        || history.zone_index !== zoneIndex || !Number.isSafeInteger(history.crystal_id)
+        || !Number.isSafeInteger(history.nucleation_step))
+        fail();
+    const m = history.morphology, s = history.end_of_step;
+    const habits = ['fibrous_blanket', 'nodular', 'fibrous', 'bladed', 'tabular'];
+    if (!m || !['unresolved', 'procedural-approximation'].includes(m.status)
+        || !habits.includes(m.display_habit) || !habits.includes(m.legacy_classifier_habit)
+        || !Array.isArray(m.display_forms) || m.display_forms.length > 4
+        || m.display_forms.some((f) => typeof f !== 'string' || f.length > 512)
+        || m.solid_Ba_mole_fraction !== null || m.solid_Ba_status !== 'incorporation-not-modeled')
+        fail();
+    if (!s || !['aggregate', 'individual'].includes(s.extent_kind))
+        fail();
+    for (const key of ['c_length_mm', 'a_width_mm', 'volume_mm3', 'total_growth_um']) {
+        if (typeof s[key] !== 'number' || !Number.isFinite(s[key]) || s[key] < 0)
+            fail();
+    }
+    if (s.split != null && (typeof s.split !== 'object'
+        || !Number.isFinite(s.split.index) || s.split.index < 0 || s.split.index > 1))
+        fail();
+    if (s.surface_growth != null && (typeof s.surface_growth !== 'object'
+        || Array.isArray(s.surface_growth)))
+        fail();
+}
+function celestineGrowthHistoryAtStep(crystal, step = Infinity) {
+    if (crystal?.mineral !== 'celestine')
+        return null;
+    const zones = crystal.zones || [];
+    for (let i = zones.length - 1; i >= 0; i--) {
+        if (zones[i].step > step)
+            continue;
+        // Missing history is not permission to substitute a later/final habit.
+        return zones[i].celestine_history || null;
+    }
+    return null;
+}
+function recordCelestineNucleation(crystal, conditions, local) {
+    if (crystal.mineral !== 'celestine')
+        return;
+    crystal.celestine_origin = _celestineFrozenCopy({
+        schema: 'celestine-lineage-origin-v1',
+        crystal_id: crystal.crystal_id, nucleation_step: crystal.nucleation_step,
+        mineral: 'celestine', position: crystal.position,
+        initial_habit_variant: crystal.habit,
+        habit_authority: 'procedural-nucleation-variant-not-a-lifetime-form',
+        conditions: { ...celestineFluidEvidence({ ...conditions,
+                fluid: local?.fluid || {}, temperature: local?.temperatureC,
+            }, local?.sigma), basis: 'local-nucleation-input' },
+    });
+}
+function celestineFluidEvidence(conditions, sigma) {
+    const fluid = conditions?.fluid || {};
+    const finite = (v) => typeof v === 'number' && Number.isFinite(v) ? v : null;
+    return _celestineFrozenCopy({
+        basis: 'local-engine-input-before-accepted-growth-budget',
+        temperature_C: finite(conditions?.temperature),
+        supersaturation_proxy: finite(sigma),
+        wall_composition: conditions?.wall?.composition || null,
+        Ba_ppm: finite(fluid.Ba), Sr_ppm: finite(fluid.Sr),
+        S_ppm: finite(fluid.S), Mn_ppm: finite(fluid.Mn),
+        pH: finite(fluid.pH), salinity: finite(fluid.salinity),
+    });
+}
+function celestineGrowthInterpretation(crystal, classified) {
+    const previous = celestineGrowthHistoryAtStep(crystal);
+    const inheritedBlanket = previous?.morphology.display_habit === 'fibrous_blanket';
+    // A later return of the fluid ratio cannot retroactively resolve the
+    // intervening material either. Only a future supported model can do that.
+    const unresolved = previous?.morphology.status === 'unresolved'
+        || (inheritedBlanket && classified.habit !== 'fibrous_blanket');
+    const habit = inheritedBlanket ? 'fibrous_blanket' : classified.habit;
+    return _celestineFrozenCopy({
+        status: unresolved ? 'unresolved' : 'procedural-approximation',
+        reason: unresolved ? 'no-solid-composition-or-morphology-transition-model'
+            : 'fluid-context-recognizer-not-a-growth-form-law',
+        display_habit: habit,
+        // No claim that fluid Ba was incorporated into this solid.
+        display_forms: habit === 'fibrous_blanket'
+            ? ['plumose white celestine blanket (locality analogy)']
+            : [`${habit} celestine (procedural approximation)`],
+        legacy_classifier_habit: classified.habit,
+        solid_Ba_mole_fraction: null,
+        solid_Ba_status: 'incorporation-not-modeled',
+    });
+}
+// Called after accepted growth and end-of-step morphology tagging, before
+// strip testimony. Rejected/dry-run zones never enter crystal.zones and so
+// cannot acquire a formation receipt. Older receipts are never rewritten.
+function recordCelestineGrowthStep(sim) {
+    for (const crystal of sim.crystals || []) {
+        if (crystal.mineral !== 'celestine')
+            continue;
+        const zones = crystal.zones || [];
+        for (let i = zones.length - 1; i >= 0; i--) {
+            const zone = zones[i];
+            if (zone.step !== sim.step)
+                break;
+            if (zone.celestine_history || !zone.celestine_growth_conditions)
+                continue;
+            zone.celestine_history = _celestineFrozenCopy({
+                schema: 'celestine-growth-history-v1',
+                crystal_id: crystal.crystal_id,
+                nucleation_step: crystal.nucleation_step,
+                step: zone.step, zone_index: i,
+                fluid: zone.celestine_growth_conditions,
+                morphology: zone.celestine_growth_interpretation,
+                accounting: {
+                    authority: 'legacy-procedural-envelope-not-resolved-surface',
+                    habit: crystal.habit, aspect_ratio: zone.aspect_ratio,
+                    formula_stoichiometry: zone.formula_stoichiometry || null,
+                    solid_solution: zone.solid_solution || null,
+                },
+                // Exact observation of the model at this step, not a claim that these
+                // ellipsoid dimensions or aggregate fabrics are measured geology.
+                end_of_step: {
+                    c_length_mm: crystal.c_length_mm, a_width_mm: crystal.a_width_mm,
+                    volume_mm3: crystal._volume_mm3, total_growth_um: crystal.total_growth_um,
+                    extent_kind: crystal.extent_kind,
+                    split: crystal._split || null,
+                    surface_growth: crystal._surfaceGrowth || null,
+                },
+            });
+            delete zone.celestine_growth_conditions;
+            delete zone.celestine_growth_interpretation;
+        }
+    }
+}
+function celestinePresentationSim(sim, step = Infinity) {
+    if (!sim?.crystals?.some((c) => c?.mineral === 'celestine'))
+        return sim;
+    const view = Object.create(sim);
+    view.crystals = sim.crystals
+        .filter((c) => c?.mineral !== 'celestine' || !(c.nucleation_step > step))
+        .map((c) => celestinePresentation(c, step));
+    return view;
+}
+// A view is disposable. It must never be fed back into any growth calculation.
+// Unsupported later material is accounted for, but cannot license a new outer
+// shape. Show the last classified blanket with an explicit unresolved notice.
+function celestinePresentation(crystal, step = Infinity) {
+    if (crystal?.mineral !== 'celestine')
+        return crystal;
+    const latest = celestineGrowthHistoryAtStep(crystal, step);
+    if (!latest)
+        return Object.assign(Object.create(Object.getPrototypeOf(crystal)), crystal, {
+            celestine_morphology_status: 'history-unavailable',
+            celestine_disclosure: 'Celestine: historical form unavailable; legacy display approximation. Solid Ba incorporation is not modeled.',
+        });
+    let shown = latest;
+    if (latest.morphology.status === 'unresolved') {
+        for (let i = latest.zone_index - 1; i >= 0; i--) {
+            const candidate = crystal.zones[i].celestine_history;
+            if (candidate?.morphology.display_habit === 'fibrous_blanket'
+                && candidate.morphology.status !== 'unresolved') {
+                shown = candidate;
+                break;
+            }
+        }
+    }
+    const state = shown.end_of_step;
+    const disclosure = latest.morphology.status === 'unresolved'
+        ? `Celestine: showing the blanket approximation recorded at step ${shown.step}; later morphology unresolved. Growth continues; solid Ba incorporation is not modeled.`
+        : 'Celestine form is a procedural approximation; fluid Ba does not establish solid Ba incorporation.';
+    return Object.assign(Object.create(Object.getPrototypeOf(crystal)), crystal, {
+        habit: shown.morphology.display_habit,
+        dominant_forms: [...shown.morphology.display_forms],
+        c_length_mm: state.c_length_mm, a_width_mm: state.a_width_mm,
+        total_growth_um: state.total_growth_um, _volume_mm3: state.volume_mm3,
+        extent_kind: state.extent_kind,
+        _split: state.split, _surfaceGrowth: state.surface_growth,
+        celestine_disclosure: disclosure,
+        celestine_morphology_status: latest.morphology.status,
+        celestine_presentation_step: shown.step,
+    });
+}
+function celestineMorphologyDescription(crystal, step = Infinity) {
+    if (crystal?.mineral !== 'celestine')
+        return null;
+    const view = celestinePresentation(crystal, step);
+    const latest = celestineGrowthHistoryAtStep(crystal, step);
+    const dimensions = latest?.end_of_step || crystal;
+    return `${view.habit} [${(view.dominant_forms || []).join(', ')}]; ${view.celestine_disclosure}`
+        + ` Approximate model dimensions ${dimensions.c_length_mm.toFixed(2)} × ${dimensions.a_width_mm.toFixed(2)} mm (not a resolved external form).`;
 }
 
 // ── 30-supersat-arsenate.js ──
@@ -63620,12 +63827,18 @@ function grow_celestine(crystal, conditions, step) {
     crystal.habit = classified.habit;
     crystal.extent_kind = classified.extent_kind;
     crystal.dominant_forms = Array.from(classified.dominant_forms);
-    return new GrowthZone({
+    const interpretation = celestineGrowthInterpretation(crystal, classified);
+    const zone = new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe * 0.001,
-        note: classified.note
+        note: interpretation.status === 'unresolved'
+            ? 'celestine growth; later morphology unresolved; earlier blanket history retained; solid Ba incorporation not modeled'
+            : `${interpretation.display_habit} celestine — procedural fluid-context analogy; solid Ba incorporation not modeled`,
     });
+    zone.celestine_growth_conditions = celestineFluidEvidence(conditions, sigma);
+    zone.celestine_growth_interpretation = interpretation;
+    return zone;
 }
 function grow_chalcanthite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_chalcanthite();
@@ -74287,6 +74500,7 @@ class VugSimulator {
         // Pure tagging; gated on wall.wulff_fluorite (only sunnyside opts in) → byte-identical fleet,
         // token unchanged so the size scale is untouched (no SIM bump, no rebake). See js/45.
         classifyWulffForm(this);
+        recordCelestineGrowthStep(this);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -75211,6 +75425,7 @@ Object.assign(VugSimulator.prototype, {
             crystal.void_reach = Number(variant.void_reach ?? 0.5);
             crystal.vector = variant.vector || 'equant';
         }
+        recordCelestineNucleation(crystal, this.conditions, _localBirthEvaluation);
         // v24 water-level: stamp growth_environment from the ring's
         // water state. Submerged or meniscus = wet = 'fluid'; vadose
         // (above the meniscus) = 'air'. Mirrors vugg.py.
@@ -81145,6 +81360,7 @@ class StripRecorder {
                         returned_budget_inventory: z._returned_budget_inventory || null,
                         formula_stoichiometry: z.formula_stoichiometry || null,
                         solid_solution: z.solid_solution || null,
+                        ...(z.celestine_history ? { celestine_history: z.celestine_history } : {}),
                         competition_allocation: allocation && (Number(allocation.scaling) < 1 - 1e-12
                             || Number(allocation.allocation_rounds) > 1) ? allocation : null,
                         dissolution_mode: z.dissolutionMode || null,
@@ -81179,6 +81395,12 @@ class StripRecorder {
                     crystal_id: crystalId,
                     mineral: String(c.mineral || ''),
                     habit: String(c.habit || ''),
+                    ...(c.mineral === 'celestine' ? {
+                        habit_authority: 'legacy-numerical-classifier-not-lineage-identity',
+                        celestine_origin: c.celestine_origin || null,
+                        celestine_morphology: celestineGrowthHistoryAtStep(c)?.morphology || null,
+                        celestine_disclosure: celestineMorphologyDescription(c),
+                    } : {}),
                     extent_kind: c.extent_kind || size?.extent_kind || 'individual',
                     dominant_forms: Array.isArray(c.dominant_forms) ? [...c.dominant_forms] : [],
                     total_growth_um: Number(c.total_growth_um) || 0,
@@ -84655,6 +84877,9 @@ function _simulationCrystalProjection(crystal) {
         cLengthMm: Number(crystal.c_length_mm) || 0,
         aWidthMm: Number(crystal.a_width_mm) || 0,
         habit: crystal.habit || null,
+        ...(crystal.celestine_origin ? {
+            celestineOrigin: _simulationCanonicalProjection(crystal.celestine_origin),
+        } : {}),
         position: crystal.position || null,
         enclosedBy: crystal.enclosed_by ?? null,
         enclosedCrystals: _simulationCanonicalProjection(crystal.enclosed_crystals || []),
@@ -91772,6 +91997,11 @@ Object.assign(VugSimulator.prototype, {
         return parts.filter(p => p).join(' ');
     },
     _narrate_celestine(c) {
+        // The fluid classifier still serves legacy arithmetic, but cannot narrate
+        // the whole accumulated specimen as its latest locality analogy.
+        if (celestineGrowthHistoryAtStep(c)) {
+            return `Celestine #${c.crystal_id}: ${celestineMorphologyDescription(c)}`;
+        }
         // Prose lives in narratives/celestine.md. JS narrator added in this
         // commit to close a JS-side gap.
         const parts = [`Celestine #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
@@ -92598,6 +92828,14 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
     _collectionBoundedOptionalText(record.habit, 'habit', 512);
     _collectionBoundedOptionalText(record.twin_law, 'twin law', 512);
     _collectionBoundedOptionalText(record.position, 'position', 512);
+    _collectionBoundedOptionalText(record.celestine_legacy_accounting_habit, 'celestine accounting habit', 512);
+    if (record.celestine_origin != null) {
+        const origin = record.celestine_origin;
+        if (record.mineral !== 'celestine' || origin.schema !== 'celestine-lineage-origin-v1'
+            || !Number.isSafeInteger(origin.crystal_id) || !Number.isSafeInteger(origin.nucleation_step)) {
+            throw new Error(`${label} has invalid celestine origin`);
+        }
+    }
     if (record.twinned !== undefined && typeof record.twinned !== 'boolean') {
         throw new Error(`${label} has invalid twin state`);
     }
@@ -92622,9 +92860,14 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
             if (record.zones.length > COLLECTION_MAX_ZONE_RECORDS) {
                 throw new Error(`${label} has invalid growth zones`);
             }
-            for (const zone of record.zones) {
+            for (const [zoneIndex, zone] of record.zones.entries()) {
                 if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
                     throw new Error(`${label} has invalid growth zone`);
+                }
+                if (zone.celestine_history) {
+                    if (record.mineral !== 'celestine')
+                        throw new Error(`${label} has misplaced celestine history`);
+                    assertCelestineGrowthHistory(zone.celestine_history, zone.step, zoneIndex);
                 }
                 for (const key of [
                     'step', 'temperature', 'thickness_um', 'growth_rate',
@@ -92812,7 +93055,8 @@ function buildCrystalRecord(crystal, meta) {
         throw new Error(`This crystal has ${liveZones.length} growth zones; the Library can retain at most ${COLLECTION_MAX_ZONE_RECORDS}.`);
     }
     // Serialize zones with the fields the Groove visualization reads.
-    // Everything else on a GrowthZone is recomputable or decorative.
+    // Formation history is not recomputable from a final habit; retain its
+    // exact receipt alongside the older Groove fields.
     const zones = liveZones.map(z => ({
         step: z.step,
         temperature: z.temperature,
@@ -92829,6 +93073,7 @@ function buildCrystalRecord(crystal, meta) {
         fluid_inclusion: !!z.fluid_inclusion,
         inclusion_type: z.inclusion_type || '',
         note: z.note || '',
+        ...(z.celestine_history ? { celestine_history: _celestineFrozenCopy(z.celestine_history) } : {}),
         is_phantom: !!z.is_phantom,
         // Calcite-morphology arc Phase 1: per-zone growth-regime tags ride
         // into the collection so a stepped calcite remembers its terraces.
@@ -92868,8 +93113,12 @@ function buildCrystalRecord(crystal, meta) {
         },
         mm: +crystal.c_length_mm.toFixed(3),
         a_mm: +((crystal.a_width_mm || 0).toFixed(3)),
-        habit: crystal.habit || '',
-        forms: (crystal.dominant_forms || []).slice(),
+        habit: celestinePresentation(crystal).habit || '',
+        forms: (celestinePresentation(crystal).dominant_forms || []).slice(),
+        ...(crystal.mineral === 'celestine' ? {
+            celestine_origin: _celestineFrozenCopy(crystal.celestine_origin || null),
+            celestine_legacy_accounting_habit: crystal.habit,
+        } : {}),
         twinned: !!crystal.twinned,
         twin_law: crystal.twin_law || null,
         position: crystal.position || '',
@@ -92884,11 +93133,15 @@ function buildCrystalRecord(crystal, meta) {
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
 function reconstructCrystalFromRecord(rec) {
+    if (rec.mineral === 'celestine')
+        assertCrystalCollectionRecord(rec);
     const zones = Array.isArray(rec.zones)
-        ? rec.zones.map(z => Object.assign({}, z))
+        ? rec.zones.map(z => Object.assign({}, z, z.celestine_history
+            ? { celestine_history: _celestineFrozenCopy(z.celestine_history) } : {}))
         : [];
     const stand = {
         mineral: rec.mineral,
+        ...(rec.celestine_origin ? { celestine_origin: _celestineFrozenCopy(rec.celestine_origin) } : {}),
         crystal_id: `C${(rec.id || '').slice(-4)}`,
         nucleation_step: rec.source?.nucleation_step ?? 0,
         nucleation_temp: rec.source?.nucleation_temp ?? 0,
@@ -92919,6 +93172,9 @@ function reconstructCrystalFromRecord(rec) {
             return rec.habit && rec.habit.includes('smoky') ? 'smoky' : 'typical for species';
         },
         describe_morphology() {
+            const celestine = celestineMorphologyDescription(this);
+            if (celestine)
+                return celestine;
             const parts = [this.habit || 'massive'];
             if (this.dominant_forms && this.dominant_forms.length) {
                 parts.push(`[${this.dominant_forms.slice(0, 2).join(', ')}]`);
@@ -102439,6 +102695,21 @@ function _wireFortressSigmaEvents(host) {
 // The two callers that want live state (post-render cleanup, Collect
 // button update) just omit the second arg.
 function _inventoryHistoricalView(crystal, replayStep) {
+    if (crystal?.mineral === 'celestine') {
+        const step = replayStep ?? Infinity;
+        if (crystal.nucleation_step > step)
+            return null;
+        const view = celestinePresentation(crystal, step);
+        const history = celestineGrowthHistoryAtStep(crystal, step);
+        if (history)
+            Object.assign(view, {
+                c_length_mm: history.end_of_step.c_length_mm,
+                a_width_mm: history.end_of_step.a_width_mm,
+                total_growth_um: history.end_of_step.total_growth_um,
+            });
+        view.zones = (crystal.zones || []).filter((z) => z.step <= step);
+        return view;
+    }
     if (replayStep == null)
         return crystal;
     if (!crystal)
@@ -102551,7 +102822,7 @@ function crystalThumbHTML(crystal, size) {
 // (this function won't render anything for those — _inventoryHistoricalView
 // returns null and we bail early).
 function renderCrystalRow(crystal, idx, onCollect, replayStep) {
-    const view = (replayStep != null) ? _inventoryHistoricalView(crystal, replayStep) : crystal;
+    const view = _inventoryHistoricalView(crystal, replayStep);
     if (!view)
         return null;
     const el = document.createElement('div');
@@ -102570,10 +102841,12 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep) {
     html += `<div style="flex:1;min-width:0">`;
     html += `<div class="inv-mineral" style="color:${cColor}">${displayName} #${crystal.crystal_id}</div>`;
     html += `<div class="inv-size">${view.c_length_mm.toFixed(1)} × ${view.a_width_mm.toFixed(1)} mm</div>`;
-    html += `<div class="inv-habit">${crystal.habit}`;
-    if (crystal.dominant_forms.length)
-        html += ` [${crystal.dominant_forms[0]}]`;
+    html += `<div class="inv-habit">${collectionPlayerTextHTML(view.habit)}`;
+    if (view.dominant_forms.length)
+        html += ` [${collectionPlayerTextHTML(view.dominant_forms[0])}]`;
     html += `</div>`;
+    if (view.celestine_disclosure)
+        html += `<div class="inv-habit">Approximate model dimensions. ${collectionPlayerTextHTML(view.celestine_disclosure)}</div>`;
     if (crystal.twinned)
         html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
     if (crystal.radiation_damage > 0)
@@ -106775,6 +107048,23 @@ function _topoUpdateSliceLabel(wall) {
     // separate UI element.
     lab.textContent = `${idx + 1}/${total} ${orient}`.trim();
 }
+function _topoCelestineNotice(panel, sim) {
+    // Holding the last blanket view must not imply that later growth stopped.
+    let notice = document.getElementById('topo-celestine-notice');
+    const view = sim?.crystals?.find((c) => c.celestine_morphology_status === 'unresolved')
+        || sim?.crystals?.find((c) => c.celestine_disclosure);
+    if (!notice && !view)
+        return;
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'topo-celestine-notice';
+        notice.setAttribute('role', 'status');
+        notice.style.cssText = 'position:relative;padding:6px 10px;font-size:12px;color:var(--text,#ddd);background:var(--bg,#242322);';
+        panel.appendChild(notice);
+    }
+    notice.textContent = view?.celestine_disclosure || '';
+    notice.hidden = !view;
+}
 function topoRender(optOverrideSnap) {
     const canvas = document.getElementById('topo-canvas');
     const panel = document.getElementById('topo-panel');
@@ -106794,6 +107084,7 @@ function topoRender(optOverrideSnap) {
     }
     const sim = topoActiveSim();
     const wall = sim ? sim.wall_state : null;
+    _topoCelestineNotice(panel, celestinePresentationSim(sim, optOverrideSnap?.step ?? Infinity));
     // Authenticate historical payloads before aggregation or empty-state
     // handling so malformed replay can never borrow today's live wall.
     const replayDecision = typeof _topoReplayRenderDecision === 'function'
@@ -106814,13 +107105,13 @@ function topoRender(optOverrideSnap) {
         _topoPaintPlaceholder(canvas, replayDecision.message);
         return;
     }
-    let renderSim = sim;
+    let renderSim = celestinePresentationSim(sim, optOverrideSnap?.step ?? Infinity);
     if (optOverrideSnap && sim) {
         const historicalConditions = replayDecision.conditions
             || CavityWaterAppearance.replayConditions(Array.isArray(optOverrideSnap)
                 ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
                 : optOverrideSnap.conditions, replayDecision.wall);
-        renderSim = Object.create(sim);
+        renderSim = Object.create(renderSim);
         renderSim.conditions = historicalConditions;
     }
     // v65: snapshots are { step, rings: [...] }. Detect the shape and
@@ -107053,7 +107344,7 @@ function topoRender(optOverrideSnap) {
         const rStart = boundaryR[i];
         const rMid = cellR[i];
         const rEnd = boundaryR[(i + 1) % N];
-        const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
+        const crystal = renderSim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
         const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
         const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
         const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
@@ -109769,7 +110060,7 @@ function _topoTooltipFromEvent(ev) {
     }
     let html;
     if (hit.isInclusion) {
-        const crystal = sim.crystals.find(c => c.mineral === hit.mineral);
+        const crystal = celestinePresentation(sim.crystals.find(c => c.mineral === hit.mineral), _topoReplayActiveSnap?.step ?? Infinity);
         if (!crystal) {
             tip.style.display = 'none';
             return;
@@ -109780,6 +110071,8 @@ function _topoTooltipFromEvent(ev) {
         const lines = [];
         lines.push(`<b style="color:${color}">◆ ${crystal.mineral} #${crystal.crystal_id}</b>`);
         lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+        if (crystal.celestine_disclosure)
+            lines.push(crystal.celestine_disclosure);
         lines.push(`${crystal.c_length_mm.toFixed(2)} mm — inclusion`);
         if (host)
             lines.push(`inside ${host.mineral} #${host.crystal_id}`);
@@ -109807,13 +110100,15 @@ function _topoTooltipFromEvent(ev) {
                 `bare wall${depthNote}`;
         }
         else {
-            const crystal = sim.crystals.find(c => c.crystal_id === cell.crystal_id);
+            const crystal = celestinePresentation(sim.crystals.find(c => c.crystal_id === cell.crystal_id), _topoReplayActiveSnap?.step ?? Infinity);
             const spec = MINERAL_SPEC[cell.mineral] || {};
             const color = spec.class_color || TOPO_WALL_COLOR;
             const lines = [];
             lines.push(`<b style="color:${color}">${cell.mineral} #${cell.crystal_id}</b>`);
             if (crystal) {
                 lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+                if (crystal.celestine_disclosure)
+                    lines.push(crystal.celestine_disclosure);
                 lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
                 if (crystal._surfaceGrowth) {
                     const sg = crystal._surfaceGrowth;
@@ -119182,6 +119477,11 @@ function _topoParseColor(s) {
 function _topoHistoricalCrystalSize(crystal, replayStep) {
     if (!crystal)
         return null;
+    if (celestineGrowthHistoryAtStep(crystal, replayStep)) {
+        const view = celestinePresentation(crystal, replayStep);
+        return view.c_length_mm > 0
+            ? { c_length_mm: view.c_length_mm, a_width_mm: view.a_width_mm } : null;
+    }
     if (crystal.nucleation_step != null && crystal.nucleation_step > replayStep)
         return null;
     if (!crystal.zones || !crystal.zones.length)
@@ -119291,6 +119591,7 @@ function _topoCAxisForCrystal(crystal, nx, ny, nz) {
 // the historical c_length per crystal. When undefined (live render),
 // the signature reduces to the v64 form so live caching is unchanged.
 function _topoCrystalsSignature(sim, wall, replayStep) {
+    sim = celestinePresentationSim(sim, replayStep ?? Infinity);
     if (!sim || !sim.crystals || !sim.crystals.length)
         return '';
     const parts = [];
@@ -119348,7 +119649,9 @@ function _topoCrystalsSignature(sim, wall, replayStep) {
         // Gypsum's fixed-plane shape develops with width as well as length.
         const bladeAspectKey = c.mineral === 'selenite' || c.mineral === 'gypsum'
             ? `:b${c.a_width_mm || 0}:${c.c_length_mm || 0}` : '';
-        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}${quartzHistoryKey}${bladeAspectKey}`);
+        const celestineKey = c.mineral === 'celestine'
+            ? `:cel${c.celestine_presentation_step ?? 'legacy'}:${c.a_width_mm}` : '';
+        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}${quartzHistoryKey}${bladeAspectKey}${celestineKey}`);
     }
     return parts.join('|');
 }
@@ -119363,6 +119666,7 @@ function _topoCrystalsSignature(sim, wall, replayStep) {
 function _o2PlaceBody(crystal, wall, replayStep, ringCount, N, initR) {
     if (!crystal)
         return null;
+    crystal = celestinePresentation(crystal, replayStep ?? Infinity);
     let renderC = crystal.c_length_mm, renderA = crystal.a_width_mm;
     if (replayStep != null) {
         const hist = _topoHistoricalCrystalSize(crystal, replayStep);
@@ -119565,6 +119869,7 @@ function _o2ContactMaterial(mat, state) {
 function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
     if (!sim || !wall || !wall.rings || !wall.rings.length)
         return;
+    sim = celestinePresentationSim(sim, replayStep ?? Infinity);
     const sig = _topoCrystalsSignature(sim, wall, replayStep);
     if (sig === state.crystalsSig)
         return;
@@ -125166,6 +125471,11 @@ function _agentSpecimenJSON(simOverride) {
             c_length_mm: +(c.c_length_mm || 0).toFixed(2),
             a_width_mm: +(c.a_width_mm || 0).toFixed(2),
             habit: c.habit,
+            ...(c.mineral === 'celestine' ? {
+                habit_authority: 'legacy-numerical-classifier-not-lineage-identity',
+                celestine_origin: c.celestine_origin || null,
+                celestine_morphology: celestineGrowthHistoryAtStep(c)?.morphology || null,
+            } : {}),
             dominant_forms: Array.isArray(c.dominant_forms) ? c.dominant_forms.slice() : [],
             zones_count: (c.zones || []).length,
             total_growth_um: +(c.total_growth_um || 0).toFixed(1),
@@ -125211,6 +125521,7 @@ function _agentSpecimenJSON(simOverride) {
             ca_from_wall: +(z.ca_from_wall || 0).toFixed(2),
             is_phantom: !!z.is_phantom,
             note: z.note || null,
+            ...(z.celestine_history ? { celestine_history: z.celestine_history } : {}),
         }));
         return obj;
     });
