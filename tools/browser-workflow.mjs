@@ -338,12 +338,19 @@ public static class VuggProcessTree {
 async function captureOwnedBrowserProcessReceipts(rootPid, {
   platform = process.platform,
   processTreeProvider = windowsProcessTree,
+  expectedRoot = null,
 } = {}) {
   if (platform !== 'win32') return [];
   if (!Number.isSafeInteger(Number(rootPid)) || Number(rootPid) <= 0) {
     throw new Error('owned browser root PID is unavailable');
   }
   const tree = await processTreeProvider();
+  if (expectedRoot && !tree.some(row => row.pid === Number(rootPid)
+      && row.pid === expectedRoot.pid
+      && row.start_ticks === expectedRoot.start_ticks
+      && row.executable_path === expectedRoot.executable_path)) {
+    throw new Error('owned browser root identity changed or exited before process-tree refresh');
+  }
   const byParent = new Map();
   for (const row of tree) {
     const children = byParent.get(row.parentPid) || [];
@@ -459,13 +466,14 @@ async function waitForOwnedExit(child, timeoutMs) {
 
 async function terminateOwned(child, {
   tree = false,
+  platform = process.platform,
   processSpawner = spawnOwned,
   treeWaitMs = 5_000,
   termWaitMs = 3_000,
   killWaitMs = 5_000,
 } = {}) {
   if (ownedProcessExited(child)) return;
-  if (tree && process.platform === 'win32' && child.pid) {
+  if (tree && platform === 'win32' && child.pid) {
     const failures = [];
     const killer = processSpawner('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
       stdio: 'ignore',
@@ -512,6 +520,77 @@ async function runCleanupActions(actions) {
   if (failures.length) {
     throw new AggregateError(failures, 'One or more owned browser-workflow resources failed cleanup');
   }
+}
+
+async function cleanupOwnedBrowserResources({
+  browser, client, page, browserPid, receipts = [], closeServer, removeProfile,
+}, {
+  platform = process.platform,
+  processTreeProvider = windowsProcessTree,
+  processSpawner = spawnOwned,
+  closeWaitMs = 2_000,
+  exitWaitMs = 5_000,
+  treeWaitMs = 5_000,
+  termWaitMs = 3_000,
+  killWaitMs = 5_000,
+} = {}) {
+  // New descendants are cleanup authority only while the original root still
+  // has the same creation time and executable. Never replace the old receipts:
+  // they also cover surviving children after the root has exited.
+  let cleanupReceipts = receipts;
+  const expectedRoot = receipts.find(receipt => receipt.pid === browserPid);
+  if (expectedRoot) {
+    try {
+      const latest = await captureOwnedBrowserProcessReceipts(browserPid, {
+        platform, processTreeProvider, expectedRoot,
+      });
+      const byIdentity = new Map([...receipts, ...latest].map(receipt => [
+        `${receipt.pid}|${receipt.start_ticks}|${receipt.executable_path}`, receipt,
+      ]));
+      cleanupReceipts = [...byIdentity.values()];
+    } catch {
+      // A failed refresh cannot grant new authority; retain the original fleet.
+    }
+  }
+  let browserStopped = false;
+  await runCleanupActions([
+    ['browser shutdown', async () => {
+      await runCleanupActions([
+        ['graceful browser close', async () => {
+          if (!client) return;
+          let timer;
+          try {
+            await Promise.race([
+              Promise.resolve().then(() => client.send('Browser.close')).catch(() => {}),
+              new Promise(resolve => { timer = setTimeout(resolve, closeWaitMs); }),
+            ]);
+          } finally {
+            clearTimeout(timer);
+          }
+          await waitForOwnedExit(browser, exitWaitMs);
+        }],
+        ['page CDP client', async () => page?.close()],
+        ['CDP client', async () => client?.close()],
+        ['authenticated browser descendants', async () => {
+          if (cleanupReceipts.length) await terminateOwnedProcessReceipts(cleanupReceipts, {
+            platform, processTreeProvider, processSpawner, waitMs: treeWaitMs,
+          });
+        }],
+        ['browser process', async () => terminateOwned(browser, {
+          // For an authenticated root use fingerprint-checked taskkill above;
+          // direct ChildProcess termination uses the owned Windows handle.
+          tree: !receipts.some(receipt => receipt.pid === browser?.pid),
+          platform, processSpawner, treeWaitMs, termWaitMs, killWaitMs,
+        })],
+      ]);
+      browserStopped = true;
+    }],
+    ['local server', async () => closeServer?.()],
+    ['temporary browser profile', async () => {
+      if (!browserStopped) throw new Error('Browser cleanup failed; retaining its temporary profile');
+      await removeProfile?.();
+    }],
+  ]);
 }
 
 function formatErrorTree(error, indent = '') {
@@ -2710,6 +2789,7 @@ export {
   BrowserDriver,
   captureOwnedBrowserProcessReceipts,
   captureOwnedBrowserProcessReceiptsForPort,
+  cleanupOwnedBrowserResources,
   CdpClient,
   fetchWithDeadline,
   formatErrorTree,

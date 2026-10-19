@@ -9,6 +9,7 @@ import {
   BROWSER_NAVIGATION_TIMEOUT_MS,
   BrowserDriver,
   captureOwnedBrowserProcessReceipts,
+  cleanupOwnedBrowserResources,
   CdpClient,
   findOwnedBrowserRootPid,
   ownedProcessExited,
@@ -74,7 +75,7 @@ describe('browser workflow owned-resource cleanup', () => {
     expect(attempted).toEqual(['browser', 'server', 'profile']);
   });
 
-  it.skipIf(process.platform !== 'win32')(
+  it(
     'falls back to direct root termination after taskkill failure',
     async () => {
       const browser = new FakeOwnedProcess(424242);
@@ -83,6 +84,7 @@ describe('browser workflow owned-resource cleanup', () => {
 
       await expect(terminateOwned(browser as never, {
         tree: true,
+        platform: 'win32',
         processSpawner,
         treeWaitMs: 1,
         killWaitMs: 10,
@@ -236,5 +238,108 @@ describe('browser workflow owned-resource cleanup', () => {
       args: ['/PID', '5100', '/T', '/F'],
     }]);
     expect(inspectCalls).toBe(2);
+  });
+
+  it.each(['DevTools timeout', 'initial receipt capture failure'])(
+    'terminates the live spawned tree before removing its profile after %s',
+    async failure => {
+      const browser = new FakeOwnedProcess(5000);
+      const actions: string[] = [];
+      const startup = failure === 'DevTools timeout'
+        ? waitForDevToolsReceipt('unused-profile', browser as never, 0)
+        : captureOwnedBrowserProcessReceipts(5000, {
+          platform: 'win32', processTreeProvider: async () => [],
+        });
+      await expect(startup).rejects.toThrow();
+
+      await cleanupOwnedBrowserResources({
+        browser,
+        closeServer: () => { actions.push('server'); },
+        removeProfile: () => {
+          expect(ownedProcessExited(browser as never)).toBe(true);
+          actions.push('profile');
+        },
+      }, {
+        platform: 'win32',
+        processTreeProvider: async () => { throw new Error('No process table available'); },
+        processSpawner: (command: string, args: string[]) => {
+          expect(command).toBe('taskkill.exe');
+          expect(args).toEqual(['/PID', '5000', '/T', '/F']);
+          actions.push('terminate');
+          browser.kill('SIGKILL');
+          return new FakeOwnedProcess(5200, 0);
+        },
+        treeWaitMs: 10,
+      });
+      expect(actions).toEqual(['terminate', 'server', 'profile']);
+    },
+  );
+
+  it.each([
+    { start_ticks: 'reused-pid' },
+    { executable_path: 'unrelated.exe' },
+  ])('does not authorize a refreshed root with changed identity %j', async change => {
+    const root = { pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe' };
+    const original = Object.freeze([Object.freeze(root)]);
+    const current = [
+      { ...root, ...change, parentPid: 4000 },
+      { pid: 5100, parentPid: 5000, start_ticks: '510000', executable_path: 'chrome.exe' },
+    ];
+    const spawned: string[] = [];
+    let profileRemoved = false;
+    await cleanupOwnedBrowserResources({
+      browser: new FakeOwnedProcess(5000, 0), browserPid: 5000, receipts: original,
+      removeProfile: () => { profileRemoved = true; },
+    }, {
+      platform: 'win32', processTreeProvider: async () => current,
+      processSpawner: (command: string) => {
+        spawned.push(command);
+        return new FakeOwnedProcess(5200, 0);
+      },
+    });
+    expect(spawned).toEqual([]);
+    expect(profileRemoved).toBe(true);
+    expect(original).toEqual([root]);
+  });
+
+  it('refreshes descendants only under the original root and retains prior orphan receipts', async () => {
+    const root = { pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe' };
+    const orphan = { pid: 5100, start_ticks: '510000', executable_path: 'chrome.exe' };
+    const newChild = { pid: 5101, start_ticks: '510100', executable_path: 'chrome.exe' };
+    let current = [
+      { ...root, parentPid: 4000 }, { ...orphan, parentPid: 4999 },
+      { ...newChild, parentPid: 5000 },
+    ];
+    const killed: number[] = [];
+    await cleanupOwnedBrowserResources({
+      browser: new FakeOwnedProcess(4000, 0), browserPid: 5000, receipts: [root, orphan],
+    }, {
+      platform: 'win32', processTreeProvider: async () => current,
+      processSpawner: (_command: string, args: string[]) => {
+        const pid = Number(args[1]);
+        killed.push(pid);
+        current = current.filter(row => row.pid !== pid);
+        return new FakeOwnedProcess(5200, 0);
+      },
+    });
+    expect(killed).toEqual([5000, 5100, 5101]);
+  });
+
+  it('bounds stalled CDP and termination, closes the server, and retains a live browser profile', async () => {
+    const browser = new FakeOwnedProcess(5000);
+    browser.kill = (signal = 'SIGTERM') => { browser.killSignals.push(signal); return true; };
+    const actions: string[] = [];
+    const started = Date.now();
+    await expect(cleanupOwnedBrowserResources({
+      browser,
+      client: { send: () => new Promise(() => {}), close: () => { actions.push('client'); } },
+      closeServer: () => { actions.push('server'); },
+      removeProfile: () => { actions.push('profile'); },
+    }, {
+      platform: 'linux', closeWaitMs: 1, exitWaitMs: 1, termWaitMs: 1, killWaitMs: 1,
+    })).rejects.toThrow(/resources failed cleanup/);
+    expect(browser.killSignals).toEqual(['SIGTERM', 'SIGKILL']);
+    expect(actions).toEqual(['client', 'server']);
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 });

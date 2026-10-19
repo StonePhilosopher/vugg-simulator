@@ -9,8 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt,
-  captureOwnedBrowserProcessReceiptsForPort, captureOwnedBrowserProcessReceipts,
-  terminateOwnedProcessReceipts, waitForOwnedExit, runCleanupActions } from './browser-workflow.mjs';
+  captureOwnedBrowserProcessReceiptsForPort, cleanupOwnedBrowserResources } from './browser-workflow.mjs';
 import { findOwnedBrowserExecutable } from './owned-browser-runtime.mjs';
 import { assertIndexMatchesDist, assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 
@@ -240,17 +239,13 @@ try {
   if (errors.length) throw new Error('Browser runtime exceptions observed');
 } finally {
   clearTimeout(deadline);
-  if (browserPid) { try { receipts = await captureOwnedBrowserProcessReceipts(browserPid); } catch {} }
-  if (client) { await Promise.race([client.send('Browser.close').catch(() => {}), new Promise(resolve => setTimeout(resolve, 2000))]); await waitForOwnedExit(browser, 15000); }
-  await runCleanupActions([
-    ['page', async () => page?.close()], ['client', async () => client?.close()],
-    ['descendants', async () => terminateOwnedProcessReceipts(receipts)],
-    ['browser-exit', async () => { if (browser && !await waitForOwnedExit(browser, 10000)) throw new Error('Owned browser has not exited'); }],
-    ['server', async () => new Promise(resolve => server.close(resolve))],
-    ['profile', async () => {
+  await cleanupOwnedBrowserResources({
+    browser, client, page, browserPid, receipts,
+    closeServer: () => new Promise(resolve => server.close(resolve)),
+    removeProfile: async () => {
       if (path.dirname(profile) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-contact-lifecycle-')) throw new Error('Unexpected disposable profile path');
       await fs.promises.rm(profile, { recursive: true, force: true, maxRetries: 4, retryDelay: 200 });
-    }],
-  ]);
+    },
+  });
   save('cleanup.json', { closed: true, at: new Date().toISOString(), port, browserPid });
 }
