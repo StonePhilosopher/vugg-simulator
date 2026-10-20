@@ -9,7 +9,8 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt,
-  captureOwnedBrowserProcessReceiptsForPort, cleanupOwnedBrowserResources } from './browser-workflow.mjs';
+  captureOwnedBrowserProcessReceiptsForPort } from './browser-workflow.mjs';
+import { cleanupOwnedBrowserResources } from './benchmark-browser-cleanup.mjs';
 import { findOwnedBrowserExecutable } from './owned-browser-runtime.mjs';
 import { assertIndexMatchesDist, assertCommissionedEvidenceRuntime } from './evidence-runtime.mjs';
 
@@ -33,7 +34,7 @@ if (start < 0 || end < start) throw new Error('Pinned baseline sync function is 
 const baselineFunction = ts.transpileModule(source.slice(start, end), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
 save('identity.json', { baseline, head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   inputs: Object.fromEntries(['index.html', 'js/99i-renderer-three.ts', 'tools/three.module.js', 'data/scenarios.json5',
-    'data/minerals.json', 'tools/contact-geometry-lifecycle-benchmark.mjs', 'tools/browser-workflow.mjs',
+    'data/minerals.json', 'tools/contact-geometry-lifecycle-benchmark.mjs', 'tools/browser-workflow.mjs', 'tools/benchmark-browser-cleanup.mjs',
     'tools/owned-browser-runtime.mjs', 'tools/evidence-runtime.mjs'].map(file => [file, hash(fs.readFileSync(path.join(root, file)))])),
   runtime: { node: process.version, platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model },
   workload: { scenarios, seed: 42, authored_shape_seeds: true, full_authored_runs: true, constructions_per_variant: 4, width: 1000, height: 760, dpr: 1 },
@@ -240,7 +241,7 @@ try {
 } finally {
   clearTimeout(deadline);
   await cleanupOwnedBrowserResources({
-    browser, client, page, browserPid, receipts,
+    browser, client, page, browserPid, receipts, profile,
     closeServer: () => new Promise(resolve => server.close(resolve)),
     removeProfile: async () => {
       if (path.dirname(profile) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-contact-lifecycle-')) throw new Error('Unexpected disposable profile path');
