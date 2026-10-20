@@ -44,6 +44,25 @@ jobs:
       - run: npm run build
       - run: npm run build:check
 
+      # These cleanup regressions protect the engineering benchmarks. Ordinary
+      # calibration CI does not otherwise execute their focused test files.
+      - name: Browser ownership and cleanup regressions
+        run: npm test -- --file tests-js/browser-workflow-cleanup.test.ts --file tests-js/benchmark-browser-cleanup.test.ts
+
+      - name: Detached Chrome ownership and cleanup probe
+        timeout-minutes: 8
+        run: node tools/benchmark-browser-cleanup-probe.mjs
+
+      - name: Preserve browser cleanup probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-cleanup-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .local-evidence/benchmark-browser-cleanup-probe/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 30
+
       # Science validation against COMMITTED receipts and manifests —
       # check-only, no bake. LF-normalised artifact hashing is portable, while
       # the receipt's producer runtime remains deliberately exact.

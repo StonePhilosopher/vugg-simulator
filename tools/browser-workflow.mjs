@@ -252,39 +252,70 @@ public static class VuggProcessTree {
   [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetProcessTimes(IntPtr process, out FILETIME creation, out FILETIME exit, out FILETIME kernel, out FILETIME user);
   [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool QueryFullProcessImageName(IntPtr process, uint flags, StringBuilder path, ref int size);
   [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
-  private enum TCP_TABLE_CLASS { TCP_TABLE_OWNER_PID_LISTENER = 3 }
-  [StructLayout(LayoutKind.Sequential)] private struct MIB_TCPROW_OWNER_PID {
+  [DllImport("kernel32.dll")] private static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+  private enum TCP_TABLE_CLASS { TCP_TABLE_OWNER_MODULE_LISTENER = 6 }
+  [StructLayout(LayoutKind.Sequential)] private struct MIB_TCPROW_OWNER_MODULE {
     public uint state, localAddr, localPort, remoteAddr, remotePort, owningPid;
+    public long createTimestamp;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] public ulong[] owningModuleInfo;
+  }
+  [StructLayout(LayoutKind.Sequential)] private struct MIB_TCPTABLE_OWNER_MODULE {
+    public uint count; public MIB_TCPROW_OWNER_MODULE first;
+  }
+  private struct Listener {
+    public uint pid; public long bound;
   }
   [DllImport("iphlpapi.dll", SetLastError = true)] private static extern uint GetExtendedTcpTable(
     IntPtr table, ref int size, bool order, int addressFamily, TCP_TABLE_CLASS tableClass, uint reserved);
-  private static uint OwnerForPort(int port) {
+  private static Listener OwnerForPort(int port) {
     int size = 0;
-    GetExtendedTcpTable(IntPtr.Zero, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER, 0);
+    GetExtendedTcpTable(IntPtr.Zero, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_MODULE_LISTENER, 0);
+    if (size <= 0) throw new InvalidOperationException("DevTools listener observation unavailable");
     IntPtr table = Marshal.AllocHGlobal(size);
     try {
-      if (GetExtendedTcpTable(table, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER, 0) != 0) return 0;
+      if (GetExtendedTcpTable(table, ref size, false, 2, TCP_TABLE_CLASS.TCP_TABLE_OWNER_MODULE_LISTENER, 0) != 0)
+        throw new InvalidOperationException("DevTools listener observation failed");
       int count = Marshal.ReadInt32(table);
-      IntPtr row = IntPtr.Add(table, 4);
-      int rowSize = Marshal.SizeOf(typeof(MIB_TCPROW_OWNER_PID));
+      IntPtr row = IntPtr.Add(table, (int)Marshal.OffsetOf(typeof(MIB_TCPTABLE_OWNER_MODULE), "first"));
+      int rowSize = Marshal.SizeOf(typeof(MIB_TCPROW_OWNER_MODULE));
+      var owner = new Listener();
       for (int i = 0; i < count; i++, row = IntPtr.Add(row, rowSize)) {
-        var entry = (MIB_TCPROW_OWNER_PID)Marshal.PtrToStructure(row, typeof(MIB_TCPROW_OWNER_PID));
+        var entry = (MIB_TCPROW_OWNER_MODULE)Marshal.PtrToStructure(row, typeof(MIB_TCPROW_OWNER_MODULE));
         int localPort = (int)(((entry.localPort & 0xFF) << 8) | ((entry.localPort & 0xFF00) >> 8));
-        if (entry.state == 2 && localPort == port) return entry.owningPid;
+        if (entry.state == 2 && localPort == port && new IPAddress(entry.localAddr).Equals(IPAddress.Loopback)) {
+          if (owner.pid != 0 && (owner.pid != entry.owningPid || owner.bound != entry.createTimestamp))
+            throw new InvalidOperationException("DevTools has ambiguous loopback owners");
+          owner.pid = entry.owningPid; owner.bound = entry.createTimestamp;
+        }
       }
-      return 0;
+      return owner;
     } finally { Marshal.FreeHGlobal(table); }
   }
   public static string[] Rows() {
     var rows = new List<string>();
+    var handles = new Dictionary<uint, IntPtr>();
     IntPtr snapshot = CreateToolhelp32Snapshot(2, 0);
-    if (snapshot == new IntPtr(-1)) return rows.ToArray();
+    if (snapshot == new IntPtr(-1)) throw new InvalidOperationException("Process enumeration unavailable");
     var entry = new PROCESSENTRY32(); entry.dwSize = (uint)Marshal.SizeOf(entry);
+    try {
+      if (Process32First(snapshot, ref entry)) do {
+        IntPtr process = OpenProcess(0x101000, false, entry.th32ProcessID);
+        if (process != IntPtr.Zero) handles[entry.th32ProcessID] = process;
+        entry.dwSize = (uint)Marshal.SizeOf(entry);
+      } while (Process32Next(snapshot, ref entry));
+    } finally { CloseHandle(snapshot); }
+    // Parent links come from a fresh snapshot taken AFTER these handles were
+    // acquired. An exited handle cannot donate an old parent link to a reused
+    // PID whose creation time/executable belong to an unrelated replacement.
+    snapshot = CreateToolhelp32Snapshot(2, 0);
+    try {
+    if (snapshot == new IntPtr(-1)) throw new InvalidOperationException("Process ancestry unavailable");
+    entry = new PROCESSENTRY32(); entry.dwSize = (uint)Marshal.SizeOf(entry);
     if (Process32First(snapshot, ref entry)) do {
       ulong creationTicks = 0;
       string executablePath = entry.szExeFile;
-      IntPtr process = OpenProcess(0x1000, false, entry.th32ProcessID);
-      if (process != IntPtr.Zero) {
+      IntPtr process;
+      if (handles.TryGetValue(entry.th32ProcessID, out process) && WaitForSingleObject(process, 0) == 258) {
         FILETIME creation, exit, kernel, user;
         if (GetProcessTimes(process, out creation, out exit, out kernel, out user)) {
           creationTicks = ((ulong)creation.high << 32) | creation.low;
@@ -292,17 +323,48 @@ public static class VuggProcessTree {
         var imagePath = new StringBuilder(32768); int imagePathSize = imagePath.Capacity;
         if (QueryFullProcessImageName(process, 0, imagePath, ref imagePathSize)) {
           executablePath = imagePath.ToString();
-        }
-        CloseHandle(process);
+        } else creationTicks = 0;
+        if (WaitForSingleObject(process, 0) != 258) creationTicks = 0;
       }
       rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
       entry.dwSize = (uint)Marshal.SizeOf(entry);
     } while (Process32Next(snapshot, ref entry));
-    CloseHandle(snapshot); return rows.ToArray();
+    return rows.ToArray();
+    } finally {
+      if (snapshot != new IntPtr(-1)) CloseHandle(snapshot);
+      foreach (IntPtr process in handles.Values) CloseHandle(process);
+    }
   }
   public static string[] RowsAndOwner(int port) {
-    var rows = new List<string>(); rows.Add("OWNER|" + OwnerForPort(port));
-    rows.AddRange(Rows()); return rows.ToArray();
+    Listener owner = OwnerForPort(port);
+    if (owner.pid == 0 || owner.bound <= 0) throw new InvalidOperationException("DevTools has no timestamped listening owner");
+    // liCreateTimestamp is the native FILETIME of the context bind. A process
+    // born after that bind is a reused PID, even if an old socket row survives.
+    // Hold the process handle through repeated PID + bind-time observations.
+    IntPtr process = OpenProcess(0x101000, false, owner.pid); // synchronize + query-limited
+    if (process == IntPtr.Zero) throw new InvalidOperationException("DevTools owner identity is unavailable");
+    try {
+      FILETIME creation, exit, kernel, user;
+      if (WaitForSingleObject(process, 0) != 258
+          || !GetProcessTimes(process, out creation, out exit, out kernel, out user))
+        throw new InvalidOperationException("DevTools owner ended before identity capture");
+      var image = new StringBuilder(32768); int size = image.Capacity;
+      if (!QueryFullProcessImageName(process, 0, image, ref size))
+        throw new InvalidOperationException("DevTools owner executable is unavailable");
+      ulong ticks = ((ulong)creation.high << 32) | creation.low;
+      if (ticks == 0 || ticks > (ulong)owner.bound)
+        throw new InvalidOperationException("DevTools owner was born after listener bind; PID reuse is possible");
+      Listener before = OwnerForPort(port);
+      if (before.pid != owner.pid || before.bound != owner.bound || WaitForSingleObject(process, 0) != 258)
+        throw new InvalidOperationException("DevTools owner changed before process capture");
+      var rows = new List<string>();
+      rows.Add("OWNER|" + owner.pid + "|" + ticks + "|" + owner.bound + "|" + image.ToString());
+      rows.AddRange(Rows());
+      Listener after = OwnerForPort(port);
+      if (after.pid != owner.pid || after.bound != owner.bound || WaitForSingleObject(process, 0) != 258)
+        throw new InvalidOperationException("DevTools owner changed during process capture");
+      return rows.ToArray();
+    } finally { CloseHandle(process); }
   }
 }`;
   const { stdout } = await execFileRunner('powershell.exe', [
@@ -332,22 +394,32 @@ public static class VuggProcessTree {
       : null;
   }).filter(Boolean);
   if (ownerPort == null) return rows;
-  return { rootPid: Number(ownerLine?.split('|')[1] || 0), rows };
+  const [, ownerPid, ownerTicks, listenerStartTicks, ...ownerPath] = ownerLine?.split('|') || [];
+  const rootReceipt = { pid: Number(ownerPid || 0), start_ticks: ownerTicks || '',
+    executable_path: ownerPath.join('|') };
+  return { rootPid: rootReceipt.pid, rootReceipt, listenerStartTicks: listenerStartTicks || '', rows };
 }
 
 async function captureOwnedBrowserProcessReceipts(rootPid, {
   platform = process.platform,
   processTreeProvider = windowsProcessTree,
+  expectedRoot = null,
 } = {}) {
   if (platform !== 'win32') return [];
   if (!Number.isSafeInteger(Number(rootPid)) || Number(rootPid) <= 0) {
     throw new Error('owned browser root PID is unavailable');
   }
   const tree = await processTreeProvider();
+  const root = tree.find(row => row.pid === Number(rootPid));
+  if (!root || !/^\d+$/.test(root.start_ticks) || BigInt(root.start_ticks) <= 0n
+      || (expectedRoot && (root.pid !== expectedRoot.pid || root.start_ticks !== expectedRoot.start_ticks
+        || root.executable_path !== expectedRoot.executable_path))) {
+    throw new Error('Owned browser root lifetime is missing or changed before capture');
+  }
   const byParent = new Map();
   for (const row of tree) {
     const children = byParent.get(row.parentPid) || [];
-    children.push(row.pid);
+    children.push(row);
     byParent.set(row.parentPid, children);
   }
   const pids = [];
@@ -356,7 +428,9 @@ async function captureOwnedBrowserProcessReceipts(rootPid, {
     const pid = pending.pop();
     if (pids.includes(pid)) continue;
     pids.push(pid);
-    pending.push(...(byParent.get(pid) || []));
+    const parent = tree.find(row => row.pid === pid);
+    pending.push(...(byParent.get(pid) || []).filter(row => /^\d+$/.test(row.start_ticks)
+      && BigInt(row.start_ticks) >= BigInt(parent.start_ticks)).map(row => row.pid));
   }
   const selected = new Set(pids);
   const receipts = tree.filter(row => selected.has(row.pid) && row.start_ticks !== '0')
@@ -371,33 +445,50 @@ async function captureOwnedBrowserProcessReceipts(rootPid, {
 }
 
 async function captureOwnedBrowserProcessReceiptsForPort(port, {
-  timeoutMs = 5_000,
+  timeoutMs = 10_000,
+  platform = process.platform,
   ownedSnapshotProvider = requestedPort => windowsProcessTree({ ownerPort: requestedPort }),
+  devtoolsReceipt = null,
+  fetcher = globalThis.fetch,
 } = {}) {
-  const deadline = Date.now() + timeoutMs;
-  let lastError = null;
-  while (Date.now() < deadline) {
-    try {
-      const snapshot = await ownedSnapshotProvider(port);
-      const rootPid = Number(snapshot?.rootPid);
-      const tree = snapshot?.rows || [];
-      if (!Number.isSafeInteger(rootPid) || rootPid <= 0) {
-        throw new Error(`authenticated DevTools port ${port} had no listening process owner`);
-      }
-      if (!tree.some(row => row.pid === rootPid)) {
-        lastError = new Error(`DevTools owner ${rootPid} exited before process snapshot`);
-      } else {
-        const receipts = await captureOwnedBrowserProcessReceipts(rootPid, {
-          processTreeProvider: async () => tree,
-        });
-        return { rootPid, receipts };
-      }
-    } catch (error) {
-      lastError = error;
-    }
-    await delay(25);
+  const checkEndpoint = async () => {
+    if (!devtoolsReceipt) return;
+    if (devtoolsReceipt.port !== port) throw new Error('DevTools receipt port differs from ownership request');
+    const version = await fetchWithDeadline(`http://127.0.0.1:${port}/json/version`, {
+      timeoutMs, fetcher,
+      consume: async response => {
+        if (!response.ok) throw new Error(`DevTools ownership check HTTP ${response.status}`);
+        return response.json();
+      },
+    });
+    assertOwnedDevToolsVersion(version, devtoolsReceipt);
+  };
+  await checkEndpoint();
+  let timer;
+  let snapshot;
+  try {
+    snapshot = await Promise.race([
+      Promise.resolve().then(() => ownedSnapshotProvider(port)),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DevTools owner observation timed out')), timeoutMs); }),
+    ]);
+  } finally { clearTimeout(timer); }
+  const rootPid = Number(snapshot?.rootPid);
+  const root = snapshot?.rootReceipt;
+  const listenerStartTicks = snapshot?.listenerStartTicks;
+  const tree = snapshot?.rows || [];
+  if (!Number.isSafeInteger(rootPid) || rootPid <= 0 || root?.pid !== rootPid
+      || !/^\d+$/.test(root.start_ticks) || BigInt(root.start_ticks) <= 0n
+      || !/^\d+$/.test(listenerStartTicks) || BigInt(listenerStartTicks) < BigInt(root.start_ticks)
+      || !root.executable_path || !tree.some(row => row.pid === rootPid
+        && row.start_ticks === root.start_ticks && row.executable_path === root.executable_path)) {
+    throw new Error('DevTools port owner lifetime changed or could not be bound to process rows');
   }
-  throw new Error(`could not capture stable authenticated DevTools process owner: ${lastError?.message || 'unknown failure'}`);
+  // Do not retry an identity disagreement into acceptance of a replacement.
+  await checkEndpoint();
+  const receipts = await captureOwnedBrowserProcessReceipts(rootPid, {
+    platform, processTreeProvider: async () => tree,
+  });
+  return { rootPid, receipts, rootReceipt: root, listenerStartTicks };
 }
 
 async function terminateOwnedProcessReceipts(receipts, {
@@ -2502,7 +2593,7 @@ async function main() {
     assertOwnedDevToolsVersion(version, devTools);
     let ownedBrowser;
     try {
-      ownedBrowser = await captureOwnedBrowserProcessReceiptsForPort(devTools.port);
+      ownedBrowser = await captureOwnedBrowserProcessReceiptsForPort(devTools.port, { devtoolsReceipt: devTools });
     } catch (error) {
       throw new Error(`${error.message}; launcher exit=${browser.exitCode}, signal=${browser.signalCode}; browser stderr=${diagnostics.browser_stderr || '(empty)'}`, { cause: error });
     }
@@ -2668,7 +2759,9 @@ async function main() {
     let receiptCaptureFailure = null;
     if (client) {
       try {
-        const latestReceipts = await captureOwnedBrowserProcessReceipts(browserRootPid);
+        const latestReceipts = await captureOwnedBrowserProcessReceipts(browserRootPid, {
+          expectedRoot: browserProcessReceipts.find(receipt => receipt.pid === browserRootPid),
+        });
         const byIdentity = new Map(browserProcessReceipts.map(receipt => [
           `${receipt.pid}|${receipt.start_ticks}|${receipt.executable_path}`,
           receipt,

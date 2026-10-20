@@ -1,9 +1,9 @@
-// Benchmark-only lifecycle code. The commissioned browser-workflow producer
-// remains unchanged; these tools do not generate scientific evidence.
+// Benchmark lifecycle code. Shared ownership observation lives in the
+// commissioned browser workflow; these tools do not generate science evidence.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
-  assertOwnedDevToolsVersion, captureOwnedBrowserProcessReceipts, CdpClient,
+  captureOwnedBrowserProcessReceipts, captureOwnedBrowserProcessReceiptsForPort, CdpClient,
   fetchWithDeadline, runCleanupActions, terminateOwned, waitForDevToolsReceipt,
   waitForOwnedExit, windowsProcessTree,
 } from './browser-workflow.mjs';
@@ -12,6 +12,44 @@ const execFileAsync = promisify(execFile);
 const sameLifetime = (current, expected) => current.pid === expected.pid
   && current.start_ticks === expected.start_ticks
   && current.executable_path === expected.executable_path;
+function lifetimeState(rows, receipt) {
+  const current = rows.find(row => row.pid === receipt.pid);
+  if (!current) return 'ended';
+  if (!/^\d+$/.test(current.start_ticks) || BigInt(current.start_ticks) <= 0n
+      || !current.executable_path) return 'unknown';
+  return sameLifetime(current, receipt) ? 'present' : 'ended';
+}
+
+function connectionRefused(error, seen = new Set()) {
+  if (!error || seen.has(error)) return false;
+  seen.add(error);
+  if (error.code) return error.code === 'ECONNREFUSED';
+  if (Array.isArray(error.errors) && error.errors.length) {
+    return error.errors.every(child => connectionRefused(child, new Set(seen)));
+  }
+  return connectionRefused(error.cause, seen);
+}
+
+export async function assertBenchmarkEndpointClosed(receipt, { fetcher = globalThis.fetch, timeoutMs = 2_000 } = {}) {
+  if (!receipt || !Number.isInteger(receipt.port) || receipt.port <= 0 || receipt.port > 65535
+      || !new RegExp(`^ws://127\\.0\\.0\\.1:${receipt.port}/devtools/browser/[A-Za-z0-9._-]+$`).test(receipt.webSocketDebuggerUrl)) {
+    throw new Error('Exact owned DevTools endpoint is unavailable; shutdown is unproven');
+  }
+  let response;
+  try {
+    response = await fetchWithDeadline(`http://127.0.0.1:${receipt.port}/json/version`, {
+      timeoutMs, fetcher,
+      consume: async value => ({ ok: value.ok, version: value.ok ? await value.json() : null }),
+    });
+  } catch (error) {
+    if (connectionRefused(error)) return;
+    throw new Error('DevTools endpoint shutdown could not be proven', { cause: error });
+  }
+  if (response.version?.webSocketDebuggerUrl === receipt.webSocketDebuggerUrl) {
+    throw new Error('Exact owned DevTools endpoint still answers after browser cleanup');
+  }
+  throw new Error('DevTools port still answers without the expected identity; retaining the profile');
+}
 
 function ownedLifetimeRows(rootPid, rows) {
   const root=rows.find(row=>row.pid===rootPid);
@@ -76,7 +114,7 @@ public static class VuggBenchmarkStop {
 }
 
 export async function cleanupOwnedBrowserResources({
-  browser, client, page, browserPid, receipts = [], profile, closeServer, removeProfile,
+  browser, client, page, browserPid, receipts = [], profile, devtoolsReceipt = null, closeServer, removeProfile,
 }, {
   platform = process.platform,
   processTreeProvider = windowsProcessTree,
@@ -89,12 +127,14 @@ export async function cleanupOwnedBrowserResources({
   exitWaitMs = 5_000,
   termWaitMs = 3_000,
   killWaitMs = 5_000,
+  endpointWaitMs = 2_000,
 } = {}) {
   const initialRoot=receipts.find(receipt=>receipt.pid===browserPid);
   let cleanupReceipts = initialRoot && /^\d+$/.test(initialRoot.start_ticks) && BigInt(initialRoot.start_ticks)>0n
     ? receipts.filter(receipt=>/^\d+$/.test(receipt.start_ticks)
       && BigInt(receipt.start_ticks)>=BigInt(initialRoot.start_ticks)) : [];
   let recoveryFailure = null;
+  let shutdownEndpoint = devtoolsReceipt;
   // Chrome may detach and leave a successful launcher behind. Only the fresh
   // profile's exact DevTools nonce can recover browser ownership in that case.
   if(browser?.pid && !cleanupReceipts.length && profile) {
@@ -102,21 +142,15 @@ export async function cleanupOwnedBrowserResources({
     try {
       if(platform !== 'win32') throw new Error('Browser process ownership is unavailable on this platform');
       const devtools = await waitForDevToolsReceipt(profile,browser,recoveryWaitMs);
-      const version = await fetchWithDeadline(`http://127.0.0.1:${devtools.port}/json/version`, {
-        timeoutMs:recoveryWaitMs, fetcher,
-        consume:async response => {
-          if(!response.ok) throw new Error(`Browser recovery HTTP ${response.status}`);
-          return response.json();
-        },
+      if (shutdownEndpoint && shutdownEndpoint.webSocketDebuggerUrl !== devtools.webSocketDebuggerUrl) {
+        throw new Error('Owned profile DevTools identity changed since startup');
+      }
+      const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port, {
+        platform, timeoutMs: recoveryWaitMs, ownedSnapshotProvider, devtoolsReceipt: devtools, fetcher,
       });
-      assertOwnedDevToolsVersion(version,devtools);
       recoveredClient=createCdpClient(devtools.webSocketDebuggerUrl,{openTimeoutMs:recoveryWaitMs});
       await recoveredClient.open();
-      const snapshot=await ownedSnapshotProvider(devtools.port);
-      const recovered=await captureOwnedBrowserProcessReceipts(snapshot.rootPid, {
-        platform,processTreeProvider:async()=>ownedLifetimeRows(snapshot.rootPid,snapshot.rows),
-      });
-      cleanupReceipts=recovered;browserPid=snapshot.rootPid;
+      cleanupReceipts=owned.receipts;browserPid=owned.rootPid;shutdownEndpoint=devtools;
       if(!client) {client=recoveredClient;recoveredClient=null;}
     } catch(error) {
       recoveryFailure=error;
@@ -163,10 +197,13 @@ export async function cleanupOwnedBrowserResources({
           if(platform !== 'win32') throw new Error('Browser process observation is unavailable');
           for(const receipt of cleanupReceipts) {
             const current=await processTreeProvider();
-            if(current.some(row=>sameLifetime(row,receipt))) await terminateReceipt(receipt);
+            const state=lifetimeState(current,receipt);
+            if(state==='unknown') throw new Error(`Browser process ${receipt.pid} identity is unavailable; shutdown is unproven`);
+            if(state==='present') await terminateReceipt(receipt);
           }
-          const remaining=(await processTreeProvider()).filter(row=>cleanupReceipts.some(prior=>sameLifetime(row,prior)));
-          if(remaining.length) throw new Error(`Authenticated browser processes survived cleanup: ${remaining.map(row=>row.pid).join(', ')}`);
+          const current=await processTreeProvider();
+          const unresolved=cleanupReceipts.filter(receipt=>lifetimeState(current,receipt)!=='ended');
+          if(unresolved.length) throw new Error(`Authenticated browser process shutdown is unproven: ${unresolved.map(row=>row.pid).join(', ')}`);
         }],
         ['browser launcher',async()=>terminateOwned(browser,{termWaitMs,killWaitMs})],
         ['browser ownership proof',async()=>{
@@ -174,6 +211,9 @@ export async function cleanupOwnedBrowserResources({
             'Browser shutdown is unproven; an exited launcher is insufficient. Retaining its profile.',
             {cause:recoveryFailure},
           );
+        }],
+        ['exact owned DevTools endpoint',async()=>{
+          if (browser?.pid) await assertBenchmarkEndpointClosed(shutdownEndpoint, { fetcher, timeoutMs: endpointWaitMs });
         }],
       ]);
       browserStopped=true;

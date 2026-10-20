@@ -121,6 +121,36 @@ duftite 8→9, erythrite 5→4); see
 validates the committed science — receipt audits plus a calibration
 sentinel — and never rebakes baselines or receipts.
 
+Windows CI also runs the browser cleanup regressions:
+`npm test -- --file tests-js/browser-workflow-cleanup.test.ts --file tests-js/benchmark-browser-cleanup.test.ts`,
+followed by `node tools/benchmark-browser-cleanup-probe.mjs`. The probe requires
+real Chrome (set `VUGG_BROWSER_BIN` if needed), uses fresh empty profiles, and
+advances no simulation. It reproduces an exited launcher with a surviving
+browser, graceful recovery and forced cleanup, unavailable/mismatched ownership,
+PID reuse during acquisition, and an endpoint that still answers after apparent
+process shutdown. Recovery requires the exact profile nonce, a native process
+lifetime, and a [native listener bind time](https://learn.microsoft.com/en-us/windows/win32/api/tcpmib/ns-tcpmib-mib_tcprow_owner_module)
+consistent across repeated observations;
+the process must predate the bind. Unproven ownership never authorizes termination
+or profile deletion. The probe independently cleans up its own negative cases.
+A separate Chrome canary must survive target recovery; the harness then verifies
+and cleans up that browser independently.
+
+Probe results and source snapshots are saved under
+`.local-evidence/benchmark-browser-cleanup-probe/` and uploaded by CI as
+`browser-cleanup-probe-<run-id>-<attempt>` for 30 days, including on failure.
+The assertions check every recorded browser lifetime, DevTools port release,
+server closure, and shutdown proof before deletion. These are engineering
+integration results, not scientific receipts or a full-suite verdict.
+
+Canonical promotion remains held pending exact-head review of this ownership
+repair and its CI evidence. Calcite renderer migration is a separate hold:
+first define the immutable specimen record, distinguish mass-accounting volume
+from completed geometric surface and their permitted consumers, establish a
+supported closure tolerance without rescaling conserved mass, and add the
+growth/save-load/reconstruction invariant. This cleanup work defines no new
+geological rule or numerical tolerance.
+
 Headless agent CLI for AI players: [`agent-api/`](agent-api/README.md).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the build pipeline and design

@@ -9,6 +9,7 @@ import {
   BROWSER_NAVIGATION_TIMEOUT_MS,
   BrowserDriver,
   captureOwnedBrowserProcessReceipts,
+  captureOwnedBrowserProcessReceiptsForPort,
   CdpClient,
   findOwnedBrowserRootPid,
   ownedProcessExited,
@@ -19,6 +20,7 @@ import {
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
+  windowsProcessTree,
 } from '../tools/browser-workflow.mjs';
 
 class FakeOwnedProcess extends EventEmitter {
@@ -44,6 +46,76 @@ class FakeOwnedProcess extends EventEmitter {
 }
 
 describe('browser workflow owned-resource cleanup', () => {
+  it('preserves the native port-owner lifetime separately from enumerated rows', async () => {
+    const snapshot = await windowsProcessTree({ownerPort: 43123, execFileRunner: async () => ({
+      stdout: 'OWNER|5000|500000|500100|C:\\Chrome\\chrome.exe\n5000|4000|500000|C:\\Chrome\\chrome.exe\n',
+    }) as never});
+    expect(snapshot).toEqual({rootPid: 5000, listenerStartTicks: '500100',
+      rootReceipt: {pid: 5000, start_ticks: '500000', executable_path: 'C:\\Chrome\\chrome.exe'},
+      rows: [{pid: 5000, parentPid: 4000, start_ticks: '500000', executable_path: 'C:\\Chrome\\chrome.exe'}]});
+  });
+
+  it('binds the listening owner to the same captured lifetime', async () => {
+    const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    const owned = await captureOwnedBrowserProcessReceiptsForPort(43123, {
+      platform: 'win32',
+      ownedSnapshotProvider: async () => ({rootPid: 5000, rootReceipt: root, listenerStartTicks: '500100',
+        rows: [{...root, parentPid: 4000}, {pid: 5100, parentPid: 5000, start_ticks: '510000', executable_path: 'chrome.exe'}]}),
+    });
+    expect(owned.rootReceipt).toEqual(root);
+    expect(owned.listenerStartTicks).toBe('500100');
+    expect(owned.receipts.map(row => row.pid)).toEqual([5000, 5100]);
+  });
+
+  it.each([{start_ticks: 'reused'}, {executable_path: 'replacement.exe'}, {pid: 6000}])(
+    'rejects owner disappearance or PID reuse between socket lookup and rows: %j', async change => {
+      const owner = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+      let calls = 0;
+      await expect(captureOwnedBrowserProcessReceiptsForPort(43123, {
+        platform: 'win32',
+        ownedSnapshotProvider: async () => {
+          calls++;
+          // A retry would offer a superficially valid replacement. A failed
+          // acquisition must never promote it into cleanup authority.
+          const replacement = {...owner, ...change};
+          return {rootPid: 5000, rootReceipt: calls === 1 ? owner : replacement, listenerStartTicks: '500100',
+            rows: [{...replacement, parentPid: 9000}]};
+        },
+      })).rejects.toThrow(/owner lifetime changed/);
+      expect(calls).toBe(1);
+    },
+  );
+
+  it.each(['499999', '', 'unknown'])(
+    'rejects a replacement already captured through the native handle when the listener predates it or has no timestamp: %s', async listenerStartTicks => {
+      const replacement = {pid: 5000, start_ticks: '500000', executable_path: 'replacement.exe'};
+      await expect(captureOwnedBrowserProcessReceiptsForPort(43123, {
+        platform: 'win32', ownedSnapshotProvider: async () => ({rootPid: 5000,
+          rootReceipt: replacement, listenerStartTicks, rows: [{...replacement, parentPid: 9000}]}),
+      })).rejects.toThrow(/owner lifetime changed/);
+    },
+  );
+
+  it('refuses a PID-only owner observation without native lifetime evidence', async () => {
+    await expect(captureOwnedBrowserProcessReceiptsForPort(43123, {
+      platform: 'win32', ownedSnapshotProvider: async () => ({rootPid: 5000,
+        rows: [{pid: 5000, parentPid: 4000, start_ticks: 'new-owner', executable_path: 'other.exe'}]}),
+    })).rejects.toThrow(/owner lifetime changed/);
+  });
+
+  it('requires the exact nonce endpoint to agree again after lifetime capture', async () => {
+    const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    let reads = 0;
+    await expect(captureOwnedBrowserProcessReceiptsForPort(43123, {
+      platform: 'win32',
+      devtoolsReceipt: {port: 43123, webSocketDebuggerUrl: 'ws://127.0.0.1:43123/devtools/browser/owned'},
+      ownedSnapshotProvider: async () => ({rootPid: 5000, rootReceipt: root, listenerStartTicks: '500100', rows: [{...root, parentPid: 4000}]}),
+      fetcher: async () => ({ok: true, json: async () => ({webSocketDebuggerUrl:
+        `ws://127.0.0.1:43123/devtools/browser/${++reads === 1 ? 'owned' : 'replacement'}`})}) as never,
+    })).rejects.toThrow(/exact owned-profile receipt/);
+    expect(reads).toBe(2);
+  });
+
   it('gives full app navigation a bounded 60-second commissioning window', async () => {
     const sent: Array<[string, unknown]> = [];
     const driver = new BrowserDriver({
