@@ -11,8 +11,8 @@ body (plus the helpers it delegates to), the `_nuc_<m>()` substrate logic, the
 `required_ingredients`, `pH_dissolution_*`).
 **Nothing in the simulator was changed.** This document and the two read-only instruments it names
 are the whole deliverable. A proposed fix order is in §6 and waits for the boss.
-**Review history:** §9 — five adversarial rounds (scores 7, 7, 7.5, 8, 8.5); their verified
-corrections are folded in.
+**Review history:** §9 — six adversarial rounds (scores 7, 7, 7.5, 8, 8.5, and 8 for the
+owner-approved sixth); their verified corrections are folded in.
 Where a number below comes from a reviewer's A/B run rather than this session's own measurement,
 it says so.
 
@@ -22,17 +22,17 @@ it says so.
 
 The recipe layer is in good shape. 182 of the 184 formulas are right (chabazite's and
 meta-autunite's are not — R8), counting the fahlores' Cu12Sb4S13 and Cu12As4S13 as simplified
-end-member formulas (R9 explains why natural fahlore needs a divalent cation). Every σ function reads the elements its formula needs; the few
-apparent gaps are read inside a helper (calcite's CO3, the CaSO4 pair) or belong to solid-solution
-and tunnel-cation sites that do not need them. The hostile-review fix ladder (rungs 1–5: F default,
+end-member formulas (R9 explains why natural fahlore needs a divalent cation). Every σ function
+reads the elements its formula needs; the few apparent gaps are read inside a helper (calcite's CO3,
+the CaSO4 pair) or belong to solid-solution and tunnel-cation sites that do not need them. The hostile-review fix ladder (rungs 1–5: F default,
 T gates, tiger's-eye substrate, redox partitions, salinity) and the S-split series still hold in
 the σ bodies.
 
 | tier | meaning | count |
 |---|---|---|
-| **1** | the recipe contradicts its own data, its own stated mechanism, or a fix the codebase already made for a sibling | 9 |
-| **2** | a window or selector the literature does not support as written | 8 |
-| **3** | metadata, display, comment and instrument drift | 13 |
+| **1** | the recipe contradicts its own data, its own stated mechanism, or a fix the codebase already made for a sibling | 10 |
+| **2** | a window or selector the literature does not support as written | 6 |
+| **3** | metadata, display, comment and instrument drift | 14 |
 
 The most useful findings:
 - **The survival-field direction bug** (R2) reaches beyond the UI: the wall-attack engine reads
@@ -127,8 +127,11 @@ unchanged. `supergene_oxidation` keeps its 98 crystals and species, but growth s
 4.502 → 4.525, Ca 587.9 → 585.9 ppm, vug diameter 49.287 → 49.286 mm). The fix is therefore a SIM
 bump, not a display edit.
 
-**Fix:** one survival window per species, read the same way by every reader. For example, take the
-floor from `pH_dissolution_below` and the ceiling from `pH_dissolution_above`, and leave
+**Fix:** one survival window per species, read the same way by every reader of the spec fields. The
+`grow_*` engines are not among them: they hardcode their own dissolution thresholds, and two
+disagree with the spec. Powellite dissolves below pH 4.5 (`js/55-engines-molybdate.ts:189`; spec 5),
+and chalcedony's HF attack starts below pH 4 (`js/59-engines-silicate.ts:458`; spec 3). For example,
+take the floor from `pH_dissolution_below` and the ceiling from `pH_dissolution_above`, and leave
 `acid_dissolution` to describe the reaction and its products. That needs one backfill, two decisions
 and one consequence:
 - backfill `pH_dissolution_below: 2` for the five species that carry only
@@ -183,7 +186,9 @@ round-5 reviewers:
   (98 → 92 crystals). `bisbee`'s later counts still shift (chrysocolla 5 → 7, dioptase 7 → 6,
   native gold 11 → 12).
 - **pH_max 3.99 on jarosite only** (or 3.5, the dossier's, or 3, Brown's) removes all 12 jarosite
-  births. `bisbee` loses its contracted jarosite but keeps its alunite.
+  births. `bisbee` loses its contracted jarosite but keeps its alunite; five of its other counts
+  shift by one (azurite 5 → 6, chrysocolla 5 → 6, dioptase 7 → 8, native gold 11 → 10, opal
+  6 → 5).
 - Alunite's contract breaks only if alunite's own cap also drops below 4. This review gives no
   source for that; alunite's births are borderline, not refuted.
 
@@ -204,8 +209,11 @@ formation of coffinite" from UO2. Their review also collects 80–130 °C for se
 | scenario | steps < 100 °C | gate that fails |
 |---|---|---|
 | `colorado_plateau` | 180 | O2 > 0.3 |
-| `radioactive_pegmatite` | 28 | O2 > 0.3 and P > 1 |
-| `schneeberg` | 76 | P > 1 |
+| `radioactive_pegmatite` | 27 | O2 > 0.3 and P > 1 |
+| `schneeberg` | 76 | P > 1 (73 also fail O2 > 0.3) |
+
+Counts are at nucleation time (round-3 probe); end-of-step samples give 28 for
+`radioactive_pegmatite`.
 
 ### R5. Cassiterite's fluorine factor has the wrong sign — and every cassiterite depends on it
 The σ body multiplies by up to 2× with fluid F (`js/37-supersat-oxide.ts:224`), justified by
@@ -242,7 +250,9 @@ drivers and re-anchor Sn in the same SIM bump. "Just stop rewarding F" is one of
 `molybdateRedoxAvailable`, means Eh ≥ +100 mV for an Fe²⁺/Mn²⁺ tungstate from reduced greisen and
 vein fluids. The species' own spec says `redox_requirement: "reducing"`. It is the only species in
 the catalog whose `redox_requirement` contradicts its gate outright. It was logged as rung-4d residue
-(`proposals/BACKLOG.md:450–455`) and is unchanged.
+(`proposals/BACKLOG.md:450–455`) and is unchanged. The BACKLOG warns that removing the gate "may
+birth wolframite at seed 42"; it does not. With `O2_min` 0, `gem_pegmatite` — the only hot W-bearing
+fluid (W 5 ppm) — is byte-identical (round-6 reviewer's A/B, control identical).
 
 ### R7. Gate objects that advertise a redox window the engine no longer uses
 The σ panel and Library card read the gate object's `O2_min/O2_max` (`js/97b-ui-sigma-panel.ts:583–614`,
@@ -331,15 +341,13 @@ with no Zn:
 - every birth in `bisbee`, `porphyry` and `schneeberg` is unchanged in species, count and first step;
 - no deterministic or expected species is lost.
 
-The growth itself still moves those scenarios' fluids, so it is a SIM bump.
+The growth moves the cell fluids and the state fingerprint, though the bulk-fluid digest is unchanged
+(round-4 reviewer). It is a SIM bump.
 
----
-
-## 3. Tier 2 — windows and selectors the literature does not support as written
-
-**S1. Mass-ppm "fractions" where moles matter.** `js/30-supersat-arsenate.ts:189–192` states that a
-cation fraction "must therefore convert each field to amount of substance". SIM 259 did so for
-pharmacolite and köttigite only. Still in mass ppm:
+### R10. Mass-ppm "fractions" where moles matter (S1 until round 6)
+`js/30-supersat-arsenate.ts:189–192` states that a cation fraction "must therefore convert each field
+to amount of substance". SIM 259 did so for pharmacolite and köttigite only — a fix the codebase
+already made for siblings, which is why this sits in Tier 1. Still in mass ppm:
 - **Pb/Cu, ×3.26** — duftite/bayldonite (`js/30:577, :600`). Duftite's "Pb:Cu near 1:1" and
   bayldonite's "Cu/Pb > 2" are mass ratios. Both seed-42 duftite births (deterministic in
   `supergene_oxidation`) sit at molar Cu/Pb ≈ 3.0, which is bayldonite's composition, so a molar
@@ -354,10 +362,11 @@ pharmacolite and köttigite only. Still in mass ppm:
 
 Cu/Zn (2.9 %) and K/Ca (2.5 %) are immaterial.
 
-**S2. Legrandite's hard block at Ca > 20 ppm** (`js/30-supersat-arsenate.ts:519`). Its showcase
-localities are carbonate-hosted: Tsumeb is in dolomite, and Ojuela is a limestone replacement
-deposit. Pore water there carries tens to hundreds of ppm Ca. The local cavity fluid may still have
-been Ca-poor (Ojuela legrandite sits in limonite cavities), so this is a check, not a verdict.
+---
+
+## 3. Tier 2 — windows and selectors the literature does not support as written
+
+*Round 6 moved S1 to Tier 1 (now R10) and S2 to the noted designs below; S3–S8 keep their numbers.*
 
 **S3. Anglesite's σ has no carbonate or pH term.** In carbonate-bearing water above pH ≈ 6,
 cerussite is the stable Pb phase. The engines respond later: `grow_anglesite` converts to cerussite
@@ -442,6 +451,12 @@ The same window gates `applyBirnessiteTodorokiteTransition` (`js/75-transitions.
 from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead at seed 42.
 
 ### Noted, not counted (designs with a defensible basis)
+- **Legrandite's hard block at Ca > 20 ppm** (`js/30-supersat-arsenate.ts:519`) is the code's
+  austinite fork ("austinite competes"; austinite is the Ca–Zn arsenate). Legrandite's showcase
+  localities are carbonate-hosted — Tsumeb in dolomite, Ojuela a limestone replacement deposit —
+  but the cavity fluid at the legrandite stage may still have been Ca-poor (Ojuela legrandite sits
+  in limonite cavities). This review cites no fluid measurement either way, so it is a question for
+  the austinite fork's threshold, not a finding (S2 until round 6).
 - **Quartz's 100 °C floor** is a deliberate kinetic phase selector, "not a claim that quartz is
   thermodynamically impossible below 100 °C" (`research/arcs/research-silica-sulfur-correction-2026-08-06.md:34–36`).
   It does mean the sim cannot stage the low-temperature camp on the Paraná amethyst geodes (Gilg et
@@ -460,8 +475,9 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
   Only the gate text (`pH_min 3.5`, displayed as hard) is wrong — M9.
 - **Turquoise's pH 6–8.5 window** is the repo's documented model: acid groundwater leaches Cu, Al
   and P, and turquoise nucleates as pH recovers (`research/minerals/research-turquoise.md:52, :119`).
-  The literature associates turquoise with acid alteration (alunite, jarosite, kaolinite). Neither
-  side gives a numeric pH, and the gate is soft (×0.3 below 6).
+  The note gives "6.0 – 8.5" as the required range, which is where the gate sits, and the gate is
+  soft (×0.3 below 6). Turquoise's usual association with acid alteration assemblages (alunite,
+  jarosite, kaolinite) is not cited here, so this review leaves the window as the repo's model.
 
 ---
 
@@ -490,10 +506,26 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
     is stable to ~586 °C).
 - **M3. Leftovers of removed or changed gates.** Mottramite's gate `fluid_min` (`js/38:55`), spec
   `required_ingredients` and `_ingredients_note` still require `Zn: 0.5` although the gate was
-  removed; the Library and σ panel show it as a requirement. Descloizite's and mottramite's spec say
-  `V: 10` while their gates say `V: 4`.
-- **M4.** Aragonite's header comment still lists T > 50 °C and Ω > 10 as selectors (both retired in
-  v228).
+  removed; the Library and σ panel show it as a requirement.
+
+  More broadly, the spec's `required_ingredients` and the gate's `fluid_min` disagree numerically
+  for 13 species. The σ panel shows both, as "Nucleation floors" from the gate
+  (`js/97b-ui-sigma-panel.ts:908`) and "Requires" from the spec (`:1234`). The σ bodies read the
+  gate. The 13 (spec / gate):
+  - quartz SiO2 60/50; calcite Ca and CO3 10/1; smithsonite Zn 15/20, CO3 30/50;
+  - wulfenite Pb 5/10, Mo 2/5; native bismuth Bi 15/5; nickeline Ni 40/15, As 40/30;
+  - cobaltite Co 50/20, As 100/30, S 50/20; descloizite and mottramite V 10/4;
+  - borax Na 100/50, B 50/5; mirabilite and thenardite Na 100/50; opal SiO2 200/75.
+
+  Fix the spec side. Moving a gate up to the spec is not neutral: descloizite's V is §6's fourth
+  trap.
+- **M4. Stale selector comments.**
+  - Aragonite's header still lists T > 50 °C and Ω > 10 as selectors (both retired in v228). It also
+    gives "Mg/Ca > ~1.5" (`js/32-supersat-carbonate.ts:504`), where the code uses a molar ratio of
+    1.1 (`:579`).
+  - Stilbite's comment says it "precedes heulandite on a cooling path" (`js/39-supersat-silicate.ts:1342`).
+    That inverts the order its own windows give: heulandite 95–210 °C forms first on cooling,
+    stilbite 40–150 °C later.
 - **M5.** Amosite's notes say "Ca > 80 + low Mg required" (the code requires Ca ≤ 80), and its
   comment says Fe/Mg > 1.5 where the code uses 1.2. Tremolite's comment says Fe > 50; the code uses
   60.
@@ -508,7 +540,9 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
   - `deccan_zeolite` lists albite and adularia-type feldspar as deterministic species, born at
     127–150 °C.
 
-  The decay is soft, so only the text is wrong.
+  The low-T side is a soft decay, so there only the text is wrong. The 800 °C ceiling is real code
+  (`if (this.temperature > 800) return 0;`, `js/39-supersat-silicate.ts:601`) and is too low.
+  It is latent: no scenario exceeds 699 °C.
 - **M9. Gates displayed as hard that the engine treats as soft — some with wrong values.**
   `js/18a-mineral-gates-types.ts` defines `T_min/T_max` and `pH_min/pH_max` as hard cutoffs ("σ → 0").
   The σ panel scores them met/unmet on that basis (`js/97b-ui-sigma-panel.ts:976–982` for T,
@@ -544,8 +578,9 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
   births are right and the gate text is wrong, so a hovering player sees "not met" next to a crystal
   the engine just grew.
 - **M10. Survival chips that disagree with the engine.** Besides R2's contradictions, some births
-  happen outside the spec's own displayed survival window. The engines dissolve only when σ < 1 and
-  pH is past the threshold, so the crystals grow; the chips mislabel them:
+  happen outside the spec's own displayed survival window. The growth engines dissolve only when
+  σ < 1 *and* pH is past their own hardcoded threshold, so the crystals grow; the chips mislabel
+  them:
   - scorodite: 4 births at pH 5.53–5.90, chip "≤ 5.5" (its gate allows pH 6 "for hysteresis");
   - atacamite: 4 at pH 4.00–4.50, chip "≥ 5.0";
   - malachite: 1 at pH 4.00, chip "≥ 4.5" (`bisbee`'s only malachite, an expects_species);
@@ -553,7 +588,8 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
     pH 6.5 (5 births at pH 6.0–6.3);
   - pyrite: `sulphur_bank`'s only pyrite at pH 1.50, chip "≥ 3";
   - three marginal ones: siderite at pH 5.47 (`bisbee`, chip "≥ 5.5"), azurite at 4.94 and
-    powellite at 4.95 (`supergene_oxidation`, chip "≥ 5");
+    powellite at 4.95 (`supergene_oxidation`, chip "≥ 5"). Powellite's birth is inside its own
+    engine's window: it dissolves only below 4.5;
   - greenockite and hawleyite carry two acid thresholds: `acid_dissolution` 2 (shown by the panel)
     and `pH_dissolution_below` 5. Their engines dissolve them only on O2 > 1.0.
 - **M11.** Calcite's 500 °C ceiling is explained as "Decomposes to CaO + CO2 above ~500 °C … thermal
@@ -576,6 +612,10 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
   - Its "soft-only" class includes anhydrite and selenite. Their T bounds are enforced hard inside
     `evaluateCaSO4System`: `temperatureC >= 100` and `temperatureC <= 80`
     (`js/40b-supersat-sulfate-Ksp.ts:167, :163`).
+- **M14. The spec's `nucleation_sigma` is a dead field.** It disagrees with the gate's `sigma_crit`
+  for 73 of the 177 species that carry both. No `js/` code reads the spec value: nucleation reads the
+  gate, and the crystal's own `nucleation_sigma` is set from the birth σ. Either delete it or
+  generate it from the gate.
 
 ---
 
@@ -652,11 +692,17 @@ artefacts noted in M13.
 
 Each rung follows the house ritual: census first, byte-identical foundation where possible, then the
 attributable SIM bump, rebake, cold CI. Even a pure text edit to `js/` changes the bundle bytes and
-needs a rebake. A gate-constant edit can also move baselines, because the initiative module reads
-gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competition.
+needs a rebake, and so does an edit to `data/minerals.json` ("Runtime, runtime-data, or producer
+changes require a fresh `npm run science:rebake`", AGENTS.md). A gate-constant edit can also move
+baselines, because the initiative module reads gate T windows (`js/43-initiative.ts:106–121`) and
+drives graduated competition.
 
 1. **Metadata and display tranche.** Expected zero baseline move; measured where noted.
    - Text: R8 formula strings, M3 leftovers, M4–M8 and M11 comments, adamite's Cu-activator text (R1).
+     Spec-only fields need a rebake too ("runtime-data", AGENTS.md).
+     - M3's spec-vs-gate floors: change the *spec* to match the gate. Moving descloizite's gate up to
+       the spec's V 10 is a trap (below).
+     - M2's spec `T_range_C`: the Library is its only reader (`js/95-ui-library.ts:55`).
    - Gate objects: R7 and M9 (declare soft where soft; correct the wrong T floors).
      - R7's willemite and primary-sulfide O2 fields are read only by the UI and the census tools.
        The σ bodies use `PRIMARY_SULFIDE_CEILING_O2` and willemite's inline 0.5.
@@ -667,13 +713,14 @@ gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competitio
      - The CaSO4 floors (anhydrite 0.3, selenite 0.2) are read only by the UI, so dropping or
        relabelling them moves nothing.
      - Giving the CaSO4 evaluator a redox test instead is a science change that breaks contracts.
-       Fluid redox is constant in the two pool-free cases: `reactive_wall` sits at −150 mV,
-       O2 0.05, in all 120 archive samples, and `sicily_solfifera` at −190 mV, O2 0.02.
-       - A test routed like `sulfateRedoxAvailable` (pools bypass) spares `mvt`,
-         `reactivated_fluorite_vein` and `sicily_solfifera`, whose births all have sulfate pools.
-         It refuses `reactive_wall`'s anhydrite, one of its five contracted species, at every step.
-       - A test that ignores pools would also delete `sicily_solfifera`'s selenite, an
-         `expects_species`.
+       The round-6 reviewer measured both versions (in memory, controls identical):
+       - **Routed like `sulfateRedoxAvailable`** (pools bypass): only `reactive_wall` moves. It is
+         the one pool-free case, at −150 mV and O2 0.05 in all 120 archive samples. Its anhydrite —
+         one of its five contracted species — is refused at every step (4 → 0). `mvt`,
+         `reactivated_fluorite_vein`, `sicily_solfifera` and `wittichen` are byte-identical.
+       - **Ignoring pools:** four contracted species in four scenarios are lost — anhydrite in
+         `mvt` (8 → 0), `reactivated_fluorite_vein` (6 → 0) and `reactive_wall` (4 → 0), and
+         selenite in `sicily_solfifera` (1 → 0, also an `expects_species`).
        - Boss call (rung 9).
      - M9's T edits feed the initiative module. Deleting the four wrong T floors is byte-identical
        (growth hash and state fingerprint) in all 41 scenarios (round-5 reviewer's A/B). Other gate
@@ -687,7 +734,12 @@ gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competitio
    - The 19-species half measures zero at seed 42 (round-3 A/B).
    - The greenockite/hawleyite decision moves `reactivated_fluorite_vein` if their floor becomes 5
      (round-4 A/B).
-   - M10's chip corrections ride here: once R2 lands, chips and engine read the same fields.
+   - M10's corrections ride here, and they are not display-only, because the wall-attack engine
+     reads the same `acid_dissolution` thresholds. The round-6 reviewer lowered atacamite's and
+     malachite's to 4.0 and powellite's to 4.5 (in memory, control identical).
+     `supergene_oxidation` moved more than under R2's four-species half: final pH
+     4.502 → 4.470, Ca 587.9 → 564.7 ppm, vug 49.2865 → 49.2767 mm, births unchanged. `bisbee` is
+     unchanged.
 3. **R3 jarosite** — census first. An inclusive cap at 4 breaks `supergene_oxidation`'s jarosite
    contract. Any lower jarosite cap also breaks `bisbee`'s jarosite, whose births sit at exactly
    pH 4.00. `bisbee`'s alunite is untouched unless alunite's own cap moves too.
@@ -698,28 +750,35 @@ gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competitio
    take what the cell offers, in both the competition pass and the budget. SIM bump: the five
    contracted fahlores start growing in `bisbee`, `porphyry` and `schneeberg`. The round-3 A/B found
    every birth unchanged and no contract lost.
-7. **S1 molar selectors** — census-measured re-anchor (the SIM 259 pattern). Duftite's births move
+7. **R10 molar selectors** — census-measured re-anchor (the SIM 259 pattern). Duftite's births move
    from steps 1–2 to 40–41, and the schneeberg uranyl phosphates lose the ×1.3 bonus. The round-5
    reviewer's full Pb/Cu molar A/B also moves `supergene_oxidation`'s mimetite (an
    `expects_species`, 2 → 1 births), lepidocrocite (1 → 2) and selenite (1 → 2), with no contract
    lost.
 8. **M1 generated `scenarios`** — derive from the strip archive at bake time; the Library reads the
    generated list.
-9. **Boss calls:** R6 and S5 redox residue, a redox test for the CaSO4 evaluator (R7; it deletes
-   `reactive_wall`'s contracted anhydrite unless that scenario's fluid changes),
-   S2 legrandite, S3 anglesite, S4 lepidocrocite CO2, S6 willemite label, S7 Cd/Ag partition, the
+9. **Boss calls:** R6 and S5 redox residue, a redox test for the CaSO4 evaluator (R7; even the
+   pool-routed version deletes `reactive_wall`'s contracted anhydrite unless that scenario's fluid
+   changes, and a pool-ignoring one deletes four contracted species),
+   the legrandite/austinite threshold (noted), S3 anglesite, S4 lepidocrocite CO2, S6 willemite
+   label, S7 Cd/Ag partition, the
    quartz floor.
 
-**Three fixes that look obvious and are wrong:**
+**Four fixes that look obvious and are wrong:**
 - **Enforcing pyrite's pH 3.5** would delete `sulphur_bank`'s only pyrite, an `expects_species`.
   The experiments say pyrite does form in acid as a minority.
-- **A blanket "nucleation window ⊆ survival window" guard** would delete four contracted species:
-  - `supergene_oxidation`'s jarosite (all six births above its 4.5 ceiling);
-  - `sicily_solfifera`'s native sulfur (all five at pH 6.0–6.3, ceiling 5; an `expects_species`);
-  - `sulphur_bank`'s only pyrite (pH 1.50, floor 3; an `expects_species`);
-  - `bisbee`'s only malachite (an `expects_species`).
+- **A blanket "nucleation window ⊆ survival window" guard** deletes two expected species and moves
+  two more (round-6 reviewer's A/B, σ = 0 outside each spec window, control identical):
+  - deleted: `sicily_solfifera`'s native sulfur (all five births at pH 6.0–6.3, ceiling 5) and
+    `sulphur_bank`'s only pyrite (pH 1.50, floor 3);
+  - moved, contracts intact: `supergene_oxidation`'s jarosite re-nucleates at steps 176–184
+    (pH 4.42–4.50), and `bisbee`'s malachite at step 95 (pH 4.50).
 
   Fix chips and windows species by species.
+- **Raising descloizite's gate V to the spec's 10** (M3) deletes `supergene_oxidation`'s contracted
+  descloizite. All four births are at V 7.5 ppm (98 → 94 crystals in the round-6 reviewer's A/B,
+  control identical; `roughten_gill`'s mottramite, at V 12, is unchanged). The spec is the side to
+  move.
 - **"Just stop rewarding F" in cassiterite** would leave every one of its 13 births below σ_crit, in
   three scenarios that expect it.
 
@@ -743,7 +802,8 @@ gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competitio
   *objects* are stale (R7).
 - Beryl-family chromophore routing; the corundum SiO2 < 50 upper gate; andalusite's peraluminous
   gate and Al2SiO5 polymorph check.
-- Zeolite cation forks (scolecite/mesolite/thomsonite/chabazite) and the stilbite→heulandite order.
+- Zeolite cation forks (scolecite/mesolite/thomsonite/chabazite) and the stilbite/heulandite
+  temperature windows (heulandite the hotter; the comment that says otherwise is M4).
 
 ---
 
@@ -811,7 +871,7 @@ gate T windows (`js/43-initiative.ts:106–121`) and drives graduated competitio
 ## 9. Review history
 
 Rounds follow the standing rule: one skeptic subagent per round, up to five, stopping at 9/10 or
-when nothing is must-fix. Every reviewer claim was re-checked in the code or the source before it
+when nothing is must-fix; the owner approved a sixth. Every reviewer claim was re-checked in the code or the source before it
 changed this text. Three were rejected along the way: two in round 2 (one of them wrongly, reversed
 in round 3) and one in round 4.
 
@@ -957,7 +1017,7 @@ The reviewer re-ran every v4 number and quote. Corrections adopted after re-chec
 
 **Not adopted:**
 - "Both duftites would vanish under a molar selector." Round 3's A/B shows the step 1–2 births
-  vanish but duftite reappears at steps 40–41, so "move" stands. S1 now gives that result.
+  vanish but duftite reappears at steps 40–41, so "move" stands. S1 (now R10) gives that result.
 
 ### Round 5 of 5 — 8.5/10, "ship after the must-fixes"
 The reviewer re-ran the census numbers, the R2 rule, the R3 ceilings, the molar selectors and the
@@ -990,6 +1050,45 @@ selectors are molar). Adopted after re-checking:
 - Rung 1 now quotes the measured all-41-scenario T-floor result.
 
 This was the fifth and last round under the standing rule. A sixth would need the owner's go-ahead.
+
+### Round 6 (owner-approved) — 8/10, "ship after the must-fixes"
+The owner asked for a sixth round before any fixes. Its brief pointed the reviewer at the post-round-5
+changes and at the parts five rounds had looked at least: Tier 2, Tier 3, §7 and Appendix A. Every
+A/B had a control that reproduced the shipped hash. All findings were re-checked and adopted.
+
+**Must-fix:**
+- **The CaSO4 cost was still wrong.** Sicily's selenite is a pool birth, so `reactive_wall` is the
+  only pool-free case. A pool-ignoring test deletes four contracted species in four scenarios
+  (reviewer's A/B). Rungs 1 and 9 now say so.
+- **M3 hid a trap.** Raising descloizite's gate V to the spec's 10 deletes `supergene_oxidation`'s
+  contracted descloizite (all births at V 7.5). It is now §6's fourth trap, and rung 1 says the spec
+  is the side to move.
+- **The blanket-guard trap overstated.** It deletes two expected species. Supergene jarosite and
+  Bisbee malachite re-nucleate later with their contracts intact — the same "moves, not vanishes"
+  error round 4 caught for duftite.
+
+**Should-fix:**
+- M2 joins rung 1 (the Library is `T_range_C`'s only reader).
+- R2 notes that the `grow_*` engines hardcode their own thresholds (powellite 4.5, chalcedony 4).
+  M10's corrections move `supergene_oxidation` more than R2's four-species half (reviewer's A/B).
+- M3 lists all 13 spec-vs-gate floor mismatches.
+- S1 moves to Tier 1 as R10: SIM 259 already fixed its siblings.
+- M8's 800 °C cap is real code, latent.
+- S2 moves to the noted designs: its pore-water claim was uncited and it ignored the code's austinite
+  reason.
+- Tier counts are now 10 / 6 / 14.
+
+**Nits:**
+- R6's measured zero blast radius (the BACKLOG's warning does not come true).
+- R4's 27 at nucleation time.
+- §7's stilbite/heulandite wording, with the inverted comment added to M4, plus aragonite's stale
+  Mg/Ca.
+- The rebake note for `minerals.json` edits.
+- R3's five shifted `bisbee` counts.
+- R9's unchanged bulk digest.
+- The turquoise note's pH range.
+- A new M14 for the dead spec `nucleation_sigma`. My count is 73 of 177 species carrying both
+  values; the reviewer's 78 used a different basis.
 
 ---
 
