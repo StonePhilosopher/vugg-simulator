@@ -10,6 +10,7 @@ import {kernelFor} from '../pilots/calcite/capture.mjs';
 import {clone,geometryVolume,tessellate,validateFrame} from '../pilots/calcite/specimen.js';
 import {SpecimenView} from '../pilots/calcite/render.js';
 import {runtimeExecutionDigest} from '../tools/evidence-runtime.mjs';
+import {boundingReference,auditSpecimenFactors,fleetFactorCoverage} from '../pilots/calcite/factor-audit.js';
 
 const h=globalThis as any;
 const hash=(x:any)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
@@ -163,6 +164,14 @@ describe('Calcite Scientific-Solid Authority v1 (isolated, production gate close
     expect(recorded.specimen.frames.some((f:any)=>f.surface.crystals.length>0)).toBe(true);
     const restored=loadCalciteSpecimen(saveCalciteSpecimen(recorded.specimen));
     for(const f of restored.frames)validateFrame(f.surface);
+    const report=JSON.parse(fs.readFileSync('pilots/calcite/factor-coverage.json','utf8'));
+    expect(auditSpecimenFactors(restored,h.wulffPolyhedron).samples).toEqual(report.examples.elmwood.audit.samples);
+    const group=new THREE.Group(),view=new SpecimenView(THREE,group),signatures=[];
+    try{for(const frame of restored.frames){
+      view.dispose();view.sync(frame.surface);signatures.push(hash(geometry(group)));
+    }}finally{view.dispose();}
+    expect(signatures).toEqual(report.examples.elmwood.replay.geometrySha256ByStep);
+    expect(view.created).toBe(view.disposed);
   },120000);
 
   it('restores the pilot growth hooks on failure',()=>{
@@ -250,5 +259,80 @@ describe('Calcite Scientific-Solid Authority v1 (isolated, production gate close
         }
       }
     }
+  });
+
+  it('splits the full-form ratio using an analytic geometric reference, without changing mass',()=>{
+    // A box is a geometry-only arithmetic oracle, not a proposed calcite habit.
+    const planes=[{n:[1,0,0],d:1},{n:[-1,0,0],d:1},{n:[0,1,0],d:2},
+      {n:[0,-1,0],d:2},{n:[0,0,1],d:3},{n:[0,0,-1],d:3}];
+    const facts={axis:[0,1,0],yaw:0,cLengthMm:4,aWidthMm:2,bookedVolumeMm3:8*Math.PI/3};
+    const saved=JSON.stringify(facts),r=boundingReference(facts,planes,h.wulffPolyhedron);
+    expect(r.fullVolumeMm3).toBeCloseTo(48,12);
+    expect(r.boundingEllipsoidMm3).toBeCloseTo(8*Math.PI,12);
+    expect(r.boundingToBooked).toBeCloseTo(3,12);
+    expect(r.polyhedronToBounding).toBeCloseTo(6/Math.PI,12);
+    expect(r.boundingToBooked*r.polyhedronToBounding).toBeCloseTo(48/facts.bookedVolumeMm3,12);
+    expect(JSON.stringify(facts)).toBe(saved);
+  });
+
+  it('measures the reference in the saved crystal frame, independent of world translation/rotation',()=>{
+    const t=[300,-10,20],rotate=(v:number[])=>[-v[1],v[0],v[2]];
+    const planes=[{n:[1,0,0],d:1},{n:[-1,0,0],d:1},{n:[0,1,0],d:2},
+      {n:[0,-1,0],d:2},{n:[0,0,1],d:3},{n:[0,0,-1],d:3}].map(p=>{
+      const n=rotate(p.n);return {n,d:p.d+n.reduce((s,x,i)=>s+x*t[i],0)};
+    });
+    const r=boundingReference({axis:[-1,0,0],yaw:0,cLengthMm:4,aWidthMm:2,bookedVolumeMm3:8*Math.PI/3},planes,h.wulffPolyhedron);
+    expect(r.extentsMm.a).toBeCloseTo(2,10);expect(r.extentsMm.c).toBeCloseTo(4,10);expect(r.extentsMm.b).toBeCloseTo(6,10);
+    expect(r.fullVolumeMm3).toBeCloseTo(48,10);expect(r.boundingToBooked).toBeCloseTo(3,10);
+  });
+
+  it('audits actual saved planes and identifies fixture contact/dissolution/regrowth coverage',()=>{
+    const s=fixture(),before=JSON.stringify(s),audit=auditSpecimenFactors(s,h.wulffPolyhedron);
+    expect(audit.supportedCrystalSteps).toBe(9);
+    expect(audit.habits).toEqual(['rhombohedral']);
+    expect(audit.phaseCounts).toEqual({growth:5,dissolution:2,regrowth:2});
+    expect(audit.contactFaceSamples).toBe(8);
+    expect(auditSpecimenFactors(loadCalciteSpecimen(saveCalciteSpecimen(s)),h.wulffPolyhedron)).toEqual(audit);
+    expect(JSON.stringify(s)).toBe(before);
+    const mutable=clone(s);auditSpecimenFactors(mutable,h.wulffPolyhedron);
+    expect(Object.isFrozen(mutable.model)).toBe(false);
+  });
+
+  it('detects mutually compensating volume-factor errors by independently intersecting saved planes',()=>{
+    const s=clone(fixture()),a=s.frames[0].surface.crystals[0].completion.volumeAudit;
+    a.fullVolumeMm3*=2;a.fullToBooked*=2;a.attachmentRetention/=2;
+    // The product still closes. Preserved planes provide the independent check.
+    const loaded=loadCalciteSpecimen(JSON.stringify(s));
+    expect(()=>auditSpecimenFactors(loaded,h.wulffPolyhedron)).toThrow(/Preserved-plane volume disagreement/);
+  });
+
+  it('keeps missing fleet phase/topology information distinct from observed absence',()=>{
+    const census=JSON.parse(fs.readFileSync('pilots/calcite/volume-census.json','utf8'));
+    const coverage=fleetFactorCoverage(census);
+    expect(coverage.supportedScenarios).toEqual(['mvt']);
+    expect(coverage.supportedHabits).toEqual(['scalenohedral']);
+    expect(coverage.contactVolumeLossSamples).toBe(0);
+    expect(coverage.dissolutionAndRegrowth).toContain('unknown, not zero');
+    expect(coverage.contactTopology).toContain('not captured');
+    expect(coverage.supportedEndpoints+coverage.excludedEndpoints).toBe(coverage.endpointCalcites);
+  });
+
+  it('binds the factor report to its evidence and preserves the fixture/live distinction',()=>{
+    const report=JSON.parse(fs.readFileSync('pilots/calcite/factor-coverage.json','utf8'));
+    const census=JSON.parse(fs.readFileSync('pilots/calcite/volume-census.json','utf8'));
+    expect(report.fleet).toEqual(fleetFactorCoverage(census));expect(report.productionHeld).toBe(true);
+    for(const [file,expected] of Object.entries({...report.sourceHashes,...report.examples.elmwood.audit.model.sourceHashes})){
+      expect(createHash('sha256').update(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n')).digest('hex'),file).toBe(expected);
+    }
+    expect(createHash('sha256').update(fs.readFileSync('pilots/calcite/volume-census.json','utf8').replaceAll('\r\n','\n')).digest('hex')).toBe(report.fleetReceiptSha256);
+    expect(report.examples.controlled.audit).toEqual(auditSpecimenFactors(fixture(),h.wulffPolyhedron));
+    expect(report.examples.controlled.specimenSha256).toBe(hash(fixture()));
+    expect(report.examples.controlled.sourceClass).toContain('authored');
+    expect(report.examples.elmwood.sourceClass).toContain('explicit Wulff override');
+    expect(report.examples.elmwood.audit.phaseCounts.dissolution).toBe(0);
+    expect(report.examples.elmwood.audit.phaseCounts.regrowth).toBe(0);
+    const golden=JSON.parse(fs.readFileSync('pilots/calcite/golden.json','utf8'));
+    expect(report.examples.controlled.replay.geometrySha256ByStep).toEqual(golden.geometrySha256ByStep);
+    for(const e of Object.values(report.examples) as any[]){expect(e.productionGate.allowed).toBe(false);expect(e.replay.allResourcesDisposed).toBe(true);}
   });
 });

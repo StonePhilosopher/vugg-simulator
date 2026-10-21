@@ -140,6 +140,43 @@ Completed geometry may feed reconstruction and surface inspection. It may not
 feed conserved mass, nucleation space, dissolution return, or a physical
 porosity claim. Reports must retain both quantities with their authority labels.
 
+## Factor diagnosis and coverage
+
+`factor-coverage.json` provides a second, read-only audit. It re-intersects the
+stored form planes, form-plus-attachment planes, and all contact planes to check
+each volume independently. Merely multiplying mutually compensating factors is
+insufficient: a full-form volume doubled while its attachment factor is halved
+still closes algebraically, but this audit rejects it against the saved planes.
+
+For the saved specimens, the audit also compares the full body's measured a/c/b
+extents with booked dimensions. An ellipsoid fitted to those extents supplies a
+**diagnostic reference**, allowing the full/booked ratio to be written as:
+
+```
+(bounding-reference volume / booked volume)
+  * (full polyhedron volume / bounding-reference volume)
+```
+
+This helps distinguish incompatible extents from the volume of a faceted shape
+within those extents. It is a chosen arithmetic comparison, not a unique causal
+attribution, a new solid model, a density/porosity inference, or permission to
+rescale geometry. O1a/O1b remain included in the recorded full-form stage.
+
+Coverage is kept separate by source:
+
+| Source | Supported crystal-steps | Habit | Contact/dissolution/regrowth evidence |
+| --- | ---: | --- | --- |
+| Authored two-generation fixture | 9 | Rhombohedral | 8 active-contact samples, 2 dissolution and 2 regrowth samples; authored accepted material |
+| Live Elmwood, explicit old-pilot Wulff override | 9 | Scalenohedral | 9 growth samples; no active-contact, dissolution, or regrowth samples in this supported subset |
+| Authored-default fleet | 116 | MVT scalenohedral only | No measured contact volume loss; phase labels and contact topology were not captured by the scalar receipt and remain unknown |
+
+All 5 fixture frames and 16 Elmwood frames retain their factors and reconstructed
+meshes through save/load and complete teardown. That does not turn the fixture's
+contact/dissolution examples into live geological validation. The fleet receipt
+lacks preserved planes for this additional extent comparison; the report marks
+that limitation rather than reconstructing them from final habits. Other habits
+and scientifically modeled contact/dissolution episodes remain evidence gaps.
+
 ## Separate acceptance criteria and production gate
 
 1. **Scientific custody:** immutable formation events; contemporaneous inputs;
@@ -168,6 +205,7 @@ producer. Install dependencies with `npm ci`, then:
 npm run build:check
 npm test -- --file tests-js/calcite-solid-authority.test.ts
 node pilots/calcite/record.mjs
+node pilots/calcite/factor-report.mjs
 node --max-old-space-size=512 pilots/calcite/census.mjs --output pilots/calcite/volume-census.json
 ```
 
