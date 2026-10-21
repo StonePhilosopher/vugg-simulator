@@ -1,0 +1,3107 @@
+{
+  "schema": "calcite-volume-census-v1",
+  "seed": 42,
+  "simVersion": 285,
+  "source": "actual scenario runs at authored duration; no scenario flags overridden",
+  "pilotSourceCommit": "5c6f11c80e31a582dbc86863a1418267b0731341",
+  "runtime": {
+    "node": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "runtimeDigest": "82d81eb0d8439e7199eedf075c63fba7e5786fe0f4408ef076cba3217cb248e3",
+  "scope": "plain untwinned Wulff calcite; all other calcite explicitly counted as excluded",
+  "decision": "Preserve existing mass/growth rules; record measured factors; hold production integration.",
+  "sourceHashes": {
+    "js/27-geometry-crystal.ts": "ae8aa56cdca6bebd6a9c29f6d4be48bd380b6c8527bd524f15c0b0cfdd12323a",
+    "js/45-morphology.ts": "4d878dd1f43c9b12b6925dfbe367220bca7980f06caf9bf88012b13d904bbfc6",
+    "js/46-wulff-geometry.ts": "6f8cc6e7db0ba132f21f165444d72aa278b2ed7c1eabd0c8b3d8c0685b5ac4dd",
+    "js/99i-renderer-three.ts": "84158e4fb093d04c34962b6ff2f10635b3810a73dd9eeec918a9a43956337dda",
+    "pilots/calcite/specimen.js": "2dc1432179630aaf7a7ed4d1ced3e871f360295866b85ca3594b67b58a15f86d",
+    "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",
+    "pilots/calcite/census.mjs": "c825e2114f2e3f85d5594315a49ecccc6ce534ffbc339296a672141d140ba664"
+  },
+  "scenarios": [
+    {
+      "scenario": "amethyst_geode",
+      "steps": 240,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "11160e34f2999c22f24dc11ae858c745edcdbded5540e08c6c05b4ee85e4352d",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "asbestos_hills_crack_seal",
+      "steps": 110,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "15ddfb22d51a04d1e694f320408f9a1fa09818ee044c1491d7d55b7f06482724",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "asbestos_hills_surficial_alteration",
+      "steps": 120,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "6ab12c805c4abc09c49a4a2b6176c6404237a297a143d132ecfa30dca1f9fbd4",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "bisbee",
+      "steps": 340,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "19c427d8a7dd7fff5b2a62e0a47b94ae016e67084b05252a13fd9a22aa49a13a",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "chiastolite_hornfels",
+      "steps": 120,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "784a1eefa1ad43f3a4ff61e8062478fafd3261b11b2666a2988203256d26361e",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "colorado_plateau",
+      "steps": 180,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "654cc7a195b06c2a2791f460a3f45a135e7da7a29fccf6940f31a1e12870f00c",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "cooling",
+      "steps": 100,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "08afcdcfaafb961ce5027cbf5f7709952bdc92461a8c083a5e8c36e1e4413f40",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "deccan_zeolite",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 0.759362870608281,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 7,
+          "habit": "rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": "euhedral_druse",
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 0.759362870608281
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "9edf019555e245e6a78da7021ed056605d1e8b8bfc066e5359fd04f6fbb3135b",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "elmwood",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 384.01371869526434,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 384.01371869526434
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "bc647d0ab9a3ddc18e77f833bdc3ae1cd800258ab24a2d99045f8987852dd16d",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "epithermal_telluride",
+      "steps": 180,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "d02d3027bbda8827c6bfe067d55e79e7f8c913ffe046afab9aaa6798888ebe6e",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "steps": 230,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "399d92eb63bd58ce0aa6b3b2875ae3e8b2533acb82c416a1b920b87ce656ef3a",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "great_salt_plains",
+      "steps": 250,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "bf5f41d4b689d375f249443d0575a425968ddbe0162349554896ba2a64a9d55b",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "grimsel_alpine_cleft",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 289.78290119486064,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 33,
+          "habit": "scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 289.78290119486064
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "9c0aebbfd754be0d816cd9e37f234dd467b51ffdcae35f35156ff26276adba62",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "jeffrey_mine",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 1.3688024031077806,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 8,
+          "habit": "scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.3688024031077806
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "6ed2724428fc7bc8398ef381990b68d0130614323af527a21148386daf802670",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "marble_contact_metamorphism",
+      "steps": 180,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "0e98ee96529e7a2afe2faf4a82a9007076bd96536fe3cdb1a63280b39b4436a1",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "mvt",
+      "steps": 120,
+      "wulffCalcite": true,
+      "calciteCount": 1,
+      "calciteBookedMm3": 5425.559480132104,
+      "eligibleCount": 1,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "27758febb11e3c43f451e917cb5bbc9637d721f7443e63f42dfdb7c53ae9b4b0",
+      "historical": [
+        {
+          "step": 5,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 0.6798726766221573,
+              "aWidthMm": 0.33993633831107867,
+              "bookedVolumeMm3": 0.0411359369856431,
+              "completedVolumeMm3": 0.01347036976147898,
+              "fullVolumeMm3": 0.02255366506390125,
+              "attachedVolumeMm3": 0.01347036976147898,
+              "fullToBooked": 0.5482715775204714,
+              "attachmentRetention": 0.597258570760602,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 6,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 1.4173038896157506,
+              "aWidthMm": 0.7086519448078753,
+              "bookedVolumeMm3": 0.372672689809973,
+              "completedVolumeMm3": 0.12140806999712946,
+              "fullVolumeMm3": 0.20332502626787238,
+              "attachedVolumeMm3": 0.12140806999712946,
+              "fullToBooked": 0.5455860647356491,
+              "attachmentRetention": 0.5971132635545774,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 7,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 1.9731869880052033,
+              "aWidthMm": 0.9865934940026017,
+              "bookedVolumeMm3": 1.0056418993870482,
+              "completedVolumeMm3": 0.3266231040044422,
+              "fullVolumeMm3": 0.5470728121942107,
+              "attachedVolumeMm3": 0.3266231040044422,
+              "fullToBooked": 0.5440035986245787,
+              "attachmentRetention": 0.5970377191555466,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 8,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 2.555562332103661,
+              "aWidthMm": 1.2777811660518306,
+              "bookedVolumeMm3": 2.1847314751952593,
+              "completedVolumeMm3": 0.7074075092699019,
+              "fullVolumeMm3": 1.1850062394752188,
+              "attachedVolumeMm3": 0.7074075092699019,
+              "fullToBooked": 0.5424036102053729,
+              "attachmentRetention": 0.5969652190043979,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 9,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 3.2868876287704416,
+              "aWidthMm": 1.6434438143852208,
+              "bookedVolumeMm3": 4.648289851618241,
+              "completedVolumeMm3": 1.4991600651100496,
+              "fullVolumeMm3": 2.5117011120474033,
+              "attachedVolumeMm3": 1.4991600651100496,
+              "fullToBooked": 0.5403495031991148,
+              "attachmentRetention": 0.5968704070397991,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 10,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 3.8530064296870097,
+              "aWidthMm": 1.9265032148435048,
+              "bookedVolumeMm3": 7.48751718557324,
+              "completedVolumeMm3": 2.408780543874305,
+              "fullVolumeMm3": 4.036071954416699,
+              "attachedVolumeMm3": 2.408780543874305,
+              "fullToBooked": 0.5390400922475745,
+              "attachmentRetention": 0.5968130823927361,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 11,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 4.538406944196226,
+              "aWidthMm": 2.269203472098113,
+              "bookedVolumeMm3": 12.236266754970888,
+              "completedVolumeMm3": 3.924783781823951,
+              "fullVolumeMm3": 6.5769854713647184,
+              "attachedVolumeMm3": 3.924783781823951,
+              "fullToBooked": 0.5374993536074121,
+              "attachmentRetention": 0.5967450892071929,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 12,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 5.078564804726429,
+              "aWidthMm": 2.5392824023632143,
+              "bookedVolumeMm3": 17.145952917222665,
+              "completedVolumeMm3": 5.488260016522944,
+              "fullVolumeMm3": 9.19765660293974,
+              "attachedVolumeMm3": 5.488260016522944,
+              "fullToBooked": 0.5364330957482644,
+              "attachmentRetention": 0.5967019919800872,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 13,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 5.730904631055907,
+              "aWidthMm": 2.865452315527954,
+              "bookedVolumeMm3": 24.63815454439096,
+              "completedVolumeMm3": 7.8671736003385675,
+              "fullVolumeMm3": 13.185551772047729,
+              "attachedVolumeMm3": 7.8671736003385675,
+              "fullToBooked": 0.5351679951634002,
+              "attachmentRetention": 0.5966510720481428,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 14,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 6.208583139454547,
+              "aWidthMm": 3.1042915697272733,
+              "bookedVolumeMm3": 31.326807215377737,
+              "completedVolumeMm3": 9.98705023783051,
+              "fullVolumeMm3": 16.739320971618312,
+              "attachedVolumeMm3": 9.98705023783051,
+              "fullToBooked": 0.5343449415873219,
+              "attachmentRetention": 0.5966221840637177,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 15,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 6.873325187218728,
+              "aWidthMm": 3.436662593609364,
+              "bookedVolumeMm3": 42.504930022460904,
+              "completedVolumeMm3": 13.519973264997297,
+              "fullVolumeMm3": 22.662477794791222,
+              "attachedVolumeMm3": 13.519973264997297,
+              "fullToBooked": 0.5331729233012659,
+              "attachmentRetention": 0.5965796585625226,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 16,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 7.46689395374378,
+              "aWidthMm": 3.7334469768718894,
+              "bookedVolumeMm3": 54.49524147058158,
+              "completedVolumeMm3": 17.30041392640008,
+              "fullVolumeMm3": 29.001017264755482,
+              "attachedVolumeMm3": 17.30041392640008,
+              "fullToBooked": 0.5321752226827224,
+              "attachmentRetention": 0.5965450717973615,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 17,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 7.973349581688696,
+              "aWidthMm": 3.986674790844348,
+              "bookedVolumeMm3": 66.35307403164963,
+              "completedVolumeMm3": 21.03340192679453,
+              "fullVolumeMm3": 35.26013911387013,
+              "attachedVolumeMm3": 21.03340192679453,
+              "fullToBooked": 0.531401741794984,
+              "attachmentRetention": 0.5965206733549361,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 18,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 8.452481701178714,
+              "aWidthMm": 4.226240850589357,
+              "bookedVolumeMm3": 79.04808416245373,
+              "completedVolumeMm3": 25.02406154952877,
+              "fullVolumeMm3": 41.95138717664868,
+              "attachedVolumeMm3": 25.02406154952877,
+              "fullToBooked": 0.5307071970325469,
+              "attachmentRetention": 0.596501408741446,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 19,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 8.992811784099022,
+              "aWidthMm": 4.496405892049511,
+              "bookedVolumeMm3": 95.1974121541555,
+              "completedVolumeMm3": 30.091191256883846,
+              "fullVolumeMm3": 50.44789238937154,
+              "attachedVolumeMm3": 30.091191256883846,
+              "fullToBooked": 0.529929241224331,
+              "attachmentRetention": 0.5964806423354867,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 20,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 9.247100781011607,
+              "aWidthMm": 4.645515056950294,
+              "bookedVolumeMm3": 104.489333090477,
+              "completedVolumeMm3": 32.65466947874505,
+              "fullVolumeMm3": 54.74598615803343,
+              "attachedVolumeMm3": 32.65466947874505,
+              "fullToBooked": 0.5239385163902716,
+              "attachmentRetention": 0.5964760482071122,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 21,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 9.46284653868221,
+              "aWidthMm": 4.783141851121253,
+              "bookedVolumeMm3": 113.3566338104131,
+              "completedVolumeMm3": 34.93981906854508,
+              "fullVolumeMm3": 58.576996606530244,
+              "attachedVolumeMm3": 34.93981906854508,
+              "fullToBooked": 0.5167496125943472,
+              "attachmentRetention": 0.5964767928140914,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 22,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 9.681371261178935,
+              "aWidthMm": 4.9361643017527745,
+              "bookedVolumeMm3": 123.51358030684523,
+              "completedVolumeMm3": 37.357539268554,
+              "fullVolumeMm3": 62.62993451732933,
+              "attachedVolumeMm3": 37.357539268554,
+              "fullToBooked": 0.5070692175041608,
+              "attachmentRetention": 0.5964805736499276,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 23,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 9.9047522120904,
+              "aWidthMm": 5.110726015423596,
+              "bookedVolumeMm3": 135.45886610115585,
+              "completedVolumeMm3": 39.93610178096572,
+              "fullVolumeMm3": 66.95227991180141,
+              "attachedVolumeMm3": 39.93610178096572,
+              "fullToBooked": 0.4942628108359023,
+              "attachmentRetention": 0.5964860619171588,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 24,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.0784918068913,
+              "aWidthMm": 5.2616661105742795,
+              "bookedVolumeMm3": 146.096812467319,
+              "completedVolumeMm3": 42.01761395785993,
+              "fullVolumeMm3": 70.44115366115328,
+              "attachedVolumeMm3": 42.01761395785993,
+              "fullToBooked": 0.4821539393743484,
+              "attachmentRetention": 0.5964924163505247,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 25,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.213732504406337,
+              "aWidthMm": 5.394342576298296,
+              "bookedVolumeMm3": 155.61811449609039,
+              "completedVolumeMm3": 43.68294969541082,
+              "fullVolumeMm3": 73.23214935511021,
+              "attachedVolumeMm3": 43.68294969541082,
+              "fullToBooked": 0.4705888488126492,
+              "attachmentRetention": 0.5964996259168595,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 26,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.36571452113215,
+              "aWidthMm": 5.5675264889756235,
+              "bookedVolumeMm3": 168.2373621080863,
+              "completedVolumeMm3": 45.59767747321573,
+              "fullVolumeMm3": 76.44090994257473,
+              "attachedVolumeMm3": 45.59767747321573,
+              "fullToBooked": 0.4543634599635738,
+              "attachmentRetention": 0.5965088263270336,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 27,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.476641921555624,
+              "aWidthMm": 5.714406814957954,
+              "bookedVolumeMm3": 179.1278168682832,
+              "completedVolumeMm3": 47.02402290375983,
+              "fullVolumeMm3": 78.83095417130637,
+              "attachedVolumeMm3": 47.02402290375983,
+              "fullToBooked": 0.44008214664544587,
+              "attachmentRetention": 0.5965172361300185,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 28,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.586181911153849,
+              "aWidthMm": 5.881914187659752,
+              "bookedVolumeMm3": 191.76764869446558,
+              "completedVolumeMm3": 48.45335562327092,
+              "fullVolumeMm3": 81.22579893271943,
+              "attachedVolumeMm3": 48.45335562327092,
+              "fullToBooked": 0.42356361714656415,
+              "attachmentRetention": 0.5965266732975514,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 29,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.662197361344985,
+              "aWidthMm": 6.021829350547285,
+              "bookedVolumeMm3": 202.44274980248827,
+              "completedVolumeMm3": 49.45550016161656,
+              "fullVolumeMm3": 82.90459253076149,
+              "attachedVolumeMm3": 49.45550016161656,
+              "fullToBooked": 0.40952117382147163,
+              "attachmentRetention": 0.5965351092373592,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 30,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.718040933526229,
+              "aWidthMm": 6.141143139282318,
+              "bookedVolumeMm3": 211.64717398138475,
+              "completedVolumeMm3": 50.19588906121183,
+              "fullVolumeMm3": 84.14461685603986,
+              "attachedVolumeMm3": 50.19588906121183,
+              "fullToBooked": 0.3975702357520764,
+              "attachmentRetention": 0.5965430818597731,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 31,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.763718821829533,
+              "aWidthMm": 6.2602281234183135,
+              "bookedVolumeMm3": 220.8723159859057,
+              "completedVolumeMm3": 50.80094538797509,
+              "fullVolumeMm3": 85.15768236137738,
+              "attachedVolumeMm3": 50.80094538797509,
+              "fullToBooked": 0.3855516341251724,
+              "attachmentRetention": 0.5965515262897229,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 32,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.802969219850839,
+              "aWidthMm": 6.383700191759467,
+              "bookedVolumeMm3": 230.5083837820989,
+              "completedVolumeMm3": 51.318786901754265,
+              "fullVolumeMm3": 86.02444545001663,
+              "attachedVolumeMm3": 51.318786901754265,
+              "fullToBooked": 0.37319443240440275,
+              "attachmentRetention": 0.5965605082752015,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 33,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.83254747141341,
+              "aWidthMm": 6.495560847794123,
+              "bookedVolumeMm3": 239.31092975815957,
+              "completedVolumeMm3": 51.70616893830588,
+              "fullVolumeMm3": 86.67257000331192,
+              "attachedVolumeMm3": 51.70616893830588,
+              "fullToBooked": 0.3621755600168392,
+              "attachmentRetention": 0.5965690060457431,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 34,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.863343288362552,
+              "aWidthMm": 6.642853430721875,
+              "bookedVolumeMm3": 250.99869668642197,
+              "completedVolumeMm3": 52.10163735264197,
+              "fullVolumeMm3": 87.33390336809465,
+              "attachedVolumeMm3": 52.10163735264197,
+              "fullToBooked": 0.34794564482222295,
+              "attachmentRetention": 0.5965797398639582,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 35,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.883369474198929,
+              "aWidthMm": 6.777716622324493,
+              "bookedVolumeMm3": 261.7753863726702,
+              "completedVolumeMm3": 52.34818550412443,
+              "fullVolumeMm3": 87.74575906817743,
+              "attachedVolumeMm3": 52.34818550412443,
+              "fullToBooked": 0.3351948412111607,
+              "attachmentRetention": 0.596589351554307,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 36,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.893298640007416,
+              "aWidthMm": 6.875762925317614,
+              "bookedVolumeMm3": 269.6496246574642,
+              "completedVolumeMm3": 52.461994172102706,
+              "fullVolumeMm3": 87.93544581214182,
+              "attachedVolumeMm3": 52.461994172102706,
+              "fullToBooked": 0.3261100249030429,
+              "attachmentRetention": 0.5965966702912756,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 37,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.900041540577519,
+              "aWidthMm": 6.9835625533593495,
+              "bookedVolumeMm3": 278.34333759007126,
+              "completedVolumeMm3": 52.527491265587216,
+              "fullVolumeMm3": 88.04401369018358,
+              "attachedVolumeMm3": 52.527491265587216,
+              "fullToBooked": 0.31631442826143713,
+              "attachmentRetention": 0.5966049145649495,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 38,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.901944762206794,
+              "aWidthMm": 7.072136651867622,
+              "bookedVolumeMm3": 285.49853698304946,
+              "completedVolumeMm3": 52.52926097396763,
+              "fullVolumeMm3": 88.04593987254182,
+              "attachedVolumeMm3": 52.52926097396763,
+              "fullToBooked": 0.3083936639499111,
+              "attachmentRetention": 0.5966119624597194,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 39,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.899576912307671,
+              "aWidthMm": 7.180970334317216,
+              "bookedVolumeMm3": 294.2893378359027,
+              "completedVolumeMm3": 52.46369089124582,
+              "fullVolumeMm3": 87.93476515814504,
+              "attachedVolumeMm3": 52.46369089124582,
+              "fullToBooked": 0.29880377523965185,
+              "attachmentRetention": 0.5966205834165046,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 40,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.8940220140006,
+              "aWidthMm": 7.274481400469375,
+              "bookedVolumeMm3": 301.8498375441835,
+              "completedVolumeMm3": 52.3570118080247,
+              "fullVolumeMm3": 87.75485660744997,
+              "attachedVolumeMm3": 52.3570118080247,
+              "fullToBooked": 0.2907235508934298,
+              "attachmentRetention": 0.596628082275048,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 41,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.885904277305235,
+              "aWidthMm": 7.360243500400345,
+              "bookedVolumeMm3": 308.7788164986662,
+              "completedVolumeMm3": 52.21639685126891,
+              "fullVolumeMm3": 87.51814630486504,
+              "attachedVolumeMm3": 52.21639685126891,
+              "fullToBooked": 0.283433129569117,
+              "attachmentRetention": 0.5966350871895267,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 42,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.874858961823968,
+              "aWidthMm": 7.455607344283577,
+              "bookedVolumeMm3": 316.5106373604647,
+              "completedVolumeMm3": 52.031564806672755,
+              "fullVolumeMm3": 87.20721593783216,
+              "attachedVolumeMm3": 52.031564806672755,
+              "fullToBooked": 0.27552696700842444,
+              "attachmentRetention": 0.5966428838155406,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 43,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.864543354887083,
+              "aWidthMm": 7.528881007802048,
+              "bookedVolumeMm3": 322.4563740748413,
+              "completedVolumeMm3": 51.864046404201034,
+              "fullVolumeMm3": 86.92555594523594,
+              "attachedVolumeMm3": 51.864046404201034,
+              "fullToBooked": 0.26957307386040613,
+              "attachmentRetention": 0.5966490043144038,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 44,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.853581964097815,
+              "aWidthMm": 7.596208162354714,
+              "bookedVolumeMm3": 327.9181290353935,
+              "completedVolumeMm3": 51.68959142161155,
+              "fullVolumeMm3": 86.63232987119396,
+              "attachedVolumeMm3": 51.68959142161155,
+              "fullToBooked": 0.26418890021735697,
+              "attachmentRetention": 0.5966547534674906,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 45,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.841690206892839,
+              "aWidthMm": 7.662096636870353,
+              "bookedVolumeMm3": 333.26589038364386,
+              "completedVolumeMm3": 51.50292688556892,
+              "fullVolumeMm3": 86.31864669225669,
+              "attachedVolumeMm3": 51.50292688556892,
+              "fullToBooked": 0.2590083449371003,
+              "attachmentRetention": 0.5966604998939243,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 46,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.824916134691527,
+              "aWidthMm": 7.747533731137522,
+              "bookedVolumeMm3": 340.2123808192956,
+              "completedVolumeMm3": 51.24251833847492,
+              "fullVolumeMm3": 85.881144050667,
+              "attachedVolumeMm3": 51.24251833847492,
+              "fullToBooked": 0.2524339174366583,
+              "attachmentRetention": 0.596667858875326,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 47,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 10.809211188735624,
+              "aWidthMm": 7.823909147902937,
+              "bookedVolumeMm3": 346.4497257505838,
+              "completedVolumeMm3": 51.02438208994592,
+              "fullVolumeMm3": 85.51511939579119,
+              "attachedVolumeMm3": 51.02438208994592,
+              "fullToBooked": 0.24683269473088068,
+              "attachmentRetention": 0.5966708863936544,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 48,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 11.289711663818728,
+              "aWidthMm": 8.171704375226472,
+              "bookedVolumeMm3": 394.73602775192137,
+              "completedVolumeMm3": 58.15024485892843,
+              "fullVolumeMm3": 97.45593439818046,
+              "attachedVolumeMm3": 58.15024485892843,
+              "fullToBooked": 0.24688887648083724,
+              "attachmentRetention": 0.5966824413312908,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 49,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 11.723487541535137,
+              "aWidthMm": 8.48567946541083,
+              "bookedVolumeMm3": 442.006539011552,
+              "completedVolumeMm3": 65.11242227766473,
+              "fullVolumeMm3": 109.12335317503893,
+              "attachedVolumeMm3": 65.11242227766473,
+              "fullToBooked": 0.24688176201888035,
+              "attachmentRetention": 0.5966864138899891,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 50,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 12.079168530900319,
+              "aWidthMm": 8.743128015341043,
+              "bookedVolumeMm3": 483.46978504777235,
+              "completedVolumeMm3": 71.21062334257044,
+              "fullVolumeMm3": 119.34329654520796,
+              "attachedVolumeMm3": 71.21062334257044,
+              "fullToBooked": 0.24684747679405752,
+              "attachmentRetention": 0.5966872493386792,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 51,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 12.529017609129607,
+              "aWidthMm": 9.068737188561899,
+              "bookedVolumeMm3": 539.522143989537,
+              "completedVolumeMm3": 79.5666672881849,
+              "fullVolumeMm3": 133.34800512778475,
+              "attachedVolumeMm3": 79.5666672881849,
+              "fullToBooked": 0.24715946623012156,
+              "attachmentRetention": 0.5966843464357622,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 52,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 13.081991248447222,
+              "aWidthMm": 9.468989847119895,
+              "bookedVolumeMm3": 614.1575263031856,
+              "completedVolumeMm3": 90.68356249136357,
+              "fullVolumeMm3": 151.98103366224126,
+              "attachedVolumeMm3": 90.68356249136357,
+              "fullToBooked": 0.24746262506472022,
+              "attachmentRetention": 0.5966768372749484,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 53,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 13.701322813401376,
+              "aWidthMm": 9.917273612884363,
+              "bookedVolumeMm3": 705.5791061151666,
+              "completedVolumeMm3": 104.28600718151351,
+              "fullVolumeMm3": 174.78182808298448,
+              "attachedVolumeMm3": 104.28600718151351,
+              "fullToBooked": 0.24771400764020937,
+              "attachmentRetention": 0.596663899933577,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 54,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 14.295350213219406,
+              "aWidthMm": 10.347241750835504,
+              "bookedVolumeMm3": 801.38759143971,
+              "completedVolumeMm3": 118.52845164649668,
+              "fullVolumeMm3": 198.6570243228532,
+              "attachedVolumeMm3": 118.52845164649668,
+              "fullToBooked": 0.24789131556923857,
+              "attachmentRetention": 0.5966486815682225,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 55,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 14.757040030663088,
+              "aWidthMm": 10.681421472474728,
+              "bookedVolumeMm3": 881.5683335447779,
+              "completedVolumeMm3": 130.4390225032909,
+              "fullVolumeMm3": 218.6238421227817,
+              "attachedVolumeMm3": 130.4390225032909,
+              "fullToBooked": 0.24799420964191998,
+              "attachmentRetention": 0.5966367676862746,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 56,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 15.399035804410195,
+              "aWidthMm": 11.1461100162946,
+              "bookedVolumeMm3": 1001.7026019227366,
+              "completedVolumeMm3": 148.26049909400047,
+              "fullVolumeMm3": 248.5020607729442,
+              "attachedVolumeMm3": 148.26049909400047,
+              "fullToBooked": 0.24807967983306853,
+              "attachmentRetention": 0.5966167790836382,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 57,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 16.015411318991866,
+              "aWidthMm": 11.592254137533015,
+              "bookedVolumeMm3": 1126.8665995899798,
+              "completedVolumeMm3": 166.80322404905593,
+              "fullVolumeMm3": 279.5917156910151,
+              "attachedVolumeMm3": 166.80322404905593,
+              "fullToBooked": 0.248114298349731,
+              "attachmentRetention": 0.596595731160343,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 58,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 16.569776058828403,
+              "aWidthMm": 11.993513700654683,
+              "bookedVolumeMm3": 1247.981456848604,
+              "completedVolumeMm3": 184.7257978075477,
+              "fullVolumeMm3": 309.6431267767415,
+              "attachedVolumeMm3": 184.7257978075477,
+              "fullToBooked": 0.2481151663572395,
+              "attachmentRetention": 0.5965764515119965,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 59,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 17.13619069865996,
+              "aWidthMm": 12.403495206678217,
+              "bookedVolumeMm3": 1380.3876818883402,
+              "completedVolumeMm3": 204.29062294802864,
+              "fullVolumeMm3": 342.44999168086997,
+              "attachedVolumeMm3": 204.29062294802864,
+              "fullToBooked": 0.24808247434692104,
+              "attachmentRetention": 0.5965560750791538,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 60,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 17.26471698901113,
+              "aWidthMm": 12.496524938567672,
+              "bookedVolumeMm3": 1411.6811196904785,
+              "completedVolumeMm3": 208.9774254475416,
+              "fullVolumeMm3": 350.3074705921363,
+              "attachedVolumeMm3": 208.9774254475416,
+              "fullToBooked": 0.24814915047453764,
+              "attachmentRetention": 0.5965542929881003,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 61,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 17.464298339083538,
+              "aWidthMm": 12.640985651131933,
+              "bookedVolumeMm3": 1461.2066524299896,
+              "completedVolumeMm3": 216.3964708656432,
+              "fullVolumeMm3": 362.7452484900835,
+              "attachedVolumeMm3": 216.3964708656432,
+              "fullToBooked": 0.24825047701968603,
+              "attachmentRetention": 0.5965521857733139,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 62,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 17.689364687173047,
+              "aWidthMm": 12.803892881729636,
+              "bookedVolumeMm3": 1518.4305121999446,
+              "completedVolumeMm3": 224.97037756359038,
+              "fullVolumeMm3": 377.11887013319574,
+              "attachedVolumeMm3": 224.97037756359038,
+              "fullToBooked": 0.2483609668688858,
+              "attachmentRetention": 0.5965503064965495,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 63,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 17.9378083208825,
+              "aWidthMm": 12.983721028721831,
+              "bookedVolumeMm3": 1583.3114497123977,
+              "completedVolumeMm3": 234.6909551197998,
+              "fullVolumeMm3": 393.41467590315983,
+              "attachedVolumeMm3": 234.6909551197998,
+              "fullToBooked": 0.2484758611292946,
+              "attachmentRetention": 0.5965485516802878,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 64,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 18.183353894523655,
+              "aWidthMm": 13.161451505654332,
+              "bookedVolumeMm3": 1649.2260631146962,
+              "completedVolumeMm3": 244.56614166066478,
+              "fullVolumeMm3": 409.9695491080152,
+              "attachedVolumeMm3": 244.56614166066478,
+              "fullToBooked": 0.24858299191182723,
+              "attachmentRetention": 0.5965470903699451,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 65,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 18.41124880528994,
+              "aWidthMm": 13.32640610280042,
+              "bookedVolumeMm3": 1712.0165416722375,
+              "completedVolumeMm3": 253.97304491836243,
+              "fullVolumeMm3": 425.7392228108393,
+              "attachedVolumeMm3": 253.97304491836243,
+              "fullToBooked": 0.24867704981109132,
+              "attachmentRetention": 0.5965460340759008,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 66,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 18.664830688202564,
+              "aWidthMm": 13.509953410630809,
+              "bookedVolumeMm3": 1783.7351877718545,
+              "completedVolumeMm3": 264.7154490562352,
+              "fullVolumeMm3": 443.74766822049264,
+              "attachedVolumeMm3": 264.7154490562352,
+              "fullToBooked": 0.24877440959989033,
+              "attachmentRetention": 0.5965449917016835,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 67,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 18.930943243466782,
+              "aWidthMm": 13.702570653383292,
+              "bookedVolumeMm3": 1861.122569978274,
+              "completedVolumeMm3": 276.30497410211836,
+              "fullVolumeMm3": 463.17622177819743,
+              "attachedVolumeMm3": 276.30497410211836,
+              "fullToBooked": 0.24886927344264292,
+              "attachmentRetention": 0.5965439526263793,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 68,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 19.25325023325874,
+              "aWidthMm": 13.935862478460614,
+              "bookedVolumeMm3": 1957.8092751539748,
+              "completedVolumeMm3": 290.7790252141888,
+              "fullVolumeMm3": 487.440673476046,
+              "attachedVolumeMm3": 290.7790252141888,
+              "fullToBooked": 0.24897250189894546,
+              "attachmentRetention": 0.5965423917962774,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 69,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 19.53485357783083,
+              "aWidthMm": 14.139692244130627,
+              "bookedVolumeMm3": 2044.978265619577,
+              "completedVolumeMm3": 303.82624643476095,
+              "fullVolumeMm3": 509.313190642105,
+              "attachedVolumeMm3": 303.82624643476095,
+              "fullToBooked": 0.24905555193653653,
+              "attachmentRetention": 0.5965410910558177,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 70,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 19.83986041543403,
+              "aWidthMm": 14.360461895609305,
+              "bookedVolumeMm3": 2142.2692427657835,
+              "completedVolumeMm3": 318.38312769165765,
+              "fullVolumeMm3": 533.7166999714948,
+              "attachedVolumeMm3": 318.38312769165765,
+              "fullToBooked": 0.24913614466239462,
+              "attachmentRetention": 0.5965395643581363,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 71,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 20.159839288950398,
+              "aWidthMm": 14.592068586599792,
+              "bookedVolumeMm3": 2247.6020138368567,
+              "completedVolumeMm3": 334.1358722295291,
+              "fullVolumeMm3": 560.1252671160798,
+              "attachedVolumeMm3": 334.1358722295291,
+              "fullToBooked": 0.24921016428522244,
+              "attachmentRetention": 0.5965377601155121,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 72,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 20.4008359281752,
+              "aWidthMm": 14.766506459754657,
+              "bookedVolumeMm3": 2329.174918693404,
+              "completedVolumeMm3": 346.333642311733,
+              "fullVolumeMm3": 580.5739243823773,
+              "attachedVolumeMm3": 346.333642311733,
+              "fullToBooked": 0.24926162467353957,
+              "attachmentRetention": 0.5965366816640406,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 73,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 20.722947637535157,
+              "aWidthMm": 14.999656937204323,
+              "bookedVolumeMm3": 2441.253081293305,
+              "completedVolumeMm3": 363.08400305305827,
+              "fullVolumeMm3": 608.6549916822206,
+              "attachedVolumeMm3": 363.08400305305827,
+              "fullToBooked": 0.2493207264524057,
+              "attachmentRetention": 0.5965349960402934,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 74,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 20.94073105591172,
+              "aWidthMm": 15.157292647113817,
+              "bookedVolumeMm3": 2519.0322811990613,
+              "completedVolumeMm3": 374.7074464968627,
+              "fullVolumeMm3": 628.1407479691446,
+              "attachedVolumeMm3": 374.7074464968627,
+              "fullToBooked": 0.24935795887067758,
+              "attachmentRetention": 0.5965342126081414,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 75,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.245111698380292,
+              "aWidthMm": 15.37760904684668,
+              "bookedVolumeMm3": 2630.4816219047657,
+              "completedVolumeMm3": 391.3531224919039,
+              "fullVolumeMm3": 656.0461611141392,
+              "attachedVolumeMm3": 391.3531224919039,
+              "fullToBooked": 0.24940153759336578,
+              "attachmentRetention": 0.5965329052871572,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 76,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 77,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 78,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 79,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 80,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 81,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 82,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 83,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 84,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 85,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 86,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 87,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 88,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 89,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.526173603237726,
+              "aWidthMm": 15.581046908328446,
+              "bookedVolumeMm3": 2736.2686259727834,
+              "completedVolumeMm3": 407.33413160760693,
+              "fullVolumeMm3": 682.8367569485761,
+              "attachedVolumeMm3": 407.33413160760693,
+              "fullToBooked": 0.24955033671294521,
+              "attachmentRetention": 0.5965322274504958,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 90,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.54277983626785,
+              "aWidthMm": 15.593066810266523,
+              "bookedVolumeMm3": 2742.606144847837,
+              "completedVolumeMm3": 408.293239520956,
+              "fullVolumeMm3": 684.4443090876565,
+              "attachedVolumeMm3": 408.293239520956,
+              "fullToBooked": 0.2495598248306376,
+              "attachmentRetention": 0.5965324484401053,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 91,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.608955653,
+              "aWidthMm": 15.640966103643283,
+              "bookedVolumeMm3": 2767.9583454964245,
+              "completedVolumeMm3": 412.12873486937434,
+              "fullVolumeMm3": 690.8729304719178,
+              "attachedVolumeMm3": 412.12873486937434,
+              "fullToBooked": 0.24959657777942895,
+              "attachmentRetention": 0.5965333373068469,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 92,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.702197769299282,
+              "aWidthMm": 15.708456490679485,
+              "bookedVolumeMm3": 2803.944195979953,
+              "completedVolumeMm3": 417.57118264208333,
+              "fullVolumeMm3": 699.9949313043754,
+              "attachedVolumeMm3": 417.57118264208333,
+              "fullToBooked": 0.2496465273124787,
+              "attachmentRetention": 0.5965345804204301,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 93,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 21.864718180458645,
+              "aWidthMm": 15.826091802765509,
+              "bookedVolumeMm3": 2867.4104756988813,
+              "completedVolumeMm3": 427.1662150539589,
+              "fullVolumeMm3": 716.0771238224053,
+              "attachedVolumeMm3": 427.1662150539589,
+              "fullToBooked": 0.24972954862623006,
+              "attachmentRetention": 0.5965366031716727,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 94,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 22.041886769503357,
+              "aWidthMm": 15.954329739867944,
+              "bookedVolumeMm3": 2937.680204313067,
+              "completedVolumeMm3": 437.7866247393748,
+              "fullVolumeMm3": 733.8780622697193,
+              "attachedVolumeMm3": 437.7866247393748,
+              "fullToBooked": 0.2498155044896474,
+              "attachmentRetention": 0.5965386448334475,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 95,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 22.21672104010559,
+              "aWidthMm": 16.080878053639186,
+              "bookedVolumeMm3": 3008.140392933381,
+              "completedVolumeMm3": 448.4325199698875,
+              "fullVolumeMm3": 751.7217668710516,
+              "attachedVolumeMm3": 448.4325199698875,
+              "fullToBooked": 0.24989583885013156,
+              "attachmentRetention": 0.5965405549402036,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 96,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 22.468515659152228,
+              "aWidthMm": 16.263131706468606,
+              "bookedVolumeMm3": 3111.582806645149,
+              "completedVolumeMm3": 464.0549665235306,
+              "fullVolumeMm3": 777.9071139972588,
+              "attachedVolumeMm3": 464.0549665235306,
+              "fullToBooked": 0.25000366769476523,
+              "attachmentRetention": 0.5965429010399381,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 97,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 22.720477522633537,
+              "aWidthMm": 16.445506413946653,
+              "bookedVolumeMm3": 3217.440913224405,
+              "completedVolumeMm3": 480.0365862857945,
+              "fullVolumeMm3": 804.6947501248621,
+              "attachedVolumeMm3": 480.0365862857945,
+              "fullToBooked": 0.2501039713945906,
+              "attachmentRetention": 0.5965449460324037,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 98,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 22.986359277684294,
+              "aWidthMm": 16.637956599189582,
+              "bookedVolumeMm3": 3331.7222330275663,
+              "completedVolumeMm3": 497.2821177728406,
+              "fullVolumeMm3": 833.6011985377872,
+              "attachedVolumeMm3": 497.2821177728406,
+              "fullToBooked": 0.2502012893734801,
+              "attachmentRetention": 0.5965467883744876,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 99,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 23.282023576849333,
+              "aWidthMm": 16.851963946678204,
+              "bookedVolumeMm3": 3461.946799113194,
+              "completedVolumeMm3": 516.9252098940049,
+              "fullVolumeMm3": 866.5268630921131,
+              "attachedVolumeMm3": 516.9252098940049,
+              "fullToBooked": 0.2503004561809214,
+              "attachmentRetention": 0.596548395567807,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 100,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 23.578561329401726,
+              "aWidthMm": 17.066603516058716,
+              "bookedVolumeMm3": 3595.920846556829,
+              "completedVolumeMm3": 537.1262702618186,
+              "fullVolumeMm3": 900.3882273246164,
+              "attachedVolumeMm3": 537.1262702618186,
+              "fullToBooked": 0.2503915591431211,
+              "attachmentRetention": 0.5965496371024505,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 101,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 23.90201953619943,
+              "aWidthMm": 17.300728613528005,
+              "bookedVolumeMm3": 3745.9502625117775,
+              "completedVolumeMm3": 559.7363775705821,
+              "fullVolumeMm3": 938.2882639547751,
+              "attachedVolumeMm3": 559.7363775705821,
+              "fullToBooked": 0.2504807053486138,
+              "attachmentRetention": 0.5965505474952429,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 102,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 24.1318360360806,
+              "aWidthMm": 17.46707409280156,
+              "bookedVolumeMm3": 3855.0437673745223,
+              "completedVolumeMm3": 576.1743830636833,
+              "fullVolumeMm3": 965.8421820388314,
+              "attachedVolumeMm3": 576.1743830636833,
+              "fullToBooked": 0.25053987459566984,
+              "attachmentRetention": 0.5965512728460625,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 103,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 24.377554636246842,
+              "aWidthMm": 17.64492980956783,
+              "bookedVolumeMm3": 3974.007029559981,
+              "completedVolumeMm3": 594.0950657405152,
+              "fullVolumeMm3": 995.881390229655,
+              "attachedVolumeMm3": 594.0950657405152,
+              "fullToBooked": 0.25059879935338797,
+              "attachmentRetention": 0.5965520307629346,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 104,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 24.618577336908917,
+              "aWidthMm": 17.81938654647824,
+              "bookedVolumeMm3": 4093.050210203157,
+              "completedVolumeMm3": 612.0231882921137,
+              "fullVolumeMm3": 1025.9330298488082,
+              "attachedVolumeMm3": 612.0231882921137,
+              "fullToBooked": 0.2506524418614172,
+              "attachmentRetention": 0.596552767564475,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 105,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 24.878065782827843,
+              "aWidthMm": 18.007209135041954,
+              "bookedVolumeMm3": 4223.845762061973,
+              "completedVolumeMm3": 631.7139450060367,
+              "fullVolumeMm3": 1058.939325837291,
+              "attachedVolumeMm3": 631.7139450060367,
+              "fullToBooked": 0.25070501753367624,
+              "attachmentRetention": 0.5965534847868151,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 106,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.116941934823597,
+              "aWidthMm": 18.18011215989571,
+              "bookedVolumeMm3": 4346.688321890998,
+              "completedVolumeMm3": 650.201501410995,
+              "fullVolumeMm3": 1089.9287068484964,
+              "attachedVolumeMm3": 650.201501410995,
+              "fullToBooked": 0.2507492201268137,
+              "attachmentRetention": 0.5965541574650672,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 107,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.353344600121222,
+              "aWidthMm": 18.351224828832937,
+              "bookedVolumeMm3": 4470.581263454733,
+              "completedVolumeMm3": 669.0013006855214,
+              "fullVolumeMm3": 1121.4422063146135,
+              "attachedVolumeMm3": 669.0013006855214,
+              "fullToBooked": 0.25084930576745545,
+              "attachmentRetention": 0.5965544161959581,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 108,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.353344600121222,
+              "aWidthMm": 18.351224828832937,
+              "bookedVolumeMm3": 4470.581263454733,
+              "completedVolumeMm3": 669.0013006855214,
+              "fullVolumeMm3": 1121.4422063146135,
+              "attachedVolumeMm3": 669.0013006855214,
+              "fullToBooked": 0.25084930576745545,
+              "attachmentRetention": 0.5965544161959581,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 109,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.353344600121222,
+              "aWidthMm": 18.351224828832937,
+              "bookedVolumeMm3": 4470.581263454733,
+              "completedVolumeMm3": 669.0013006855214,
+              "fullVolumeMm3": 1121.4422063146135,
+              "attachedVolumeMm3": 669.0013006855214,
+              "fullToBooked": 0.25084930576745545,
+              "attachmentRetention": 0.5965544161959581,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 110,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.353344600121222,
+              "aWidthMm": 18.351224828832937,
+              "bookedVolumeMm3": 4470.581263454733,
+              "completedVolumeMm3": 669.0013006855214,
+              "fullVolumeMm3": 1121.4422063146135,
+              "attachedVolumeMm3": 669.0013006855214,
+              "fullToBooked": 0.25084930576745545,
+              "attachmentRetention": 0.5965544161959581,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 111,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.353344600121222,
+              "aWidthMm": 18.351224828832937,
+              "bookedVolumeMm3": 4470.581263454733,
+              "completedVolumeMm3": 669.0013006855214,
+              "fullVolumeMm3": 1121.4422063146135,
+              "attachedVolumeMm3": 669.0013006855214,
+              "fullToBooked": 0.25084930576745545,
+              "attachmentRetention": 0.5965544161959581,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 112,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.396747544173603,
+              "aWidthMm": 18.382640691201438,
+              "bookedVolumeMm3": 4493.5804483204665,
+              "completedVolumeMm3": 672.4920135995037,
+              "fullVolumeMm3": 1127.2929133498726,
+              "attachedVolumeMm3": 672.4920135995037,
+              "fullToBooked": 0.2508674154862884,
+              "attachmentRetention": 0.5965548134256615,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 113,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.501221458569592,
+              "aWidthMm": 18.45826086369023,
+              "bookedVolumeMm3": 4549.264247904723,
+              "completedVolumeMm3": 680.9407997768429,
+              "fullVolumeMm3": 1141.4536784398092,
+              "attachedVolumeMm3": 680.9407997768429,
+              "fullToBooked": 0.2509095133274648,
+              "attachmentRetention": 0.5965557890247318,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 114,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.659732006505507,
+              "aWidthMm": 18.572993761806543,
+              "bookedVolumeMm3": 4634.624619127751,
+              "completedVolumeMm3": 693.8885104583718,
+              "fullVolumeMm3": 1163.155064174445,
+              "attachedVolumeMm3": 693.8885104583718,
+              "fullToBooked": 0.2509707171048847,
+              "attachmentRetention": 0.5965571847042274,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 115,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 25.857739202296514,
+              "aWidthMm": 18.716315072071467,
+              "bookedVolumeMm3": 4742.746020219353,
+              "completedVolumeMm3": 710.2810372390416,
+              "fullVolumeMm3": 1190.630420401918,
+              "attachedVolumeMm3": 710.2810372390416,
+              "fullToBooked": 0.2510424162133082,
+              "attachmentRetention": 0.5965587852184004,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 116,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 26.04201612810432,
+              "aWidthMm": 18.84969815622081,
+              "bookedVolumeMm3": 4844.8688601276235,
+              "completedVolumeMm3": 725.7595285003097,
+              "fullVolumeMm3": 1216.5738426306225,
+              "attachedVolumeMm3": 725.7595285003097,
+              "fullToBooked": 0.2511056290177017,
+              "attachmentRetention": 0.5965601947605458,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 117,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 26.227499674507015,
+              "aWidthMm": 18.983954614915767,
+              "bookedVolumeMm3": 4949.1302828534235,
+              "completedVolumeMm3": 741.5567822992234,
+              "fullVolumeMm3": 1243.0515403581887,
+              "attachedVolumeMm3": 741.5567822992234,
+              "fullToBooked": 0.2511656532188736,
+              "attachmentRetention": 0.5965615730507375,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 118,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 26.512235333714145,
+              "aWidthMm": 19.190051608480513,
+              "bookedVolumeMm3": 5112.075435393631,
+              "completedVolumeMm3": 766.2320982673644,
+              "fullVolumeMm3": 1284.410510919665,
+              "attachedVolumeMm3": 766.2320982673644,
+              "fullToBooked": 0.2512503047249664,
+              "attachmentRetention": 0.5965632418553832,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 119,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 26.78024964460107,
+              "aWidthMm": 19.38404537750802,
+              "bookedVolumeMm3": 5268.683119557688,
+              "completedVolumeMm3": 789.9348211642051,
+              "fullVolumeMm3": 1324.1397225436458,
+              "attachedVolumeMm3": 789.9348211642051,
+              "fullToBooked": 0.2513227105324203,
+              "attachmentRetention": 0.5965645526038266,
+              "contactRetention": 1
+            }
+          ]
+        },
+        {
+          "step": 120,
+          "crystals": [
+            {
+              "id": 1,
+              "habit": "scalenohedral",
+              "cLengthMm": 27.043450600694733,
+              "aWidthMm": 19.574555150345468,
+              "bookedVolumeMm3": 5425.559480132104,
+              "completedVolumeMm3": 813.6657699795259,
+              "fullVolumeMm3": 1363.91656675929,
+              "attachedVolumeMm3": 813.6657699795259,
+              "fullToBooked": 0.2513872664660347,
+              "attachmentRetention": 0.5965656476428189,
+              "contactRetention": 1
+            }
+          ]
+        }
+      ],
+      "crystals": [
+        {
+          "id": 1,
+          "habit": "scalenohedral",
+          "cLengthMm": 27.043450600694733,
+          "aWidthMm": 19.574555150345468,
+          "bookedVolumeMm3": 5425.559480132104,
+          "completedVolumeMm3": 813.6657699795259,
+          "fullVolumeMm3": 1363.91656675929,
+          "attachedVolumeMm3": 813.6657699795259,
+          "fullToBooked": 0.2513872664660347,
+          "attachmentRetention": 0.5965656476428189,
+          "contactRetention": 1
+        }
+      ]
+    },
+    {
+      "scenario": "naica_geothermal",
+      "steps": 320,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "7da8a27195e4cc169097b26329e4698a43ca04fe85b5f59f83f277beb8df3df7",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "ouro_preto",
+      "steps": 260,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "4b232551c3bb46db703ccb1ce8a2b0110aa76af23753af337b1db333951be522",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "porphyry",
+      "steps": 120,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "87ebffb5b3ec76322ed629ff7ba8cf36f2d68e8c612a5503f65f39e976889fc9",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "pulse",
+      "steps": 100,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "6d8a324cc3b37cd689198836c03eb71935f9c721da35ebfcb8b9d0cbfbd7d0a2",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "radioactive_pegmatite",
+      "steps": 120,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "15dae4381fd6ea08fe4a517f2076131941dced07c4e8415e1576bc0c9c1f58f8",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "reactivated_fluorite_vein",
+      "steps": 160,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 18964.965636945206,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 3,
+          "habit": "rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 18964.965636945206
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "ccbc253886497c21a08f0620b92eedfe2e5ceebaf747f8a6840343bf49be322c",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "reactive_wall",
+      "steps": 120,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "0dfbda770f0cfb6b10bc737d34f368e580dd5f69fa89e05482473f40f8a7dd87",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "roughten_gill",
+      "steps": 240,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 10.143632194010724,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 25,
+          "habit": "scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 10.143632194010724
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "c69973319640f642528b5d723cbbdff45048a64faec171c31069a46993ce8618",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "sabkha_dolomitization",
+      "steps": 260,
+      "wulffCalcite": false,
+      "calciteCount": 20,
+      "calciteBookedMm3": 2.2482309668698536e-9,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "hopper_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 8.686495148048496e-11
+        },
+        {
+          "id": 7,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 6.675910960137973e-10
+        },
+        {
+          "id": 35,
+          "habit": "dendritic_scalenohedral",
+          "twinned": true,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 3.631763350713311e-11
+        },
+        {
+          "id": 36,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 8.733811179913575e-12
+        },
+        {
+          "id": 37,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 8.959634041396279e-12
+        },
+        {
+          "id": 38,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 7.529593977522025e-12
+        },
+        {
+          "id": 39,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 8.1421123743206e-12
+        },
+        {
+          "id": 42,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.2644271560632374e-11
+        },
+        {
+          "id": 43,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.1737522117237874e-11
+        },
+        {
+          "id": 44,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 7.695864420926762e-12
+        },
+        {
+          "id": 55,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 4.07917153757762e-10
+        },
+        {
+          "id": 67,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.2155658659378265e-11
+        },
+        {
+          "id": 69,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 7.313149316926818e-11
+        },
+        {
+          "id": 70,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 3.440168063083237e-12
+        },
+        {
+          "id": 82,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.1770956285181589e-11
+        },
+        {
+          "id": 83,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 6.5333808145533356e-12
+        },
+        {
+          "id": 84,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.0158891392975712e-11
+        },
+        {
+          "id": 96,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.094576956497995e-11
+        },
+        {
+          "id": 97,
+          "habit": "dendritic_scalenohedral",
+          "twinned": true,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 1.2854422783095587e-11
+        },
+        {
+          "id": 98,
+          "habit": "dendritic_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 8.431065817062108e-10
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "95b658d108cc9ec1cf674b3a602fd815cdfc05290b6e1733e5851d1a3bc9b4f3",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "schneeberg",
+      "steps": 160,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "8a5726dd8fd521e4a54790f958645ab03282dc8c6d049daae2310266244ae079",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "searles_lake",
+      "steps": 300,
+      "wulffCalcite": false,
+      "calciteCount": 3,
+      "calciteBookedMm3": 1.4826398655005032e-7,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 7.871275853158007e-8
+        },
+        {
+          "id": 24,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 3.609562340361495e-11
+        },
+        {
+          "id": 25,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 6.951513239506664e-8
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "3f9b231d18018734cf3b9772d07d130bcb4cfdf92c1682b1670e34816e0b34c9",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "shigar_pegmatite",
+      "steps": 70,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "384b240d63fbf775e334455375d24f69084102498d6d02f58ec8d544b0ad9c14",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "sicily_solfifera",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 0.34709821945001407,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 12,
+          "habit": "rhombohedral",
+          "twinned": true,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 0.34709821945001407
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "c6432b586bec6ca531912e758081014d8519490e40a15f86cf693a117309d269",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "stalactite_demo",
+      "steps": 100,
+      "wulffCalcite": false,
+      "calciteCount": 2,
+      "calciteBookedMm3": 0.1450786311344761,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "stepped_rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": "euhedral_druse",
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 0.14332467533351462
+        },
+        {
+          "id": 2,
+          "habit": "stepped_rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 0.0017539558009614991
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "33b5378ec08944a559c607267a2283a862a671a07b790ec8cf39fd7e49006f51",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "sulphur_bank",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "b263e67295d641ff7bc3f526d9be39650cb336f845d3317ce6fe4169a4c65699",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "sunnyside_american_tunnel",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 53817.661288338946,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 29,
+          "habit": "botryoidal_manganocalcite",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": "botryoidal_crust",
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 53817.661288338946
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "708ab57e0f283e09b33bfcdd4c3d45c8a085ce3f0b62eb91e3feb5b81aa83fbd",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "supergene_oxidation",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "631acbe7c5e4bf02226fb777d1481cfa3238f3de9c4e9a65f1f99a07c4a659fc",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "tn457_barite_pulses",
+      "steps": 110,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "d555ceb73f077f9db7eada8bd5ab7ac3bec98682233783cf95063bd903958268",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "tormiq_alpine_cleft",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "ccec17cd9e8a2f5015202fe0781cc30576a06f2c96ad0b30cb849d74524a4571",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "tutorial_first_crystal",
+      "steps": 30,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "ff5b6d55ded893764ee9464df9e9193c4e552689ef09e8504fe33e9f40065672",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "tutorial_mn_calcite",
+      "steps": 30,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 2.173890561759165,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 2.173890561759165
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "4685b59c825026301e9b0fcd08bf752aa92e545a2b37a14bbb82887378851ddc",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "tutorial_travertine",
+      "steps": 60,
+      "wulffCalcite": false,
+      "calciteCount": 1,
+      "calciteBookedMm3": 0.38773718351775543,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 1,
+          "habit": "travertine_crust",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": "botryoidal_crust",
+          "growthEnvironment": "fluid",
+          "bookedVolumeMm3": 0.38773718351775543
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "2f7124518a92dad11b7257974b07659de617842774f7b8d31e4deed8a9d9c936",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "ultramafic_supergene",
+      "steps": 200,
+      "wulffCalcite": false,
+      "calciteCount": 4,
+      "calciteBookedMm3": 3.7587525180307536e-10,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 18,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 2.3565704265006484e-12
+        },
+        {
+          "id": 19,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 2.5800628381249837e-12
+        },
+        {
+          "id": 20,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 2.64126947736566e-12
+        },
+        {
+          "id": 21,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 3.682973490610841e-10
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "308e3e737a25b2686c430aa5ccaf74bada1047a4cafe86f20d4a81597f266974",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "wittichen",
+      "steps": 220,
+      "wulffCalcite": false,
+      "calciteCount": 0,
+      "calciteBookedMm3": 0,
+      "eligibleCount": 0,
+      "excluded": [],
+      "observationDidNotMutate": true,
+      "fingerprint": "2042b9ae4ca4a56601d5d229b1079c7c33f541955e64ad24b83005cebedf3033",
+      "historical": [],
+      "crystals": []
+    },
+    {
+      "scenario": "zoned_dripstone_cave",
+      "steps": 150,
+      "wulffCalcite": false,
+      "calciteCount": 4,
+      "calciteBookedMm3": 0.07977877546700214,
+      "eligibleCount": 0,
+      "excluded": [
+        {
+          "id": 2,
+          "habit": "stepped_rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 0.07654715773992958
+        },
+        {
+          "id": 7,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 0.0031331888802856264
+        },
+        {
+          "id": 8,
+          "habit": "stepped_scalenohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 0.00009838972038734527
+        },
+        {
+          "id": 9,
+          "habit": "rhombohedral",
+          "twinned": false,
+          "dissolved": false,
+          "hasForm": false,
+          "surfaceGrowth": null,
+          "growthEnvironment": "air",
+          "bookedVolumeMm3": 3.912639957535251e-8
+        }
+      ],
+      "observationDidNotMutate": true,
+      "fingerprint": "86250d6566ed3963fe32c78a5cf7601bbce02627461575f1db2285ce50b689c2",
+      "historical": [],
+      "crystals": []
+    }
+  ]
+}
