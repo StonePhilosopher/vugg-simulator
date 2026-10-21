@@ -8,7 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt,
+import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt, assertOwnedDevToolsVersion,
   captureOwnedBrowserProcessReceiptsForPort } from './browser-workflow.mjs';
 import { cleanupOwnedBrowserResources } from './benchmark-browser-cleanup.mjs';
 import { findOwnedBrowserExecutable } from './owned-browser-runtime.mjs';
@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'vugg-contact-lifecycle-'));
-let browser, browserPid, client, page, receipts = [];
+let browser, browserPid, client, page, receipts = [], devtoolsReceipt;
 const deadline = setTimeout(() => { void client?.send('Browser.close').catch(() => {}); }, 20 * 60_000);
 class ProbeClient extends CdpClient {
   send(method, params = {}, sessionId = null) {
@@ -72,13 +72,15 @@ try {
   { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
   browser.stderr.on('data', () => {});
   const devtools = await waitForDevToolsReceipt(profile, browser);
-  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port);
+  devtoolsReceipt = devtools;
+  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port, { devtoolsReceipt });
   receipts = owned.receipts; browserPid = owned.rootPid;
   save('helper.json', { owner: process.env.CODEX_THREAD_ID || `contact-lifecycle:${runId}`, purpose: 'bounded WebGL resource-lifecycle comparison',
     receipts, port, devtoolsPort: devtools.port, profile, start: new Date().toISOString(), expiryMinutes: 20,
     server: { pid: process.pid, executable: process.execPath, start: new Date(Date.now() - process.uptime() * 1000).toISOString() },
     source: 'tools/contact-geometry-lifecycle-benchmark.mjs', stop: 'CDP Browser.close and exact owned cleanup in finally; server.close' });
   const version = await (await fetch(`http://127.0.0.1:${devtools.port}/json/version`)).json();
+  assertOwnedDevToolsVersion(version, devtoolsReceipt);
   save('browser.json', version);
   client = new CdpClient(version.webSocketDebuggerUrl); await client.open();
   save('system.json', await client.send('SystemInfo.getInfo'));
@@ -241,7 +243,7 @@ try {
 } finally {
   clearTimeout(deadline);
   await cleanupOwnedBrowserResources({
-    browser, client, page, browserPid, receipts, profile,
+    browser, client, page, browserPid, receipts, profile, devtoolsReceipt,
     closeServer: () => new Promise(resolve => server.close(resolve)),
     removeProfile: async () => {
       if (path.dirname(profile) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-contact-lifecycle-')) throw new Error('Unexpected disposable profile path');

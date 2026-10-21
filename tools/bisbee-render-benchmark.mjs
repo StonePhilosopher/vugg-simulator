@@ -6,7 +6,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt,
+import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt, assertOwnedDevToolsVersion,
   captureOwnedBrowserProcessReceiptsForPort } from './browser-workflow.mjs';
 import { cleanupOwnedBrowserResources } from './benchmark-browser-cleanup.mjs';
 import { findOwnedBrowserExecutable } from './owned-browser-runtime.mjs';
@@ -44,7 +44,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
-let browser, client, page, receipts = [], browserPid;
+let browser, client, page, receipts = [], browserPid, devtoolsReceipt;
 const save = (name, value) => fs.writeFileSync(path.join(out, name), JSON.stringify(value, null, 2));
 const hostCpuSnapshot = () => os.cpus().map(cpu => ({ ...cpu.times }));
 const hostCpuInterval = before => {
@@ -81,12 +81,14 @@ try {
     { stdio:['ignore','ignore','pipe'], windowsHide:true });
   browser.stderr.on('data', () => {});
   const devtools = await waitForDevToolsReceipt(profile, browser);
-  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port);
+  devtoolsReceipt = devtools;
+  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port, { devtoolsReceipt });
   receipts = owned.receipts; browserPid = owned.rootPid;
   save('helper.json', {owner:process.env.CODEX_THREAD_ID || `bisbee-render-benchmark:${runId}`, purpose:'bounded Bisbee render profile', receipts, port, devtoolsPort:devtools.port,
     server:{pid:process.pid,executable:process.execPath,start:new Date(Date.now()-process.uptime()*1000).toISOString()},
     start:new Date().toISOString(), expiryMinutes:15, stop:'CDP Browser.close; exact owned identity cleanup in finally; in-process server.close', profile});
   const version = await (await fetch(`http://127.0.0.1:${devtools.port}/json/version`)).json();
+  assertOwnedDevToolsVersion(version, devtoolsReceipt);
   save('browser.json', version);
   client = new CdpClient(version.webSocketDebuggerUrl); await client.open();
   save('system.json', await client.send('SystemInfo.getInfo'));
@@ -252,7 +254,7 @@ try {
 } finally {
   clearTimeout(deadline);
   await cleanupOwnedBrowserResources({
-    browser, client, page, browserPid, receipts, profile,
+    browser, client, page, browserPid, receipts, profile, devtoolsReceipt,
     closeServer: () => new Promise(resolve => server.close(resolve)),
     removeProfile: async () => {
       if (path.dirname(profile) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-bisbee-')) throw new Error('Unexpected disposable profile path');

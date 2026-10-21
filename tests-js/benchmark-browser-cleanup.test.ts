@@ -4,7 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { captureOwnedBrowserProcessReceipts, ownedProcessExited, waitForDevToolsReceipt } from '../tools/browser-workflow.mjs';
-import { cleanupOwnedBrowserResources } from '../tools/benchmark-browser-cleanup.mjs';
+import { cleanupOwnedBrowserResources as cleanupImplementation } from '../tools/benchmark-browser-cleanup.mjs';
+const devtoolsReceipt = {port: 43123, webSocketDebuggerUrl: 'ws://127.0.0.1:43123/devtools/browser/owned-profile-uuid'};
+const refused = () => {throw Object.assign(new Error('No listener'), {code: 'ECONNREFUSED'});};
+function cleanupOwnedBrowserResources(resources: any, options: any = {}) {
+  return cleanupImplementation({devtoolsReceipt, ...resources}, {fetcher: refused, ...options});
+}
 class FakeOwnedProcess extends EventEmitter {
   pid: number;
   exitCode: number | null;
@@ -88,8 +93,8 @@ describe('benchmark browser cleanup', () => {
         }, {
           platform: 'win32', recoveryWaitMs: 10,
           processTreeProvider: async () => current,
-          ownedSnapshotProvider: async () => ({rootPid: 5000, rows: current}),
-          fetcher: async () => endpoint === 'unresponsive' ? new Promise(() => {}) : {
+          ownedSnapshotProvider: async () => ({rootPid: 5000, rootReceipt: root, listenerStartTicks: '500100', rows: current}),
+          fetcher: async () => !current.length ? refused() : endpoint === 'unresponsive' ? new Promise(() => {}) : {
             ok: true, status: 200,
             json: async () => ({webSocketDebuggerUrl: `ws://127.0.0.1:43123/devtools/browser/${endpoint === 'valid' ? 'owned-profile-uuid' : 'other-profile'}`}),
           },
@@ -121,7 +126,7 @@ describe('benchmark browser cleanup', () => {
   );
 
   it.each([
-    { start_ticks: 'reused-pid' },
+    { start_ticks: '600000' },
     { executable_path: 'unrelated.exe' },
   ])('does not authorize a refreshed root with changed identity %j', async change => {
     const root = { pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe' };
@@ -145,6 +150,62 @@ describe('benchmark browser cleanup', () => {
     expect(profileRemoved).toBe(true);
     expect(original).toEqual([root]);
   });
+
+  it('does not terminate a replacement acquired between the port lookup and process rows', async () => {
+    const profile = await mkdtemp(path.join(os.tmpdir(), 'vugg-owner-reuse-'));
+    const owner = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    const replacement = {...owner, start_ticks: '600000', executable_path: 'other.exe', parentPid: 9000};
+    const actions: string[] = [];
+    try {
+      await writeFile(path.join(profile, 'DevToolsActivePort'), '43123\n/devtools/browser/owned-profile-uuid\n');
+      await expect(cleanupOwnedBrowserResources({browser: new FakeOwnedProcess(4000, 0), profile,
+        closeServer: () => {actions.push('server');}, removeProfile: () => {actions.push('profile');},
+      }, {
+        platform: 'win32', processTreeProvider: async () => [replacement],
+        ownedSnapshotProvider: async () => ({rootPid: 5000, rootReceipt: owner, listenerStartTicks: '500100', rows: [replacement]}),
+        fetcher: async () => ({ok: true, json: async () => ({webSocketDebuggerUrl: devtoolsReceipt.webSocketDebuggerUrl})}),
+        createCdpClient: () => {throw new Error('Invalid owner must not acquire a client');},
+        terminateReceipt: async () => {actions.push('terminate-replacement');},
+      })).rejects.toThrow(/resources failed cleanup/);
+      expect(actions).toEqual(['server']);
+    } finally {await rm(profile, {recursive: true, force: true});}
+  });
+
+  it.each([{start_ticks: '0'}, {executable_path: ''}])('retains the profile for unreadable lifetime metadata: %j', async change => {
+    const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    const actions: string[] = [];
+    await expect(cleanupOwnedBrowserResources({browser: new FakeOwnedProcess(4000, 0), browserPid: 5000, receipts: [root],
+      closeServer: () => {actions.push('server');}, removeProfile: () => {actions.push('profile');},
+    }, {
+      platform: 'win32', processTreeProvider: async () => [{...root, ...change, parentPid: 4000}],
+      terminateReceipt: async () => {actions.push('terminate');},
+    })).rejects.toThrow(/resources failed cleanup/);
+    expect(actions).toEqual(['server']);
+  });
+
+  it.each(['owned-profile-uuid', 'replacement-nonce', 'timeout', 'mixed-refusal'])(
+    'retains the profile if the final endpoint check is unresolved: %s', async endpoint => {
+      const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+      let current = [{...root, parentPid: 4000}];
+      const actions: string[] = [];
+      await expect(cleanupOwnedBrowserResources({browser: new FakeOwnedProcess(4000, 0), browserPid: 5000, receipts: [root],
+        closeServer: () => {actions.push('server');}, removeProfile: () => {actions.push('profile');},
+      }, {
+        platform: 'win32', endpointWaitMs: 5, processTreeProvider: async () => current,
+        terminateReceipt: async () => {current = []; actions.push('terminate');},
+        fetcher: async () => {
+          if (endpoint === 'mixed-refusal') throw new AggregateError([
+            Object.assign(new Error('refused'), {code: 'ECONNREFUSED'}),
+            Object.assign(new Error('unknown'), {code: 'ETIMEDOUT'}),
+          ]);
+          return endpoint === 'timeout' ? new Promise(() => {}) : {
+            ok: true, json: async () => ({webSocketDebuggerUrl: `ws://127.0.0.1:43123/devtools/browser/${endpoint}`}),
+          };
+        },
+      })).rejects.toThrow(/resources failed cleanup/);
+      expect(actions).toEqual(['terminate', 'server']);
+    },
+  );
 
   it('refreshes descendants only under the original root and retains prior orphan receipts', async () => {
     const root = { pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe' };
@@ -170,7 +231,7 @@ describe('benchmark browser cleanup', () => {
   it('revalidates a child lifetime after stopping its parent', async () => {
     const root = {pid: 5000, parentPid: 4000, start_ticks: '500000', executable_path: 'chrome.exe'};
     const child = {pid: 5100, parentPid: 5000, start_ticks: '510000', executable_path: 'chrome.exe'};
-    const replacement = {...child, parentPid: 9999, start_ticks: 'reused', executable_path: 'other.exe'};
+    const replacement = {...child, parentPid: 9999, start_ticks: '610000', executable_path: 'other.exe'};
     let current = [root, child];
     const killed: number[] = [];
     await cleanupOwnedBrowserResources({browser: new FakeOwnedProcess(4000, 0), browserPid: 5000, receipts: [root, child]}, {
