@@ -555,6 +555,7 @@
         "layer_count": 2193,
         "formula_layers": [],
         "solid_solution_layers": [],
+        "celestine_history_layers": [],
         "binding_competition_allocations": [
           {
             "step": 20,

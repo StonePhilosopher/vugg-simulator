@@ -9,14 +9,14 @@
     "platform": "win32",
     "arch": "x64"
   },
-  "runtimeDigest": "82d81eb0d8439e7199eedf075c63fba7e5786fe0f4408ef076cba3217cb248e3",
+  "runtimeDigest": "cb0d79a2876a997050047f3490ecc020f2cc548a12dc5d6ae496c70da8fb8ebf",
   "scope": "plain untwinned Wulff calcite; all other calcite explicitly counted as excluded",
   "decision": "Preserve existing mass/growth rules; record measured factors; hold production integration.",
   "sourceHashes": {
-    "js/27-geometry-crystal.ts": "ae8aa56cdca6bebd6a9c29f6d4be48bd380b6c8527bd524f15c0b0cfdd12323a",
+    "js/27-geometry-crystal.ts": "f82d36decad0613b5238dd40168c44ce0eb3533c7664240a45b3f99e23e2b729",
     "js/45-morphology.ts": "4d878dd1f43c9b12b6925dfbe367220bca7980f06caf9bf88012b13d904bbfc6",
     "js/46-wulff-geometry.ts": "6f8cc6e7db0ba132f21f165444d72aa278b2ed7c1eabd0c8b3d8c0685b5ac4dd",
-    "js/99i-renderer-three.ts": "84158e4fb093d04c34962b6ff2f10635b3810a73dd9eeec918a9a43956337dda",
+    "js/99i-renderer-three.ts": "3ecfb4434ee9793e4e1cc89fcb752fe18ae81a20fbf230fa6eed08a46800ce58",
     "pilots/calcite/specimen.js": "2dc1432179630aaf7a7ed4d1ced3e871f360295866b85ca3594b67b58a15f86d",
     "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",
     "pilots/calcite/census.mjs": "c825e2114f2e3f85d5594315a49ecccc6ce534ffbc339296a672141d140ba664"
@@ -157,7 +157,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "bc647d0ab9a3ddc18e77f833bdc3ae1cd800258ab24a2d99045f8987852dd16d",
+      "fingerprint": "4793c1fcdf9c84ef9dd2e6afeca65da0328ba9d0e23d6866bf46fdcf599d0a2c",
       "historical": [],
       "crystals": []
     },
@@ -2386,7 +2386,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "7da8a27195e4cc169097b26329e4698a43ca04fe85b5f59f83f277beb8df3df7",
+      "fingerprint": "1e1316bf55a1281564d2b7db4e6de22a5b2839cebbd93d64acaafd134ad13292",
       "historical": [],
       "crystals": []
     },
@@ -2462,7 +2462,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "ccbc253886497c21a08f0620b92eedfe2e5ceebaf747f8a6840343bf49be322c",
+      "fingerprint": "009293b9813759641130de75c0289427b8eed649b7d4de90054b8351ce803afd",
       "historical": [],
       "crystals": []
     },
@@ -2713,7 +2713,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "95b658d108cc9ec1cf674b3a602fd815cdfc05290b6e1733e5851d1a3bc9b4f3",
+      "fingerprint": "3c20a396e7096b544a87cb391a226c818db23485e73fb068ecbf82378de692be",
       "historical": [],
       "crystals": []
     },
@@ -2770,7 +2770,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "3f9b231d18018734cf3b9772d07d130bcb4cfdf92c1682b1670e34816e0b34c9",
+      "fingerprint": "d5a2db7305b151e89573211a1a022f3fb488ed231f2052cd85979d60822b4bce",
       "historical": [],
       "crystals": []
     },
@@ -2807,7 +2807,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "c6432b586bec6ca531912e758081014d8519490e40a15f86cf693a117309d269",
+      "fingerprint": "7cccbb9e4fcbf8838bfaa10d5b5fd375097a966d9e42d0d4af759faab1ec2090",
       "historical": [],
       "crystals": []
     },

@@ -5,12 +5,12 @@
     "platform": "win32",
     "arch": "x64"
   },
-  "runtimeDigest": "82d81eb0d8439e7199eedf075c63fba7e5786fe0f4408ef076cba3217cb248e3",
+  "runtimeDigest": "cb0d79a2876a997050047f3490ecc020f2cc548a12dc5d6ae496c70da8fb8ebf",
   "sourceHashes": {
     "pilots/calcite/factor-audit.js": "947467367e679ff0970eed397e2ef36f68fc073eb6642a836b2f3ee54a2a43df",
     "pilots/calcite/factor-report.mjs": "309457da16cf31ad11352b5c1e4c893861f3490e0e1f918c46342f980682c727"
   },
-  "fleetReceiptSha256": "1cf7353b22322701b1ff764f3b1c78aed6cf8fa983c9e158dcc6643c9850fff3",
+  "fleetReceiptSha256": "dd86c7ec9798e488edfdb3863dfdccac3d260dec3f819ef26308b318c3b4006f",
   "fleet": {
     "scenarios": 41,
     "endpointCalcites": 44,
@@ -409,7 +409,7 @@
       }
     },
     "elmwood": {
-      "specimenSha256": "a2270788b0d5530fa170d27242d9f923c718c6d9cff9f265f22dc02972e82a07",
+      "specimenSha256": "71b00645afcdc101f061ed55575bedeaffcdb3a2b7a277f7f7a67627b64ab246",
       "sourceClass": "live Elmwood with explicit Wulff override",
       "audit": {
         "model": {
@@ -419,7 +419,7 @@
           "wulffCalciteOverride": true,
           "limitation": "Old pilot configuration, 16 steps; not authored default Elmwood or an independent geology validation",
           "simVersion": 285,
-          "runtimeDigest": "82d81eb0d8439e7199eedf075c63fba7e5786fe0f4408ef076cba3217cb248e3",
+          "runtimeDigest": "cb0d79a2876a997050047f3490ecc020f2cc548a12dc5d6ae496c70da8fb8ebf",
           "sourceHashes": {
             "pilots/calcite/authority.js": "73b8df9be6d0740fbd74a4ffda9fc9fe0e6c152c21c9d26f4be870d9dba9f2d4",
             "pilots/calcite/specimen.js": "2dc1432179630aaf7a7ed4d1ced3e871f360295866b85ca3594b67b58a15f86d",

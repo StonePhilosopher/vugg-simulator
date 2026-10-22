@@ -189,6 +189,11 @@ function _agentSpecimenJSON(simOverride?: any): any {
       c_length_mm: +(c.c_length_mm || 0).toFixed(2),
       a_width_mm: +(c.a_width_mm || 0).toFixed(2),
       habit: c.habit,
+      ...(c.mineral === 'celestine' ? {
+        habit_authority: 'legacy-numerical-classifier-not-lineage-identity',
+        celestine_origin: c.celestine_origin || null,
+        celestine_morphology: celestineGrowthHistoryAtStep(c)?.morphology || null,
+      } : {}),
       dominant_forms: Array.isArray(c.dominant_forms) ? c.dominant_forms.slice() : [],
       zones_count: (c.zones || []).length,
       total_growth_um: +(c.total_growth_um || 0).toFixed(1),
@@ -222,6 +227,7 @@ function _agentSpecimenJSON(simOverride?: any): any {
       ca_from_wall: +(z.ca_from_wall || 0).toFixed(2),
       is_phantom: !!z.is_phantom,
       note: z.note || null,
+      ...(z.celestine_history ? { celestine_history: z.celestine_history } : {}),
     }));
     return obj;
   });
