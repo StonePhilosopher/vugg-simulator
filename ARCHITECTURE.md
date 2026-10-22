@@ -20,6 +20,7 @@ If a section below is wrong, update the canonical source — not this file.
 | Current SIM_VERSION            | `js/15-version.ts`                                   |
 | Roadmap and decisions          | `proposals/BACKLOG.md` and individual `proposals/*.md` briefs |
 | Cavity geometry migration      | `proposals/PROPOSAL-MARCHING-CUBES-CAVITY.md`         |
+| Calcite authority contract (isolated; production held) | `pilots/calcite/README.md` |
 | Build pipeline                 | "Build pipeline" section below                       |
 | Module index (JS source)       | `js/README.md` — every prefix annotated, "find X by purpose" |
 | Modes shown to the player      | the title screen — open `index.html` and look       |

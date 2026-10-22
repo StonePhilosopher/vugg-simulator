@@ -6,10 +6,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt,
-  captureOwnedBrowserProcessReceiptsForPort, captureOwnedBrowserProcessReceipts,
-  terminateOwnedProcessReceipts, waitForOwnedExit,
-  runCleanupActions } from './browser-workflow.mjs';
+import { CdpClient, BrowserDriver, spawnOwned, waitForDevToolsReceipt, assertOwnedDevToolsVersion,
+  captureOwnedBrowserProcessReceiptsForPort } from './browser-workflow.mjs';
+import { cleanupOwnedBrowserResources } from './benchmark-browser-cleanup.mjs';
 import { findOwnedBrowserExecutable } from './owned-browser-runtime.mjs';
 import { summarizeBisbeeRenderComparison } from './bisbee-render-contract.mjs';
 import { assertIndexMatchesDist } from './evidence-runtime.mjs';
@@ -45,7 +44,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
-let browser, client, page, receipts = [], browserPid;
+let browser, client, page, receipts = [], browserPid, devtoolsReceipt;
 const save = (name, value) => fs.writeFileSync(path.join(out, name), JSON.stringify(value, null, 2));
 const hostCpuSnapshot = () => os.cpus().map(cpu => ({ ...cpu.times }));
 const hostCpuInterval = before => {
@@ -59,7 +58,7 @@ const hostCpuInterval = before => {
 };
 save('identity.json',{baseline,head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
   inputs:Object.fromEntries(['index.html','js/99i-renderer-three.ts','tools/three.module.js','data/scenarios.json5','data/minerals.json',
-    'tools/bisbee-render-benchmark.mjs','tools/bisbee-render-contract.mjs','tools/browser-workflow.mjs',
+    'tools/bisbee-render-benchmark.mjs','tools/bisbee-render-contract.mjs','tools/browser-workflow.mjs','tools/benchmark-browser-cleanup.mjs',
     'tools/owned-browser-runtime.mjs','tools/evidence-runtime.mjs'].map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')])),
   environment:{node:process.version,platform:process.platform,arch:process.arch,cpu:os.cpus()[0]?.model},
   trust:'measurement-only; identical meshes do not prove geological validity',coldVariant,seed:42,shape_seed:13,steps:340});
@@ -82,12 +81,14 @@ try {
     { stdio:['ignore','ignore','pipe'], windowsHide:true });
   browser.stderr.on('data', () => {});
   const devtools = await waitForDevToolsReceipt(profile, browser);
-  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port);
+  devtoolsReceipt = devtools;
+  const owned = await captureOwnedBrowserProcessReceiptsForPort(devtools.port, { devtoolsReceipt });
   receipts = owned.receipts; browserPid = owned.rootPid;
   save('helper.json', {owner:process.env.CODEX_THREAD_ID || `bisbee-render-benchmark:${runId}`, purpose:'bounded Bisbee render profile', receipts, port, devtoolsPort:devtools.port,
     server:{pid:process.pid,executable:process.execPath,start:new Date(Date.now()-process.uptime()*1000).toISOString()},
     start:new Date().toISOString(), expiryMinutes:15, stop:'CDP Browser.close; exact owned identity cleanup in finally; in-process server.close', profile});
   const version = await (await fetch(`http://127.0.0.1:${devtools.port}/json/version`)).json();
+  assertOwnedDevToolsVersion(version, devtoolsReceipt);
   save('browser.json', version);
   client = new CdpClient(version.webSocketDebuggerUrl); await client.open();
   save('system.json', await client.send('SystemInfo.getInfo'));
@@ -252,17 +253,13 @@ try {
   }
 } finally {
   clearTimeout(deadline);
-  if (browserPid) { try {receipts = await captureOwnedBrowserProcessReceipts(browserPid);} catch {} }
-  if (client) { await Promise.race([client.send('Browser.close').catch(()=>{}),new Promise(r=>setTimeout(r,2000))]); await waitForOwnedExit(browser,15000); }
-  await runCleanupActions([
-    ['page', async()=>page?.close()], ['client',async()=>client?.close()],
-    ['descendants',async()=>terminateOwnedProcessReceipts(receipts)],
-    ['browser-exit',async()=>{if(browser && !await waitForOwnedExit(browser,10000))throw new Error('Owned browser has not exited');}],
-    ['server',async()=>new Promise(r=>server.close(r))],
-    ['profile',async()=>{
-      if(path.dirname(profile)!==path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-bisbee-'))throw new Error('Unexpected disposable profile path');
-      await fs.promises.rm(profile,{recursive:true,force:true,maxRetries:4,retryDelay:200});
-    }],
-  ]);
+  await cleanupOwnedBrowserResources({
+    browser, client, page, browserPid, receipts, profile, devtoolsReceipt,
+    closeServer: () => new Promise(resolve => server.close(resolve)),
+    removeProfile: async () => {
+      if (path.dirname(profile) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('vugg-bisbee-')) throw new Error('Unexpected disposable profile path');
+      await fs.promises.rm(profile, { recursive: true, force: true, maxRetries: 4, retryDelay: 200 });
+    },
+  });
   save('cleanup.json',{closed:true,at:new Date().toISOString(),port,browserPid});
 }
