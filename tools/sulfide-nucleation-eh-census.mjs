@@ -27,12 +27,16 @@ for (const name of Object.keys(SCENARIOS).sort()) {
   const s = SCENARIOS[name]();
   const sim = new VugSimulator(s.conditions, s.events);
   const steps = s.defaultSteps ?? 100;
-  const eh = [];
-  for (let i = 0; i < steps; i++) { sim.run_step(); eh.push(sim.conditions.fluid.Eh); }
+  // ehEnd[k] is the fluid at the end of step k + 1; a birth in step n reads
+  // the end of its own step, ehEnd[n − 1]. This census used to read ehEnd[n],
+  // the end of the NEXT step, which put porphyry's step-84 stibnite (born at
+  // +44 mV) at +322 across step 85's oxidation event. See the same fix and its
+  // fleet measurement in tools/nucleation-eh-census.mjs (recipe review M12).
+  const ehEnd = [];
+  for (let i = 0; i < steps; i++) { sim.run_step(); ehEnd.push(sim.conditions.fluid.Eh); }
   for (const c of sim.crystals) {
     if (!SULFIDES.has(c.mineral)) continue;
-    const st = Math.min(c.nucleation_step ?? 0, eh.length - 1);
-    const E = eh[st];
+    const E = ehEnd[Math.max(0, Math.min((c.nucleation_step ?? 1) - 1, ehEnd.length - 1))];
     const ps = perSpecies[c.mineral] || (perSpecies[c.mineral] = { min: Infinity, max: -Infinity, n: 0 });
     ps.min = Math.min(ps.min, E); ps.max = Math.max(ps.max, E); ps.n++;
     if (E > 100) highEh.push({ name, m: c.mineral, step: c.nucleation_step, E });
