@@ -11,9 +11,13 @@
 
 // ---- Sulfide MINERAL_GATES exports (38 minerals — biggest engine class) ----
 
+// The six primary sulfides' O2_max (sphalerite, wurtzite, pyrite, marcasite,
+// chalcopyrite, galena) mirrors PRIMARY_SULFIDE_CEILING_O2 = 0.5 (js/20c,
+// Eh ≤ +100 mV). Display only: the σ bodies read the constant, so these
+// fields exist for the σ panel and Library (recipe review R7).
 const MINERAL_GATES_sphalerite: MineralGates = {
   sigma_crit: 1.0, T_optimal: 175,
-  fluid_min: { Zn: 10, S: 10 }, surface_energy: 'medium',
+  fluid_min: { Zn: 10, S: 10 }, O2_max: 0.5, surface_energy: 'medium',
   _sources: ['sphalerite engine v17+', 'Karthikeyan et al. 2002', 'Scott & Barnes 1972 GCA 36:1275 (inversion ~1020°C, f(S2)-univariant)'],
   // v228 (rung 2): the old note "wurtzite dimorph above 95°C" was the T>95
   // polymorph-selection lie the hostile review retired — the real inversion
@@ -36,32 +40,32 @@ const MINERAL_GATES_wurtzite: MineralGates = {
   // marcasite, GCA 50:2615); the metastable-branch conditions stand on the
   // verified sources above.
   sigma_crit: 1.0, T_max: 350, T_optimal: 250,
-  fluid_min: { Zn: 10, S: 10, Fe: 5 }, pH_max: 4.0,
+  fluid_min: { Zn: 10, S: 10, Fe: 5 }, O2_max: 0.5, pH_max: 4.0,
   surface_energy: 'medium',
   _sources: ['wurtzite engine v17+', 'Scott & Barnes 1972 GCA 36:1275', 'GCA 340:99 (2023) nanoscale ZnS surface energetics', 'VMS black-smoker wurtzite ~250-300°C (sphalerite-wurtzite assemblages)'],
   _notes: 'ZnS hexagonal — METASTABLE kinetic-trap polymorph only (v228): pH<4 + σ_base≥1 + Fe≥5, T≤350. Aachen schalenblende / AMD / VMS acid-vent wurtzite. The equilibrium field starts ~1020°C — not a vug regime.',
 };
 const MINERAL_GATES_pyrite: MineralGates = {
   sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
-  fluid_min: { Fe: 5, S: 10 }, O2_max: 1.5, pH_min: 3.5,
+  fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_min: 3.5,
   surface_energy: 'medium', _sources: ['pyrite engine v17+'],
   _notes: 'FeS2 cubic — fool\'s gold. Marcasite is the orthorhombic acid-loving dimorph.',
 };
 const MINERAL_GATES_marcasite: MineralGates = {
   sigma_crit: 1.0, T_max: 240, T_optimal: 100,
-  fluid_min: { Fe: 5, S: 10 }, O2_max: 1.5, pH_max: 5.0,
+  fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_max: 5.0,
   surface_energy: 'medium', _sources: ['marcasite engine v17+'],
   _notes: 'FeS2 orthorhombic — acid pH<5 + T<240 required (pyrite is the alkaline/hot dimorph).',
 };
 const MINERAL_GATES_chalcopyrite: MineralGates = {
   sigma_crit: 1.0, T_min: 180, T_max: 600, T_optimal: 400,
-  fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 1.5,
+  fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 0.5,
   surface_energy: 'medium', _sources: ['chalcopyrite engine v17+', 'Seo et al. 2012'],
   _notes: 'CuFeS2 — primary porphyry Cu mineral. 300-500°C sweet spot.',
 };
 const MINERAL_GATES_galena: MineralGates = {
   sigma_crit: 1.0, T_optimal: 300,
-  fluid_min: { Pb: 5, S: 10 }, O2_max: 1.5,
+  fluid_min: { Pb: 5, S: 10 }, O2_max: 0.5,
   surface_energy: 'medium', _sources: ['galena engine v13+', 'Anderson 1962'],
   _notes: 'PbS cubic — MVT diagnostic. Most heavily exercised mineral in sim.',
 };

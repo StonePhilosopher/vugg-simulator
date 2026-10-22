@@ -228,7 +228,8 @@ const MINERAL_GATES_willemite: MineralGates = {
   sigma_crit: 1.0,
   T_min: 50, T_max: 700, T_optimal: 115,
   fluid_min: { Zn: 50, SiO2: 100 },
-  O2_min: 0.3,
+  // Display only — the σ body enforces its own inline O2 ≥ 0.5 (rung 4a).
+  O2_min: 0.5,
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'medium',
   _sources: ['willemite engine v98+', 'Franklin/Sterling NJ + Skorpion literature'],

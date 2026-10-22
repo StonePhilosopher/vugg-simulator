@@ -52,7 +52,7 @@ const MINERAL_GATES_descloizite: MineralGates = {
 const MINERAL_GATES_mottramite: MineralGates = {
   sigma_crit: 1.0,
   T_optimal: 40,
-  fluid_min: { Pb: 40, Cu: 50, V: 4, Zn: 0.5 },
+  fluid_min: { Pb: 40, Cu: 50, V: 4 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',

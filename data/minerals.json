@@ -3640,8 +3640,7 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Ca": 50,
-        "S": 20,
-        "O2": 0.3
+        "S": 20
       },
       "trace_ingredients": {
         "Mn": "pale-lavender angelite variant trace",
@@ -5089,8 +5088,7 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Ca": 20,
-        "S": 15,
-        "O2": 0.2
+        "S": 15
       },
       "trace_ingredients": {},
       "thermal_decomp_C": 150,

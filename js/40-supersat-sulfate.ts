@@ -46,7 +46,9 @@ const MINERAL_GATES_anhydrite: MineralGates = {
   // mass-balanced path through evaluateCaSO4System/applyCaSO4PhaseTransition.
   T_min: 100, T_optimal: 150,
   fluid_min: { Ca: 50, S: 20 },
-  O2_min: 0.3,
+  // No O2 field: evaluateCaSO4System applies no O2 test. Redox enters only
+  // through the sulfate amount (sulfateAvailablePpm). The old O2_min 0.3 was
+  // read by nothing but the σ panel (recipe review R7).
   pH_min: 5, pH_max: 9,
   surface_energy: 'medium',
   _sources: ['anhydrite engine v17+', 'Blount & Dickson 1973', 'Ossorio et al. 2014 Chem. Geol. 386:16 (no primary anhydrite ≤120°C)', 'Voigt & Freyer 2023 Front. Nucl. Eng. 2:1208582 (kinetic floor ~100°C; equilibrium boundary 42°C is NOT a nucleation gate)'],
@@ -142,7 +144,7 @@ const MINERAL_GATES_selenite: MineralGates = {
   // elmwood minted gypsum at 88.6°C from a reduced MVT brine.
   T_max: 80, T_optimal: 30,
   fluid_min: { Ca: 20, S: 15 },
-  O2_min: 0.2,
+  // No O2 field — see anhydrite: evaluateCaSO4System has no O2 test.
   surface_energy: 'low',
   _sources: ['selenite engine v17+', 'Van Driessche et al. 2016', 'Ossorio et al. 2014 Chem. Geol. 386:16 (primary-gypsum ceiling 80°C)', 'Voigt & Freyer 2023 (equilibrium 42±1°C ≠ nucleation bound)'],
   _notes: 'CaSO4·2H2O — Pulpí 20°C, Naica 54.5°C. v228: hard nucleation ceiling 80°C (Ossorio 2014); soft decay above 60°C within the window; T<40 bonus.',
