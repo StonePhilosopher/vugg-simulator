@@ -31,6 +31,7 @@ const MINERAL_GATES_halite: MineralGates = {
 };
 
 const MINERAL_GATES_atacamite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.2,
   T_min: 5,
   T_max: 200,
@@ -45,6 +46,7 @@ const MINERAL_GATES_atacamite: MineralGates = {
 };
 
 const MINERAL_GATES_sylvite: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.0,
   T_optimal: 25,
   T_max: 200,                   // σ attenuates above 100; effectively gated by 200

@@ -12,6 +12,7 @@
 // ---- Sulfate MINERAL_GATES exports ----
 
 const MINERAL_GATES_barite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 125,
   fluid_min: { Ba: 5, S: 10 },
@@ -23,6 +24,8 @@ const MINERAL_GATES_barite: MineralGates = {
 };
 
 const MINERAL_GATES_celestine: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 80,
   fluid_min: { Sr: 3, S: 10 },
@@ -56,6 +59,7 @@ const MINERAL_GATES_anhydrite: MineralGates = {
 };
 
 const MINERAL_GATES_brochantite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Cu: 10, S: 15 },
@@ -67,6 +71,7 @@ const MINERAL_GATES_brochantite: MineralGates = {
 };
 
 const MINERAL_GATES_antlerite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Cu: 15, S: 20 },
@@ -78,6 +83,7 @@ const MINERAL_GATES_antlerite: MineralGates = {
 };
 
 const MINERAL_GATES_jarosite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { K: 5, Fe: 10, S: 20 },
@@ -89,6 +95,7 @@ const MINERAL_GATES_jarosite: MineralGates = {
 };
 
 const MINERAL_GATES_alunite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 125,
   fluid_min: { K: 5, Al: 10, S: 20 },
@@ -100,6 +107,8 @@ const MINERAL_GATES_alunite: MineralGates = {
 };
 
 const MINERAL_GATES_chalcanthite: MineralGates = {
+  soft: ['T_min', 'T_max'],
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 10, T_max: 50, T_optimal: 30,
   fluid_min: { Cu: 30, S: 50 },
@@ -111,6 +120,7 @@ const MINERAL_GATES_chalcanthite: MineralGates = {
 };
 
 const MINERAL_GATES_mirabilite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_max: 32, T_optimal: 5,
   fluid_min: { Na: 50, S: 50 },
@@ -122,6 +132,7 @@ const MINERAL_GATES_mirabilite: MineralGates = {
 };
 
 const MINERAL_GATES_thenardite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 25, T_optimal: 60,
   fluid_min: { Na: 50, S: 50 },
@@ -151,6 +162,7 @@ const MINERAL_GATES_selenite: MineralGates = {
 };
 
 const MINERAL_GATES_anglesite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.1,
   T_optimal: 30,
   fluid_min: { Pb: 15, S: 15 },
@@ -162,6 +174,7 @@ const MINERAL_GATES_anglesite: MineralGates = {
 };
 
 const MINERAL_GATES_linarite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 25,
   fluid_min: { Pb: 30, Cu: 10, S: 50 },
@@ -173,6 +186,7 @@ const MINERAL_GATES_linarite: MineralGates = {
 };
 
 const MINERAL_GATES_caledonite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 25,
   fluid_min: { Pb: 30, Cu: 10, S: 50, CO3: 5 },
@@ -184,6 +198,7 @@ const MINERAL_GATES_caledonite: MineralGates = {
 };
 
 const MINERAL_GATES_leadhillite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 30,
   fluid_min: { Pb: 50, S: 30, CO3: 30 },

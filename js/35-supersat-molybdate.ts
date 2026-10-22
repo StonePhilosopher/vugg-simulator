@@ -72,6 +72,7 @@ const MINERAL_GATES_scheelite: MineralGates = {
 };
 
 const MINERAL_GATES_powellite: MineralGates = {
+  soft: ['pH_min'],
   sigma_crit: 1.2,
   T_min: 5,
   T_max: 250,
@@ -85,6 +86,7 @@ const MINERAL_GATES_powellite: MineralGates = {
 };
 
 const MINERAL_GATES_wolframite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.3,
   T_min: 200,
   T_max: 600,

@@ -20159,11 +20159,16 @@ const MIN_RESOLVABLE_SOLID_THICKNESS_UM = 5.0;
 //
 // Fields are optional EXCEPT sigma_crit + surface_energy:
 //   - sigma_crit:        nucleation threshold (σ ≤ this → no nucleation)
-//   - T_min/T_max:       hard cutoffs (σ → 0 outside this range)
+//   - T_min/T_max:       hard cutoffs (σ → 0 outside this range), unless listed
+//                        in `soft`
 //   - T_optimal:         used by initiative temperature modifier
 //   - fluid_min:         per-species composition floor (σ → 0 below)
-//   - pH_min/pH_max:     hard pH cutoffs
+//   - pH_min/pH_max:     hard pH cutoffs, unless listed in `soft`
 //   - O2_min/O2_max:     redox windows (for oxidizing- or reducing-only minerals)
+//   - soft:              bounds the σ body only ATTENUATES (σ decays, never cut
+//                        to zero). The σ panel shows them as soft; the
+//                        initiative module still reads T_min/T_max unchanged
+//   - redox_bypass:      a redox route the O2 fields cannot show (display only)
 //   - surface_energy:    γ_sl category (per 01-geochemical-grounding.md)
 //   - _sources:          literature / engine references
 //   - _notes:            free-form notes
@@ -20171,8 +20176,9 @@ const MIN_RESOLVABLE_SOLID_THICKNESS_UM = 5.0;
 // Conventions:
 //   - "Hard cutoff" means σ → 0 (mineral cannot fire). "Attenuation"
 //     (exponential decay above some threshold) is engine-specific and
-//     stays inline in the supersat function — gates carry only the
-//     hard cutoffs.
+//     stays inline in the supersat function. Gates carry the hard cutoffs;
+//     a bound kept for display or for the initiative module although the
+//     σ only attenuates there must be listed in `soft`.
 //   - σ_crit is the LOWEST σ-threshold in the nucleation file. If
 //     a mineral has secondary nucleation gates (e.g., lepidocrocite
 //     σ > 1.7 for additional crystals), that's not in MINERAL_GATES.
@@ -39856,6 +39862,7 @@ class Crystal {
 // All arsenates use arsenateAvailablePpm helper for As(V) state-aware
 // composition; sigma_crit 1.0 for most; substrate discount applies in nucleation.
 const MINERAL_GATES_olivenite = {
+    soft: ['T_min', 'T_max', 'pH_min', 'pH_max'],
     sigma_crit: 1.0,
     T_min: 10, T_max: 60, T_optimal: 30,
     fluid_min: { Cu: 50, As: 10, Zn: 0.5 },
@@ -39896,6 +39903,7 @@ const MINERAL_GATES_annabergite = {
     _notes: 'Ni3(AsO4)2·8H2O nickel bloom — Ni equivalent of erythrite.',
 };
 const MINERAL_GATES_adamite = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.0,
     T_optimal: 30,
     fluid_min: { Zn: 10, As: 5, Cu: 0.5 },
@@ -40799,6 +40807,7 @@ const MINERAL_GATES_rhodochrosite = {
     _notes: 'MnCO3 pink carbonate — structurally identical to calcite (R3̄c).',
 };
 const MINERAL_GATES_malachite = {
+    soft: ['pH_min'],
     sigma_crit: 1.0,
     T_optimal: 30,
     fluid_min: { Cu: 5, CO3: 20 },
@@ -40830,6 +40839,7 @@ const MINERAL_GATES_smithsonite = {
     _notes: 'Supergene-only (T 10-50°C optimum). v17 tightened from 200°C to 100°C hard cap to match research.',
 };
 const MINERAL_GATES_azurite = {
+    soft: ['pH_min'],
     sigma_crit: 1.4,
     T_optimal: 30,
     fluid_min: { Cu: 20, CO3: 120 },
@@ -42125,6 +42135,7 @@ const MINERAL_GATES_halite = {
     _notes: 'rung-5: σ = (brine_strength/10.6)² where brine_strength = (salinity/35)×concentration in seawater multiples; halite onset 10.6× (Usiglio). Na/Cl floors are presence gates only. T > 100 attenuates 0.7×.',
 };
 const MINERAL_GATES_atacamite = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.2,
     T_min: 5,
     T_max: 200,
@@ -42138,6 +42149,7 @@ const MINERAL_GATES_atacamite = {
     _notes: 'Arid Cu-supergene chloride. Wins over malachite/brochantite/chrysocolla when Cl dominates Cu-pairing. CO3 > 100 and S > 100 suppress.',
 };
 const MINERAL_GATES_sylvite = {
+    soft: ['T_max'],
     sigma_crit: 1.0,
     T_optimal: 25,
     T_max: 200, // σ attenuates above 100; effectively gated by 200
@@ -42441,6 +42453,7 @@ const MINERAL_GATES_scheelite = {
     _notes: 'CaWO4 — hydrothermal Ca-tungstate. Bright blue-white SW UV fluorescence (diagnostic vs wolframite).',
 };
 const MINERAL_GATES_powellite = {
+    soft: ['pH_min'],
     sigma_crit: 1.2,
     T_min: 5,
     T_max: 250,
@@ -42453,6 +42466,7 @@ const MINERAL_GATES_powellite = {
     _notes: 'CaMoO4 — supergene oxidation of molybdenite. Bright yellow SW UV (vs scheelite blue).',
 };
 const MINERAL_GATES_wolframite = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.3,
     T_min: 200,
     T_max: 600,
@@ -42679,6 +42693,7 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
 // ---- Native MINERAL_GATES exports ----
 const MINERAL_GATES_native_tellurium = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 100, T_max: 400, T_optimal: 225,
     fluid_min: { Te: 0.5 },
@@ -42689,6 +42704,7 @@ const MINERAL_GATES_native_tellurium = {
     _notes: 'Te° native — Cripple Creek bonanza pocket. Au > 1 blocks. Soft Ag/Pb/Bi suppressors.',
 };
 const MINERAL_GATES_native_sulfur = {
+    soft: ['T_max'],
     sigma_crit: 1.0,
     T_max: 200, T_optimal: 50,
     fluid_min: { S_elemental: 100 },
@@ -42699,6 +42715,7 @@ const MINERAL_GATES_native_sulfur = {
     _notes: 'Consumes an explicit S° precursor pool. Sulphur Bank creates it by H2S + ½O2 → S° + H2O; Sicily carries separately sourced, inherited microbial S° under anoxic conditions. Dissolved sulfide and sulfate cannot be spent as native sulfur.',
 };
 const MINERAL_GATES_native_arsenic = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 100, T_max: 350, T_optimal: 225,
     fluid_min: { As: 5 },
@@ -42709,6 +42726,7 @@ const MINERAL_GATES_native_arsenic = {
     _notes: 'As° — As(III) dominant fluids, five-element-vein chemistry. Soft S+Fe suppressors (Path C local-vs-bulk).',
 };
 const MINERAL_GATES_native_silver = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 50, T_max: 300, T_optimal: 150,
     fluid_min: { Ag: 1.0 },
@@ -42719,6 +42737,7 @@ const MINERAL_GATES_native_silver = {
     _notes: 'Ag° — five-element-vein + Tsumeb supergene-enrichment + Keweenaw co-precipitation. Soft S suppressor (Path C).',
 };
 const MINERAL_GATES_native_bismuth = {
+    soft: ['T_min'],
     sigma_crit: 1.0,
     T_min: 100, T_max: 270, T_optimal: 175,
     fluid_min: { Bi: 5 },
@@ -42729,6 +42748,7 @@ const MINERAL_GATES_native_bismuth = {
     _notes: 'Bi° — bismuthinite paragenetic step-down. Soft S suppressor.',
 };
 const MINERAL_GATES_native_gold = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 20, T_max: 700, T_optimal: 200,
     fluid_min: { Au: 0.5 },
@@ -42737,6 +42757,7 @@ const MINERAL_GATES_native_gold = {
     _notes: 'Au° — tolerant of both Eh regimes. Substrate-pref chalcocite (Bisbee enrichment-blanket) > pyrite (orogenic) > bornite.',
 };
 const MINERAL_GATES_native_copper = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.6,
     T_min: 20, T_max: 300, T_optimal: 85,
     fluid_min: { Cu: 50 },
@@ -43290,6 +43311,7 @@ const MINERAL_GATES_uraninite = {
     _notes: 'UO2 pegmatitic + reducing. T > 200 boosts σ by 1.3×. Anoxic gate distinguishes from oxidized uranyl phases.',
 };
 const MINERAL_GATES_magnetite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 100, T_max: 800, T_optimal: 450,
     fluid_min: { Fe: 25 },
@@ -43917,6 +43939,7 @@ const MINERAL_GATES_plumbogummite = {
 // Caldbeck V suite (vanadinite + mottramite + descloizite): Kingsbury
 // & Hartley 1956 MinMag; Stanley, Symes & Jones 1991 MinMag 55:121.
 const MINERAL_GATES_descloizite = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.0,
     T_optimal: 40,
     fluid_min: { Pb: 40, Zn: 50, V: 4, Cu: 0.5 },
@@ -43927,6 +43950,7 @@ const MINERAL_GATES_descloizite = {
     _notes: 'PbZn(VO4)(OH) — Zn-dominant Pb-Zn-V (Zn/(Zn+Cu) ≥ 0.5).',
 };
 const MINERAL_GATES_mottramite = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.0,
     T_optimal: 40,
     fluid_min: { Pb: 40, Cu: 50, V: 4 },
@@ -44083,6 +44107,7 @@ const MINERAL_GATES_apatite = {
     _notes: 'Ca5(PO4)3(F,Cl,OH) — apatite-supergroup parent. Wide T-window (50-1000°C). Pb > 30 + T < 100 suppresses (pyromorphite/mimetite drain P).',
 };
 const MINERAL_GATES_turquoise = {
+    soft: ['pH_min', 'pH_max'],
     sigma_crit: 1.3,
     T_min: 5, T_max: 80, T_optimal: 32,
     fluid_min: { Cu: 5, Al: 3, P: 1 },
@@ -44714,6 +44739,7 @@ const MINERAL_GATES_albite = {
     _notes: 'NaAlSi3O8 — Na-feldspar. More acid-resistant than K-feldspar (pH 3 vs 4 cutoff).',
 };
 const MINERAL_GATES_lepidolite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.2,
     T_min: 350, T_max: 700, T_optimal: 450,
     fluid_min: { K: 10, Li: 15, Al: 10, SiO2: 200, F: 5 },
@@ -44723,6 +44749,7 @@ const MINERAL_GATES_lepidolite = {
     _notes: 'K(Li,Al)3(Al,Si)4O10(F,OH)2 — Li-mica. Mn → pink/purple coloration. Fe > 100 ppm routes to zinnwaldite.',
 };
 const MINERAL_GATES_spodumene = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.5,
     T_min: 400, T_max: 800, T_optimal: 525,
     fluid_min: { Li: 8, Al: 5, SiO2: 40 },
@@ -44741,6 +44768,7 @@ const MINERAL_GATES_chrysocolla = {
     _notes: '(Cu,Al)2H2Si2O5(OH)4·nH2O — cyan supergene Cu silicate. CO3 > SiO2 routes to malachite.',
 };
 const MINERAL_GATES_beryl = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 300, T_max: 700, T_optimal: 450,
     fluid_min: { Be: 10, Al: 6, SiO2: 50 },
@@ -44749,6 +44777,7 @@ const MINERAL_GATES_beryl = {
     _notes: 'Be3Al2Si6O18 — pegmatite cyclosilicate. Chromophore-free variant. Cr/V → emerald, Mn → morganite, Fe → aquamarine/heliodor.',
 };
 const MINERAL_GATES_emerald = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 300, T_max: 700, T_optimal: 450,
     fluid_min: { Be: 10, Al: 6, SiO2: 50, Cr: 0.5 },
@@ -44757,6 +44786,7 @@ const MINERAL_GATES_emerald = {
     _notes: 'Cr or V chromophore-bearing beryl. V ≥ 1.0 also fires.',
 };
 const MINERAL_GATES_aquamarine = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 300, T_max: 700, T_optimal: 450,
     fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 8 },
@@ -44765,6 +44795,7 @@ const MINERAL_GATES_aquamarine = {
     _notes: 'Fe2+ chromophore beryl. Fe ≥ 15 with O2 > 0.5 routes to heliodor instead.',
 };
 const MINERAL_GATES_morganite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 300, T_max: 700, T_optimal: 450,
     fluid_min: { Be: 10, Al: 6, SiO2: 50, Mn: 2.0 },
@@ -44773,6 +44804,7 @@ const MINERAL_GATES_morganite = {
     _notes: 'Mn2+ chromophore beryl — pink-peach variant.',
 };
 const MINERAL_GATES_heliodor = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0,
     T_min: 300, T_max: 700, T_optimal: 450,
     fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 15 },
@@ -44782,6 +44814,7 @@ const MINERAL_GATES_heliodor = {
     _notes: 'Fe3+ chromophore beryl — yellow-gold variant. Requires oxidizing conditions for Fe(III) state.',
 };
 const MINERAL_GATES_tourmaline = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.3,
     T_min: 350, T_max: 700, T_optimal: 500,
     fluid_min: { Na: 3, B: 6, Al: 8, SiO2: 60 },
@@ -44790,6 +44823,7 @@ const MINERAL_GATES_tourmaline = {
     _notes: 'Na(Mg,Fe,Mn,Li,Al)3Al6(Si6O18)(BO3)3(OH,F)4 — pegmatite cyclo-borosilicate. Schorl/dravite/elbaite/uvite varieties.',
 };
 const MINERAL_GATES_topaz = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.4,
     T_min: 300, T_max: 600, T_optimal: 370,
     fluid_min: { Al: 3, SiO2: 200, F: 20 },
@@ -46997,6 +47031,7 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
 // ---- Sulfate MINERAL_GATES exports ----
 const MINERAL_GATES_barite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 125,
     fluid_min: { Ba: 5, S: 10 },
@@ -47007,6 +47042,8 @@ const MINERAL_GATES_barite = {
     _notes: 'BaSO4 — heavy spar, MVT gangue. T optimum 50-200°C. O2 saturates at SO4/H2S boundary (0.4), not at full oxidation — allows galena+barite coexistence.',
 };
 const MINERAL_GATES_celestine = {
+    soft: ['pH_min', 'pH_max'],
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 80,
     fluid_min: { Sr: 3, S: 10 },
@@ -47038,6 +47075,7 @@ const MINERAL_GATES_anhydrite = {
     _notes: 'CaSO4 — direct nucleation ≥100°C only. Below that, anhydrite requires gypsum replacement. Hardie water-activity/pressure stability is separate from nucleability.',
 };
 const MINERAL_GATES_brochantite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 30,
     fluid_min: { Cu: 10, S: 15 },
@@ -47048,6 +47086,7 @@ const MINERAL_GATES_brochantite = {
     _notes: 'Cu4(SO4)(OH)6 — wet-supergene Cu sulfate (pH 4-7 fork end). Substrate pref dissolving chalcocite/covellite.',
 };
 const MINERAL_GATES_antlerite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 30,
     fluid_min: { Cu: 15, S: 20 },
@@ -47058,6 +47097,7 @@ const MINERAL_GATES_antlerite = {
     _notes: 'Cu3(SO4)(OH)4 — dry-acid Cu sulfate (pH 1-3.5 fork end). Substrate-prefers dissolving brochantite (pH-fork conversion).',
 };
 const MINERAL_GATES_jarosite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 30,
     fluid_min: { K: 5, Fe: 10, S: 20 },
@@ -47068,6 +47108,7 @@ const MINERAL_GATES_jarosite = {
     _notes: 'KFe3(SO4)2(OH)6 — acid mine drainage yellow. Substrate-pref dissolving pyrite/marcasite (diagnostic yellow rim).',
 };
 const MINERAL_GATES_alunite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_optimal: 125,
     fluid_min: { K: 5, Al: 10, S: 20 },
@@ -47078,6 +47119,8 @@ const MINERAL_GATES_alunite = {
     _notes: 'KAl3(SO4)2(OH)6 — advanced argillic alteration index. Substrate-pref dissolving feldspar (Al source).',
 };
 const MINERAL_GATES_chalcanthite = {
+    soft: ['T_min', 'T_max'],
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_min: 10, T_max: 50, T_optimal: 30,
     fluid_min: { Cu: 30, S: 50 },
@@ -47088,6 +47131,7 @@ const MINERAL_GATES_chalcanthite = {
     _notes: 'CuSO4·5H2O — blue vitriol. Requires salinity > 5.0 (evaporative concentration).',
 };
 const MINERAL_GATES_mirabilite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_max: 32, T_optimal: 5,
     fluid_min: { Na: 50, S: 50 },
@@ -47098,6 +47142,7 @@ const MINERAL_GATES_mirabilite = {
     _notes: 'Na2SO4·10H2O Glauber salt — cold playa-brine evaporite. Quadratic in concentration; needs c ≥ 1.5.',
 };
 const MINERAL_GATES_thenardite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_min: 25, T_optimal: 60,
     fluid_min: { Na: 50, S: 50 },
@@ -47125,6 +47170,7 @@ const MINERAL_GATES_selenite = {
     _notes: 'CaSO4·2H2O — Pulpí 20°C, Naica 54.5°C. v228: hard nucleation ceiling 80°C (Ossorio 2014); soft decay above 60°C within the window; T<40 bonus.',
 };
 const MINERAL_GATES_anglesite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.1,
     T_optimal: 30,
     fluid_min: { Pb: 15, S: 15 },
@@ -47135,6 +47181,7 @@ const MINERAL_GATES_anglesite = {
     _notes: 'PbSO4 — supergene oxidation of galena. Substrate-pref galena (dissolving or active).',
 };
 const MINERAL_GATES_linarite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_min: 5, T_max: 60, T_optimal: 25,
     fluid_min: { Pb: 30, Cu: 10, S: 50 },
@@ -47145,6 +47192,7 @@ const MINERAL_GATES_linarite = {
     _notes: 'PbCu(SO4)(OH)2 deep azure-blue. CO3:SO4 ratio < 0.3 required. Cl > 100 suppresses (boleite group).',
 };
 const MINERAL_GATES_caledonite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_min: 5, T_max: 60, T_optimal: 25,
     fluid_min: { Pb: 30, Cu: 10, S: 50, CO3: 5 },
@@ -47155,6 +47203,7 @@ const MINERAL_GATES_caledonite = {
     _notes: 'Pb5Cu2(CO3)(SO4)3(OH)6 — intermediate CO3:SO4 0.3-1. Epitactic on linarite as carbonate activity rises. Cl > 50 suppresses.',
 };
 const MINERAL_GATES_leadhillite = {
+    redox_bypass: 'explicit_sulfate_pool',
     sigma_crit: 1.0,
     T_min: 5, T_max: 60, T_optimal: 30,
     fluid_min: { Pb: 50, S: 30, CO3: 30 },
@@ -47813,6 +47862,7 @@ const MINERAL_GATES_wurtzite = {
     _notes: 'ZnS hexagonal — METASTABLE kinetic-trap polymorph only (v228): pH<4 + σ_base≥1 + Fe≥5, T≤350. Aachen schalenblende / AMD / VMS acid-vent wurtzite. The equilibrium field starts ~1020°C — not a vug regime.',
 };
 const MINERAL_GATES_pyrite = {
+    soft: ['T_min', 'T_max', 'pH_min'],
     sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
     fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_min: 3.5,
     surface_energy: 'medium', _sources: ['pyrite engine v17+'],
@@ -47825,6 +47875,7 @@ const MINERAL_GATES_marcasite = {
     _notes: 'FeS2 orthorhombic — acid pH<5 + T<240 required (pyrite is the alkaline/hot dimorph).',
 };
 const MINERAL_GATES_chalcopyrite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 180, T_max: 600, T_optimal: 400,
     fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 0.5,
     surface_energy: 'medium', _sources: ['chalcopyrite engine v17+', 'Seo et al. 2012'],
@@ -47855,18 +47906,21 @@ const MINERAL_GATES_argentite = {
     _notes: 'Ag2S cubic — high-T (>173°C). Paramorphs to acanthite on cooling.',
 };
 const MINERAL_GATES_nickeline = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 200, T_max: 500, T_optimal: 375,
     fluid_min: { Ni: 15, As: 30 }, O2_max: 0.6, pH_min: 3, pH_max: 8,
     surface_energy: 'medium', _sources: ['nickeline engine v17+', 'Burkhardt 2001'],
     _notes: 'NiAs — five-element-vein primary arsenide. As(III) state required.',
 };
 const MINERAL_GATES_millerite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 275,
     fluid_min: { Ni: 50, S: 30 }, O2_max: 0.6, pH_min: 3, pH_max: 8,
     surface_energy: 'medium', _sources: ['millerite engine v17+'],
     _notes: 'NiS trigonal — hairlike radiating crystals. As(III) > 30 + T > 200 routes to nickeline.',
 };
 const MINERAL_GATES_cobaltite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.2, T_min: 300, T_max: 600, T_optimal: 450,
     fluid_min: { Co: 20, As: 30, S: 20 }, O2_max: 0.5, pH_min: 3, pH_max: 8,
     surface_energy: 'medium', _sources: ['cobaltite engine v17+ Arc 3'],
@@ -47900,48 +47954,56 @@ const MINERAL_GATES_tennantite = {
     _notes: '(Cu,Fe,Zn)12As4S13 — As-end fahlore. Intermediate-sulfidation regime.',
 };
 const MINERAL_GATES_cinnabar = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 20, T_max: 350, T_optimal: 125,
     fluid_min: { Hg: 1.0, S: 50 }, O2_max: 1.0, pH_max: 9,
     surface_energy: 'medium', _sources: ['cinnabar engine v81+', 'White & Roberson 1962'],
     _notes: 'HgS trigonal α — Sulphur Bank + Sicily hot-spring + sedimentary BSR habitat. Most O2-tolerant sulfide.',
 };
 const MINERAL_GATES_realgar = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 20, T_max: 250, T_optimal: 115,
     fluid_min: { As: 5, S: 30 }, O2_max: 0.5, pH_max: 9, // rung-4d: SO₄/HS cap (was 1.2)
     surface_energy: 'low', _sources: ['realgar engine v82+'],
     _notes: 'α-As4S4 orange-red monoclinic — hot-spring + epithermal low-T.',
 };
 const MINERAL_GATES_orpiment = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 20, T_max: 280, T_optimal: 130,
     fluid_min: { As: 8, S: 50 }, O2_max: 0.5, pH_max: 9.5, // rung-4d: with realgar (was 1.2)
     surface_energy: 'low', _sources: ['orpiment engine v82+'],
     _notes: 'As2S3 golden yellow — Carlin-type + hot-spring habitat. More alkali-tolerant than realgar.',
 };
 const MINERAL_GATES_stibnite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 225,
     fluid_min: { Sb: 10, S: 15 }, O2_max: 1.0, pH_min: 2.0,
     surface_energy: 'medium', _sources: ['stibnite engine v17+'],
     _notes: 'Sb2S3 — needle/blade habit. 150-300°C sweet spot.',
 };
 const MINERAL_GATES_bismuthinite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.3, T_min: 150, T_max: 500, T_optimal: 300,
     fluid_min: { Bi: 5, S: 15 }, O2_max: 1.0, pH_min: 2.0,
     surface_energy: 'medium', _sources: ['bismuthinite engine v17+'],
     _notes: 'Bi2S3 — pegmatite + epithermal-vein. Paragenetic predecessor to native_bismuth.',
 };
 const MINERAL_GATES_bornite = {
+    soft: ['T_min', 'T_max'],
     sigma_crit: 1.0, T_min: 80, T_max: 500, T_optimal: 190,
     fluid_min: { Cu: 25, Fe: 8, S: 20 }, O2_max: 1.8, pH_min: 3.0,
     surface_energy: 'medium', _sources: ['bornite engine v17+'],
     _notes: 'Cu5FeS4 — peacock-ore. Cu:Fe > 2 required.',
 };
 const MINERAL_GATES_chalcocite = {
+    soft: ['T_max'],
     sigma_crit: 1.1, T_max: 150, T_optimal: 80,
     fluid_min: { Cu: 30, S: 15 }, O2_max: 1.9, pH_min: 3.0,
     surface_energy: 'medium', _sources: ['chalcocite engine v17+'],
     _notes: 'Cu2S — supergene Cu-enrichment-blanket signature.',
 };
 const MINERAL_GATES_covellite = {
+    soft: ['T_max'],
     sigma_crit: 1.2, T_max: 100, T_optimal: 60,
     fluid_min: { Cu: 20, S: 25 }, O2_max: 2.0, pH_min: 3.0,
     surface_energy: 'medium', _sources: ['covellite engine v17+'],
@@ -101425,10 +101487,42 @@ function _formationCompetition(name, sigma, c, sim) {
     }
     return { competitors, initiative };
 }
+// T and pH gate chip. A bound listed in gate.soft is one the σ body only
+// attenuates, so it is shown but never by itself makes the chip "unmet".
+// With no soft bound the text and verdict are exactly the old hard-gate ones.
+function _formationBoundChip(valueText, value, lo, hi, softLo, softHi, unit) {
+    const hasLo = lo != null, hasHi = hi != null;
+    if (!hasLo && !hasHi)
+        return { text: `${valueText} · no explicit cutoff`, met: true };
+    const need = hasLo && hasHi && softLo === softHi
+        ? `${lo}–${hi}${unit}${softLo ? ' (soft)' : ''}`
+        : [hasLo ? `≥ ${lo}${unit}${softLo ? ' (soft)' : ''}` : null,
+            hasHi ? `≤ ${hi}${unit}${softHi ? ' (soft)' : ''}` : null].filter(Boolean).join(', ');
+    const known = typeof value === 'number';
+    const belowLo = known && hasLo && value < lo;
+    const aboveHi = known && hasHi && value > hi;
+    const hardFail = !known || (belowLo && !softLo) || (aboveHi && !softHi);
+    const chip = { text: `${valueText} · ${need}`, met: !hardFail };
+    if (!hardFail && (belowLo || aboveHi)) {
+        chip.status = 'observer';
+        chip.note = 'Outside a soft bound: the engine attenuates σ here instead of stopping, so this alone does not block formation.';
+    }
+    return chip;
+}
 function _formationRedoxChip(gate, c) {
     const f = c?.fluid || {};
     const hasMin = gate?.O2_min != null;
     const hasMax = gate?.O2_max != null;
+    // Mirrors sulfateRedoxAvailable (js/20c): an explicit sulfate pool admits
+    // sulfate minerals at ANY Eh; the O2 floor applies only without pools.
+    if (gate?.redox_bypass === 'explicit_sulfate_pool' && f.sulfurPoolsExplicit) {
+        const sulfate = Number(f.S_sulfate) || 0;
+        return {
+            text: `explicit sulfate pool ${_formationNumber(sulfate)} ppm · any Eh`,
+            met: sulfate > 0,
+            note: 'This fluid carries an explicit sulfate pool, so the engine admits sulfate at any Eh ("an anoxic fluid may retain and precipitate inherited sulfate"). The O₂ floor applies only to fluids without explicit pools.',
+        };
+    }
     const ehMode = typeof EH_DYNAMIC_ENABLED !== 'undefined' && EH_DYNAMIC_ENABLED
         && typeof ehFromO2 === 'function';
     if (!hasMin && !hasMax) {
@@ -101462,6 +101556,16 @@ function _formationRedoxChip(gate, c) {
 // union envelope. Keep the shared registry broad for discovery, but resolve
 // the exact selected gate before building player-facing T/pH/redox chips.
 function _formationEffectiveGate(name, base, c) {
+    // Native sulfur's σ picks its redox window by pathway (js/36): the
+    // oxidative pathways use the gate's O2 window, the anaerobic-inherited one
+    // replaces it with O2 ≤ 0.1.
+    if (name === 'native_sulfur' && base
+        && c?.fluid?.nativeSulfurPathway === 'anaerobic_microbial_inherited') {
+        const gate = { ...base };
+        delete gate.O2_min;
+        gate.O2_max = 0.1;
+        return gate;
+    }
     if (name !== 'tigers_eye' || !base)
         return base;
     const gate = { ...base };
@@ -101815,15 +101919,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
                 : [{ text: 'No calibrated stoichiometric budget registered', met: true }],
     });
     const T = c.temperature;
-    const hasTMin = gate?.T_min != null, hasTMax = gate?.T_max != null;
-    const tMet = typeof T === 'number'
-        && (!hasTMin || T >= gate.T_min)
-        && (!hasTMax || T <= gate.T_max);
-    const tNeed = hasTMin && hasTMax
-        ? `${gate.T_min}–${gate.T_max}°C`
-        : hasTMin ? `≥ ${gate.T_min}°C` : hasTMax ? `≤ ${gate.T_max}°C` : 'no explicit cutoff';
+    const softBounds = new Set(gate?.soft || []);
     const temperatureChips = [
-        { text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet },
+        _formationBoundChip(`${_formationNumber(T, 0)}°C`, T, gate?.T_min, gate?.T_max, softBounds.has('T_min'), softBounds.has('T_max'), '°C'),
     ];
     if (typeof sulfateThermoTemperatureAssessment === 'function'
         && ['selenite', 'gypsum', 'anhydrite', 'barite', 'celestine'].indexOf(name) >= 0) {
@@ -101858,16 +101956,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         });
     }
     const pH = c.fluid.pH;
-    const hasPHMin = gate?.pH_min != null, hasPHMax = gate?.pH_max != null;
-    const phMet = typeof pH === 'number'
-        && (!hasPHMin || pH >= gate.pH_min)
-        && (!hasPHMax || pH <= gate.pH_max);
-    const phNeed = hasPHMin && hasPHMax
-        ? `${gate.pH_min}–${gate.pH_max}`
-        : hasPHMin ? `≥ ${gate.pH_min}` : hasPHMax ? `≤ ${gate.pH_max}` : 'no explicit cutoff';
     groups.push({
         label: 'pH gate',
-        chips: [{ text: `pH ${_formationNumber(pH, 1)} · ${phNeed}`, met: (!hasPHMin && !hasPHMax) || phMet }],
+        chips: [_formationBoundChip(`pH ${_formationNumber(pH, 1)}`, pH, gate?.pH_min, gate?.pH_max, softBounds.has('pH_min'), softBounds.has('pH_max'), '')],
     });
     groups.push({ label: 'Redox gate', chips: [_formationRedoxChip(gate, c)] });
     let substrateChips = substrate.available.length

@@ -14,6 +14,7 @@
 // composition; sigma_crit 1.0 for most; substrate discount applies in nucleation.
 
 const MINERAL_GATES_olivenite: MineralGates = {
+  soft: ['T_min', 'T_max', 'pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_min: 10, T_max: 60, T_optimal: 30,
   fluid_min: { Cu: 50, As: 10, Zn: 0.5 },
@@ -58,6 +59,7 @@ const MINERAL_GATES_annabergite: MineralGates = {
 };
 
 const MINERAL_GATES_adamite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Zn: 10, As: 5, Cu: 0.5 },

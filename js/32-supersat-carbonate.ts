@@ -196,6 +196,7 @@ const MINERAL_GATES_rhodochrosite: MineralGates = {
 };
 
 const MINERAL_GATES_malachite: MineralGates = {
+  soft: ['pH_min'],
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Cu: 5, CO3: 20 },
@@ -229,6 +230,7 @@ const MINERAL_GATES_smithsonite: MineralGates = {
 };
 
 const MINERAL_GATES_azurite: MineralGates = {
+  soft: ['pH_min'],
   sigma_crit: 1.4,
   T_optimal: 30,
   fluid_min: { Cu: 20, CO3: 120 },

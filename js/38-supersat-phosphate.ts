@@ -39,6 +39,7 @@ const MINERAL_GATES_plumbogummite: MineralGates = {
 // Caldbeck V suite (vanadinite + mottramite + descloizite): Kingsbury
 // & Hartley 1956 MinMag; Stanley, Symes & Jones 1991 MinMag 55:121.
 const MINERAL_GATES_descloizite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 40,
   fluid_min: { Pb: 40, Zn: 50, V: 4, Cu: 0.5 },
@@ -50,6 +51,7 @@ const MINERAL_GATES_descloizite: MineralGates = {
 };
 
 const MINERAL_GATES_mottramite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 40,
   fluid_min: { Pb: 40, Cu: 50, V: 4 },
@@ -220,6 +222,7 @@ const MINERAL_GATES_apatite: MineralGates = {
 };
 
 const MINERAL_GATES_turquoise: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.3,
   T_min: 5, T_max: 80, T_optimal: 32,
   fluid_min: { Cu: 5, Al: 3, P: 1 },

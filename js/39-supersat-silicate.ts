@@ -77,6 +77,7 @@ const MINERAL_GATES_albite: MineralGates = {
 };
 
 const MINERAL_GATES_lepidolite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.2,
   T_min: 350, T_max: 700, T_optimal: 450,
   fluid_min: { K: 10, Li: 15, Al: 10, SiO2: 200, F: 5 },
@@ -87,6 +88,7 @@ const MINERAL_GATES_lepidolite: MineralGates = {
 };
 
 const MINERAL_GATES_spodumene: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.5,
   T_min: 400, T_max: 800, T_optimal: 525,
   fluid_min: { Li: 8, Al: 5, SiO2: 40 },
@@ -107,6 +109,7 @@ const MINERAL_GATES_chrysocolla: MineralGates = {
 };
 
 const MINERAL_GATES_beryl: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50 },
@@ -116,6 +119,7 @@ const MINERAL_GATES_beryl: MineralGates = {
 };
 
 const MINERAL_GATES_emerald: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Cr: 0.5 },
@@ -125,6 +129,7 @@ const MINERAL_GATES_emerald: MineralGates = {
 };
 
 const MINERAL_GATES_aquamarine: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 8 },
@@ -134,6 +139,7 @@ const MINERAL_GATES_aquamarine: MineralGates = {
 };
 
 const MINERAL_GATES_morganite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Mn: 2.0 },
@@ -143,6 +149,7 @@ const MINERAL_GATES_morganite: MineralGates = {
 };
 
 const MINERAL_GATES_heliodor: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 15 },
@@ -153,6 +160,7 @@ const MINERAL_GATES_heliodor: MineralGates = {
 };
 
 const MINERAL_GATES_tourmaline: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.3,
   T_min: 350, T_max: 700, T_optimal: 500,
   fluid_min: { Na: 3, B: 6, Al: 8, SiO2: 60 },
@@ -162,6 +170,7 @@ const MINERAL_GATES_tourmaline: MineralGates = {
 };
 
 const MINERAL_GATES_topaz: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.4,
   T_min: 300, T_max: 600, T_optimal: 370,
   fluid_min: { Al: 3, SiO2: 200, F: 20 },
