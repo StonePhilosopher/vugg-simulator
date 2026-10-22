@@ -595,12 +595,14 @@ Object.assign(VugConditions.prototype, {
   // not double-fire here. Python's K-only design has been canonical
   // since the data model split feldspar/albite as separate species.
   // JS now matches Python's K-only structure, with a hard 800°C
-  // upper cap (sanidine→melt boundary) added.
+  // upper cap added.
   if (this.fluid.K < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
-  // Hard upper cap — feldspar melts above 800°C.
+  // Hard 800°C upper cap. It is a model cap, NOT the melting point: sanidine
+  // melts near 1150°C dry. Latent — no scenario runs above ~700°C.
   if (this.temperature > 800) return 0;
   let sigma = (this.fluid.K / 40.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
-  // Feldspars need HIGH temperature — they're igneous/metamorphic
+  // Soft decay below 300°C, not a floor: K-feldspar also forms at low T
+  // (epithermal adularia; the Deccan zeolite stage grows it at ~127-150°C).
   if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
   // Acid destabilization — kaolinization regime, mirrors grow_feldspar
   // dissolution at pH < 4. KAlSi₃O₈ + H⁺ → kaolinite + K⁺ + SiO₂.
@@ -1339,7 +1341,8 @@ Object.assign(VugConditions.prototype, {
 
   // v200 (2026-06-17): Stilbite — the COOLER, more-hydrated member of the
   // Deccan Stage-II zeolite couple. Ca-dominant, alkaline, moderate silica.
-  // T sweet spot 60-110°C (stilbite precedes heulandite on a cooling path).
+  // T sweet spot 60-110°C (heulandite, the hotter member, precedes stilbite on
+  // a cooling path).
   // Redox-insensitive: no redox gate. See MINERAL_GATES_stilbite.
   supersaturation_stilbite() {
     const g = MINERAL_GATES_stilbite;

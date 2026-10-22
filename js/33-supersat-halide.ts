@@ -60,9 +60,11 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.F < g.fluid_min!.F) return 0;
   let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
   // 5-tier T window per Richardson & Holland 1979 + MVT deposit
-  // studies showing 50-152°C formation range. Solubility increases
-  // with T below 100°C (kinetically slow precipitation), passes
-  // through max around 100-250°C, declines above 350°C.
+  // studies showing 50-152°C formation range. The factor encodes how
+  // favourable each band is for PRECIPITATION: kinetically slow below
+  // 100°C, best at 100-250°C, declining above 350°C. (It is not a
+  // solubility curve — a solubility maximum would make 100-250°C the
+  // least favourable band, the opposite of what the factor does.)
   let T_factor = 1.0;
   if (this.temperature < 50) T_factor = this.temperature / 50.0;
   else if (this.temperature < 100) T_factor = 0.8;

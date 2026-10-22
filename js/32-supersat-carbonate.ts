@@ -322,11 +322,12 @@ Object.assign(VugConditions.prototype, {
   supersaturation_calcite() {
   // Calcite has RETROGRADE solubility — less soluble at higher T.
   // Precipitates on heating or CO₂ degassing. Forms at 10-500°C.
-  // Decomposes to CaO + CO₂ above ~500°C.
+  // The 500°C T_max is a hydrothermal-occurrence cap, NOT decomposition:
+  // calcite decarbonates to CaO + CO₂ near 898°C at 1 atm CO₂ (spec 840°C).
   // Mg poisoning: Mg²⁺ stalls calcite {10ī4} growth steps (Davis 2000;
   // Nielsen 2013). Mg/Ca > ~2 hands the polymorph to aragonite. Capped
   // at 85% inhibition — high-Mg calcite (HMC) always forms some fraction.
-  if (this.temperature > MINERAL_GATES_calcite.T_max!) return 0; // thermal decomposition
+  if (this.temperature > MINERAL_GATES_calcite.T_max!) return 0; // occurrence cap (see above)
   // Week 2 (PROPOSAL-CARBONATE-GEOCHEM): SI-based dispatcher hook.
   // Runs AFTER hard physical/geochemical gates (thermal decomposition
   // boundary, ingredient minimums, redox gates) so the SI engine
@@ -500,10 +501,12 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_aragonite() {
-  // Orthorhombic CaCO₃ dimorph — metastable at surface but kinetically
-  // favored when Mg/Ca > ~1.5 (dominant, Folk 1974 / Morse 1997),
-  // T > ~50°C (Burton & Walter 1987 in low-Mg), or Ω > ~10 (Ostwald
-  // step rule, Sun 2015). Trace Sr/Pb/Ba give a small additional boost.
+  // Orthorhombic CaCO₃ dimorph — metastable at surface. Since v228 two
+  // selectors, either sufficient (details below): aqueous MOLAR Mg/Ca ≥ 1.1
+  // (Mg-poisoning of calcite), or the open-spring degassing window ~45–90°C.
+  // Ω is not a selector, only a bounded amplifier of one; the old
+  // "T > ~50°C" and "Ω > ~10" triggers are retired. Trace Sr/Pb/Ba give a
+  // small additional boost.
   // Pressure is the thermodynamic sorter only in the deep/cold stability
   // window. Low-pressure aragonite remains Mg/degassing-kinetic and must never
   // be excluded by a pressure gate.

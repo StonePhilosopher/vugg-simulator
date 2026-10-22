@@ -65,7 +65,7 @@ const MINERAL_GATES_adamite: MineralGates = {
   pH_min: 4.0, pH_max: 8.0,
   surface_energy: 'medium',
   _sources: ['adamite engine v92+'],
-  _notes: 'Zn2(AsO4)(OH) — Zn-dominant. Cu trace for fluorescence. Zn-fraction sweet spot 0.55-0.85.',
+  _notes: 'Zn2(AsO4)(OH) — Zn-dominant. Uranyl traces activate its SW fluorescence; Cu²⁺ quenches it. Zn-fraction sweet spot 0.55-0.85.',
 };
 
 const MINERAL_GATES_pharmacolite: MineralGates = {
@@ -303,17 +303,18 @@ Object.assign(VugConditions.prototype, {
   const g = MINERAL_GATES_adamite;
   const as_v = arsenateAvailablePpm(this.fluid);
   if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
-  // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
+  // Trace Cu floor — the Round-9c recessive-side floor that makes the Cu:Zn
+  // ratio "meaningful" (Cu is a fluorescence QUENCHER, not the activator).
   if (this.fluid.Cu < g.fluid_min!.Cu) return 0;
   // Broth-ratio gate — adamite is Zn-dominant.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;
   if (zn_fraction < 0.5) return 0;
   let sigma = (this.fluid.Zn / 80.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
-  // Sweet-spot bonus — Zn-dominant with Cu trace (the fluorescent
-  // variety) is the most aesthetic adamite. Pure-Zn damped because
-  // hemimorphite/smithsonite take that territory.
+  // Sweet-spot bonus — Zn-dominant with some Cu is the classic aesthetic
+  // adamite (the brightest fluorescence is pure-Zn, uranyl-activated; Cu
+  // dims it). Pure-Zn damped because hemimorphite/smithsonite take that
+  // territory.
   if (zn_fraction >= 0.55 && zn_fraction <= 0.85) sigma *= 1.3;
   else if (zn_fraction > 0.95) sigma *= 0.5;
   if (this.temperature > 100) sigma *= Math.exp(-0.02 * (this.temperature - 100));
