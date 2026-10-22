@@ -82,9 +82,15 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
       expect(DEHYDRATION_TRANSITIONS.mirabilite).toEqual(['thenardite', 30, 1.5, 32.4]);
     });
 
-    it('keeps the structured meta-autunite formula consistent with the 11-to-8-hydrate receipt', () => {
+    // SIM 277 pinned meta-autunite at ·8H2O to match a description that said
+    // "three water molecules gone". The species formula is the 6-hydrate
+    // (the CSIRO and Webmineral species entries; Webmineral gives 2–6 H2O);
+    // 8 H2O is the metatorbernite/metazeunerite count. research-autunite.md's
+    // "6–8H₂O" for meta-autunite I includes 6. The 11-hydrate parent is
+    // Locock & Burns 2003, Am. Mineral. 88:240. Recipe review R8, rung 1.
+    it('keeps the structured meta-autunite formula at the 6-hydrate (autunite 11 H2O → 6)', () => {
       expect((globalThis as any).MINERAL_SPEC.autunite.formula).toBe('Ca(UO2)2(PO4)2·11H2O');
-      expect((globalThis as any).MINERAL_SPEC['meta-autunite'].formula).toBe('Ca(UO2)2(PO4)2·8H2O');
+      expect((globalThis as any).MINERAL_SPEC['meta-autunite'].formula).toBe('Ca(UO2)2(PO4)2·6H2O');
     });
   });
 
