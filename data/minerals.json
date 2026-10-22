@@ -3934,11 +3934,10 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Zn": 10,
-        "Cu": 0.5,
         "As": 5,
         "O2": 0.3
       },
-      "_ingredients_note": "Round 9c (Apr 2026): Cu=0.5 is required by the broth-ratio engine retrofit so the Cu:Zn ratio is meaningful. Cu is not the fluorescence activator: uranyl traces activate the green SW glow and Cu²⁺ quenches it (v225 audit), so pure-Zn adamite is the brighter fluorescent kind.",
+      "_ingredients_note": "Round 9c (Apr 2026) added a Cu=0.5 floor so the Cu:Zn ratio would be meaningful; recipe-review rung 1d removed it, as mottramite's was removed on 2026-06-16 — the Zn-fraction selector is the series gate. Cu is not the fluorescence activator: uranyl traces activate the green SW glow and Cu²⁺ quenches it (v225 audit), so pure-Zn adamite is the brighter fluorescent kind.",
       "trace_ingredients": {
         "Cu": "cuproadamite_FL_quencher",
         "Co": "purple_cobaltoadamite"
@@ -9494,10 +9493,9 @@
       "required_ingredients": {
         "Pb": 40,
         "Zn": 50,
-        "Cu": 0.5,
         "V": 4
       },
-      "_ingredients_note": "Round 9c (Apr 2026): Cu=0.5 is required by the broth-ratio engine retrofit so the Cu:Zn ratio is meaningful. Real descloizite always has at least trace Cu (cuprian descloizite — common at Tsumeb and Berg Aukas).",
+      "_ingredients_note": "Round 9c (Apr 2026) added a Cu=0.5 floor so the Cu:Zn ratio would be meaningful; recipe-review rung 1d removed it, as mottramite's was removed on 2026-06-16. A crystal carrying trace Cu (cuprian descloizite, common at Tsumeb and Berg Aukas) does not need 0.5 ppm Cu in the fluid; the Zn-fraction selector is the series gate.",
       "trace_ingredients": {},
       "thermal_decomp_C": null,
       "thermal_decomp_reaction": null,
@@ -9808,10 +9806,9 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Cu": 50,
-        "Zn": 0.5,
         "As": 10
       },
-      "_ingredients_note": "Round 9c (Apr 2026): Zn=0.5 is required by the broth-ratio engine retrofit so the Cu:Zn ratio is meaningful. Real olivenite always has at least trace Zn (zincolivenite-leaning compositions); pure-Cu olivenite is uncommon.",
+      "_ingredients_note": "Round 9c (Apr 2026) added a Zn=0.5 floor so the Cu:Zn ratio would be meaningful; recipe-review rung 1d removed it, as mottramite's was removed on 2026-06-16. A crystal carrying trace Zn does not need 0.5 ppm Zn in the fluid; the Cu-fraction selector is the series gate.",
       "trace_ingredients": {},
       "thermal_decomp_C": null,
       "thermal_decomp_reaction": null,

@@ -48,9 +48,11 @@ const MINERAL_GATES_native_arsenic: MineralGates = {
 };
 
 const MINERAL_GATES_native_silver: MineralGates = {
-  soft: ['T_min', 'T_max'],
+  soft: ['T_max'],
   sigma_crit: 1.0,
-  T_min: 50, T_max: 300, T_optimal: 150,
+  // No T_min: the old 50°C floor was soft in the σ and wrong (supergene native
+  // silver forms at ambient T, as bisbee's 25°C births show) — recipe review M9.
+  T_max: 300, T_optimal: 150,
   fluid_min: { Ag: 1.0 },
   O2_max: 0.3,                  // anoxic (Ag° reduced)
   pH_min: 4, pH_max: 9,

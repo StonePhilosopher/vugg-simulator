@@ -17,7 +17,7 @@ const MINERAL_GATES_olivenite: MineralGates = {
   soft: ['T_min', 'T_max', 'pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_min: 10, T_max: 60, T_optimal: 30,
-  fluid_min: { Cu: 50, As: 10, Zn: 0.5 },
+  fluid_min: { Cu: 50, As: 10 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',
@@ -62,7 +62,7 @@ const MINERAL_GATES_adamite: MineralGates = {
   soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 30,
-  fluid_min: { Zn: 10, As: 5, Cu: 0.5 },
+  fluid_min: { Zn: 10, As: 5 },
   O2_min: 0.3,
   pH_min: 4.0, pH_max: 8.0,
   surface_energy: 'medium',
@@ -224,9 +224,9 @@ Object.assign(VugConditions.prototype, {
   const as_v = arsenateAvailablePpm(this.fluid);
   if (this.fluid.Cu < g.fluid_min!.Cu || as_v < g.fluid_min!.As) return 0;
   if (!arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  // Recessive-side trace floor — real olivenite always has at least
-  // trace Zn (zincolivenite-leaning); makes the ratio meaningful.
-  if (this.fluid.Zn < g.fluid_min!.Zn) return 0;
+  // No recessive-side Zn floor (removed in recipe-review rung 1d, as for
+  // mottramite on 2026-06-16): a crystal carrying trace Zn does not need
+  // ≥ 0.5 ppm Zn in the fluid, and the Cu fraction below is the series gate.
   // Broth-ratio gate — olivenite is Cu-dominant.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const cu_fraction = this.fluid.Cu / cu_zn_total;
@@ -305,9 +305,9 @@ Object.assign(VugConditions.prototype, {
   const g = MINERAL_GATES_adamite;
   const as_v = arsenateAvailablePpm(this.fluid);
   if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  // Trace Cu floor — the Round-9c recessive-side floor that makes the Cu:Zn
-  // ratio "meaningful" (Cu is a fluorescence QUENCHER, not the activator).
-  if (this.fluid.Cu < g.fluid_min!.Cu) return 0;
+  // No recessive-side Cu floor (removed in recipe-review rung 1d, as for
+  // mottramite): pure-Zn adamite exists and is the brighter fluorescent kind
+  // (uranyl activates, Cu quenches). The Zn fraction below is the series gate.
   // Broth-ratio gate — adamite is Zn-dominant.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;

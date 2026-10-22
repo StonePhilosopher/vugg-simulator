@@ -46,8 +46,10 @@ const MINERAL_GATES_wurtzite: MineralGates = {
   _notes: 'ZnS hexagonal — METASTABLE kinetic-trap polymorph only (v228): pH<4 + σ_base≥1 + Fe≥5, T≤350. Aachen schalenblende / AMD / VMS acid-vent wurtzite. The equilibrium field starts ~1020°C — not a vug regime.',
 };
 const MINERAL_GATES_pyrite: MineralGates = {
-  soft: ['T_min', 'T_max', 'pH_min'],
-  sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
+  soft: ['T_max', 'pH_min'],
+  // No T_min: the old 100°C floor was soft in the σ and wrong (pyrite forms at
+  // sulphur_bank's 66°C and in low-T sediments) — recipe review M9.
+  sigma_crit: 1.0, T_max: 400, T_optimal: 250,
   fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_min: 3.5,
   surface_energy: 'medium', _sources: ['pyrite engine v17+'],
   _notes: 'FeS2 cubic — fool\'s gold. Marcasite is the orthorhombic acid-loving dimorph.',
@@ -59,8 +61,10 @@ const MINERAL_GATES_marcasite: MineralGates = {
   _notes: 'FeS2 orthorhombic — acid pH<5 + T<240 required (pyrite is the alkaline/hot dimorph).',
 };
 const MINERAL_GATES_chalcopyrite: MineralGates = {
-  soft: ['T_min', 'T_max'],
-  sigma_crit: 1.0, T_min: 180, T_max: 600, T_optimal: 400,
+  soft: ['T_max'],
+  // No T_min: the old 180°C floor was soft in the σ and wrong (Roughton Gill's
+  // documented 110-130°C primary stage grows chalcopyrite) — recipe review M9.
+  sigma_crit: 1.0, T_max: 600, T_optimal: 400,
   fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 0.5,
   surface_energy: 'medium', _sources: ['chalcopyrite engine v17+', 'Seo et al. 2012'],
   _notes: 'CuFeS2 — primary porphyry Cu mineral. 300-500°C sweet spot.',
@@ -173,8 +177,10 @@ const MINERAL_GATES_bismuthinite: MineralGates = {
   _notes: 'Bi2S3 — pegmatite + epithermal-vein. Paragenetic predecessor to native_bismuth.',
 };
 const MINERAL_GATES_bornite: MineralGates = {
-  soft: ['T_min', 'T_max'],
-  sigma_crit: 1.0, T_min: 80, T_max: 500, T_optimal: 190,
+  soft: ['T_max'],
+  // No T_min: the old 80°C floor was soft in the σ and wrong (low-T supergene
+  // bornite, logged in proposals/BACKLOG.md) — recipe review M9.
+  sigma_crit: 1.0, T_max: 500, T_optimal: 190,
   fluid_min: { Cu: 25, Fe: 8, S: 20 }, O2_max: 1.8, pH_min: 3.0,
   surface_energy: 'medium', _sources: ['bornite engine v17+'],
   _notes: 'Cu5FeS4 — peacock-ore. Cu:Fe > 2 required.',
