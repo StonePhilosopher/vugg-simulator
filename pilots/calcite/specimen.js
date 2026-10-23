@@ -1,5 +1,6 @@
 // Renderer-independent pilot. No DOM, Three.js, live simulator, or RNG access.
 // The injected half-space kernel is the existing js/46 implementation.
+import {assertCalciteVolumeContract} from './volume-contract.js';
 export const SCHEMA = 'vugg-calcite-specimen-pilot-v1';
 export const clone = value => JSON.parse(JSON.stringify(value, (_key, item) => {
   if(typeof item==='number'&&!Number.isFinite(item))throw Error('Non-finite specimen fact');
@@ -218,15 +219,7 @@ export function validateFrame(frame) {
       }
     }
     if([...edges.values()].some(e=>e.count!==2||e.balance!==0))throw Error('Specimen surface is not closed');
-    finite(c.completion.volumeMm3,'completed volume');
-    if(Math.abs(geometryVolume(c.completion.poly)-c.completion.volumeMm3)>1e-7*Math.max(1,c.completion.volumeMm3))throw Error('Completed volume mismatch');
-    const audit=c.completion.volumeAudit;
-    if(!audit||['fullVolumeMm3','attachedVolumeMm3','fullToBooked','attachmentRetention','contactRetention'].some(k=>typeof audit[k]!=='number'||!Number.isFinite(audit[k])||audit[k]<=0))throw Error('Invalid volume factors');
-    const tolerance=Math.max(1e-10,c.completion.volumeMm3*1e-8);
-    if(audit.attachmentRetention>1+1e-8||audit.contactRetention>1+1e-8
-      ||Math.abs(audit.fullVolumeMm3-c.facts.bookedVolumeMm3*audit.fullToBooked)>tolerance
-      ||Math.abs(audit.attachedVolumeMm3-audit.fullVolumeMm3*audit.attachmentRetention)>tolerance
-      ||Math.abs(c.completion.volumeMm3-audit.attachedVolumeMm3*audit.contactRetention)>tolerance)throw Error('Volume factor closure failed');
+    assertCalciteVolumeContract(c,geometryVolume(c.completion.poly));
   }
   return frame;
 }

@@ -7,6 +7,7 @@ import {loadPilotModel} from './capture.mjs';
 import {loadCalciteSpecimen,saveCalciteSpecimen,calciteProductionGate} from './authority.js';
 import {auditSpecimenFactors,fleetFactorCoverage} from './factor-audit.js';
 import {SpecimenView} from './render.js';
+import {CALCITE_VOLUME_CONTRACT,assertCalciteVolumeContract} from './volume-contract.js';
 import {assertCommissionedEvidenceRuntime,runtimeExecutionDigest} from '../../tools/evidence-runtime.mjs';
 assertCommissionedEvidenceRuntime();
 const h=await loadPilotModel(),digest=runtimeExecutionDigest(process.cwd());
@@ -39,12 +40,16 @@ for(const name of ['controlled','elmwood']){
   if(JSON.stringify(audit)!==JSON.stringify(auditSpecimenFactors(reloaded,h.wulffPolyhedron)))throw Error('Replay changed factor audit');
   const before=meshSignatures(specimen),after=meshSignatures(reloaded);
   if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Replay changed mesh reconstruction');
+  const volumeContracts=specimen.frames.flatMap(f=>f.surface.crystals.map(c=>({step:f.step,id:c.id,
+    ...assertCalciteVolumeContract(c,c.completion.volumeMm3)})));
   examples[name]={specimenSha256:hash(text),sourceClass:name==='controlled'?'authored accepted-zone fixture':'live Elmwood with explicit Wulff override',
+    volumeContracts,
     audit,replay:{frames:specimen.frames.length,factorsUnchanged:true,geometrySha256ByStep:after,allResourcesDisposed:true},
     productionGate:calciteProductionGate(specimen)};
 }
 const result={schema:'calcite-factor-coverage-v1',runtime:{node:process.version,platform:process.platform,arch:process.arch},
-  runtimeDigest:digest,sourceHashes:Object.fromEntries(['pilots/calcite/factor-audit.js','pilots/calcite/factor-report.mjs'].map(file=>[file,sourceHash(file)])),
+  runtimeDigest:digest,volumeContract:CALCITE_VOLUME_CONTRACT,
+  sourceHashes:Object.fromEntries(['pilots/calcite/factor-audit.js','pilots/calcite/factor-report.mjs','pilots/calcite/volume-contract.js'].map(file=>[file,sourceHash(file)])),
   fleetReceiptSha256:sourceHash('pilots/calcite/volume-census.json'),fleet:fleetFactorCoverage(census),examples,
   interpretation:'Arithmetic diagnosis only. The bounding ellipsoid is a comparison reference, not a replacement solid, calibration, density or porosity.',
   gaps:['Contact/dissolution/regrowth witnesses are authored fixture evidence, not validated live geological episodes.',

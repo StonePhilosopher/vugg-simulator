@@ -17,9 +17,10 @@
     "js/45-morphology.ts": "4d878dd1f43c9b12b6925dfbe367220bca7980f06caf9bf88012b13d904bbfc6",
     "js/46-wulff-geometry.ts": "6f8cc6e7db0ba132f21f165444d72aa278b2ed7c1eabd0c8b3d8c0685b5ac4dd",
     "js/99i-renderer-three.ts": "091ea165e1a614a41f437fc3729bbd4bf7c7f5f34b21ff5a432c57dab3379d08",
-    "pilots/calcite/specimen.js": "2dc1432179630aaf7a7ed4d1ced3e871f360295866b85ca3594b67b58a15f86d",
+    "pilots/calcite/specimen.js": "591cb08033f43a6a1a48ae177b75b26a88d6ce8ca1f224d0bff1b00f25044eda",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
     "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",
-    "pilots/calcite/census.mjs": "c825e2114f2e3f85d5594315a49ecccc6ce534ffbc339296a672141d140ba664"
+    "pilots/calcite/census.mjs": "1bb68fd08fda89748d01c4e2a6a5347010d63c71ca8b5f50318220e4152bf5d4"
   },
   "scenarios": [
     {

@@ -14,7 +14,7 @@ assertCommissionedEvidenceRuntime();
 const h=await loadPilotModel(),output=path.resolve('.local-evidence/calcite-authority-v1/specimens');
 fs.mkdirSync(output,{recursive:true});
 const hash=text=>createHash('sha256').update(text).digest('hex');
-const sourceFiles=['pilots/calcite/authority.js','pilots/calcite/specimen.js','pilots/calcite/capture.mjs',
+const sourceFiles=['pilots/calcite/authority.js','pilots/calcite/specimen.js','pilots/calcite/volume-contract.js','pilots/calcite/capture.mjs',
   'pilots/calcite/growth-capture.mjs','pilots/calcite/render.js','pilots/calcite/fixture.mjs','pilots/calcite/record.mjs'];
 const model={kind:'live-model-capture',scenario:'elmwood',seed:42,wulffCalciteOverride:true,
   limitation:'Old pilot configuration, 16 steps; not authored default Elmwood or an independent geology validation',

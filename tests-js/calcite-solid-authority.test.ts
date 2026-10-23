@@ -11,6 +11,7 @@ import {clone,geometryVolume,tessellate,validateFrame} from '../pilots/calcite/s
 import {SpecimenView} from '../pilots/calcite/render.js';
 import {runtimeExecutionDigest} from '../tools/evidence-runtime.mjs';
 import {boundingReference,auditSpecimenFactors,fleetFactorCoverage} from '../pilots/calcite/factor-audit.js';
+import {CALCITE_VOLUME_CONTRACT,assertCalciteVolumeContract,calciteVolumeForConsumer} from '../pilots/calcite/volume-contract.js';
 
 const h=globalThis as any;
 const hash=(x:any)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
@@ -19,6 +20,61 @@ const geometry=(group:any)=>group.children.map((m:any)=>({id:m.userData.crystalI
 const fixture=()=>controlledSpecimen(h);
 
 describe('Calcite Scientific-Solid Authority v1 (isolated, production gate closed)',()=>{
+  it('exposes units, ownership, unresolved physics, and explicit consumer permissions',()=>{
+    const s=fixture(),before=saveCalciteSpecimen(s);
+    expect(s.volumeRelationship).toEqual(CALCITE_VOLUME_CONTRACT);
+    expect(s.volumeRelationship.units).toEqual({volumes:'mm^3',dimensions:'mm',factors:'dimensionless'});
+    for(const frame of s.frames)for(const c of frame.surface.crystals){
+      const measured=geometryVolume(c.completion.poly),v=assertCalciteVolumeContract(c,measured);
+      expect(v.arithmeticClosure).toBe('passed');expect(v.physicalClosure).toBe('unresolved');
+      expect(v.productionAllowed).toBe(false);
+      for(const purpose of ['chemistry','fill','occupancy','dissolution-inventory']){
+        expect(calciteVolumeForConsumer(c,'booked',purpose,measured)).toEqual({value:c.facts.bookedVolumeMm3,
+          units:'mm^3',quantity:'booked',owner:'accepted growth-zone inventory',physicalClosure:'unresolved'});
+        expect(()=>calciteVolumeForConsumer(c,'completed',purpose,measured)).toThrow('not authorized');
+      }
+      expect(calciteVolumeForConsumer(c,'completed','surface-reconstruction',measured).value).toBe(c.completion.volumeMm3);
+      expect(()=>calciteVolumeForConsumer(c,'booked','surface-reconstruction',measured)).toThrow();
+      expect(()=>calciteVolumeForConsumer(c,'full','occupancy',measured)).toThrow();
+    }
+    expect(saveCalciteSpecimen(s)).toBe(before);
+  });
+
+  it('checks ratio tolerances independently even when absolute mm³ errors are tiny',()=>{
+    const c:any={facts:{cLengthMm:1e-4,aWidthMm:1e-4,bookedVolumeMm3:Math.PI/6*1e-12},
+      completion:{visibilityScale:1,volumeIsMassAuthority:false,volumeMm3:1e-14,
+        volumeAudit:{fullVolumeMm3:2e-14,attachedVolumeMm3:1e-14,fullToBooked:2e-14/(Math.PI/6*1e-12),
+          attachmentRetention:.5,contactRetention:1}}};
+    expect(assertCalciteVolumeContract(c,1e-14).arithmeticClosure).toBe('passed');
+    c.completion.volumeAudit.fullToBooked*=2;
+    expect(()=>assertCalciteVolumeContract(c,1e-14)).toThrow('full/booked ratio');
+  });
+
+  it.each(['bookedVolumeMm3','cLengthMm','aWidthMm'])('refuses an incompatible booked dimension convention: %s',key=>{
+    const c=clone(fixture().frames[0].surface.crystals[0]);c.facts[key]*=2;
+    expect(()=>assertCalciteVolumeContract(c,geometryVolume(c.completion.poly))).toThrow('booked dimension convention');
+  });
+
+  it('refuses legacy and incomplete records without synthesizing a conversion or rerunning growth',()=>{
+    const old=clone(fixture());old.schema='vugg-calcite-scientific-solid-authority-v1';
+    expect(()=>loadCalciteSpecimen(JSON.stringify(old))).toThrow('Legacy calcite specimen');
+    const incomplete=clone(fixture());delete incomplete.frames[0].surface.crystals[0].completion.volumeAudit;
+    expect(()=>loadCalciteSpecimen(JSON.stringify(incomplete))).toThrow('Missing calcite volume authority');
+    const forged=clone(fixture());forged.volumeRelationship.physicalReconciliation='closed';
+    expect(()=>loadCalciteSpecimen(JSON.stringify(forged))).toThrow('Invalid calcite specimen contract');
+  });
+
+  it('keeps a stagewise mass ledger through dissolution, regrowth, and save/load',()=>{
+    const s=loadCalciteSpecimen(saveCalciteSpecimen(fixture()));
+    for(const id of [1,2]){
+      const events=s.events.filter((e:any)=>e.id===id&&['growth','dissolution','regrowth'].includes(e.kind));
+      const net=events.reduce((sum:number,e:any)=>sum+e.after.bookedVolumeMm3-e.before.bookedVolumeMm3,0);
+      expect(net+events[0].before.bookedVolumeMm3).toBeCloseTo(events.at(-1).after.bookedVolumeMm3,12);
+      expect(s.frames.at(-1).allCalcite.find((c:any)=>c.id===id).bookedVolumeMm3).toBe(events.at(-1).after.bookedVolumeMm3);
+    }
+    expect(calciteProductionGate(s).allowed).toBe(false);
+  });
+
   it('records nucleation, both generations, accepted composition, dissolution, and regrowth',()=>{
     const s=fixture();
     expect(s.frames).toHaveLength(5);

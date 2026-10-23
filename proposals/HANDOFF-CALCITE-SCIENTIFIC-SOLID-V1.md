@@ -1,5 +1,11 @@
 # Calcite Scientific-Solid Authority v1 handoff
 
+The 2026-10-23 continuation from `91e5cc11` is documented in
+[`CALCITE-VOLUME-CONTRACT-2026-10-23.md`](CALCITE-VOLUME-CONTRACT-2026-10-23.md).
+It adds the executable quantity/consumer/tolerance/legacy contract, regenerates
+the isolated receipts, and retains the physical-solid production hold. The
+source/delivery history below describes the earlier pilot, not the new base.
+
 The requested next seam is calcite history and scientific authority, not another
 performance harness. The implementation and explicit contract live in
 [`pilots/calcite/README.md`](../pilots/calcite/README.md).
