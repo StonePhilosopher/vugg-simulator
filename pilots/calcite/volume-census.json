@@ -9,14 +9,14 @@
     "platform": "win32",
     "arch": "x64"
   },
-  "runtimeDigest": "f8beeb096dd0d76d9b9d15c8fe3a561c901ef549642189fa30a9be1c225b6119",
+  "runtimeDigest": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
   "scope": "plain untwinned Wulff calcite; all other calcite explicitly counted as excluded",
   "decision": "Preserve existing mass/growth rules; record measured factors; hold production integration.",
   "sourceHashes": {
     "js/27-geometry-crystal.ts": "f82d36decad0613b5238dd40168c44ce0eb3533c7664240a45b3f99e23e2b729",
     "js/45-morphology.ts": "4d878dd1f43c9b12b6925dfbe367220bca7980f06caf9bf88012b13d904bbfc6",
     "js/46-wulff-geometry.ts": "6f8cc6e7db0ba132f21f165444d72aa278b2ed7c1eabd0c8b3d8c0685b5ac4dd",
-    "js/99i-renderer-three.ts": "091ea165e1a614a41f437fc3729bbd4bf7c7f5f34b21ff5a432c57dab3379d08",
+    "js/99i-renderer-three.ts": "04bd627da41b4f66e3a4e2807cf40696758e584d6a64ff17eb9df869c5a0ef66",
     "pilots/calcite/specimen.js": "591cb08033f43a6a1a48ae177b75b26a88d6ce8ca1f224d0bff1b00f25044eda",
     "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
     "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",

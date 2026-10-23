@@ -1,8 +1,8 @@
 {
   "schema": "vugg-guided-tutorial-browser-receipt-v6",
   "sim_version": 285,
-  "browser_bundle_sha256": "ef83c36994e1534469f8500979a0e57fd602ea251c7e70ce74ffc0070918608c",
-  "execution_set_sha256": "f8beeb096dd0d76d9b9d15c8fe3a561c901ef549642189fa30a9be1c225b6119",
+  "browser_bundle_sha256": "196cd924fff6f025c040ba8f1f23357e181cb4314eb74dd5249e27d7cc4ec520",
+  "execution_set_sha256": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
   "node_runtime": {
     "schema": "vugg-evidence-node-runtime-v1",
     "node": "24.15.0",
@@ -13,7 +13,7 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "ae008ffbac4f239c949b7883f0cc341dac5148f7488b84a38eec04b9afe91e7f",
+  "producer_contract_sha256": "923558b53019dfd8e5dad51c28a6dd0cd34ddbf187f55cae6cd98fa9ba94da8c",
   "payload": {
     "browser_runtime": {
       "schema": "vugg-owned-devtools-browser-runtime-v2",
@@ -142,7 +142,7 @@
           "Finish tutorial"
         ],
         "collected": {
-          "record_id": "cry-16-wr2",
+          "record_id": "cry-16-vqk",
           "name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "mineral": "topaz",
           "source_scenario": "shigar_pegmatite",
@@ -156,14 +156,14 @@
             "scenario": "shigar_pegmatite",
             "step": 70,
             "fingerprint": "1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6",
-            "run_id": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"
+            "run_id": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
           },
           "after": {
             "runtime": "simulation",
             "scenario": "shigar_pegmatite",
             "step": 70,
             "fingerprint": "1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6",
-            "run_id": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2"
+            "run_id": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
           }
         },
         "teardown": {
@@ -221,7 +221,7 @@
       "player_surfaces": {
         "schema": "game04-player-surfaces-v2",
         "collection_record_groove": {
-          "record_id": "cry-16-wr2",
+          "record_id": "cry-16-vqk",
           "stored_name": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "library_name_text": "<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">",
           "groove_name_text": "“<img data-vugg-player-name-probe src=x onerror=\"globalThis.__vuggPlayerNameInjection=1\">”",
@@ -308,13 +308,13 @@
           "scenario": "shigar_pegmatite",
           "seed": 42,
           "download_filename": "shigar_pegmatite@seed42.stripview",
-          "download_sha256": "2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b",
+          "download_sha256": "858e176d22de18c61ffec67767b5404e38c7238d01412ffa02d2d8b0e4168c3b",
           "production_key": "shigar_pegmatite@42#42",
           "production_origin": "production-run",
-          "imported_key": "imported:shigar_pegmatite@42#42@sha256-c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+          "imported_key": "imported:shigar_pegmatite@42#42@sha256-8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586",
           "imported_origin": "imported-file",
-          "dataset_digest_sha256": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
-          "imported_digest_sha256": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+          "dataset_digest_sha256": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586",
+          "imported_digest_sha256": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586",
           "visible_import_label": "IMPORTED FILE",
           "upload_via_visible_file_chooser": true,
           "durable_commit_before_render": true,
@@ -335,5 +335,5 @@
       }
     }
   },
-  "payload_sha256": "bbae563b173d20b7a3f1b7939eacbd361c83e3c9e565854d176c06d2699c0ffa"
+  "payload_sha256": "baeb27adb925c9df5625771e05b864df2bc48331fdc3812542b3cff9afa9fe52"
 }

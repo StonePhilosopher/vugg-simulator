@@ -23,6 +23,7 @@ import {
   attestOwnedDevToolsBrowserRuntime,
   findOwnedBrowserExecutable,
 } from './owned-browser-runtime.mjs';
+import {verifyQuartzBrowserPayload} from './check-quartz-browser-payload.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionMatch = /const SIM_VERSION = (\d+);/.exec(
@@ -1806,6 +1807,7 @@ async function runWorkflow(driver, diagnostics) {
     const downloadFilename = 'shigar_pegmatite@seed42.stripview';
     const downloadedFile = await waitForDownloadedFile(diagnostics.download_dir, downloadFilename);
     const downloadSha256 = sha256File(downloadedFile);
+    if(process.argv.includes('--quartz-reconciliation-proof'))await verifyQuartzBrowserPayload(driver,downloadedFile,diagnostics);
     await driver.click('#strip-view-back');
     await driver.waitFor(
       `!!document.querySelector('#strip-view-upload-input')

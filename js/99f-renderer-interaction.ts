@@ -55,10 +55,16 @@ function _topoTooltipFromEvent(ev) {
       const lines = [];
       lines.push(`<b style="color:${color}">${cell.mineral} #${cell.crystal_id}</b>`);
       if (crystal) {
-        lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+        if(hit.quartzForm){
+          const form=hit.quartzForm,habit=form.status==='recorded-form-selection'?form.observed_habit:crystal.habit;
+          lines.push(collectionPlayerTextHTML(habit||'form unknown'));
+          lines.push(collectionPlayerTextHTML(quartzFormDisplayText(form)));
+          const length=hit.displayScale?.recordedLengthMm;
+          if(Number.isFinite(length))lines.push(`${length.toFixed(2)} mm at replay step ${form.cursor_step}`);
+        }else lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
         if (crystal.celestine_disclosure) lines.push(crystal.celestine_disclosure);
-        lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
-        if (crystal._surfaceGrowth) {
+        if(!hit.quartzForm)lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
+        if (crystal._surfaceGrowth&&!hit.quartzForm) {
           const sg = crystal._surfaceGrowth;
           const regime = String(sg.regime || 'surface growth').replace(/_/g, ' ');
           const cover = Math.round(Math.max(0, Math.min(1, sg.coverage_fraction || 0)) * 100);

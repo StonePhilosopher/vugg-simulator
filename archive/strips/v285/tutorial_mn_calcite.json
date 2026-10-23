@@ -6685,6 +6685,56 @@
         "surface_film": null,
         "zone_count": 1
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 4,
+        "captured_step": 30,
+        "sample_index": 29,
+        "nucleation_step": 1,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 1
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 4,
+          "initial": {
+            "step": 1,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.47847612907902026,
+                "azim": 0.16403076341970046
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "prismatic",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 30,
+          "observed_zone_count": 1
+        }
+      }
     ]
   }
 }
