@@ -13691,6 +13691,404 @@
         "surface_film": null,
         "zone_count": 88
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 1,
+        "captured_step": 100,
+        "sample_index": 99,
+        "nucleation_step": 13,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 13
+          },
+          {
+            "zone_index": 1,
+            "step": 14
+          },
+          {
+            "zone_index": 2,
+            "step": 15
+          },
+          {
+            "zone_index": 3,
+            "step": 16
+          },
+          {
+            "zone_index": 4,
+            "step": 17
+          },
+          {
+            "zone_index": 5,
+            "step": 18
+          },
+          {
+            "zone_index": 6,
+            "step": 19
+          },
+          {
+            "zone_index": 7,
+            "step": 20
+          },
+          {
+            "zone_index": 8,
+            "step": 21
+          },
+          {
+            "zone_index": 9,
+            "step": 22
+          },
+          {
+            "zone_index": 10,
+            "step": 23
+          },
+          {
+            "zone_index": 11,
+            "step": 24
+          },
+          {
+            "zone_index": 12,
+            "step": 25
+          },
+          {
+            "zone_index": 13,
+            "step": 26
+          },
+          {
+            "zone_index": 14,
+            "step": 27
+          },
+          {
+            "zone_index": 15,
+            "step": 28
+          },
+          {
+            "zone_index": 16,
+            "step": 29
+          },
+          {
+            "zone_index": 17,
+            "step": 30
+          },
+          {
+            "zone_index": 18,
+            "step": 31
+          },
+          {
+            "zone_index": 19,
+            "step": 32
+          },
+          {
+            "zone_index": 20,
+            "step": 33
+          },
+          {
+            "zone_index": 21,
+            "step": 34
+          },
+          {
+            "zone_index": 22,
+            "step": 35
+          },
+          {
+            "zone_index": 23,
+            "step": 36
+          },
+          {
+            "zone_index": 24,
+            "step": 37
+          },
+          {
+            "zone_index": 25,
+            "step": 38
+          },
+          {
+            "zone_index": 26,
+            "step": 39
+          },
+          {
+            "zone_index": 27,
+            "step": 40
+          },
+          {
+            "zone_index": 28,
+            "step": 41
+          },
+          {
+            "zone_index": 29,
+            "step": 42
+          },
+          {
+            "zone_index": 30,
+            "step": 43
+          },
+          {
+            "zone_index": 31,
+            "step": 44
+          },
+          {
+            "zone_index": 32,
+            "step": 45
+          },
+          {
+            "zone_index": 33,
+            "step": 46
+          },
+          {
+            "zone_index": 34,
+            "step": 47
+          },
+          {
+            "zone_index": 35,
+            "step": 48
+          },
+          {
+            "zone_index": 36,
+            "step": 49
+          },
+          {
+            "zone_index": 37,
+            "step": 50
+          },
+          {
+            "zone_index": 38,
+            "step": 51
+          },
+          {
+            "zone_index": 39,
+            "step": 52
+          },
+          {
+            "zone_index": 40,
+            "step": 53
+          },
+          {
+            "zone_index": 41,
+            "step": 54
+          },
+          {
+            "zone_index": 42,
+            "step": 55
+          },
+          {
+            "zone_index": 43,
+            "step": 56
+          },
+          {
+            "zone_index": 44,
+            "step": 57
+          },
+          {
+            "zone_index": 45,
+            "step": 58
+          },
+          {
+            "zone_index": 46,
+            "step": 59
+          },
+          {
+            "zone_index": 47,
+            "step": 60
+          },
+          {
+            "zone_index": 48,
+            "step": 61
+          },
+          {
+            "zone_index": 49,
+            "step": 62
+          },
+          {
+            "zone_index": 50,
+            "step": 63
+          },
+          {
+            "zone_index": 51,
+            "step": 64
+          },
+          {
+            "zone_index": 52,
+            "step": 65
+          },
+          {
+            "zone_index": 53,
+            "step": 66
+          },
+          {
+            "zone_index": 54,
+            "step": 67
+          },
+          {
+            "zone_index": 55,
+            "step": 68
+          },
+          {
+            "zone_index": 56,
+            "step": 69
+          },
+          {
+            "zone_index": 57,
+            "step": 70
+          },
+          {
+            "zone_index": 58,
+            "step": 71
+          },
+          {
+            "zone_index": 59,
+            "step": 72
+          },
+          {
+            "zone_index": 60,
+            "step": 73
+          },
+          {
+            "zone_index": 61,
+            "step": 74
+          },
+          {
+            "zone_index": 62,
+            "step": 75
+          },
+          {
+            "zone_index": 63,
+            "step": 76
+          },
+          {
+            "zone_index": 64,
+            "step": 77
+          },
+          {
+            "zone_index": 65,
+            "step": 78
+          },
+          {
+            "zone_index": 66,
+            "step": 79
+          },
+          {
+            "zone_index": 67,
+            "step": 80
+          },
+          {
+            "zone_index": 68,
+            "step": 81
+          },
+          {
+            "zone_index": 69,
+            "step": 82
+          },
+          {
+            "zone_index": 70,
+            "step": 83
+          },
+          {
+            "zone_index": 71,
+            "step": 84
+          },
+          {
+            "zone_index": 72,
+            "step": 85
+          },
+          {
+            "zone_index": 73,
+            "step": 86
+          },
+          {
+            "zone_index": 74,
+            "step": 87
+          },
+          {
+            "zone_index": 75,
+            "step": 88
+          },
+          {
+            "zone_index": 76,
+            "step": 89
+          },
+          {
+            "zone_index": 77,
+            "step": 90
+          },
+          {
+            "zone_index": 78,
+            "step": 91
+          },
+          {
+            "zone_index": 79,
+            "step": 92
+          },
+          {
+            "zone_index": 80,
+            "step": 93
+          },
+          {
+            "zone_index": 81,
+            "step": 94
+          },
+          {
+            "zone_index": 82,
+            "step": 95
+          },
+          {
+            "zone_index": 83,
+            "step": 96
+          },
+          {
+            "zone_index": 84,
+            "step": 97
+          },
+          {
+            "zone_index": 85,
+            "step": 98
+          },
+          {
+            "zone_index": 86,
+            "step": 99
+          },
+          {
+            "zone_index": 87,
+            "step": 100
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 1,
+          "initial": {
+            "step": 13,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.17452530348942485,
+                "azim": 4.721801664483621
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "prismatic",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 100,
+          "observed_zone_count": 88
+        }
+      }
     ]
   }
 }

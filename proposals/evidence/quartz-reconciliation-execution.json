@@ -1,0 +1,344 @@
+{
+  "schema": "quartz-reconciliation-execution-v1",
+  "base": "91e5cc1102b453acac1638adb40b51587b75115e",
+  "headAtLocalVerification": "f38302eb837f4749d42f31527a0a9d0cc6484d44",
+  "workingChangesBoundBy": "Runtime digest and source hashes in the comparison receipt; final commit/CI/deployment identity in delivery PR.",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtimeExecutionDigest": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+  "focused": {
+    "finalPostRebakeTests": 167,
+    "allPassed": true,
+    "fileCounts": {
+      "quartz-r4": 7,
+      "guided-tutorial-browser-receipt": 9,
+      "quartz-form-history": 16,
+      "quartz-form-strip": 11,
+      "quartz-form-collection": 12,
+      "quartz-form-display": 25,
+      "calcite-solid-authority": 36,
+      "celestine-lineage": 11,
+      "wall-display-control": 3,
+      "tutorial-guidance": 28,
+      "cavity-field-fallback": 9
+    },
+    "additionalUnchangedSaveSuites": {
+      "fortress-saves": 66,
+      "collection-player-names": 11
+    },
+    "scienceRebakeTests": 55,
+    "fullColdAllFilesSuiteClaimed": false
+  },
+  "browsers": {
+    "journeys": 18,
+    "viewerCases": 2,
+    "uncaughtViewerExceptions": 0,
+    "preflightAttempts": [
+      {
+        "startedUtc": "2026-10-23T04:31:10.1185857Z",
+        "finishedUtc": "2026-10-23T04:38:15.6769830Z",
+        "exitCode": 1,
+        "disposition": "Refused stale browser identity pins after completing journeys; not a passing commissioned receipt."
+      },
+      {
+        "startedUtc": "2026-10-23T04:47:28.8301176Z",
+        "finishedUtc": "2026-10-23T04:55:04.4251688Z",
+        "exitCode": 1,
+        "disposition": "Refused stale browser identity pins after completing journeys; not a passing commissioned receipt."
+      },
+      {
+        "startedUtc": "2026-10-23T04:56:20.1862904Z",
+        "finishedUtc": "2026-10-23T05:04:05.1212431Z",
+        "exitCode": 0,
+        "disposition": "Successful preflight; only final 05:16 UTC runtime is delivery evidence."
+      },
+      {
+        "startedUtc": "2026-10-23T05:06:43.3455868Z",
+        "finishedUtc": "2026-10-23T05:14:23.6618990Z",
+        "exitCode": 0,
+        "disposition": "Successful preflight; only final 05:16 UTC runtime is delivery evidence."
+      },
+      {
+        "startedUtc": "2026-10-23T05:16:00.3914962Z",
+        "finishedUtc": "2026-10-23T05:23:46.1758539Z",
+        "exitCode": 0,
+        "disposition": "Successful preflight; only final 05:16 UTC runtime is delivery evidence."
+      }
+    ]
+  },
+  "comparison": {
+    "existingHistoryPayloadsUnchanged": 41,
+    "numericalBaselinesUnchanged": 3,
+    "freshFleetScenarioValuesAndFingerprintsUnchanged": 41,
+    "scenarioMineralThermoSourcesUnchanged": true
+  },
+  "stages": [
+    {
+      "name": "quartz-browser",
+      "startedUtc": "2026-10-23T05:16:00.3914962Z",
+      "finishedUtc": "2026-10-23T05:23:46.1758539Z",
+      "exitCode": 0,
+      "commands": [
+        {
+          "finished_utc": "2026-10-23T05:23:23.4440669Z",
+          "started_utc": "2026-10-23T05:16:00.5164935Z",
+          "arguments": [
+            "run",
+            "gen:browser-receipt",
+            "--",
+            "--quartz-reconciliation-proof"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T05:23:46.1748534Z",
+          "started_utc": "2026-10-23T05:23:23.4530665Z",
+          "arguments": [
+            "tools/check-viewer-paths.mjs"
+          ],
+          "exit_code": 0,
+          "executable": "node"
+        }
+      ],
+      "logSha256": "e3ef3340356f376437907e85373d5de8bbeac93361b3fbe5fe84ac63732b596b",
+      "helperCleanup": {
+        "recordedLifetimes": 33,
+        "remainingLifetimes": 0,
+        "remainingListeners": 0,
+        "retainedHelpers": 0
+      }
+    },
+    {
+      "name": "science",
+      "startedUtc": "2026-10-23T05:25:20.0557429Z",
+      "finishedUtc": "2026-10-23T06:28:39.3213305Z",
+      "exitCode": 0,
+      "commands": [
+        {
+          "finished_utc": "2026-10-23T06:28:39.3163306Z",
+          "started_utc": "2026-10-23T05:25:20.1807421Z",
+          "arguments": [
+            "run",
+            "science:rebake"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        }
+      ],
+      "logSha256": "fc9b6c09b560a49120d6b36a23ccc225971bbd84052938803477d92c670db6a3",
+      "helperCleanup": {
+        "recordedLifetimes": 9,
+        "remainingLifetimes": 0,
+        "remainingListeners": 0,
+        "retainedHelpers": 0
+      }
+    },
+    {
+      "name": "calcite-pilot",
+      "startedUtc": "2026-10-23T06:28:58.4477690Z",
+      "finishedUtc": "2026-10-23T06:40:19.5841234Z",
+      "exitCode": 0,
+      "commands": [
+        {
+          "finished_utc": "2026-10-23T06:40:09.7082672Z",
+          "started_utc": "2026-10-23T06:28:58.5737691Z",
+          "arguments": [
+            "--max-old-space-size=512",
+            "pilots/calcite/census.mjs",
+            "--output",
+            "pilots/calcite/volume-census.json"
+          ],
+          "exit_code": 0,
+          "executable": "node"
+        },
+        {
+          "finished_utc": "2026-10-23T06:40:18.2677116Z",
+          "started_utc": "2026-10-23T06:40:09.7182596Z",
+          "arguments": [
+            "pilots/calcite/record.mjs"
+          ],
+          "exit_code": 0,
+          "executable": "node"
+        },
+        {
+          "finished_utc": "2026-10-23T06:40:19.5801309Z",
+          "started_utc": "2026-10-23T06:40:18.2737128Z",
+          "arguments": [
+            "pilots/calcite/factor-report.mjs"
+          ],
+          "exit_code": 0,
+          "executable": "node"
+        }
+      ],
+      "logSha256": "83d33d1014620f0be4d3fb9fd7595cbfe936fae8363d81f7528e4684016bde58",
+      "helperCleanup": {
+        "recordedLifetimes": 2,
+        "remainingLifetimes": 0,
+        "remainingListeners": 0,
+        "retainedHelpers": 0
+      }
+    },
+    {
+      "name": "quartz-final",
+      "startedUtc": "2026-10-23T06:40:37.9861149Z",
+      "finishedUtc": "2026-10-23T06:42:56.8175898Z",
+      "exitCode": 0,
+      "commands": [
+        {
+          "finished_utc": "2026-10-23T06:40:45.7505199Z",
+          "started_utc": "2026-10-23T06:40:38.1111192Z",
+          "arguments": [
+            "test",
+            "--",
+            "--file",
+            "tests-js/quartz-r4.test.ts"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:40:59.7571047Z",
+          "started_utc": "2026-10-23T06:40:45.7595205Z",
+          "arguments": [
+            "test",
+            "--",
+            "--file",
+            "tests-js/guided-tutorial-browser-receipt.test.ts"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:32.2040213Z",
+          "started_utc": "2026-10-23T06:40:59.7591049Z",
+          "arguments": [
+            "test",
+            "--",
+            "--file",
+            "tests-js/quartz-form-history.test.ts",
+            "--file",
+            "tests-js/quartz-form-strip.test.ts",
+            "--file",
+            "tests-js/quartz-form-collection.test.ts",
+            "--file",
+            "tests-js/quartz-form-display.test.ts",
+            "--file",
+            "tests-js/calcite-solid-authority.test.ts",
+            "--file",
+            "tests-js/celestine-lineage.test.ts",
+            "--file",
+            "tests-js/wall-display-control.test.ts",
+            "--file",
+            "tests-js/tutorial-guidance.test.ts",
+            "--file",
+            "tests-js/cavity-field-fallback.test.ts"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:35.3529843Z",
+          "started_utc": "2026-10-23T06:42:32.2060196Z",
+          "arguments": [
+            "run",
+            "typecheck"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:40.6792945Z",
+          "started_utc": "2026-10-23T06:42:35.3559829Z",
+          "arguments": [
+            "run",
+            "build:check"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:42.4439777Z",
+          "started_utc": "2026-10-23T06:42:40.6812923Z",
+          "arguments": [
+            "run",
+            "gen:release"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:44.1968694Z",
+          "started_utc": "2026-10-23T06:42:42.4459760Z",
+          "arguments": [
+            "run",
+            "audit:release"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:46.7283900Z",
+          "started_utc": "2026-10-23T06:42:44.1988690Z",
+          "arguments": [
+            "run",
+            "audit:science"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:50.0708340Z",
+          "started_utc": "2026-10-23T06:42:46.7313885Z",
+          "arguments": [
+            "run",
+            "audit:evidence"
+          ],
+          "exit_code": 0,
+          "executable": "npm.cmd"
+        },
+        {
+          "finished_utc": "2026-10-23T06:42:56.8155899Z",
+          "started_utc": "2026-10-23T06:42:50.0718337Z",
+          "arguments": [
+            "tools/check-quartz-reconciliation.mjs"
+          ],
+          "exit_code": 0,
+          "executable": "node"
+        }
+      ],
+      "logSha256": "22702171ade39fe9f7dacf22e832baff8a8a616279a97956b14fcb11cffe68b6",
+      "helperCleanup": {
+        "recordedLifetimes": 1,
+        "remainingLifetimes": 0,
+        "remainingListeners": 0,
+        "retainedHelpers": 0
+      }
+    }
+  ],
+  "correctedPreflightFailures": [
+    "Missing opposite termination dependency exposed by actual geometry test; bounded source option transplanted.",
+    "New collection fixture had no collectible solid; fixture corrected.",
+    "Pre-collected Library records incorrectly chose the legacy finish producer; selection now uses actual saved testimony and all 66 save tests pass."
+  ],
+  "discardedEvidence": [
+    "Attempted Node reproduction did not match the Chrome strip; it is not accepted evidence. Actual Chrome bytes supply the baseline recovery proof."
+  ],
+  "boundaries": [
+    "Finalized classifier observations are not measured face velocities or geological validation.",
+    "Topology scope and nucleation tilt are observed in quartz v2 because the general R7 replay layer was not imported.",
+    "Historical width and display material retain existing approximations; this is not a complete physical-solid reconstruction.",
+    "Twins, split/fabric growth, casts, enclosed hosts, parent inheritance and gaps keep explicit latest-form display fallbacks.",
+    "Legacy records remain readable without invented quartz testimony; old producer selection is retained for old authenticated receipts.",
+    "Chrome 155 on this host was tested; no universal GPU/browser claim.",
+    "No performance improvement is claimed by this integration.",
+    "Calcite production remains withheld; canonical PR #11 requires an independent owner-side gate."
+  ]
+}

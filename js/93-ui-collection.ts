@@ -74,6 +74,7 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
   if (record.twinned !== undefined && typeof record.twinned !== 'boolean') {
     throw new Error(`${label} has invalid twin state`);
   }
+  assertCollectionQuartzForm(record);
   if (record.forms !== undefined
       && (!Array.isArray(record.forms) || record.forms.length > 128
         || record.forms.some(value => typeof value !== 'string' || value.length > 512))) {
@@ -264,7 +265,9 @@ function _collectionRecordHasSurvivingSolid(record: any): boolean {
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
 // crystal later — without this the Groove would have nothing to draw.
-function buildCrystalRecord(crystal, meta) {
+function buildCrystalRecord(crystal, meta, quartzSchema:string|null=COLLECTION_QUARTZ_FORM_SCHEMA) {
+  if(quartzSchema!==null&&quartzSchema!==COLLECTION_QUARTZ_FORM_SCHEMA)throw new Error('Unsupported quartz collection producer');
+  const quartzForm=quartzSchema===null?undefined:collectionQuartzFormForPersistence(crystal);
   if (!_crystalHasCollectibleSolid(crystal)) {
     throw new Error('This crystal has no surviving solid specimen to collect.');
   }
@@ -327,6 +330,7 @@ function buildCrystalRecord(crystal, meta) {
     collected_at: new Date().toISOString(),
     name: meta.name || defaultName,
     mineral: crystal.mineral,
+    ...(quartzForm!==undefined?{quartz_form:quartzForm}:{}),
     source: {
       mode: meta.mode || 'unknown',
       scenario: meta.scenario || null,
@@ -363,7 +367,7 @@ function buildCrystalRecord(crystal, meta) {
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
 function reconstructCrystalFromRecord(rec): any {
-  if (rec.mineral === 'celestine') assertCrystalCollectionRecord(rec);
+  if (rec.mineral === 'celestine'||rec.quartz_form!==undefined) assertCrystalCollectionRecord(rec);
   const zones = Array.isArray(rec.zones)
     ? rec.zones.map(z => Object.assign({}, z, z.celestine_history
       ? { celestine_history: _celestineFrozenCopy(z.celestine_history) } : {}))
@@ -417,6 +421,7 @@ function reconstructCrystalFromRecord(rec): any {
       return `step ${z.step}, T=${z.temperature.toFixed(1)}°C, +${z.thickness_um.toFixed(1)} µm`;
     },
   };
+  restoreCollectionQuartzForm(stand,rec);
   return stand;
 }
 

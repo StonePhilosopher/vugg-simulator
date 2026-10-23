@@ -1391,6 +1391,9 @@ class VugSimulator {
     // token unchanged so the size scale is untouched (no SIM bump, no rebake). See js/45.
     classifyWulffForm(this);
 
+    // Observe finalized existing classifiers; never feed testimony into growth.
+    recordQuartzFormObservations(this);
+
     recordCelestineGrowthStep(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====

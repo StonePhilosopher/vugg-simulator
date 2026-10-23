@@ -123,7 +123,7 @@
   - Transformation step 65: argentite → acanthite (cooling-below-phase-boundary); dehydration=null; phase-replacement={"schema":"paramorph-transition-v1","step":65,"from":"argentite","to":"acanthite","driver":"cooling-below-phase-boundary","temperature_C":35.0000000000004,"phase_boundary_C":173,"external_form_preserved":true}
   - Transformation step 65: argentite → acanthite (cooling-below-phase-boundary); dehydration=null; phase-replacement={"schema":"paramorph-transition-v1","step":65,"from":"argentite","to":"acanthite","driver":"cooling-below-phase-boundary","temperature_C":35.0000000000004,"phase_boundary_C":173,"external_form_preserved":true}
   - Transformation step 65: argentite → acanthite (cooling-below-phase-boundary); dehydration=null; phase-replacement={"schema":"paramorph-transition-v1","step":65,"from":"argentite","to":"acanthite","driver":"cooling-below-phase-boundary","temperature_C":35.0000000000004,"phase_boundary_C":173,"external_form_preserved":true}
-  - Transformation reactivity commissioning: controlled production-engine boundary; not a locality trajectory; artifact vugg-mechanism-witnesses-v6/99d1afbd36c4f9b57ad0fd28711da6a75796db2f9b0189ad62c62a9694eb9cfd.
+  - Transformation reactivity commissioning: controlled production-engine boundary; not a locality trajectory; artifact vugg-mechanism-witnesses-v6/4052654ca52331c76e666b609b7d4b5b993cae27321c9f562345713c222f6c45.
     - No controlled reactivity witness is applicable to a transformation product in this locality run.
   - Conserved carbonate boundary: not enabled for this archived run.
 

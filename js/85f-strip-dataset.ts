@@ -181,6 +181,7 @@ interface StripDataset {
   player_action_testimony?: any[];
   layer_growth_testimony?: any[];
   habit_morphology_testimony?: any[];
+  quartz_form_testimony?: StripQuartzFormTestimony[];
 }
 
 // ============================================================
@@ -394,6 +395,10 @@ function stripValidateDatasetShape(ds: StripDataset): void {
       throw new Error(`strip: invalid ${key}`);
     }
   }
+  if(ds.quartz_form_testimony!==undefined){
+    if(manifest.format_version<4)throw new Error('strip: quartz form history requires a testimony section');
+    stripValidateQuartzFormTestimony(ds.quartz_form_testimony,steps);
+  }
 }
 
 async function _stripReadStreamBounded(
@@ -451,6 +456,10 @@ async function stripSerialize(
   ds: StripDataset,
   gzip: boolean = true
 ): Promise<Uint8Array> {
+  if(ds.quartz_form_testimony!==undefined){
+    if(ds.manifest.format_version<4)throw new Error('strip: quartz form history requires a testimony section');
+    stripValidateQuartzFormTestimony(ds.quartz_form_testimony,ds.manifest.axes.steps);
+  }
   const enc = new TextEncoder();
   const manifestBytes = enc.encode(JSON.stringify(ds.manifest));
   const eventsBytes = enc.encode(JSON.stringify(ds.nucleation_events));
@@ -471,6 +480,7 @@ async function stripSerialize(
     player_action_testimony: ds.player_action_testimony || [],
     layer_growth_testimony: ds.layer_growth_testimony || [],
     habit_morphology_testimony: ds.habit_morphology_testimony || [],
+    ...(ds.quartz_form_testimony!==undefined?{quartz_form_testimony:ds.quartz_form_testimony}:{}),
   })) : null;
   const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
 
@@ -558,6 +568,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let player_action_testimony: any[] | undefined;
   let layer_growth_testimony: any[] | undefined;
   let habit_morphology_testimony: any[] | undefined;
+  let quartz_form_testimony: StripQuartzFormTestimony[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
     const testimony = takeJson('testimony');
     pressure_phase_testimony = Array.isArray(testimony.pressure_phase_testimony)
@@ -580,6 +591,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.layer_growth_testimony : [];
     habit_morphology_testimony = Array.isArray(testimony.habit_morphology_testimony)
       ? testimony.habit_morphology_testimony : [];
+    // Preserve malformed values for validation; never erase a bad channel.
+    quartz_form_testimony=testimony.quartz_form_testimony;
   }
   const chip_data = buf.slice(offset);
   const result = {
@@ -595,8 +608,10 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(player_action_testimony ? { player_action_testimony } : {}),
     ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
     ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
+    ...(quartz_form_testimony!==undefined?{quartz_form_testimony}:{}),
   };
   stripValidateDatasetShape(result);
+  if(quartz_form_testimony!==undefined)_quartzFormFreeze(quartz_form_testimony);
   return result;
 }
 

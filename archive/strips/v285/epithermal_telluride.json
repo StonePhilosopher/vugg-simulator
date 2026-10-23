@@ -120535,6 +120535,2720 @@
         "surface_film": null,
         "zone_count": 108
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 15,
+        "captured_step": 180,
+        "sample_index": 179,
+        "nucleation_step": 21,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 21
+          },
+          {
+            "zone_index": 1,
+            "step": 22
+          },
+          {
+            "zone_index": 2,
+            "step": 23
+          },
+          {
+            "zone_index": 3,
+            "step": 24
+          },
+          {
+            "zone_index": 4,
+            "step": 25
+          },
+          {
+            "zone_index": 5,
+            "step": 26
+          },
+          {
+            "zone_index": 6,
+            "step": 27
+          },
+          {
+            "zone_index": 7,
+            "step": 28
+          },
+          {
+            "zone_index": 8,
+            "step": 29
+          },
+          {
+            "zone_index": 9,
+            "step": 30
+          },
+          {
+            "zone_index": 10,
+            "step": 31
+          },
+          {
+            "zone_index": 11,
+            "step": 32
+          },
+          {
+            "zone_index": 12,
+            "step": 33
+          },
+          {
+            "zone_index": 13,
+            "step": 34
+          },
+          {
+            "zone_index": 14,
+            "step": 35
+          },
+          {
+            "zone_index": 15,
+            "step": 36
+          },
+          {
+            "zone_index": 16,
+            "step": 37
+          },
+          {
+            "zone_index": 17,
+            "step": 38
+          },
+          {
+            "zone_index": 18,
+            "step": 39
+          },
+          {
+            "zone_index": 19,
+            "step": 40
+          },
+          {
+            "zone_index": 20,
+            "step": 41
+          },
+          {
+            "zone_index": 21,
+            "step": 42
+          },
+          {
+            "zone_index": 22,
+            "step": 43
+          },
+          {
+            "zone_index": 23,
+            "step": 44
+          },
+          {
+            "zone_index": 24,
+            "step": 45
+          },
+          {
+            "zone_index": 25,
+            "step": 46
+          },
+          {
+            "zone_index": 26,
+            "step": 47
+          },
+          {
+            "zone_index": 27,
+            "step": 48
+          },
+          {
+            "zone_index": 28,
+            "step": 49
+          },
+          {
+            "zone_index": 29,
+            "step": 50
+          },
+          {
+            "zone_index": 30,
+            "step": 51
+          },
+          {
+            "zone_index": 31,
+            "step": 52
+          },
+          {
+            "zone_index": 32,
+            "step": 53
+          },
+          {
+            "zone_index": 33,
+            "step": 54
+          },
+          {
+            "zone_index": 34,
+            "step": 55
+          },
+          {
+            "zone_index": 35,
+            "step": 56
+          },
+          {
+            "zone_index": 36,
+            "step": 57
+          },
+          {
+            "zone_index": 37,
+            "step": 58
+          },
+          {
+            "zone_index": 38,
+            "step": 59
+          },
+          {
+            "zone_index": 39,
+            "step": 60
+          },
+          {
+            "zone_index": 40,
+            "step": 61
+          },
+          {
+            "zone_index": 41,
+            "step": 62
+          },
+          {
+            "zone_index": 42,
+            "step": 63
+          },
+          {
+            "zone_index": 43,
+            "step": 64
+          },
+          {
+            "zone_index": 44,
+            "step": 65
+          },
+          {
+            "zone_index": 45,
+            "step": 66
+          },
+          {
+            "zone_index": 46,
+            "step": 67
+          },
+          {
+            "zone_index": 47,
+            "step": 68
+          },
+          {
+            "zone_index": 48,
+            "step": 69
+          },
+          {
+            "zone_index": 49,
+            "step": 70
+          },
+          {
+            "zone_index": 50,
+            "step": 71
+          },
+          {
+            "zone_index": 51,
+            "step": 72
+          },
+          {
+            "zone_index": 52,
+            "step": 73
+          },
+          {
+            "zone_index": 53,
+            "step": 74
+          },
+          {
+            "zone_index": 54,
+            "step": 75
+          },
+          {
+            "zone_index": 55,
+            "step": 76
+          },
+          {
+            "zone_index": 56,
+            "step": 77
+          },
+          {
+            "zone_index": 57,
+            "step": 78
+          },
+          {
+            "zone_index": 58,
+            "step": 79
+          },
+          {
+            "zone_index": 59,
+            "step": 80
+          },
+          {
+            "zone_index": 60,
+            "step": 81
+          },
+          {
+            "zone_index": 61,
+            "step": 82
+          },
+          {
+            "zone_index": 62,
+            "step": 83
+          },
+          {
+            "zone_index": 63,
+            "step": 84
+          },
+          {
+            "zone_index": 64,
+            "step": 85
+          },
+          {
+            "zone_index": 65,
+            "step": 86
+          },
+          {
+            "zone_index": 66,
+            "step": 87
+          },
+          {
+            "zone_index": 67,
+            "step": 88
+          },
+          {
+            "zone_index": 68,
+            "step": 89
+          },
+          {
+            "zone_index": 69,
+            "step": 90
+          },
+          {
+            "zone_index": 70,
+            "step": 91
+          },
+          {
+            "zone_index": 71,
+            "step": 92
+          },
+          {
+            "zone_index": 72,
+            "step": 93
+          },
+          {
+            "zone_index": 73,
+            "step": 94
+          },
+          {
+            "zone_index": 74,
+            "step": 95
+          },
+          {
+            "zone_index": 75,
+            "step": 96
+          },
+          {
+            "zone_index": 76,
+            "step": 97
+          },
+          {
+            "zone_index": 77,
+            "step": 98
+          },
+          {
+            "zone_index": 78,
+            "step": 99
+          },
+          {
+            "zone_index": 79,
+            "step": 100
+          },
+          {
+            "zone_index": 80,
+            "step": 101
+          },
+          {
+            "zone_index": 81,
+            "step": 102
+          },
+          {
+            "zone_index": 82,
+            "step": 103
+          },
+          {
+            "zone_index": 83,
+            "step": 104
+          },
+          {
+            "zone_index": 84,
+            "step": 105
+          },
+          {
+            "zone_index": 85,
+            "step": 106
+          },
+          {
+            "zone_index": 86,
+            "step": 107
+          },
+          {
+            "zone_index": 87,
+            "step": 108
+          },
+          {
+            "zone_index": 88,
+            "step": 109
+          },
+          {
+            "zone_index": 89,
+            "step": 110
+          },
+          {
+            "zone_index": 90,
+            "step": 111
+          },
+          {
+            "zone_index": 91,
+            "step": 112
+          },
+          {
+            "zone_index": 92,
+            "step": 113
+          },
+          {
+            "zone_index": 93,
+            "step": 114
+          },
+          {
+            "zone_index": 94,
+            "step": 115
+          },
+          {
+            "zone_index": 95,
+            "step": 116
+          },
+          {
+            "zone_index": 96,
+            "step": 117
+          },
+          {
+            "zone_index": 97,
+            "step": 118
+          },
+          {
+            "zone_index": 98,
+            "step": 119
+          },
+          {
+            "zone_index": 99,
+            "step": 120
+          },
+          {
+            "zone_index": 100,
+            "step": 121
+          },
+          {
+            "zone_index": 101,
+            "step": 122
+          },
+          {
+            "zone_index": 102,
+            "step": 123
+          },
+          {
+            "zone_index": 103,
+            "step": 124
+          },
+          {
+            "zone_index": 104,
+            "step": 125
+          },
+          {
+            "zone_index": 105,
+            "step": 126
+          },
+          {
+            "zone_index": 106,
+            "step": 127
+          },
+          {
+            "zone_index": 107,
+            "step": 128
+          },
+          {
+            "zone_index": 108,
+            "step": 129
+          },
+          {
+            "zone_index": 109,
+            "step": 130
+          },
+          {
+            "zone_index": 110,
+            "step": 131
+          },
+          {
+            "zone_index": 111,
+            "step": 132
+          },
+          {
+            "zone_index": 112,
+            "step": 133
+          },
+          {
+            "zone_index": 113,
+            "step": 134
+          },
+          {
+            "zone_index": 114,
+            "step": 135
+          },
+          {
+            "zone_index": 115,
+            "step": 136
+          },
+          {
+            "zone_index": 116,
+            "step": 137
+          },
+          {
+            "zone_index": 117,
+            "step": 138
+          },
+          {
+            "zone_index": 118,
+            "step": 139
+          },
+          {
+            "zone_index": 119,
+            "step": 140
+          },
+          {
+            "zone_index": 120,
+            "step": 141
+          },
+          {
+            "zone_index": 121,
+            "step": 142
+          },
+          {
+            "zone_index": 122,
+            "step": 143
+          },
+          {
+            "zone_index": 123,
+            "step": 144
+          },
+          {
+            "zone_index": 124,
+            "step": 145
+          },
+          {
+            "zone_index": 125,
+            "step": 146
+          },
+          {
+            "zone_index": 126,
+            "step": 147
+          },
+          {
+            "zone_index": 127,
+            "step": 148
+          },
+          {
+            "zone_index": 128,
+            "step": 149
+          },
+          {
+            "zone_index": 129,
+            "step": 150
+          },
+          {
+            "zone_index": 130,
+            "step": 151
+          },
+          {
+            "zone_index": 131,
+            "step": 152
+          },
+          {
+            "zone_index": 132,
+            "step": 153
+          },
+          {
+            "zone_index": 133,
+            "step": 154
+          },
+          {
+            "zone_index": 134,
+            "step": 155
+          },
+          {
+            "zone_index": 135,
+            "step": 156
+          },
+          {
+            "zone_index": 136,
+            "step": 157
+          },
+          {
+            "zone_index": 137,
+            "step": 158
+          },
+          {
+            "zone_index": 138,
+            "step": 159
+          },
+          {
+            "zone_index": 139,
+            "step": 160
+          },
+          {
+            "zone_index": 140,
+            "step": 161
+          },
+          {
+            "zone_index": 141,
+            "step": 162
+          },
+          {
+            "zone_index": 142,
+            "step": 163
+          },
+          {
+            "zone_index": 143,
+            "step": 164
+          },
+          {
+            "zone_index": 144,
+            "step": 165
+          },
+          {
+            "zone_index": 145,
+            "step": 166
+          },
+          {
+            "zone_index": 146,
+            "step": 167
+          },
+          {
+            "zone_index": 147,
+            "step": 168
+          },
+          {
+            "zone_index": 148,
+            "step": 169
+          },
+          {
+            "zone_index": 149,
+            "step": 170
+          },
+          {
+            "zone_index": 150,
+            "step": 171
+          },
+          {
+            "zone_index": 151,
+            "step": 172
+          },
+          {
+            "zone_index": 152,
+            "step": 173
+          },
+          {
+            "zone_index": 153,
+            "step": 174
+          },
+          {
+            "zone_index": 154,
+            "step": 175
+          },
+          {
+            "zone_index": 155,
+            "step": 176
+          },
+          {
+            "zone_index": 156,
+            "step": 177
+          },
+          {
+            "zone_index": 157,
+            "step": 178
+          },
+          {
+            "zone_index": 158,
+            "step": 179
+          },
+          {
+            "zone_index": 159,
+            "step": 180
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 15,
+          "initial": {
+            "step": 21,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.4178692005310228,
+                "azim": 4.153277988859102
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "gwindel",
+              "twin_law": "Brazil",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": true,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 41,
+              "zone_count": 21,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 48,
+              "zone_count": 28,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 60,
+              "zone_count": 40,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 70,
+              "zone_count": 50,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 81,
+              "zone_count": 61,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 92,
+              "zone_count": 72,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 110,
+              "zone_count": 90,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 117,
+              "zone_count": 97,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 128,
+              "zone_count": 108,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 138,
+              "zone_count": 118,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 154,
+              "zone_count": 134,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 165,
+              "zone_count": 145,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 175,
+              "zone_count": 155,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.4178692005310228,
+                  "azim": 4.153277988859102
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            }
+          ],
+          "observed_through_step": 180,
+          "observed_zone_count": 160
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 23,
+        "captured_step": 180,
+        "sample_index": 179,
+        "nucleation_step": 41,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 41
+          },
+          {
+            "zone_index": 1,
+            "step": 42
+          },
+          {
+            "zone_index": 2,
+            "step": 43
+          },
+          {
+            "zone_index": 3,
+            "step": 44
+          },
+          {
+            "zone_index": 4,
+            "step": 45
+          },
+          {
+            "zone_index": 5,
+            "step": 46
+          },
+          {
+            "zone_index": 6,
+            "step": 47
+          },
+          {
+            "zone_index": 7,
+            "step": 48
+          },
+          {
+            "zone_index": 8,
+            "step": 49
+          },
+          {
+            "zone_index": 9,
+            "step": 50
+          },
+          {
+            "zone_index": 10,
+            "step": 51
+          },
+          {
+            "zone_index": 11,
+            "step": 52
+          },
+          {
+            "zone_index": 12,
+            "step": 53
+          },
+          {
+            "zone_index": 13,
+            "step": 54
+          },
+          {
+            "zone_index": 14,
+            "step": 55
+          },
+          {
+            "zone_index": 15,
+            "step": 56
+          },
+          {
+            "zone_index": 16,
+            "step": 57
+          },
+          {
+            "zone_index": 17,
+            "step": 58
+          },
+          {
+            "zone_index": 18,
+            "step": 59
+          },
+          {
+            "zone_index": 19,
+            "step": 60
+          },
+          {
+            "zone_index": 20,
+            "step": 61
+          },
+          {
+            "zone_index": 21,
+            "step": 62
+          },
+          {
+            "zone_index": 22,
+            "step": 63
+          },
+          {
+            "zone_index": 23,
+            "step": 64
+          },
+          {
+            "zone_index": 24,
+            "step": 65
+          },
+          {
+            "zone_index": 25,
+            "step": 66
+          },
+          {
+            "zone_index": 26,
+            "step": 67
+          },
+          {
+            "zone_index": 27,
+            "step": 68
+          },
+          {
+            "zone_index": 28,
+            "step": 69
+          },
+          {
+            "zone_index": 29,
+            "step": 70
+          },
+          {
+            "zone_index": 30,
+            "step": 71
+          },
+          {
+            "zone_index": 31,
+            "step": 72
+          },
+          {
+            "zone_index": 32,
+            "step": 73
+          },
+          {
+            "zone_index": 33,
+            "step": 74
+          },
+          {
+            "zone_index": 34,
+            "step": 75
+          },
+          {
+            "zone_index": 35,
+            "step": 76
+          },
+          {
+            "zone_index": 36,
+            "step": 77
+          },
+          {
+            "zone_index": 37,
+            "step": 78
+          },
+          {
+            "zone_index": 38,
+            "step": 79
+          },
+          {
+            "zone_index": 39,
+            "step": 80
+          },
+          {
+            "zone_index": 40,
+            "step": 81
+          },
+          {
+            "zone_index": 41,
+            "step": 82
+          },
+          {
+            "zone_index": 42,
+            "step": 83
+          },
+          {
+            "zone_index": 43,
+            "step": 84
+          },
+          {
+            "zone_index": 44,
+            "step": 85
+          },
+          {
+            "zone_index": 45,
+            "step": 86
+          },
+          {
+            "zone_index": 46,
+            "step": 87
+          },
+          {
+            "zone_index": 47,
+            "step": 88
+          },
+          {
+            "zone_index": 48,
+            "step": 89
+          },
+          {
+            "zone_index": 49,
+            "step": 90
+          },
+          {
+            "zone_index": 50,
+            "step": 91
+          },
+          {
+            "zone_index": 51,
+            "step": 92
+          },
+          {
+            "zone_index": 52,
+            "step": 93
+          },
+          {
+            "zone_index": 53,
+            "step": 94
+          },
+          {
+            "zone_index": 54,
+            "step": 95
+          },
+          {
+            "zone_index": 55,
+            "step": 96
+          },
+          {
+            "zone_index": 56,
+            "step": 97
+          },
+          {
+            "zone_index": 57,
+            "step": 98
+          },
+          {
+            "zone_index": 58,
+            "step": 99
+          },
+          {
+            "zone_index": 59,
+            "step": 100
+          },
+          {
+            "zone_index": 60,
+            "step": 101
+          },
+          {
+            "zone_index": 61,
+            "step": 102
+          },
+          {
+            "zone_index": 62,
+            "step": 103
+          },
+          {
+            "zone_index": 63,
+            "step": 104
+          },
+          {
+            "zone_index": 64,
+            "step": 105
+          },
+          {
+            "zone_index": 65,
+            "step": 106
+          },
+          {
+            "zone_index": 66,
+            "step": 107
+          },
+          {
+            "zone_index": 67,
+            "step": 108
+          },
+          {
+            "zone_index": 68,
+            "step": 109
+          },
+          {
+            "zone_index": 69,
+            "step": 110
+          },
+          {
+            "zone_index": 70,
+            "step": 111
+          },
+          {
+            "zone_index": 71,
+            "step": 112
+          },
+          {
+            "zone_index": 72,
+            "step": 113
+          },
+          {
+            "zone_index": 73,
+            "step": 114
+          },
+          {
+            "zone_index": 74,
+            "step": 115
+          },
+          {
+            "zone_index": 75,
+            "step": 116
+          },
+          {
+            "zone_index": 76,
+            "step": 117
+          },
+          {
+            "zone_index": 77,
+            "step": 118
+          },
+          {
+            "zone_index": 78,
+            "step": 119
+          },
+          {
+            "zone_index": 79,
+            "step": 120
+          },
+          {
+            "zone_index": 80,
+            "step": 121
+          },
+          {
+            "zone_index": 81,
+            "step": 122
+          },
+          {
+            "zone_index": 82,
+            "step": 123
+          },
+          {
+            "zone_index": 83,
+            "step": 124
+          },
+          {
+            "zone_index": 84,
+            "step": 125
+          },
+          {
+            "zone_index": 85,
+            "step": 126
+          },
+          {
+            "zone_index": 86,
+            "step": 127
+          },
+          {
+            "zone_index": 87,
+            "step": 128
+          },
+          {
+            "zone_index": 88,
+            "step": 129
+          },
+          {
+            "zone_index": 89,
+            "step": 130
+          },
+          {
+            "zone_index": 90,
+            "step": 131
+          },
+          {
+            "zone_index": 91,
+            "step": 132
+          },
+          {
+            "zone_index": 92,
+            "step": 133
+          },
+          {
+            "zone_index": 93,
+            "step": 134
+          },
+          {
+            "zone_index": 94,
+            "step": 135
+          },
+          {
+            "zone_index": 95,
+            "step": 136
+          },
+          {
+            "zone_index": 96,
+            "step": 137
+          },
+          {
+            "zone_index": 97,
+            "step": 138
+          },
+          {
+            "zone_index": 98,
+            "step": 139
+          },
+          {
+            "zone_index": 99,
+            "step": 140
+          },
+          {
+            "zone_index": 100,
+            "step": 141
+          },
+          {
+            "zone_index": 101,
+            "step": 142
+          },
+          {
+            "zone_index": 102,
+            "step": 143
+          },
+          {
+            "zone_index": 103,
+            "step": 144
+          },
+          {
+            "zone_index": 104,
+            "step": 145
+          },
+          {
+            "zone_index": 105,
+            "step": 146
+          },
+          {
+            "zone_index": 106,
+            "step": 147
+          },
+          {
+            "zone_index": 107,
+            "step": 148
+          },
+          {
+            "zone_index": 108,
+            "step": 149
+          },
+          {
+            "zone_index": 109,
+            "step": 150
+          },
+          {
+            "zone_index": 110,
+            "step": 151
+          },
+          {
+            "zone_index": 111,
+            "step": 152
+          },
+          {
+            "zone_index": 112,
+            "step": 153
+          },
+          {
+            "zone_index": 113,
+            "step": 154
+          },
+          {
+            "zone_index": 114,
+            "step": 155
+          },
+          {
+            "zone_index": 115,
+            "step": 156
+          },
+          {
+            "zone_index": 116,
+            "step": 157
+          },
+          {
+            "zone_index": 117,
+            "step": 158
+          },
+          {
+            "zone_index": 118,
+            "step": 159
+          },
+          {
+            "zone_index": 119,
+            "step": 160
+          },
+          {
+            "zone_index": 120,
+            "step": 161
+          },
+          {
+            "zone_index": 121,
+            "step": 162
+          },
+          {
+            "zone_index": 122,
+            "step": 163
+          },
+          {
+            "zone_index": 123,
+            "step": 164
+          },
+          {
+            "zone_index": 124,
+            "step": 165
+          },
+          {
+            "zone_index": 125,
+            "step": 166
+          },
+          {
+            "zone_index": 126,
+            "step": 167
+          },
+          {
+            "zone_index": 127,
+            "step": 168
+          },
+          {
+            "zone_index": 128,
+            "step": 169
+          },
+          {
+            "zone_index": 129,
+            "step": 170
+          },
+          {
+            "zone_index": 130,
+            "step": 171
+          },
+          {
+            "zone_index": 131,
+            "step": 172
+          },
+          {
+            "zone_index": 132,
+            "step": 173
+          },
+          {
+            "zone_index": 133,
+            "step": 174
+          },
+          {
+            "zone_index": 134,
+            "step": 175
+          },
+          {
+            "zone_index": 135,
+            "step": 176
+          },
+          {
+            "zone_index": 136,
+            "step": 177
+          },
+          {
+            "zone_index": 137,
+            "step": 178
+          },
+          {
+            "zone_index": 138,
+            "step": 179
+          },
+          {
+            "zone_index": 139,
+            "step": 180
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 23,
+          "initial": {
+            "step": 41,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.8581108174629014,
+                "azim": 1.4087259789315159
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "scepter overgrowth possible",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 48,
+              "zone_count": 8,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 60,
+              "zone_count": 20,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 70,
+              "zone_count": 30,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 81,
+              "zone_count": 41,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 92,
+              "zone_count": 52,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 110,
+              "zone_count": 70,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 117,
+              "zone_count": 77,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 128,
+              "zone_count": 88,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 138,
+              "zone_count": 98,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 154,
+              "zone_count": 114,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Dauphiné (thermal stress)",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 165,
+              "zone_count": 125,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "Dauphiné (thermal stress)",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 175,
+              "zone_count": 135,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.8581108174629014,
+                  "azim": 1.4087259789315159
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "Dauphiné (thermal stress)",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            }
+          ],
+          "observed_through_step": 180,
+          "observed_zone_count": 140
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 27,
+        "captured_step": 180,
+        "sample_index": 179,
+        "nucleation_step": 73,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 73
+          },
+          {
+            "zone_index": 1,
+            "step": 74
+          },
+          {
+            "zone_index": 2,
+            "step": 75
+          },
+          {
+            "zone_index": 3,
+            "step": 76
+          },
+          {
+            "zone_index": 4,
+            "step": 77
+          },
+          {
+            "zone_index": 5,
+            "step": 78
+          },
+          {
+            "zone_index": 6,
+            "step": 79
+          },
+          {
+            "zone_index": 7,
+            "step": 80
+          },
+          {
+            "zone_index": 8,
+            "step": 81
+          },
+          {
+            "zone_index": 9,
+            "step": 82
+          },
+          {
+            "zone_index": 10,
+            "step": 83
+          },
+          {
+            "zone_index": 11,
+            "step": 84
+          },
+          {
+            "zone_index": 12,
+            "step": 85
+          },
+          {
+            "zone_index": 13,
+            "step": 86
+          },
+          {
+            "zone_index": 14,
+            "step": 87
+          },
+          {
+            "zone_index": 15,
+            "step": 88
+          },
+          {
+            "zone_index": 16,
+            "step": 89
+          },
+          {
+            "zone_index": 17,
+            "step": 90
+          },
+          {
+            "zone_index": 18,
+            "step": 91
+          },
+          {
+            "zone_index": 19,
+            "step": 92
+          },
+          {
+            "zone_index": 20,
+            "step": 93
+          },
+          {
+            "zone_index": 21,
+            "step": 94
+          },
+          {
+            "zone_index": 22,
+            "step": 95
+          },
+          {
+            "zone_index": 23,
+            "step": 96
+          },
+          {
+            "zone_index": 24,
+            "step": 97
+          },
+          {
+            "zone_index": 25,
+            "step": 98
+          },
+          {
+            "zone_index": 26,
+            "step": 99
+          },
+          {
+            "zone_index": 27,
+            "step": 100
+          },
+          {
+            "zone_index": 28,
+            "step": 101
+          },
+          {
+            "zone_index": 29,
+            "step": 102
+          },
+          {
+            "zone_index": 30,
+            "step": 103
+          },
+          {
+            "zone_index": 31,
+            "step": 104
+          },
+          {
+            "zone_index": 32,
+            "step": 105
+          },
+          {
+            "zone_index": 33,
+            "step": 106
+          },
+          {
+            "zone_index": 34,
+            "step": 107
+          },
+          {
+            "zone_index": 35,
+            "step": 108
+          },
+          {
+            "zone_index": 36,
+            "step": 109
+          },
+          {
+            "zone_index": 37,
+            "step": 110
+          },
+          {
+            "zone_index": 38,
+            "step": 111
+          },
+          {
+            "zone_index": 39,
+            "step": 112
+          },
+          {
+            "zone_index": 40,
+            "step": 113
+          },
+          {
+            "zone_index": 41,
+            "step": 114
+          },
+          {
+            "zone_index": 42,
+            "step": 115
+          },
+          {
+            "zone_index": 43,
+            "step": 116
+          },
+          {
+            "zone_index": 44,
+            "step": 117
+          },
+          {
+            "zone_index": 45,
+            "step": 118
+          },
+          {
+            "zone_index": 46,
+            "step": 119
+          },
+          {
+            "zone_index": 47,
+            "step": 120
+          },
+          {
+            "zone_index": 48,
+            "step": 121
+          },
+          {
+            "zone_index": 49,
+            "step": 122
+          },
+          {
+            "zone_index": 50,
+            "step": 123
+          },
+          {
+            "zone_index": 51,
+            "step": 124
+          },
+          {
+            "zone_index": 52,
+            "step": 125
+          },
+          {
+            "zone_index": 53,
+            "step": 126
+          },
+          {
+            "zone_index": 54,
+            "step": 127
+          },
+          {
+            "zone_index": 55,
+            "step": 128
+          },
+          {
+            "zone_index": 56,
+            "step": 129
+          },
+          {
+            "zone_index": 57,
+            "step": 130
+          },
+          {
+            "zone_index": 58,
+            "step": 131
+          },
+          {
+            "zone_index": 59,
+            "step": 132
+          },
+          {
+            "zone_index": 60,
+            "step": 133
+          },
+          {
+            "zone_index": 61,
+            "step": 134
+          },
+          {
+            "zone_index": 62,
+            "step": 135
+          },
+          {
+            "zone_index": 63,
+            "step": 136
+          },
+          {
+            "zone_index": 64,
+            "step": 137
+          },
+          {
+            "zone_index": 65,
+            "step": 138
+          },
+          {
+            "zone_index": 66,
+            "step": 139
+          },
+          {
+            "zone_index": 67,
+            "step": 140
+          },
+          {
+            "zone_index": 68,
+            "step": 141
+          },
+          {
+            "zone_index": 69,
+            "step": 142
+          },
+          {
+            "zone_index": 70,
+            "step": 143
+          },
+          {
+            "zone_index": 71,
+            "step": 144
+          },
+          {
+            "zone_index": 72,
+            "step": 145
+          },
+          {
+            "zone_index": 73,
+            "step": 146
+          },
+          {
+            "zone_index": 74,
+            "step": 147
+          },
+          {
+            "zone_index": 75,
+            "step": 148
+          },
+          {
+            "zone_index": 76,
+            "step": 149
+          },
+          {
+            "zone_index": 77,
+            "step": 150
+          },
+          {
+            "zone_index": 78,
+            "step": 151
+          },
+          {
+            "zone_index": 79,
+            "step": 152
+          },
+          {
+            "zone_index": 80,
+            "step": 153
+          },
+          {
+            "zone_index": 81,
+            "step": 154
+          },
+          {
+            "zone_index": 82,
+            "step": 155
+          },
+          {
+            "zone_index": 83,
+            "step": 156
+          },
+          {
+            "zone_index": 84,
+            "step": 157
+          },
+          {
+            "zone_index": 85,
+            "step": 158
+          },
+          {
+            "zone_index": 86,
+            "step": 159
+          },
+          {
+            "zone_index": 87,
+            "step": 160
+          },
+          {
+            "zone_index": 88,
+            "step": 161
+          },
+          {
+            "zone_index": 89,
+            "step": 162
+          },
+          {
+            "zone_index": 90,
+            "step": 163
+          },
+          {
+            "zone_index": 91,
+            "step": 164
+          },
+          {
+            "zone_index": 92,
+            "step": 165
+          },
+          {
+            "zone_index": 93,
+            "step": 166
+          },
+          {
+            "zone_index": 94,
+            "step": 167
+          },
+          {
+            "zone_index": 95,
+            "step": 168
+          },
+          {
+            "zone_index": 96,
+            "step": 169
+          },
+          {
+            "zone_index": 97,
+            "step": 170
+          },
+          {
+            "zone_index": 98,
+            "step": 171
+          },
+          {
+            "zone_index": 99,
+            "step": 172
+          },
+          {
+            "zone_index": 100,
+            "step": 173
+          },
+          {
+            "zone_index": 101,
+            "step": 174
+          },
+          {
+            "zone_index": 102,
+            "step": 175
+          },
+          {
+            "zone_index": 103,
+            "step": 176
+          },
+          {
+            "zone_index": 104,
+            "step": 177
+          },
+          {
+            "zone_index": 105,
+            "step": 178
+          },
+          {
+            "zone_index": 106,
+            "step": 179
+          },
+          {
+            "zone_index": 107,
+            "step": 180
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 27,
+          "initial": {
+            "step": 73,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.1616691625806714,
+                "azim": 1.943862728953714
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "scepter overgrowth possible",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 81,
+              "zone_count": 9,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 92,
+              "zone_count": 20,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 110,
+              "zone_count": 38,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 111,
+              "zone_count": 39,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "present"
+              }
+            },
+            {
+              "step": 117,
+              "zone_count": 45,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "present"
+              }
+            },
+            {
+              "step": 128,
+              "zone_count": 56,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "present"
+              }
+            },
+            {
+              "step": 138,
+              "zone_count": 66,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "present"
+              }
+            },
+            {
+              "step": 154,
+              "zone_count": 82,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 165,
+              "zone_count": 93,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            },
+            {
+              "step": 175,
+              "zone_count": 103,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.1616691625806714,
+                  "azim": 1.943862728953714
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "present"
+              }
+            }
+          ],
+          "observed_through_step": 180,
+          "observed_zone_count": 108
+        }
+      }
     ]
   }
 }

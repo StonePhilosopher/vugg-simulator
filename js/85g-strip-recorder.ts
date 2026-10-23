@@ -122,6 +122,8 @@ class StripRecorder {
   private layerGrowthTestimony: any[];
   private lastSeenZoneCounts: Map<number | string, number>;
   private latestHabitMorphology: Map<number | string, any>;
+  private latestQuartzForms = new Map<number|string,StripQuartzFormTestimony>();
+  private quartzFormFailure: string|null = null;
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -288,10 +290,35 @@ class StripRecorder {
   // step's slice of chip data + any new nucleation events this step.
   // Safe to call when the recorder is finished — just becomes a no-op.
   captureStep(sim: any): void {
+    if(!this.active)return;
+    try{this._captureStep(sim);}
+    catch(error){this.quartzFormFailure='strip: capture failed; quartz form history may be incomplete';throw error;}
+  }
+
+  private _captureQuartzForms(sim:any):void {
+    const staged=new Map(this.latestQuartzForms),seen=new Set<number|string>();
+    for(const c of Array.isArray(sim?.crystals)?sim.crystals:[]){
+      if(!c)continue;
+      const history=quartzFormHistoryForPersistence(c,sim.step),id=_quartzFormValue(c,'crystal_id');
+      if(history===undefined){if(staged.has(id))throw new Error('strip: previously recorded quartz history disappeared');continue;}
+      if(seen.has(id))throw new Error('strip: duplicate quartz history identity');seen.add(id);
+      const count=history.observed_zone_count??0,zones=[];
+      if(count>STRIP_QUARTZ_FORM_LIMITS.zonesPerRow)throw new Error('strip: quartz zone witness limit');
+      const liveZones=_quartzFormValue(c,'zones'),birth=_quartzFormValue(c,'nucleation_step');
+      for(let i=0;i<count;i++)zones.push({zone_index:i,step:_quartzFormZoneStep(liveZones,i)});
+      staged.set(id,_quartzFormFreeze({schema:'strip-quartz-form-observations-v1',crystal_id:id,
+        captured_step:sim.step,sample_index:this.capturedSteps,...(birth!==undefined?{nucleation_step:birth}:{}),zones,history}));
+    }
+    stripValidateQuartzFormTestimony(Array.from(staged.values()),this.manifest.axes.steps);
+    this.latestQuartzForms=staged;
+  }
+
+  private _captureStep(sim:any):void {
     if (!this.active) return;
     if (this.capturedSteps >= this.manifest.axes.steps) {
       this._growCapacity();
     }
+    this._captureQuartzForms(sim);
 
     const wall = sim?.wall_state || sim?.conditions?.wall;
     const step = this.capturedSteps;
@@ -610,6 +637,7 @@ class StripRecorder {
   // serialization / IndexedDB.
   finalize(): StripDataset {
     this.active = false;
+    if(this.quartzFormFailure)throw new Error(this.quartzFormFailure);
     if (this.capturedSteps < this.manifest.axes.steps) {
       // Shrink axes.steps + slice chipData to match what we actually
       // captured. Keeps the dataset honest.
@@ -641,6 +669,7 @@ class StripRecorder {
       player_action_testimony: this.playerActionTestimony,
       layer_growth_testimony: this.layerGrowthTestimony,
       habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
+      ...(this.latestQuartzForms.size?{quartz_form_testimony:Object.freeze(Array.from(this.latestQuartzForms.values())) as any}:{}),
     };
   }
 

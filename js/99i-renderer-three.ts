@@ -7013,7 +7013,7 @@ function _emitClusterSatellites(
   const bariteCrest = !!parentMesh && geom.userData.bariteR4?.habit === 'cockscomb';
   const n = bladeSpray && count > 0 ? Math.min(9, count + 2) : bariteCrest && count > 0 ? Math.min(7, Math.max(5, count)) : count;
   if (n === 0) return;
-  const rand = _clusterRand((crystal.crystal_id || 0) * 0x9E3779B9 + 0x12345);
+  const rand = _clusterRand(crystalRenderSeed(crystal) * 0x9E3779B9 + 0x12345);
   // Build an orthonormal tangent frame perpendicular to the substrate
   // normal — used to spread satellites in a chord direction, then
   // re-projected back onto the curved wall (see below).
@@ -7240,6 +7240,7 @@ function _emitClusterSatellites(
       cellIdx: _address.cellIdx,
       surfaceAnchorKey: wall?.surfaceAnchorKey?.(crystal),
       isSatellite: true,
+      quartzForm:parentMesh?.userData?.quartzForm??null,
       ...(spray ? { bladeSpray: true, sprayGroup: spray.group } : {}),
       ...(crest ? { bariteCrest: true } : {}),
       ...(spray?.basal && i === 6 ? { ownsSatelliteMaterial: true } : {}),
@@ -7373,7 +7374,7 @@ function _localCrystalColor(crystal: any, spec: any): any {
   // (2) legibility floor — deterministic per-id micro-jitter across 3 axes
   // (hue, saturation, value) from three low-discrepancy hashes, so two
   // same-broth neighbours rarely collide on all three at once.
-  const id = crystal && crystal.crystal_id ? crystal.crystal_id : 0;
+  const id = crystalRenderSeed(crystal);
   const h1 = ((id * 0.6180339887498949) % 1 + 1) % 1;   // golden-ratio conjugate
   const h2 = ((id * 0.7548776662466927) % 1 + 1) % 1;   // second low-discrepancy constant
   const h3 = ((id * 0.5698402909980532) % 1 + 1) % 1;   // third (plastic-number related)
@@ -7832,7 +7833,9 @@ function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): strin
   sim = celestinePresentationSim(sim, replayStep ?? Infinity);
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
-  for (const c of sim.crystals) {
+  for (const original of sim.crystals) {
+    const c=replayStep!=null&&original&&!original._quartzFormRender
+      ?quartzFormRenderProjection(original,original,replayStep):original;
     if (!c) continue;
     // Q4: dissolved crystals normally drop from the scene, BUT a
     // dissolved crystal flagged perimorph_eligible persists as a
@@ -7846,7 +7849,8 @@ function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): strin
     // Only an effectively-zero remnant drops; partially-dissolved
     // crystals stay in the scene (and get the etched-matte surface
     // the face-realism arc already ships for them).
-    if (c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05)) continue;
+    if ((replayStep==null||c.mineral!=='quartz')&&c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05)) continue;
+    if(c._quartzFormRender)parts.push(':quartz-form:'+(c._quartzFormRender.signature||JSON.stringify(c._quartzFormRender)));
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the truth.
     const _anchorKey = wall?.surfaceAnchorKey
       ? wall.surfaceAnchorKey(c) : CavitySurfaceAnchors.key(c.wall_anchor);
@@ -8091,6 +8095,10 @@ function _o2ContactMaterial(mat: any, state: any): any {
 function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: number) {
   if (!sim || !wall || !wall.rings || !wall.rings.length) return;
   sim = celestinePresentationSim(sim, replayStep ?? Infinity);
+  if(replayStep!=null){
+    const crystals=sim.crystals.map(c=>quartzFormRenderProjection(c,c,replayStep));
+    sim=Object.assign(Object.create(sim),{crystals});
+  }
   const sig = _topoCrystalsSignature(sim, wall, replayStep);
   if (sig === state.crystalsSig) return;
   state.crystalsSig = sig;
@@ -8431,8 +8439,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // the twist is the dominant visual). Gated on the prism token.
     if (!geom && crystal.mineral === 'quartz' && crystal._gwindel && token === 'prism') {
       const td = Math.round((crystal._gwindel.twistDeg || 75) / 5) * 5;  // quantize for cache reuse
-      if (crystal._gwindelGeomTd !== td) { crystal._gwindelGeom = _makeGwindelGeom(td); crystal._gwindelGeomTd = td; }
-      geom = crystal._gwindelGeom;
+      if(crystal._quartzFormRender?.status==='recorded-form-selection'){
+        const key='__recorded_gwindel_'+td;geom=state.geomCache.get(key);
+        if(!geom){geom=_makeGwindelGeom(td);state.geomCache.set(key,geom);}
+      }else{
+        if (crystal._gwindelGeomTd !== td) { crystal._gwindelGeom = _makeGwindelGeom(td); crystal._gwindelGeomTd = td; }
+        geom = crystal._gwindelGeom;
+      }
     }
     // Quartz SCEPTRE (alpine-cleft arc SIM 206): a crystal the sim tagged with
     // _sceptre renders as the two-body stem+cap silhouette. Gated on the prism
@@ -8441,15 +8454,20 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // resorption boundary step the crystal is still a plain gen-1 prism.
     if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
         && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
-      const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20;  // quantize for cache reuse
+      const cf = Math.round((crystal._sceptre.capFrac ?? 0.5) * 20) / 20;  // zero is a recorded value
       // Eccentric cap (growth-centre migration — see _makeSceptreHexPrism): a
       // deterministic per-id lateral offset in 0.06..0.15 (never dead-coaxial —
       // real caps aren't), azimuth-scattered by the per-crystal yaw. Pure fn of
       // the id, so the cf-keyed per-crystal cache stays valid.
-      const eccH = Math.abs(Math.sin((crystal.crystal_id || 1) * 12.9898)) % 1;
+      const eccH = Math.abs(Math.sin((crystalRenderSeed(crystal) || 1) * 12.9898)) % 1;
       const ecc = 0.06 + 0.09 * eccH;
-      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf, ecc); crystal._sceptreGeomCf = cf; }
-      geom = crystal._sceptreGeom;
+      if(crystal._quartzFormRender?.status==='recorded-form-selection'){
+        const key='__recorded_sceptre_'+cf+'_'+ecc;geom=state.geomCache.get(key);
+        if(!geom){geom=_makeSceptreHexPrism(cf,ecc);state.geomCache.set(key,geom);}
+      }else{
+        if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf, ecc); crystal._sceptreGeomCf = cf; }
+        geom = crystal._sceptreGeom;
+      }
     }
     // W-F O5 SPLITTING (S-b + S-c) — a crystal that EARNED a rung on the two-route
     // cumulative-misorientation ladder (js/44c _split) renders its divergent /
@@ -8806,11 +8824,12 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     let quartzGeometry: any = null;
     if (quartzR4 && cLen > 0) {
       const history = quartzRenderHistory(crystal, replayStep);
+      const recordedDouble=crystal._quartzFormRender?.status==='recorded-form-selection'&&habitForGeom==='doubly_terminated';
       const ratio = Math.round(Math.max(0.2, Math.min(1.1, aWid / cLen)) * 100) / 100;
-      const key = '__quartz_r4_' + ratio + '_' + history.contrast + '_' + history.phase;
+      const key = '__quartz_r4_' + ratio + '_' + history.contrast + '_' + history.phase+(recordedDouble?'_recorded_double':'');
       quartzGeometry = state.geomCache.get(key);
       if (!quartzGeometry) {
-        quartzGeometry = makeQuartzRenderGeometry(ratio, history.contrast, history.phase);
+        quartzGeometry = makeQuartzRenderGeometry(ratio, history.contrast, history.phase,recordedDouble);
         if (quartzGeometry) state.geomCache.set(key, quartzGeometry);
       }
       if (quartzGeometry) {
@@ -8914,7 +8933,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // face-toward-camera rotation. rotateY composes the local +Y
     // rotation AFTER the substrate orientation, so the spin happens
     // around the (now world-space) substrate normal.
-    mesh.rotateY(_crystalYaw(crystal.crystal_id || 0));
+    mesh.rotateY(_crystalYaw(crystalRenderSeed(crystal)));
 
     // W-F O2 — induction surfaces. Clip this crystal against the neighbours it
     // grew into and cap each cut with a matte contact facet (Self & Hill 2003;
@@ -8930,6 +8949,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // clipped geom, leaving the cached form intact for the satellites + geomCache.
     let ownsContactGeometry = false;
     if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
+        && crystal._quartzFormRender?.status!=='recorded-form-selection'
         && !isEtched && !isSectorZoned && !isGypsumHourglass
         && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
       const meX = mesh.position.x, meY = mesh.position.y, meZ = mesh.position.z;
@@ -8983,6 +9003,8 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     mesh.userData = {
       crystal_id: crystal.crystal_id,
       ownsGeometry: ownsContactGeometry,
+      quartzForm:crystal._quartzFormRender??null,
+      displayScale:{recordedLengthMm:renderC,nominalLengthMm:cLen},
       // v66: report the effectiveMineral (paramorph-rewound during
       // replay) so hit-test tooltips match what the user sees.
       mineral: effectiveMineral,
@@ -9143,7 +9165,8 @@ function _topoHitTestThree(ev: any): any {
     wall_depth: 0,
     base_radius_mm: 0,
   };
-  return { mineral: data.mineral, isInclusion: false, cell: synthCell };
+  return { mineral: data.mineral, isInclusion: false, cell: synthCell,
+    quartzForm:data.quartzForm??null,displayScale:data.displayScale??null };
 }
 
 // Drive the camera from the existing tilt/zoom globals so toggling

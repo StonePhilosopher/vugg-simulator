@@ -32158,6 +32158,4099 @@
         },
         "zone_count": 204
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 3,
+        "captured_step": 240,
+        "sample_index": 239,
+        "nucleation_step": 18,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 18
+          },
+          {
+            "zone_index": 1,
+            "step": 19
+          },
+          {
+            "zone_index": 2,
+            "step": 20
+          },
+          {
+            "zone_index": 3,
+            "step": 21
+          },
+          {
+            "zone_index": 4,
+            "step": 22
+          },
+          {
+            "zone_index": 5,
+            "step": 23
+          },
+          {
+            "zone_index": 6,
+            "step": 24
+          },
+          {
+            "zone_index": 7,
+            "step": 25
+          },
+          {
+            "zone_index": 8,
+            "step": 26
+          },
+          {
+            "zone_index": 9,
+            "step": 27
+          },
+          {
+            "zone_index": 10,
+            "step": 28
+          },
+          {
+            "zone_index": 11,
+            "step": 29
+          },
+          {
+            "zone_index": 12,
+            "step": 30
+          },
+          {
+            "zone_index": 13,
+            "step": 31
+          },
+          {
+            "zone_index": 14,
+            "step": 32
+          },
+          {
+            "zone_index": 15,
+            "step": 33
+          },
+          {
+            "zone_index": 16,
+            "step": 34
+          },
+          {
+            "zone_index": 17,
+            "step": 35
+          },
+          {
+            "zone_index": 18,
+            "step": 36
+          },
+          {
+            "zone_index": 19,
+            "step": 37
+          },
+          {
+            "zone_index": 20,
+            "step": 38
+          },
+          {
+            "zone_index": 21,
+            "step": 39
+          },
+          {
+            "zone_index": 22,
+            "step": 40
+          },
+          {
+            "zone_index": 23,
+            "step": 41
+          },
+          {
+            "zone_index": 24,
+            "step": 42
+          },
+          {
+            "zone_index": 25,
+            "step": 43
+          },
+          {
+            "zone_index": 26,
+            "step": 44
+          },
+          {
+            "zone_index": 27,
+            "step": 45
+          },
+          {
+            "zone_index": 28,
+            "step": 46
+          },
+          {
+            "zone_index": 29,
+            "step": 47
+          },
+          {
+            "zone_index": 30,
+            "step": 48
+          },
+          {
+            "zone_index": 31,
+            "step": 49
+          },
+          {
+            "zone_index": 32,
+            "step": 50
+          },
+          {
+            "zone_index": 33,
+            "step": 51
+          },
+          {
+            "zone_index": 34,
+            "step": 52
+          },
+          {
+            "zone_index": 35,
+            "step": 53
+          },
+          {
+            "zone_index": 36,
+            "step": 54
+          },
+          {
+            "zone_index": 37,
+            "step": 55
+          },
+          {
+            "zone_index": 38,
+            "step": 56
+          },
+          {
+            "zone_index": 39,
+            "step": 57
+          },
+          {
+            "zone_index": 40,
+            "step": 58
+          },
+          {
+            "zone_index": 41,
+            "step": 59
+          },
+          {
+            "zone_index": 42,
+            "step": 60
+          },
+          {
+            "zone_index": 43,
+            "step": 61
+          },
+          {
+            "zone_index": 44,
+            "step": 62
+          },
+          {
+            "zone_index": 45,
+            "step": 63
+          },
+          {
+            "zone_index": 46,
+            "step": 64
+          },
+          {
+            "zone_index": 47,
+            "step": 65
+          },
+          {
+            "zone_index": 48,
+            "step": 66
+          },
+          {
+            "zone_index": 49,
+            "step": 67
+          },
+          {
+            "zone_index": 50,
+            "step": 68
+          },
+          {
+            "zone_index": 51,
+            "step": 69
+          },
+          {
+            "zone_index": 52,
+            "step": 70
+          },
+          {
+            "zone_index": 53,
+            "step": 71
+          },
+          {
+            "zone_index": 54,
+            "step": 72
+          },
+          {
+            "zone_index": 55,
+            "step": 73
+          },
+          {
+            "zone_index": 56,
+            "step": 74
+          },
+          {
+            "zone_index": 57,
+            "step": 75
+          },
+          {
+            "zone_index": 58,
+            "step": 76
+          },
+          {
+            "zone_index": 59,
+            "step": 77
+          },
+          {
+            "zone_index": 60,
+            "step": 78
+          },
+          {
+            "zone_index": 61,
+            "step": 79
+          },
+          {
+            "zone_index": 62,
+            "step": 80
+          },
+          {
+            "zone_index": 63,
+            "step": 81
+          },
+          {
+            "zone_index": 64,
+            "step": 82
+          },
+          {
+            "zone_index": 65,
+            "step": 83
+          },
+          {
+            "zone_index": 66,
+            "step": 84
+          },
+          {
+            "zone_index": 67,
+            "step": 85
+          },
+          {
+            "zone_index": 68,
+            "step": 86
+          },
+          {
+            "zone_index": 69,
+            "step": 87
+          },
+          {
+            "zone_index": 70,
+            "step": 88
+          },
+          {
+            "zone_index": 71,
+            "step": 89
+          },
+          {
+            "zone_index": 72,
+            "step": 90
+          },
+          {
+            "zone_index": 73,
+            "step": 91
+          },
+          {
+            "zone_index": 74,
+            "step": 92
+          },
+          {
+            "zone_index": 75,
+            "step": 93
+          },
+          {
+            "zone_index": 76,
+            "step": 94
+          },
+          {
+            "zone_index": 77,
+            "step": 95
+          },
+          {
+            "zone_index": 78,
+            "step": 96
+          },
+          {
+            "zone_index": 79,
+            "step": 97
+          },
+          {
+            "zone_index": 80,
+            "step": 98
+          },
+          {
+            "zone_index": 81,
+            "step": 99
+          },
+          {
+            "zone_index": 82,
+            "step": 100
+          },
+          {
+            "zone_index": 83,
+            "step": 101
+          },
+          {
+            "zone_index": 84,
+            "step": 102
+          },
+          {
+            "zone_index": 85,
+            "step": 103
+          },
+          {
+            "zone_index": 86,
+            "step": 104
+          },
+          {
+            "zone_index": 87,
+            "step": 105
+          },
+          {
+            "zone_index": 88,
+            "step": 106
+          },
+          {
+            "zone_index": 89,
+            "step": 107
+          },
+          {
+            "zone_index": 90,
+            "step": 108
+          },
+          {
+            "zone_index": 91,
+            "step": 109
+          },
+          {
+            "zone_index": 92,
+            "step": 110
+          },
+          {
+            "zone_index": 93,
+            "step": 111
+          },
+          {
+            "zone_index": 94,
+            "step": 112
+          },
+          {
+            "zone_index": 95,
+            "step": 113
+          },
+          {
+            "zone_index": 96,
+            "step": 114
+          },
+          {
+            "zone_index": 97,
+            "step": 115
+          },
+          {
+            "zone_index": 98,
+            "step": 116
+          },
+          {
+            "zone_index": 99,
+            "step": 117
+          },
+          {
+            "zone_index": 100,
+            "step": 118
+          },
+          {
+            "zone_index": 101,
+            "step": 119
+          },
+          {
+            "zone_index": 102,
+            "step": 120
+          },
+          {
+            "zone_index": 103,
+            "step": 121
+          },
+          {
+            "zone_index": 104,
+            "step": 122
+          },
+          {
+            "zone_index": 105,
+            "step": 123
+          },
+          {
+            "zone_index": 106,
+            "step": 124
+          },
+          {
+            "zone_index": 107,
+            "step": 125
+          },
+          {
+            "zone_index": 108,
+            "step": 126
+          },
+          {
+            "zone_index": 109,
+            "step": 127
+          },
+          {
+            "zone_index": 110,
+            "step": 128
+          },
+          {
+            "zone_index": 111,
+            "step": 129
+          },
+          {
+            "zone_index": 112,
+            "step": 130
+          },
+          {
+            "zone_index": 113,
+            "step": 131
+          },
+          {
+            "zone_index": 114,
+            "step": 132
+          },
+          {
+            "zone_index": 115,
+            "step": 133
+          },
+          {
+            "zone_index": 116,
+            "step": 134
+          },
+          {
+            "zone_index": 117,
+            "step": 135
+          },
+          {
+            "zone_index": 118,
+            "step": 136
+          },
+          {
+            "zone_index": 119,
+            "step": 137
+          },
+          {
+            "zone_index": 120,
+            "step": 138
+          },
+          {
+            "zone_index": 121,
+            "step": 139
+          },
+          {
+            "zone_index": 122,
+            "step": 140
+          },
+          {
+            "zone_index": 123,
+            "step": 141
+          },
+          {
+            "zone_index": 124,
+            "step": 142
+          },
+          {
+            "zone_index": 125,
+            "step": 143
+          },
+          {
+            "zone_index": 126,
+            "step": 144
+          },
+          {
+            "zone_index": 127,
+            "step": 145
+          },
+          {
+            "zone_index": 128,
+            "step": 146
+          },
+          {
+            "zone_index": 129,
+            "step": 147
+          },
+          {
+            "zone_index": 130,
+            "step": 148
+          },
+          {
+            "zone_index": 131,
+            "step": 149
+          },
+          {
+            "zone_index": 132,
+            "step": 150
+          },
+          {
+            "zone_index": 133,
+            "step": 151
+          },
+          {
+            "zone_index": 134,
+            "step": 152
+          },
+          {
+            "zone_index": 135,
+            "step": 153
+          },
+          {
+            "zone_index": 136,
+            "step": 154
+          },
+          {
+            "zone_index": 137,
+            "step": 155
+          },
+          {
+            "zone_index": 138,
+            "step": 156
+          },
+          {
+            "zone_index": 139,
+            "step": 157
+          },
+          {
+            "zone_index": 140,
+            "step": 158
+          },
+          {
+            "zone_index": 141,
+            "step": 159
+          },
+          {
+            "zone_index": 142,
+            "step": 160
+          },
+          {
+            "zone_index": 143,
+            "step": 161
+          },
+          {
+            "zone_index": 144,
+            "step": 162
+          },
+          {
+            "zone_index": 145,
+            "step": 163
+          },
+          {
+            "zone_index": 146,
+            "step": 164
+          },
+          {
+            "zone_index": 147,
+            "step": 165
+          },
+          {
+            "zone_index": 148,
+            "step": 166
+          },
+          {
+            "zone_index": 149,
+            "step": 167
+          },
+          {
+            "zone_index": 150,
+            "step": 168
+          },
+          {
+            "zone_index": 151,
+            "step": 169
+          },
+          {
+            "zone_index": 152,
+            "step": 170
+          },
+          {
+            "zone_index": 153,
+            "step": 171
+          },
+          {
+            "zone_index": 154,
+            "step": 172
+          },
+          {
+            "zone_index": 155,
+            "step": 173
+          },
+          {
+            "zone_index": 156,
+            "step": 174
+          },
+          {
+            "zone_index": 157,
+            "step": 175
+          },
+          {
+            "zone_index": 158,
+            "step": 176
+          },
+          {
+            "zone_index": 159,
+            "step": 177
+          },
+          {
+            "zone_index": 160,
+            "step": 178
+          },
+          {
+            "zone_index": 161,
+            "step": 179
+          },
+          {
+            "zone_index": 162,
+            "step": 180
+          },
+          {
+            "zone_index": 163,
+            "step": 181
+          },
+          {
+            "zone_index": 164,
+            "step": 182
+          },
+          {
+            "zone_index": 165,
+            "step": 183
+          },
+          {
+            "zone_index": 166,
+            "step": 184
+          },
+          {
+            "zone_index": 167,
+            "step": 185
+          },
+          {
+            "zone_index": 168,
+            "step": 186
+          },
+          {
+            "zone_index": 169,
+            "step": 187
+          },
+          {
+            "zone_index": 170,
+            "step": 188
+          },
+          {
+            "zone_index": 171,
+            "step": 189
+          },
+          {
+            "zone_index": 172,
+            "step": 194
+          },
+          {
+            "zone_index": 173,
+            "step": 195
+          },
+          {
+            "zone_index": 174,
+            "step": 196
+          },
+          {
+            "zone_index": 175,
+            "step": 197
+          },
+          {
+            "zone_index": 176,
+            "step": 198
+          },
+          {
+            "zone_index": 177,
+            "step": 199
+          },
+          {
+            "zone_index": 178,
+            "step": 200
+          },
+          {
+            "zone_index": 179,
+            "step": 201
+          },
+          {
+            "zone_index": 180,
+            "step": 202
+          },
+          {
+            "zone_index": 181,
+            "step": 203
+          },
+          {
+            "zone_index": 182,
+            "step": 204
+          },
+          {
+            "zone_index": 183,
+            "step": 205
+          },
+          {
+            "zone_index": 184,
+            "step": 206
+          },
+          {
+            "zone_index": 185,
+            "step": 207
+          },
+          {
+            "zone_index": 186,
+            "step": 208
+          },
+          {
+            "zone_index": 187,
+            "step": 209
+          },
+          {
+            "zone_index": 188,
+            "step": 210
+          },
+          {
+            "zone_index": 189,
+            "step": 211
+          },
+          {
+            "zone_index": 190,
+            "step": 212
+          },
+          {
+            "zone_index": 191,
+            "step": 213
+          },
+          {
+            "zone_index": 192,
+            "step": 214
+          },
+          {
+            "zone_index": 193,
+            "step": 215
+          },
+          {
+            "zone_index": 194,
+            "step": 216
+          },
+          {
+            "zone_index": 195,
+            "step": 217
+          },
+          {
+            "zone_index": 196,
+            "step": 218
+          },
+          {
+            "zone_index": 197,
+            "step": 219
+          },
+          {
+            "zone_index": 198,
+            "step": 220
+          },
+          {
+            "zone_index": 199,
+            "step": 236
+          },
+          {
+            "zone_index": 200,
+            "step": 237
+          },
+          {
+            "zone_index": 201,
+            "step": 238
+          },
+          {
+            "zone_index": 202,
+            "step": 239
+          },
+          {
+            "zone_index": 203,
+            "step": 240
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 3,
+          "initial": {
+            "step": 18,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.05286859505647434,
+                "azim": 4.897493007053248
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "prismatic",
+              "twin_law": "Brazil",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": true,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 115,
+              "zone_count": 98,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 200.44540272203704,
+                  "capFrac": 0.3714838850315407,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 116,
+              "zone_count": 99,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 207.29718326134613,
+                  "capFrac": 0.3793649269515949,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 117,
+              "zone_count": 100,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 211.83950893445893,
+                  "capFrac": 0.3844815464635582,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 118,
+              "zone_count": 101,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 217.6868604722972,
+                  "capFrac": 0.3909452890114541,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 119,
+              "zone_count": 102,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 223.15532816969423,
+                  "capFrac": 0.3968685570991865,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 120,
+              "zone_count": 103,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 227.615944750404,
+                  "capFrac": 0.40161550708678523,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 121,
+              "zone_count": 104,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 231.6261239533052,
+                  "capFrac": 0.40581976906646283,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 122,
+              "zone_count": 105,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 237.8107716169314,
+                  "capFrac": 0.4121891644717166,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 123,
+              "zone_count": 106,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 244.00394372430551,
+                  "capFrac": 0.4184319545865508,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 124,
+              "zone_count": 107,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 248.81971824231525,
+                  "capFrac": 0.42319541810381966,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 125,
+              "zone_count": 108,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 253.58299959728546,
+                  "capFrac": 0.42783081433170755,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 126,
+              "zone_count": 109,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 258.5484553818277,
+                  "capFrac": 0.4325843022241937,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 127,
+              "zone_count": 110,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 262.49834129840673,
+                  "capFrac": 0.4363095403982245,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 128,
+              "zone_count": 111,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 267.0823634649369,
+                  "capFrac": 0.44057198810275905,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 129,
+              "zone_count": 112,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 274.2191020694267,
+                  "capFrac": 0.44708126529417663,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 130,
+              "zone_count": 113,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 279.9629167696495,
+                  "capFrac": 0.45221108881359035,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 131,
+              "zone_count": 114,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 287.0811692633438,
+                  "capFrac": 0.4584378525670369,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 132,
+              "zone_count": 115,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 291.4748113853551,
+                  "capFrac": 0.46221107404053585,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 133,
+              "zone_count": 116,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 295.89216562127973,
+                  "capFrac": 0.46595202330369445,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 134,
+              "zone_count": 117,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 301.59865522247935,
+                  "capFrac": 0.4707083514236045,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 135,
+              "zone_count": 118,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 306.4181398042407,
+                  "capFrac": 0.474659866816689,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 136,
+              "zone_count": 119,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 311.57531819611955,
+                  "capFrac": 0.4788234292333463,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 137,
+              "zone_count": 120,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 316.8638350511591,
+                  "capFrac": 0.4830250393210807,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 138,
+              "zone_count": 121,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 322.0992600638734,
+                  "capFrac": 0.48711826927179935,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 139,
+              "zone_count": 122,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 328.2191819187852,
+                  "capFrac": 0.49182161341945396,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 140,
+              "zone_count": 123,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 333.3885515023312,
+                  "capFrac": 0.4957277400012264,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 141,
+              "zone_count": 124,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 338.35199638856227,
+                  "capFrac": 0.4994221692640708,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 142,
+              "zone_count": 125,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 345.163730906506,
+                  "capFrac": 0.5044050859696564,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 143,
+              "zone_count": 126,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 350.09746083718767,
+                  "capFrac": 0.5079527013327613,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 144,
+              "zone_count": 127,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 355.5862361168832,
+                  "capFrac": 0.5118402135242223,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 145,
+              "zone_count": 128,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 361.45678561661657,
+                  "capFrac": 0.515930707427535,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 146,
+              "zone_count": 129,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 367.1140121347048,
+                  "capFrac": 0.5198082206227476,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 147,
+              "zone_count": 130,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 372.91296221506576,
+                  "capFrac": 0.5237189240197463,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 148,
+              "zone_count": 131,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 377.5430851731673,
+                  "capFrac": 0.5267959542355123,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 149,
+              "zone_count": 132,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 382.4708098571546,
+                  "capFrac": 0.5300273853196826,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 150,
+              "zone_count": 133,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 387.31095703447266,
+                  "capFrac": 0.5331587081443696,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 151,
+              "zone_count": 134,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 392.22329443022807,
+                  "capFrac": 0.5362943560687632,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 152,
+              "zone_count": 135,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 398.2876615869546,
+                  "capFrac": 0.5401077478253926,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 153,
+              "zone_count": 136,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 402.87041510013995,
+                  "capFrac": 0.5429481219740977,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 154,
+              "zone_count": 137,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 407.2831591243793,
+                  "capFrac": 0.545650163819878,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 155,
+              "zone_count": 138,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 413.43276240135197,
+                  "capFrac": 0.5493628812609052,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 156,
+              "zone_count": 139,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 418.3239621742331,
+                  "capFrac": 0.5522728162565251,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 157,
+              "zone_count": 140,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 422.5900648857278,
+                  "capFrac": 0.5547803486802476,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 158,
+              "zone_count": 141,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 427.4805395663352,
+                  "capFrac": 0.5576205410382303,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 159,
+              "zone_count": 142,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 431.4745917931242,
+                  "capFrac": 0.5599133840226541,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 160,
+              "zone_count": 143,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 437.2369691063435,
+                  "capFrac": 0.5631797890737316,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 161,
+              "zone_count": 144,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 441.77694716388316,
+                  "capFrac": 0.565719325480289,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 162,
+              "zone_count": 145,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 447.22180673591055,
+                  "capFrac": 0.5687263541496355,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 163,
+              "zone_count": 146,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 452.3307070307006,
+                  "capFrac": 0.5715102198288131,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 164,
+              "zone_count": 147,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 458.5366484607725,
+                  "capFrac": 0.5748439006457365,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 165,
+              "zone_count": 148,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 465.404262294721,
+                  "capFrac": 0.5784730686143592,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 166,
+              "zone_count": 149,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 471.93738218684473,
+                  "capFrac": 0.581868432872982,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 167,
+              "zone_count": 150,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 477.2404304010188,
+                  "capFrac": 0.5845845508935218,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 168,
+              "zone_count": 151,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 481.60195104080395,
+                  "capFrac": 0.5867921317526948,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 169,
+              "zone_count": 152,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 488.3204996089719,
+                  "capFrac": 0.5901471850790333,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 170,
+              "zone_count": 153,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 493.9088310105192,
+                  "capFrac": 0.5928966124560854,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 171,
+              "zone_count": 154,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 500.536409158638,
+                  "capFrac": 0.5961099047897802,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 172,
+              "zone_count": 155,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 507.3419779541515,
+                  "capFrac": 0.5993571307497279,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 173,
+              "zone_count": 156,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 512.6796437163471,
+                  "capFrac": 0.6018676509522141,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 174,
+              "zone_count": 157,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 517.0156364390594,
+                  "capFrac": 0.6038840006595451,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 175,
+              "zone_count": 158,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 522.9115218246607,
+                  "capFrac": 0.6065931986316736,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 176,
+              "zone_count": 159,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 529.4307306153571,
+                  "capFrac": 0.6095459990460074,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 177,
+              "zone_count": 160,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 533.9708960882032,
+                  "capFrac": 0.6115763666104572,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 178,
+              "zone_count": 161,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 539.1101634050268,
+                  "capFrac": 0.6138493230687508,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 179,
+              "zone_count": 162,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 544.7648636485118,
+                  "capFrac": 0.6163197007213503,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 180,
+              "zone_count": 163,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 551.8685328713048,
+                  "capFrac": 0.6193786539245937,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 181,
+              "zone_count": 164,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 557.3448664686316,
+                  "capFrac": 0.6217037586796808,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 182,
+              "zone_count": 165,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 564.0347680199807,
+                  "capFrac": 0.6245058506716586,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 183,
+              "zone_count": 166,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 570.670192170216,
+                  "capFrac": 0.6272444183641346,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 184,
+              "zone_count": 167,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 576.9764030925734,
+                  "capFrac": 0.6298103458936053,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 185,
+              "zone_count": 168,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 581.0044438797669,
+                  "capFrac": 0.6314309036576964,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 186,
+              "zone_count": 169,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 585.0855700026826,
+                  "capFrac": 0.6330584124045201,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 187,
+              "zone_count": 170,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 589.4975080129747,
+                  "capFrac": 0.6348017539579516,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 188,
+              "zone_count": 171,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 595.0236790952761,
+                  "capFrac": 0.6369621450747687,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 189,
+              "zone_count": 172,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 601.111382642127,
+                  "capFrac": 0.639312664060365,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 194,
+              "zone_count": 173,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 601.6973667959759,
+                  "capFrac": 0.6395373130880312,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 195,
+              "zone_count": 174,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 602.3716410986871,
+                  "capFrac": 0.6397954639403453,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 196,
+              "zone_count": 175,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 603.0580180802642,
+                  "capFrac": 0.640057868896338,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 197,
+              "zone_count": 176,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 603.7559749419429,
+                  "capFrac": 0.6403243091342412,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 198,
+              "zone_count": 177,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 604.6458372958972,
+                  "capFrac": 0.6406634364654767,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 199,
+              "zone_count": 178,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 606.0133735877142,
+                  "capFrac": 0.6411833609932325,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 200,
+              "zone_count": 179,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 607.5253197464947,
+                  "capFrac": 0.6417564403343741,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 201,
+              "zone_count": 180,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 608.8859725459988,
+                  "capFrac": 0.6422706115883143,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 202,
+              "zone_count": 181,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 610.8293016064526,
+                  "capFrac": 0.6430024137808714,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 203,
+              "zone_count": 182,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 612.537337982124,
+                  "capFrac": 0.643643143658323,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 204,
+              "zone_count": 183,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 614.0124348956512,
+                  "capFrac": 0.6441946437848287,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 205,
+              "zone_count": 184,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 616.0713184443113,
+                  "capFrac": 0.6449615585600116,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 206,
+              "zone_count": 185,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 617.4765864473995,
+                  "capFrac": 0.6454831121340757,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 207,
+              "zone_count": 186,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 619.1840027053771,
+                  "capFrac": 0.6461147472503923,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 208,
+              "zone_count": 187,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 620.5708838187652,
+                  "capFrac": 0.6466261505993888,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 209,
+              "zone_count": 188,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 622.1121647833025,
+                  "capFrac": 0.6471927566090574,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 210,
+              "zone_count": 189,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 624.4738338954237,
+                  "capFrac": 0.6480574373696968,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 211,
+              "zone_count": 190,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 627.0907585622073,
+                  "capFrac": 0.649010638234628,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 212,
+              "zone_count": 191,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 629.9890837946749,
+                  "capFrac": 0.6500603298081706,
+                  "route": "masking"
+                }
+              }
+            },
+            {
+              "step": 213,
+              "zone_count": 192,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.05286859505647434,
+                  "azim": 4.897493007053248
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter_overgrowth",
+                "twin_law": "Brazil",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": true,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent",
+                "_sceptre": {
+                  "boundaryStep": 80,
+                  "stemUm": 339.134941940877,
+                  "capUm": 632.6670044907652,
+                  "capFrac": 0.6510246319364291,
+                  "route": "masking"
+                }
+              }
+            }
+          ],
+          "observed_through_step": 240,
+          "observed_zone_count": 204
+        }
+      }
     ]
   }
 }
