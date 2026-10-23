@@ -1,5 +1,47 @@
 # Calcite Scientific-Solid Authority v1
 
+## Executable volume contract (2026-10-23)
+
+The continuation from `91e5cc1102b453acac1638adb40b51587b75115e` makes
+the existing preserve-mass decision executable in `volume-contract.js`.
+`CALCITE_VOLUME_CONTRACT` names each quantity's field, units, owner, meaning,
+allowed consumers, and physical limitation. `assertCalciteVolumeContract`
+checks the booked ellipsoid convention, each measured stage and ratio, clipping
+monotonicity, the final factor product, and the closed stored-surface volume.
+Each stage uses `max(1e-10 mm³, 1e-8 * that stage's expected volume)`; ratios
+separately use `max(1e-12, 1e-8 * expected ratio)`. The dimensionless check matters
+for tiny crystals: a large ratio error must not disappear under an absolute
+volume tolerance. Nonfinite, missing, zero, or negative quantities fail for a
+completed body. Unsupported/empty calcites remain explicit exclusions, not
+invented zero-volume surfaces.
+
+`calciteVolumeForConsumer` requires both a named quantity and an allowed purpose.
+Chemistry, fill/occupancy and dissolution inventory read **booked** volume only;
+surface reconstruction/inspection read **completed** volume; intermediate full
+and attached bodies support factor inspection only. No inverse physical
+conversion, density correction, porosity interpretation, rescale, or mass return
+is authorized. The independent saved-plane audit remains necessary to detect
+mutually compensating full/attachment factor errors: arithmetic validity alone
+does not authenticate an envelope or prove geology.
+
+The specimen envelope is now `vugg-calcite-scientific-solid-authority-v2` so a
+historical v1 record cannot silently acquire these stronger semantics. V1 and
+incomplete inputs are refused with an explicit diagnostic; keep their original
+bytes and provenance for historical inspection or deliberate recapture from
+original sources. Loading never fills missing facts from current fluid, reruns
+growth, or upgrades a saved production flag. Exact replay still uses stored
+planes/polygons, not a growth kernel. Save/load and total mesh rebuild preserve
+lineage, morphology inputs, every booked volume, and the geometry golden.
+
+The regenerated fleet and factor receipts demonstrate the same measured
+representation relationship as before. They do **not** resolve the dense-solid
+physical mismatch. Production opt-in remains hardcoded false. This closes the
+bounded accounting/completion contract with an explicit scientific hold; it is
+not permission to treat the completed surface as the conserved solid.
+
+Fresh baseline comparison and commands are recorded in
+[`CALCITE-VOLUME-CONTRACT-2026-10-23.md`](../../proposals/CALCITE-VOLUME-CONTRACT-2026-10-23.md).
+
 This is an **isolated calcite contract**, with production integration held. It
 preserves growth history and independently reconstructible surfaces. It does
 **not** resolve the disagreement between the current mass model and geometric
