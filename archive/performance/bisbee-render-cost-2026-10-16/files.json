@@ -1,0 +1,78 @@
+{
+  "baseline-cold-phases.json": {
+    "bytes": 494,
+    "sha256": "4c6634fc3aa8153cd9338440852c3406e5e1714191e3ff8920b57a3e7e9ef568"
+  },
+  "baseline-cold.cpuprofile.gz": {
+    "bytes": 35176,
+    "sha256": "4517a0aff49f58d3d6360b3c1e27f5b73cedfdf8b5fe8868c96760608ec6f888"
+  },
+  "baseline-cold.json": {
+    "bytes": 309,
+    "sha256": "e795fc7809012d657d5bacde52947e6cc02c2fcdc099ea0de483404917ea2865"
+  },
+  "baseline-growth.json": {
+    "bytes": 4847,
+    "sha256": "8fdee0857782b1ada435ce9dc4c675e4b16a0285edf565339ff9871eebbba5f8"
+  },
+  "baseline-steady.cpuprofile.gz": {
+    "bytes": 4033,
+    "sha256": "a39d7cbfd3d381a61b918623d3675d391d5ed92298ee23f67c8c89b181f5f46c"
+  },
+  "candidate-cold-phases.json": {
+    "bytes": 507,
+    "sha256": "afcbcebea50dfbbad4212fc5164f9baea680264a3065b62e5fd6d0fe96939808"
+  },
+  "candidate-cold.cpuprofile.gz": {
+    "bytes": 30126,
+    "sha256": "cfebf6b9d3d987d30aa4cd7047858804b80c353c5571c86cf9002504b8d644a6"
+  },
+  "candidate-cold.json": {
+    "bytes": 298,
+    "sha256": "a841c7e964f97de5e5dad7271c36f026374fcc9e993de86f297f688fcb1aa6d5"
+  },
+  "candidate-growth.json": {
+    "bytes": 4864,
+    "sha256": "808d8558192ae2b87e59c03635ae634b14b13fcb777f93ae1ded2456156e1df3"
+  },
+  "cold-meshes.json.gz": {
+    "bytes": 1199558,
+    "sha256": "add345f357128b83811bb6d62035ee890194c16cd67f011cdd6fcbc396217807"
+  },
+  "environment.json": {
+    "bytes": 2889,
+    "sha256": "cc40b61a4b87ddb2f743a3cec411a4e3c6c9ac4e1ec8f737d3d69179f2309f54"
+  },
+  "matched-frame.png": {
+    "bytes": 357107,
+    "sha256": "632aaecc9d9aca7439ccdabefe105c9b729e01baba9c1eac4037d9cdfb932a9e"
+  },
+  "measurement-producer.mjs.gz": {
+    "bytes": 7254,
+    "sha256": "35322fd43e176912082071d8d7d0a4a45cf321f9b0dbbbb6d351d06a7947bdfe"
+  },
+  "pairs.json": {
+    "bytes": 57943,
+    "sha256": "86694293a14e3b78d0c02b0c22fb6409efb38d326837de909aaa34593b055805"
+  },
+  "preservation.json": {
+    "bytes": 967,
+    "sha256": "53c62bfe0b51fd00ccfcebc29d3bfbc9e25f4ecb29139c0837190a68ecb36b20"
+  },
+  "reference-meshes.json.gz": {
+    "bytes": 1199604,
+    "sha256": "fa4660c594e2cea2d8d70314331bffd044de08d78b8653b62befb5d4c1be1931"
+  },
+  "scientific-preservation.json": {
+    "bytes": 8607,
+    "sha256": "ff37f1f952b2d68d8f14dfd15775f16efc724951aa4ed51aae2c3083493ee995"
+  },
+  "scientific-record.json.gz": {
+    "bytes": 781277,
+    "sha256": "b6d4ea7d929860d999f66fd227915e83f202ff6eeb6a8587cbe9887dced6c16d"
+  },
+  "summary.json": {
+    "bytes": 1095,
+    "sha256": "0d49a9e19fe5326af6c944855316e5414bfb9ce414dac8d57093ff3f1c25f2cd"
+  }
+}

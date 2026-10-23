@@ -1,0 +1,35 @@
+{
+  "schema": "bisbee-render-comparison-v1",
+  "trust": "measurement-only-not-scientific-validation",
+  "baseline": {
+    "construction_median_ms": 15993.90000000596,
+    "construction_p95_ms": 17064.40000000596,
+    "retained_heap_median_bytes": 766517152,
+    "cpu_median_ms": 8.600000023841858,
+    "cpu_p95_ms": 10.800000011920929,
+    "gpu_valid_samples": 216,
+    "gpu_unavailable_samples": 0,
+    "gpu_median_ms": 5.701632,
+    "gpu_p95_ms": 11.945984
+  },
+  "candidate": {
+    "construction_median_ms": 12764.54999999702,
+    "construction_p95_ms": 13908.100000023842,
+    "retained_heap_median_bytes": 522589452,
+    "cpu_median_ms": 8.699999988079071,
+    "cpu_p95_ms": 10.900000005960464,
+    "gpu_valid_samples": 216,
+    "gpu_unavailable_samples": 0,
+    "gpu_median_ms": 5.5208960000000005,
+    "gpu_p95_ms": 9.249792
+  },
+  "construction_improvement_fraction": 0.2019113537040833,
+  "gates": {
+    "construction": true,
+    "steady_cpu": true,
+    "steady_gpu": true,
+    "retained_heap": true,
+    "identical_meshes_records_and_resource_counts": true
+  },
+  "status": "passed"
+}

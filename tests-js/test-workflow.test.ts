@@ -8,6 +8,7 @@ import {
   DEFAULT_TEST_BATCH_SIZE,
   MAX_BATCH_RSS_BYTES,
   MAX_CONSECUTIVE_RSS_FAILURES,
+  MONITOR_UNAVAILABLE_EXIT_CODE,
   TEST_CHECKPOINT_SCHEMA,
   TEST_CHECKPOINT_TRUST,
   assertTestWorkflowIdentityUnchanged,
@@ -47,6 +48,7 @@ describe('memory-bounded full-test workflow', () => {
       startIndex: 115,
       selectedFiles: [],
       fresh: false,
+      chipBase: null,
     });
     expect(parseArgs(['--file', 'tests-js/a.test.ts', '--file', 'tests-js/b.test.ts']))
       .toEqual({
@@ -55,6 +57,7 @@ describe('memory-bounded full-test workflow', () => {
         startIndex: 0,
         selectedFiles: ['tests-js/a.test.ts', 'tests-js/b.test.ts'],
         fresh: false,
+        chipBase: null,
       });
     expect(parseArgs(['--fresh'])).toMatchObject({ fresh: true });
     expect(() => parseArgs(['--start-index', '-1'])).toThrow('non-negative integer');
@@ -216,16 +219,16 @@ describe('memory-bounded full-test workflow', () => {
       rssSampler,
       pollIntervalMs: 1,
     });
-    expect(result).toMatchObject({ status: 1, exceededRssBytes: MAX_BATCH_RSS_BYTES + 1 });
+    expect(result).toMatchObject({ outcome: 'rss-limit-exceeded', status: 1, exceededRssBytes: MAX_BATCH_RSS_BYTES + 1 });
     expect(child.kill).toHaveBeenCalledWith('SIGTERM');
     expect(spawn).toHaveBeenCalledTimes(1);
   });
 
-  it('fails closed and terminates the child when RSS monitoring is unavailable', async () => {
+  it.each([null, 0])('reports monitoring as inconclusive even when the stopped child exits %s', async (exitCode) => {
     const child = new EventEmitter() as any;
     child.pid = 1234;
     child.kill = vi.fn(() => {
-      queueMicrotask(() => child.emit('exit', null, 'SIGTERM'));
+      queueMicrotask(() => child.emit('exit', exitCode, exitCode === null ? 'SIGTERM' : null));
       return true;
     });
     const result = await runVitestBatch({
@@ -234,11 +237,111 @@ describe('memory-bounded full-test workflow', () => {
       rssSampler: vi.fn().mockRejectedValue(new Error('sampler denied')),
       pollIntervalMs: 1,
     });
-    expect(result.status).toBe(1);
+    expect(result).toMatchObject({
+      status: MONITOR_UNAVAILABLE_EXIT_CODE, outcome: 'monitor-unavailable',
+      exceededRssBytes: null, terminationError: null, exit: { code: exitCode },
+    });
     expect(result.monitorError?.message).toContain(
       `RSS sampler failed ${MAX_CONSECUTIVE_RSS_FAILURES} consecutive times: sampler denied`,
     );
     expect(child.kill).toHaveBeenCalledWith('SIGTERM');
+  });
+
+  it('does not count isolated sampler failures as a monitoring outage', async () => {
+    const child = new EventEmitter() as any;
+    child.pid = 1234;
+    child.kill = vi.fn();
+    const rssSampler = vi.fn()
+      .mockRejectedValueOnce(new Error('temporary'))
+      .mockResolvedValueOnce(123)
+      .mockRejectedValueOnce(new Error('temporary again'))
+      .mockImplementationOnce(async () => {
+        queueMicrotask(() => child.emit('exit', 0, null));
+        return 456;
+      });
+    const result = await runVitestBatch({
+      batch: ['tests-js/a.test.ts'], spawn: () => child, rssSampler, pollIntervalMs: 1,
+    });
+    expect(result).toMatchObject({ outcome: 'pass', status: 0, peakRssBytes: 456, monitorError: null });
+    expect(rssSampler).toHaveBeenCalledTimes(4);
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
+  it('retains a measured RSS breach when the sampler fails during termination', async () => {
+    vi.useFakeTimers();
+    try {
+      const child = new EventEmitter() as any;
+      child.pid = 1234;
+      child.kill = vi.fn((signal: string) => {
+        if (signal === 'SIGKILL') queueMicrotask(() => child.emit('exit', null, signal));
+        return true;
+      });
+      const resultPromise = runVitestBatch({
+        batch: ['tests-js/a.test.ts'], spawn: () => child,
+        rssSampler: vi.fn().mockResolvedValueOnce(MAX_BATCH_RSS_BYTES + 1)
+          .mockRejectedValue(new Error('sampler denied during shutdown')),
+        pollIntervalMs: 100, terminationGraceMs: 500, hardKillGraceMs: 500,
+      });
+      await vi.advanceTimersByTimeAsync(700);
+      const result = await resultPromise;
+      expect(result).toMatchObject({ outcome: 'rss-limit-exceeded', status: 1,
+        exceededRssBytes: MAX_BATCH_RSS_BYTES + 1 });
+      expect(result.monitorError).toBeInstanceOf(Error);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('stops on monitor loss without recording that batch as passed or measured', async () => {
+    const onBatchPass = vi.fn();
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const batchRunner = vi.fn()
+        .mockResolvedValueOnce({ status: 0, peakRssBytes: 100 })
+        // Even a zero child status must not bypass the failed monitor.
+        .mockResolvedValueOnce({ status: 0, peakRssBytes: 0, monitorError: new Error('denied') });
+      const status = await runTestWorkflow({
+        files: ['tests-js/a.test.ts', 'tests-js/b.test.ts', 'tests-js/c.test.ts'],
+        batchRunner, onBatchPass,
+      });
+      expect(status).toBe(MONITOR_UNAVAILABLE_EXIT_CODE);
+      expect(batchRunner).toHaveBeenCalledTimes(2);
+      expect(onBatchPass).toHaveBeenCalledTimes(1);
+      expect(onBatchPass.mock.calls[0][0].batch).toEqual(['tests-js/a.test.ts']);
+      expect(errorLog.mock.calls.flat().join('\n')).toContain('INCONCLUSIVE [monitor-unavailable]');
+      expect(errorLog.mock.calls.flat().join('\n')).not.toContain('FAIL');
+    } finally { errorLog.mockRestore(); }
+  });
+
+  it.each([
+    [{ status: 0, monitorError: new Error('sampler lost') }, 'monitor-unavailable', 2],
+    [{ status: 0, monitorError: new Error('lost'), exceededRssBytes: MAX_BATCH_RSS_BYTES + 1 }, 'rss-limit-exceeded', 1],
+    [{ status: 0, monitorError: new Error('lost'), terminationError: new Error('denied') }, 'termination-failed', 1],
+    [{ status: 2 }, 'test-process-failed', 2],
+  ])('reports the typed failure to wrappers without advancing progress (%j)', async (result, outcome, status) => {
+    const onFailure = vi.fn();
+    const onBatchPass = vi.fn();
+    const batchRunner = vi.fn(async () => ({ peakRssBytes: 100, ...result }));
+    expect(await runTestWorkflow({ files: ['tests-js/a.test.ts'], batchRunner, onFailure, onBatchPass })).toBe(status);
+    expect(onFailure).toHaveBeenCalledExactlyOnceWith({ outcome, status });
+    expect(onBatchPass).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { terminationError: new Error('child still alive'), label: 'termination-failed' },
+    { exceededRssBytes: MAX_BATCH_RSS_BYTES + 1, label: 'rss-limit-exceeded' },
+  ])('keeps $label more urgent than monitor loss', async ({ label, ...failure }) => {
+    const onBatchPass = vi.fn();
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const batchRunner = vi.fn().mockResolvedValue({
+        status: 2, peakRssBytes: 0, monitorError: new Error('denied'), ...failure,
+      });
+      expect(await runTestWorkflow({
+        files: ['tests-js/a.test.ts', 'tests-js/b.test.ts'], batchRunner, onBatchPass,
+      })).toBe(1);
+      expect(batchRunner).toHaveBeenCalledTimes(1);
+      expect(onBatchPass).not.toHaveBeenCalled();
+      expect(errorLog.mock.calls.flat().join('\n')).toContain(`FAIL [${label}]`);
+    } finally { errorLog.mockRestore(); }
   });
 
   it('continues monitoring and escalates when a child ignores SIGTERM', async () => {

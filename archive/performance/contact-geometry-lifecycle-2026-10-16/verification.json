@@ -1,0 +1,131 @@
+{
+  "focused_tests": 93,
+  "files": 9,
+  "batches": [
+    {
+      "batch": 1,
+      "tests_passed": 6,
+      "peak_rss_mb": 717,
+      "elapsed_ms": 114111.3
+    },
+    {
+      "batch": 2,
+      "tests_passed": 16,
+      "peak_rss_mb": 292,
+      "elapsed_ms": 4386
+    },
+    {
+      "batch": 3,
+      "tests_passed": 11,
+      "peak_rss_mb": 318,
+      "elapsed_ms": 3899.4
+    },
+    {
+      "batch": 4,
+      "tests_passed": 14,
+      "peak_rss_mb": 918,
+      "elapsed_ms": 25360.7
+    },
+    {
+      "batch": 5,
+      "tests_passed": 7,
+      "peak_rss_mb": 433,
+      "elapsed_ms": 3833.4
+    },
+    {
+      "batch": 6,
+      "tests_passed": 9,
+      "peak_rss_mb": 589,
+      "elapsed_ms": 13620.5
+    },
+    {
+      "batch": 7,
+      "tests_passed": 11,
+      "peak_rss_mb": 866,
+      "elapsed_ms": 151176.7
+    },
+    {
+      "batch": 8,
+      "tests_passed": 6,
+      "peak_rss_mb": 938,
+      "elapsed_ms": 80180
+    },
+    {
+      "batch": 9,
+      "tests_passed": 13,
+      "peak_rss_mb": 219,
+      "elapsed_ms": 2200.6
+    }
+  ],
+  "completion": {
+    "exit_code": 0,
+    "started_utc": "2026-10-17T00:55:31.1039878Z",
+    "finished_utc": "2026-10-17T01:02:42.4568782Z"
+  },
+  "commissioned_browser_checks": [
+    "boots the exact SIM and lists authored scenarios",
+    "owns guided tutorial progress by one exact run lifecycle",
+    "completes public-control guided tutorial journeys and lifecycle policy",
+    "traverses Library, Record Groove, Strip View, topology, and phone surfaces",
+    "cancels a progressive Simulation run through the N shortcut",
+    "completes a deterministic short Simulation run",
+    "binds tutorial strip success to committed IndexedDB bytes",
+    "selects an authored scenario through the Creative menu at seed 42",
+    "edits live Creative chemistry and advances by button and keyboard",
+    "shows causal mineral formation evidence by pointer and keyboard",
+    "shows storage denial globally during active Creative play and retries durably",
+    "manual-saves, recovers corruption, reloads, and restores Creative state",
+    "pauses and resumes authenticated wall replay",
+    "keeps the active Creative workspace inside a phone viewport",
+    "honors reduced motion without altering the simulation state",
+    "persists accessible text scale and explicit motion controls without changing geology",
+    "fits title and Creative setup across the responsive viewport matrix"
+  ],
+  "browser_completion": {
+    "started_utc": "2026-10-17T01:12:45.9236520Z",
+    "finished_utc": "2026-10-17T01:19:43.1159754Z",
+    "exit_code": 0
+  },
+  "science_tests": 55,
+  "science_files": 7,
+  "science_completion": {
+    "finished_utc": "2026-10-17T02:22:17.2831631Z",
+    "exit_code": 0,
+    "started_utc": "2026-10-17T01:19:53.0411570Z"
+  },
+  "final_checks": [
+    "typecheck",
+    "build:check",
+    "gen:release",
+    "audit:release",
+    "audit:evidence",
+    "audit:science"
+  ],
+  "final_completion": {
+    "finished_utc": "2026-10-17T02:22:51.1726125Z",
+    "started_utc": "2026-10-17T02:22:33.0935049Z",
+    "exit_code": 0
+  },
+  "red_control": {
+    "source_reference": "59d9c409a79d9631792e789c63248262e5519150",
+    "new_tests_failed": 2,
+    "existing_tests_passed": 4,
+    "reason": "retired contact geometry disposal events remained zero"
+  },
+  "measurement_run": "3960db6b-5e3a-46ef-b1e9-d85767ca47e5",
+  "controls": [
+    {
+      "id": "4e98dcfc-9689-408c-b371-95b65e03efbe",
+      "label": "initial-exact-png-gate"
+    },
+    {
+      "id": "38f01324-f214-4fbb-a5ba-46f85e6b2508",
+      "label": "unchanged-mvt-rebuilds"
+    },
+    {
+      "id": "df16a91e-4492-4957-9898-9289c54db78e",
+      "label": "pegmatite-repeatability"
+    }
+  ],
+  "scope": "Focused checks, not a full-suite cold-CI certification"
+}

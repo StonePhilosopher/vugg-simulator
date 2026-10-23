@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "ms": 11421.5,
+  "info": {
+    "memory": {
+      "geometries": 50,
+      "textures": 7
+    },
+    "render": {
+      "frame": 35,
+      "calls": 415,
+      "triangles": 1145910,
+      "points": 0,
+      "lines": 0
+    },
+    "programs": 8
+  },
+  "canvas": [
+    1000,
+    760
+  ]
+}

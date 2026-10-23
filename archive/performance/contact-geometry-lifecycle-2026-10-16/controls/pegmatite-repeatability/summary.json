@@ -1,0 +1,94 @@
+{
+  "results": [
+    {
+      "scenario": "mvt",
+      "workload": {
+        "steps": 120,
+        "shape_seed": 3,
+        "three": "163"
+      },
+      "science_fingerprint": "382914f77886d6aff092ce5df82944d783f42f2769bd7ec4c1c35eb2051a4e28",
+      "baseline_geometries": [
+        23,
+        26,
+        29,
+        32
+      ],
+      "candidate_geometries": [
+        23,
+        23,
+        23,
+        23
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "88158f9efafc7d1069efede31e1a2be4b504a463b956a8a91f50ed84ce89bc6f",
+        "candidate": "4f0d4bbb719d85e13f9f289cdc9f9343c92e9f1539ed8924fda8dbc7262adac1"
+      },
+      "frames_byte_identical": false,
+      "pixel_repeatability": {
+        "baseline_max_rgb_delta": 1,
+        "candidate_max_rgb_delta": 1,
+        "alpha_equal": true,
+        "baseline_max_changed_pixels": 783,
+        "candidate_max_changed_pixels": 667,
+        "total_pixels": 760000
+      },
+      "frames_within_baseline_repeatability": true,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "camera_and_quality_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": true
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "workload": {
+        "steps": 230,
+        "shape_seed": 8,
+        "three": "163"
+      },
+      "science_fingerprint": "3c0107bf85849f03a08fb815e3781d78f996e5a2ce717e2803a657c553c3ddbd",
+      "baseline_geometries": [
+        23,
+        35,
+        47,
+        59
+      ],
+      "candidate_geometries": [
+        23,
+        23,
+        23,
+        23
+      ],
+      "baseline_geometry_count_increases": true,
+      "screenshots": {
+        "baseline": "ed2bea297684c15cf1c841d2e525eaf0f9aec2b837dfb59021a165a4f80814f1",
+        "candidate": "b038c3265584877661ba303fc76772e0c1008288fc2ba7dd745d86963554112c"
+      },
+      "frames_byte_identical": false,
+      "pixel_repeatability": {
+        "baseline_max_rgb_delta": 3,
+        "candidate_max_rgb_delta": 3,
+        "alpha_equal": true,
+        "baseline_max_changed_pixels": 1401,
+        "candidate_max_changed_pixels": 1340,
+        "total_pixels": 760000
+      },
+      "frames_within_baseline_repeatability": false,
+      "baseline_reproduces_missing_disposal": true,
+      "candidate_disposes_each_retired_contact_once": true,
+      "candidate_resource_counts_stable": true,
+      "matched_initial_resources": true,
+      "geometry_and_science_preserved": true,
+      "camera_and_quality_preserved": true,
+      "draw_counts_preserved": true,
+      "passed": false
+    }
+  ],
+  "errors": [],
+  "passed": false
+}

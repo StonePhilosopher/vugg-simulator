@@ -117933,6 +117933,17 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
     const newContactVertices = [], displacementSamples = [];
     const nodeMap = new Map(), edges = new Map();
     const displacedContacts = new Map();
+    const addEdge = (a, b) => {
+        // Pack the same unordered pair exactly into a safe integer. Large meshes
+        // retain the string path rather than risk a numeric collision.
+        const low = Math.min(a, b), high = Math.max(a, b);
+        const edgeKey = high < 0x200000 ? high * 0x100000000 + low : low + ':' + high;
+        const edge = edges.get(edgeKey);
+        if (edge)
+            edge.count++;
+        else
+            edges.set(edgeKey, { a, b, count: 1 });
+    };
     const cross2 = (a, b, q) => (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]);
     const mixVertex = (a, b, f) => ({
         uv: a.uv.map((v, k) => v + (b.uv[k] - v) * f),
@@ -117964,6 +117975,10 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
         return faces;
     };
     const addNode = (v, t, base) => {
+        // A contact vertex is shared by several faces in this build. Its assigned
+        // node is stable until the fold repair below; avoid re-encoding its position.
+        if (v.renderNode != null)
+            return v.renderNode;
         const key = pointKey(v.top);
         const found = nodeMap.get(key);
         if (found != null) {
@@ -117982,14 +117997,18 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
     for (const t of patch.triangles) {
         const key = sourceKeys.get(t.triangle_index);
         let previous;
-        for (const layer of earlierLayers)
-            if (layer.triangle_keys.has(key)) {
-                const inherited = layer.partitions?.get(t.triangle_index);
-                if (inherited)
-                    previous = inherited;
-                // Scattered teeth/fibres have no continuous top to inherit. Their nominal
-                // instance height must not lift a whole later coating into a false blanket.
+        for (let layerIndex = earlierLayers.length - 1; layerIndex >= 0; layerIndex--) {
+            const layer = earlierLayers[layerIndex];
+            if (!layer.triangle_keys.has(key))
+                continue;
+            const inherited = layer.partitions?.get(t.triangle_index);
+            if (inherited) {
+                previous = inherited;
+                break;
             }
+            // Scattered teeth/fibres have no continuous top to inherit. Their nominal
+            // instance height must not lift a whole later coating into a false blanket.
+        }
         if (!previous) {
             previous = [];
             const canonicalVertices = new Map();
@@ -118045,7 +118064,10 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
                             top: bases[i].map((x, k) => Math.fround(x + displacement.vector[k])) };
                         displacedContacts.set(contactKey, contact);
                     }
-                    const result = { uv: v.uv, ...contact };
+                    // A fixed object shape avoids a spread/copy and later shape changes
+                    // for every contact vertex; all geometric values remain shared.
+                    const result = { uv: v.uv, samples: contact.samples, growthProfile: contact.growthProfile,
+                        top: contact.top, renderNode: undefined };
                     topVertices.set(v, result);
                     newContactVertices.push(result);
                     return result;
@@ -118053,14 +118075,9 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
                 output.push(top);
                 const ids = top.map((v, i) => addNode(v, t, bases[i]));
                 indices.push(ids[0], ids[2], ids[1]);
-                for (const [a, b] of [[ids[0], ids[2]], [ids[2], ids[1]], [ids[1], ids[0]]]) {
-                    const edgeKey = a < b ? a + ':' + b : b + ':' + a;
-                    const edge = edges.get(edgeKey);
-                    if (edge)
-                        edge.count++;
-                    else
-                        edges.set(edgeKey, { a, b, count: 1 });
-                }
+                addEdge(ids[0], ids[2]);
+                addEdge(ids[2], ids[1]);
+                addEdge(ids[1], ids[0]);
             }
         }
         partitions.set(t.triangle_index, output);
@@ -118080,8 +118097,10 @@ function _emitSurfaceGrowthLining(state, crystal, parentMat, wall, sim, coverage
     const repairedTops = basalPositions.map((_, id) => positions.slice(id * 3, id * 3 + 3));
     for (const v of newContactVertices) {
         v.top = repairedTops[v.renderNode];
-        delete v.samples;
-        delete v.renderNode;
+        // Release transient references without deleting fields from every shared
+        // contact vertex (which turns these hot objects into dictionary objects).
+        v.samples = undefined;
+        v.renderNode = undefined;
     }
     let interiorOpenEdges = 0;
     for (const edge of edges.values())
@@ -119550,10 +119569,9 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
     if (sig === state.crystalsSig)
         return;
     state.crystalsSig = sig;
-    // Clear out the old children. Geometries are cached at the state
-    // level (geomCache) so we keep them; only materials per crystal
-    // need disposing — but materials are MeshStandardMaterial with no
-    // textures, so the GC handles the rest.
+    // Cached shapes are borrowed and survive rebuilds. Lining meshes and
+    // contact-clipped parents own their fresh geometry and must release its
+    // GPU buffers when replaced; garbage collection alone does not do that.
     while (state.crystals.children.length) {
         const child = state.crystals.children.pop();
         if (child.userData?.ownsGeometry && child.geometry?.dispose)
@@ -120453,6 +120471,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // Falls back to current-size (reach, Diggle first-order) when either body
         // lacks a growth scalar. Render-only: replaces mesh.geometry with a fresh
         // clipped geom, leaving the cached form intact for the satellites + geomCache.
+        let ownsContactGeometry = false;
         if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
             && !isEtched && !isSectorZoned && !isGypsumHourglass
             && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
@@ -120496,6 +120515,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
                     if (mesh.geometry.userData.bariteR4)
                         clipped.geom.userData.bariteR4 = mesh.geometry.userData.bariteR4;
                     mesh.geometry = clipped.geom;
+                    ownsContactGeometry = true;
                     mesh.material = [mat, _o2ContactMaterial(mat, state)];
                 }
             }
@@ -120508,6 +120528,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // findable by id via sim.crystals if a consumer needs more.
         mesh.userData = {
             crystal_id: crystal.crystal_id,
+            ownsGeometry: ownsContactGeometry,
             // v66: report the effectiveMineral (paramorph-rewound during
             // replay) so hit-test tooltips match what the user sees.
             mineral: effectiveMineral,

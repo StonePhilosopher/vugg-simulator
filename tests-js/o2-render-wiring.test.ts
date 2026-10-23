@@ -10,12 +10,14 @@
 // executes without a GL context, so a stub clipUniforms suffices.
 
 import { describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const THREE: any;
 declare const _topoSyncCrystalMeshes: any;
+declare const simulationStateFingerprint: any;
 
 function makeSim(name: string, seed = 42, steps?: number) {
   setSeed(seed);
@@ -82,6 +84,33 @@ function tally(state: any) {
   return { total, contacted, satellites };
 }
 
+function geometryWitness(state: any) {
+  const hash = (attribute: any) => attribute ? {
+    itemSize: attribute.itemSize, normalized: attribute.normalized,
+    arrayType: attribute.array.constructor.name,
+    bytes: createHash('sha256').update(Buffer.from(attribute.array.buffer,
+      attribute.array.byteOffset, attribute.array.byteLength)).digest('hex'),
+  } : null;
+  const meshes: any[] = [];
+  state.crystals.traverse((mesh: any) => {
+    if (!mesh.geometry) return;
+    meshes.push({
+      crystal: mesh.userData.crystal_id, mineral: mesh.userData.mineral,
+      position: mesh.position.toArray(), quaternion: mesh.quaternion.toArray(), scale: mesh.scale.toArray(),
+      attributes: Object.fromEntries(Object.entries(mesh.geometry.attributes)
+        .map(([name, attribute]) => [name, hash(attribute)])),
+      index: hash(mesh.geometry.index), groups: mesh.geometry.groups,
+      instances: hash(mesh.instanceMatrix),
+      materials: [].concat(mesh.material).map((material: any) => ({
+        type: material.type, color: material.color?.getHex(), side: material.side,
+        roughness: material.roughness, metalness: material.metalness,
+        opacity: material.opacity, transparent: material.transparent, depthWrite: material.depthWrite,
+      })),
+    });
+  });
+  return meshes;
+}
+
 describe('W-F O2 — the render pipeline fires on real scenarios', () => {
   it('gem_pegmatite: convex crystals get clipped + a matte contact material', () => {
     const sim = makeSim('gem_pegmatite');
@@ -128,5 +157,42 @@ describe('W-F O2 — the render pipeline fires on real scenarios', () => {
     const first = state.crystals.children.length;
     _topoSyncCrystalMeshes(state, sim, sim.wall_state, undefined);   // sig unchanged → early-out
     expect(state.crystals.children.length).toBe(first);
+  });
+
+  it.each(['gem_pegmatite', 'mvt'])('%s: rebuilds dispose replaced contacts and preserve cached shapes', (name) => {
+    const sim = makeSim(name), state = makeState();
+    const science = simulationStateFingerprint(sim);
+    _topoSyncCrystalMeshes(state, sim, sim.wall_state);
+    const witness = geometryWitness(state);
+    const cached = new Map(state.geomCache);
+    const cacheDisposals = new Map<any, number>();
+    for (const geometry of cached.values()) {
+      cacheDisposals.set(geometry, 0);
+      geometry.addEventListener('dispose', () => cacheDisposals.set(geometry, cacheDisposals.get(geometry)! + 1));
+    }
+    for (let rebuild = 0; rebuild < 2; rebuild++) {
+      const children = state.crystals.children.slice();
+      const contacts = children.filter((mesh: any) => !mesh.userData.isSatellite
+        && Array.isArray(mesh.material) && mesh.geometry.groups.some((group: any) => group.materialIndex === 1));
+      expect(contacts.length, 'fixture must exercise contact clipping').toBeGreaterThan(0);
+      const disposals = new Map<any, number>();
+      for (const mesh of contacts) {
+        expect([...cached.values()]).not.toContain(mesh.geometry);
+        disposals.set(mesh.geometry, 0);
+        mesh.geometry.addEventListener('dispose', () => disposals.set(mesh.geometry, disposals.get(mesh.geometry)! + 1));
+      }
+      _topoSyncCrystalMeshes(state, sim, sim.wall_state);
+      expect(state.crystals.children).toEqual(children);
+      expect([...disposals.values()]).toEqual(contacts.map(() => 0));
+
+      // Invalidate only display state; the completed specimen is never advanced.
+      state.crystalsSig = null;
+      _topoSyncCrystalMeshes(state, sim, sim.wall_state);
+      expect([...disposals.values()], 'every retired contact must be disposed once').toEqual(contacts.map(() => 1));
+      expect([...cacheDisposals.values()], 'cached shapes remain borrowed by the next render').toEqual([...cached.values()].map(() => 0));
+      for (const [key, geometry] of cached) expect(state.geomCache.get(key)).toBe(geometry);
+      expect(geometryWitness(state)).toEqual(witness);
+      expect(simulationStateFingerprint(sim)).toBe(science);
+    }
   });
 });

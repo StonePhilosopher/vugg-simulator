@@ -19,6 +19,99 @@ Passing batches append a measurement-only Test Quarry cost ledger; inspect
 packing with `npm run test:quarry-packing`. The ledger does not change
 science or baselines.
 
+If RSS sampling fails twice consecutively, the runner stops the child and reports
+`INCONCLUSIVE [monitor-unavailable]` (exit 2). That batch does not advance the
+checkpoint or enter the cost ledger. Restore access to the OS RSS query and rerun
+the interrupted batch; do not bypass the watchdog. A measured memory-limit breach
+or failed child termination still reports `FAIL`. Programmatic batch results carry
+an `outcome` field; child test exit codes are preserved, so an exit code alone is
+not a unique diagnosis. No scientific receipt or baseline is changed by these
+runner outcomes.
+
+`node tools/cold-ci.mjs` runs the full CI guard and stamps a local verdict.
+GREEN requires a result from that invocation covering every discovered test
+file in one uninterrupted run, an unchanged project/runtime identity, and a
+clean, unchanged HEAD. Successful resumed or selected runs are partial and
+produce INCONCLUSIVE / exit 2. A previous shared last-pass report cannot supply
+the missing result. Child failures retain their exit codes; monitor loss is
+inconclusive only when the runner explicitly identifies it, not merely because
+a child returned 2. Duration always describes this invocation, never an
+accumulated suite total.
+
+`node tools/cold-ci.mjs --check` validates the stamp against current project
+bytes (including ignored dist), runtime, HEAD, and suite membership without
+launching CI. Legacy stamps must be replaced by a new full-guard result. These
+stamps and invocation records are local operator results, not scientific
+receipts or independent attestation. No full guard is run by the chip tests.
+
+`node tools/process-census.mjs --preflight` takes one Windows process snapshot
+for the foreman work. Exit 1 means recognized JavaScript test/build work was
+observed outside a verified caller tree; exit 2 means observation is incomplete
+or unavailable. Exit 0 means no such work was observed in this snapshot.
+Shell intermediates and exact creation times are retained for ancestry checks;
+a parent created after its child cannot exempt that worker. `--json` emits the
+same result as structured data. A metadata-only diagnostic is saved under
+`.local-evidence/process-preflight-v1.json`; raw command lines are discarded.
+
+This census certifies neither host cleanliness nor process ownership. It does
+not reserve the machine, terminate processes, or gate test runs. Unrecognized
+workloads remain outside its observation scope. Other platforms explicitly
+return unknown until their process-identity adapters are implemented.
+
+`node tools/test-lease.mjs --status --json` inspects the cooperative machine
+lease without acquiring or changing it. Exit 1 means a live owner holds it;
+exit 2 means identity, storage, or journal state is unresolved. Exit 0 means
+available or reclaimable, not permission to start work. Windows clients share
+`%ProgramData%\VuggSimulator\test-lease-v1`; denied access never falls back to a
+checkout or user temp directory. The directory requires shared write access and
+a trusted local filesystem supporting hard links. Other platforms fail closed.
+
+The `createMachineLease()` API in `tools/test-lease-lib.mjs` provides asynchronous
+`acquire({ runId, checkout })`, `inspect()`, and `release(handle)`. Start work only
+after `status === 'acquired'`, retain its handle, and finish all owned work before
+release. Check release results: unavailable observation/storage leaves the claim
+unresolved. The owner is the calling process's exact PID and seven-digit Windows
+creation timestamp. A live owner never expires due to heartbeat age; reclaim
+requires a fresh observation proving that lifetime ended. A token alone cannot
+release another process's open claim.
+
+Claims and completion records are immutable, numbered files. Publication uses
+a fully written, synced staging file and a non-overwriting hard link. Delayed
+release/reclaim operations address only their original generation. History is
+retained; malformed, partial, or mismatched committed records block acquisition.
+Private `pending-*` staging residue has no authority. There is no automatic
+journal deletion/compaction; 10,000 generations require coordinated offline
+maintenance. Never remove the journal while any client could still use it.
+
+This tranche provides the lease primitive, not runner admission. Existing
+`npm test` and cold CI do not yet acquire it; the older foreman protocol does not
+participate. The next integration must hold the lease across the full asynchronous
+child lifecycle and combine it with fresh census checks. An ended lease owner
+can leave children behind, so reclaim alone cannot certify an idle host. This
+API grants no ownership of other processes, termination authority, or green CI
+verdict. It has no watcher, heartbeat timer, telemetry collector, or retained
+helper process.
+
+Test Quarry also has a bounded chip check for its own runner, ledger, test
+selector, build orchestration, cold-CI verdict wrapper, process census, and lease.
+Preview the authored selection with
+`node tools/test-chip-check.mjs --base origin/main`, then execute it with
+`npm test -- --chip-base origin/main`. The comparison includes branch commits
+since the merge base, staged and unstaged edits, and nonignored untracked files.
+Renames check both names. The explicit map is `tools/test-chip-map.json`.
+
+Any unmapped change (including scientific source/data, build configuration,
+shared test helpers, or new test files) requires a full check and refuses a chip
+verdict. Empty/documentation-only changes also issue no PASS (exit 2). A chip
+PASS covers only its selected tooling tests. Build orchestration coverage checks
+phase ordering, cleanup, exit codes, and check-mode forwarding; changes to the
+narrative generator, compiler configuration, and bundle splicer still require
+the full check. A chip PASS does not replace calibration,
+release/evidence audits, or `npm run ci`. The runner keeps one file per child,
+the RSS watchdog, and the project-identity guard. Chip runs never resume or
+write a full-suite checkpoint/result. Passing batches still record advisory
+cost measurements. No full-suite speedup or broader tier equivalence is claimed.
+
 GitHub Actions CI (`.github/workflows/ci.yml`) runs on **Node 24**, the
 calibration-authority runtime for the committed baselines (SIM 285 /
 `seed42_v285.json`). Node 20/22/23 flip deterministic crystal counts against
@@ -27,6 +120,36 @@ duftite 8→9, erythrite 5→4); see
 [BUG-supergene-calibration-v237.md](BUG-supergene-calibration-v237.md). CI
 validates the committed science — receipt audits plus a calibration
 sentinel — and never rebakes baselines or receipts.
+
+Windows CI also runs the browser cleanup regressions:
+`npm test -- --file tests-js/browser-workflow-cleanup.test.ts --file tests-js/benchmark-browser-cleanup.test.ts`,
+followed by `node tools/benchmark-browser-cleanup-probe.mjs`. The probe requires
+real Chrome (set `VUGG_BROWSER_BIN` if needed), uses fresh empty profiles, and
+advances no simulation. It reproduces an exited launcher with a surviving
+browser, graceful recovery and forced cleanup, unavailable/mismatched ownership,
+PID reuse during acquisition, and an endpoint that still answers after apparent
+process shutdown. Recovery requires the exact profile nonce, a native process
+lifetime, and a [native listener bind time](https://learn.microsoft.com/en-us/windows/win32/api/tcpmib/ns-tcpmib-mib_tcprow_owner_module)
+consistent across repeated observations;
+the process must predate the bind. Unproven ownership never authorizes termination
+or profile deletion. The probe independently cleans up its own negative cases.
+A separate Chrome canary must survive target recovery; the harness then verifies
+and cleans up that browser independently.
+
+Probe results and source snapshots are saved under
+`.local-evidence/benchmark-browser-cleanup-probe/` and uploaded by CI as
+`browser-cleanup-probe-<run-id>-<attempt>` for 30 days, including on failure.
+The assertions check every recorded browser lifetime, DevTools port release,
+server closure, and shutdown proof before deletion. These are engineering
+integration results, not scientific receipts or a full-suite verdict.
+
+Canonical promotion remains held pending exact-head review of this ownership
+repair and its CI evidence. Calcite renderer migration is a separate hold:
+first define the immutable specimen record, distinguish mass-accounting volume
+from completed geometric surface and their permitted consumers, establish a
+supported closure tolerance without rescaling conserved mass, and add the
+growth/save-load/reconstruction invariant. This cleanup work defines no new
+geological rule or numerical tolerance.
 
 Headless agent CLI for AI players: [`agent-api/`](agent-api/README.md).
 

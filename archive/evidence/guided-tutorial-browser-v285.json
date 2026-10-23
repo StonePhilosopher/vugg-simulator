@@ -1,8 +1,8 @@
 {
   "schema": "vugg-guided-tutorial-browser-receipt-v6",
   "sim_version": 285,
-  "browser_bundle_sha256": "fecf737a1daa95886ab7da8de0690ac351e41821a5ac9800cc8da57f15f6031f",
-  "execution_set_sha256": "406082f7c7bbc78e6b38d3b7e24198be685b8fbe8477d60627f48fdaf8a69923",
+  "browser_bundle_sha256": "1689966e2894bb12584d992fdcff2bb62666b185e5226ce65a759954fef8cdc4",
+  "execution_set_sha256": "82d81eb0d8439e7199eedf075c63fba7e5786fe0f4408ef076cba3217cb248e3",
   "node_runtime": {
     "schema": "vugg-evidence-node-runtime-v1",
     "node": "24.15.0",
@@ -13,13 +13,13 @@
     "locale": "en-US"
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "producer_contract_sha256": "c56b2e3405965234b1facacee81697471f5c7c7533cd1257046d0f9f3a7464da",
+  "producer_contract_sha256": "81328c86c22f3c254b531ad772c91a89069e2f2201b580adcdd8bf53fd6a0dbc",
   "payload": {
     "browser_runtime": {
       "schema": "vugg-owned-devtools-browser-runtime-v2",
       "executable_name": "chrome.exe",
-      "executable_sha256": "caf423e184f0bcefe2ee5bef40539a3c005c63beb44e3321c0834929a13af733",
-      "devtools_browser_product": "Chrome/152.0.7977.83",
+      "executable_sha256": "9ca2beaa7a9fd1109f01e562788c22e045a01cec0f6015ade689325af7f8a521",
+      "devtools_browser_product": "Chrome/155.0.8059.41",
       "devtools_protocol_version": "1.3"
     },
     "journeys": {
@@ -335,5 +335,5 @@
       }
     }
   },
-  "payload_sha256": "fdf47e0630c3a4d4c52b335b02e75fa09f3039add15dd035e3648c664735657d"
+  "payload_sha256": "bbae563b173d20b7a3f1b7939eacbd361c83e3c9e565854d176c06d2699c0ffa"
 }

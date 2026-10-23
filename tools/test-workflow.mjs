@@ -28,6 +28,9 @@ import {
   TEST_QUARRY_LEDGER_PATH,
   appendQuarryMeasurements,
 } from './test-quarry-ledger.mjs';
+import {
+  CHIP_SELECTION_EXIT_CODE, ChipSelectionRequiredError, planChipCheck, requireChipSelection,
+} from './test-chip-check.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
@@ -40,10 +43,14 @@ export const CHILD_HEAP_LIMIT_MB = 1536;
 export const MAX_BATCH_RSS_BYTES = 2 * 1024 * 1024 * 1024;
 export const RSS_POLL_INTERVAL_MS = 1000;
 export const MAX_CONSECUTIVE_RSS_FAILURES = 2;
+export const MONITOR_UNAVAILABLE_EXIT_CODE = 2;
 export const TERMINATION_GRACE_MS = 2000;
 export const HARD_KILL_GRACE_MS = 2000;
 export const TEST_CHECKPOINT_SCHEMA = 2;
 export const TEST_CHECKPOINT_TRUST = 'untrusted-operator-convenience';
+export const TEST_RESULT_TRUST = 'local-uninterrupted-result-not-independent-attestation';
+export const TEST_INVOCATION_ENV = 'VUGG_TEST_INVOCATION_ID';
+export const TEST_INVOCATION_SCHEMA = 'vugg-test-invocation-v1';
 export const TEST_CHECKPOINT_PATH = path.join(
   ROOT, '.local-evidence', 'test-workflow-checkpoint-v2.json',
 );
@@ -153,6 +160,23 @@ export function writeJsonAtomic(filePath, value) {
   fs.renameSync(temporary, filePath);
 }
 
+// A wrapper gets a result from its own invocation, never the shared last-pass
+// file. UUID-only names keep this operator channel inside .local-evidence.
+export function testInvocationReportPath(invocationId, root = ROOT) {
+  if (typeof invocationId !== 'string'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(invocationId)) {
+    throw new Error('test invocation id must be a UUID v4');
+  }
+  return path.join(root, '.local-evidence', 'test-workflow-invocations', `${invocationId}.json`);
+}
+
+export function writeTestInvocationResult({ invocationId, status, outcome, completion = null }, root = ROOT) {
+  if (!invocationId) return;
+  writeJsonAtomic(testInvocationReportPath(invocationId, root), {
+    schema: TEST_INVOCATION_SCHEMA, invocation_id: invocationId, status, outcome, completion,
+  });
+}
+
 export function makeTestCheckpoint({ identity, completedFiles = [], batches = [] } = {}) {
   return {
     schema: TEST_CHECKPOINT_SCHEMA,
@@ -178,7 +202,7 @@ export function makeTestCompletionReport({
     status: uninterrupted ? 'pass' : 'operator-resume-complete',
     full_suite_pass: uninterrupted,
     trust: uninterrupted
-      ? 'local-uninterrupted-result-not-independent-attestation'
+      ? TEST_RESULT_TRUST
       : TEST_CHECKPOINT_TRUST,
   };
 }
@@ -399,20 +423,27 @@ export async function runVitestBatch({
   if (spawnError) throw spawnError;
   if (terminationError) {
     return {
+      outcome: 'termination-failed',
       status: 1, peakRssBytes, exceededRssBytes, monitorError, terminationError, exit,
+    };
+  }
+  // A measured limit breach remains a resource failure even if sampling fails
+  // while termination is in progress. Preserve both pieces of evidence.
+  if (exceededRssBytes != null) {
+    return {
+      outcome: 'rss-limit-exceeded',
+      status: 1, peakRssBytes, exceededRssBytes, monitorError, terminationError: null, exit,
     };
   }
   if (monitorError) {
     return {
-      status: 1, peakRssBytes, exceededRssBytes: null, monitorError, terminationError: null, exit,
-    };
-  }
-  if (exceededRssBytes != null) {
-    return {
-      status: 1, peakRssBytes, exceededRssBytes, monitorError: null, terminationError: null, exit,
+      outcome: 'monitor-unavailable',
+      status: MONITOR_UNAVAILABLE_EXIT_CODE, peakRssBytes, exceededRssBytes: null,
+      monitorError, terminationError: null, exit,
     };
   }
   return {
+    outcome: exit.code === 0 ? 'pass' : 'test-process-failed',
     status: exit.code ?? 1, peakRssBytes, exceededRssBytes: null,
     monitorError: null, terminationError: null, exit,
   };
@@ -422,6 +453,7 @@ export function parseArgs(argv) {
   let batchSize = DEFAULT_TEST_BATCH_SIZE;
   let startIndex = 0;
   let fresh = false;
+  let chipBase = null;
   const selectedFiles = [];
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
@@ -429,7 +461,12 @@ export function parseArgs(argv) {
     else if (arg === '--start-index') startIndex = Number(argv[++index]);
     else if (arg === '--file') selectedFiles.push(String(argv[++index] || '').replaceAll('\\', '/'));
     else if (arg === '--fresh') fresh = true;
-    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles, fresh };
+    else if (arg === '--chip-base') {
+      if (chipBase !== null) throw new Error('--chip-base may only be specified once');
+      chipBase = argv[++index];
+      if (!chipBase || chipBase.startsWith('-')) throw new Error('--chip-base requires a Git commit reference');
+    }
+    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles, fresh, chipBase };
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!Number.isInteger(startIndex) || startIndex < 0) {
@@ -439,7 +476,11 @@ export function parseArgs(argv) {
   if (selectedFiles.length && startIndex !== 0) {
     throw new Error('--file and --start-index cannot be combined');
   }
-  return { help: false, batchSize, startIndex, selectedFiles, fresh };
+  if (chipBase !== null && (selectedFiles.length || argv.includes('--start-index') || fresh
+      || argv.includes('--batch-size'))) {
+    throw new Error('--chip-base cannot be combined with --file, --start-index, --fresh, or --batch-size');
+  }
+  return { help: false, batchSize, startIndex, selectedFiles, fresh, chipBase };
 }
 
 export async function runTestWorkflow({
@@ -448,6 +489,7 @@ export async function runTestWorkflow({
   batchRunner = runVitestBatch,
   assertStable = null,
   onBatchPass = null,
+  onFailure = null,
 } = {}) {
   const batches = partitionTests(files, batchSize);
   console.log(`[test-workflow] ${files.length} files in ${batches.length} sequential batch(es) of at most ${batchSize}`);
@@ -462,20 +504,25 @@ export async function runTestWorkflow({
     const elapsedMs = Number((performance.now() - started).toFixed(1));
     const peakMb = Math.ceil(result.peakRssBytes / 1024 / 1024);
     if (result.terminationError) {
-      console.error(`[test-workflow] FAIL: ${result.terminationError.message}`);
-      return 1;
-    }
-    if (result.monitorError) {
-      console.error(`[test-workflow] FAIL: RSS watchdog unavailable in batch ${index + 1}/${batches.length}: ${result.monitorError.message}`);
+      console.error(`[test-workflow] FAIL [termination-failed]: ${result.terminationError.message}`);
+      if (onFailure) await onFailure({ outcome: 'termination-failed', status: 1 });
       return 1;
     }
     if (result.exceededRssBytes != null) {
       const exceededMb = Math.ceil(result.exceededRssBytes / 1024 / 1024);
-      console.error(`[test-workflow] FAIL: batch ${index + 1}/${batches.length} reached ${exceededMb} MB RSS (limit 2048 MB) and was terminated`);
+      console.error(`[test-workflow] FAIL [rss-limit-exceeded]: batch ${index + 1}/${batches.length} reached ${exceededMb} MB RSS (limit 2048 MB) and was terminated`);
+      if (onFailure) await onFailure({ outcome: 'rss-limit-exceeded', status: 1 });
       return 1;
     }
+    if (result.monitorError) {
+      console.error(`[test-workflow] INCONCLUSIVE [monitor-unavailable]: RSS watchdog unavailable in batch ${index + 1}/${batches.length}: ${result.monitorError.message}`);
+      console.error('[test-workflow] Batch stopped without a trustworthy monitored result; no PASS or cost measurement recorded. Restore RSS monitoring and rerun this batch.');
+      if (onFailure) await onFailure({ outcome: 'monitor-unavailable', status: MONITOR_UNAVAILABLE_EXIT_CODE });
+      return MONITOR_UNAVAILABLE_EXIT_CODE;
+    }
     if (result.status !== 0) {
-      console.error(`[test-workflow] FAIL in batch ${index + 1}/${batches.length} (peak ${peakMb} MB RSS)`);
+      console.error(`[test-workflow] FAIL [test-process-failed] in batch ${index + 1}/${batches.length} (peak ${peakMb} MB RSS)`);
+      if (onFailure) await onFailure({ outcome: 'test-process-failed', status: result.status ?? 1 });
       return result.status ?? 1;
     }
     if (assertStable) await assertStable({
@@ -499,19 +546,39 @@ export async function runTestWorkflow({
 const invokedDirectly = process.argv[1]
   && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
 if (invokedDirectly) {
+  let invocationId = null;
   try {
+    const requestedId = process.env[TEST_INVOCATION_ENV];
+    if (requestedId) {
+      testInvocationReportPath(requestedId);
+      invocationId = requestedId;
+    }
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
       console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
+      console.log('npm test -- --chip-base REF selects authored tooling tests; never a full-suite verdict.');
       console.log('Passing batches append a measurement-only cost ledger at .local-evidence/test-quarry-cost-ledger-v1.json');
       console.log('That ledger does not change science, baselines, receipts, or batch order.');
     } else {
       const allFiles = collectTestFiles();
+      const chipPlan = args.chipBase === null ? null : requireChipSelection(planChipCheck({ base: args.chipBase }));
+      if (chipPlan) {
+        for (const file of chipPlan.tests) {
+          if (!allFiles.includes(file)) throw new Error(`chip test file is not registered: ${file}`);
+        }
+      }
       for (const file of args.selectedFiles) {
         if (!allFiles.includes(file)) throw new Error(`selected test file is not registered: ${file}`);
       }
-      const automaticCheckpoint = !args.selectedFiles.length && args.startIndex === 0;
-      const identity = automaticCheckpoint ? testWorkflowIdentity() : null;
+      const automaticCheckpoint = !chipPlan && !args.selectedFiles.length && args.startIndex === 0;
+      const identity = automaticCheckpoint || chipPlan ? testWorkflowIdentity() : null;
+      if (chipPlan) {
+        // Close the selection/identity race before launching any child. Later
+        // changes are caught by the existing whole-project identity guard.
+        const rechecked = requireChipSelection(planChipCheck({ base: args.chipBase }));
+        if (JSON.stringify(rechecked) !== JSON.stringify(chipPlan)) throw new Error('chip selection changed during planning');
+        assertTestWorkflowIdentityUnchanged(identity);
+      }
       if (automaticCheckpoint && args.fresh && fs.existsSync(TEST_CHECKPOINT_PATH)) {
         fs.unlinkSync(TEST_CHECKPOINT_PATH);
       }
@@ -527,10 +594,13 @@ if (invokedDirectly) {
       const completedFiles = plan ? plan.completedFiles : [];
       const completedBatches = plan ? plan.completedBatches : [];
       const resumeIndex = plan ? plan.resumeIndex : args.startIndex;
-      const files = args.selectedFiles.length
+      const files = chipPlan ? chipPlan.tests : args.selectedFiles.length
         ? [...new Set(args.selectedFiles)]
         : plan ? plan.files : selectResumeFiles(allFiles, resumeIndex);
-      if (args.startIndex > 0) {
+      if (chipPlan) {
+        console.log(`[test-chip] ${chipPlan.changed_files.length} changed paths; ${files.length} selected test files (${chipPlan.scope})`);
+        console.log('[test-chip] Partial tooling check; no full-suite PASS or checkpoint will be issued.');
+      } else if (args.startIndex > 0) {
         console.log(`[test-workflow] resuming at sorted file index ${args.startIndex} of ${allFiles.length}`);
       } else if (args.selectedFiles.length) {
         console.log(`[test-workflow] selected ${files.length} exact test file(s)`);
@@ -544,10 +614,13 @@ if (invokedDirectly) {
           identity, completedFiles, batches: completedBatches,
         }));
       }
+      let failureOutcome = null;
+      let completion = null;
       const status = files.length ? await runTestWorkflow({
         batchSize: args.batchSize,
         files,
-        assertStable: automaticCheckpoint
+        onFailure: ({ outcome }) => { failureOutcome = outcome; },
+        assertStable: identity
           ? () => assertTestWorkflowIdentityUnchanged(identity)
           : null,
         onBatchPass: ({ batch, peakRssBytes, elapsedMs }) => {
@@ -562,13 +635,18 @@ if (invokedDirectly) {
           }));
         },
       }) : 0;
+      if (chipPlan && status === 0) {
+        assertTestWorkflowIdentityUnchanged(identity);
+        console.log('[test-chip] CHIP PASS: selected tooling checks only; full-suite status remains unknown.');
+      }
       if (automaticCheckpoint && status === 0 && completedFiles.length === allFiles.length) {
         assertTestWorkflowIdentityUnchanged(identity);
         const uninterrupted = plan.uninterrupted;
         const reportPath = uninterrupted ? TEST_REPORT_PATH : TEST_RESUME_REPORT_PATH;
-        writeJsonAtomic(reportPath, makeTestCompletionReport({
+        completion = makeTestCompletionReport({
           identity, completedFiles, batches: completedBatches, uninterrupted,
-        }));
+        });
+        writeJsonAtomic(reportPath, completion);
         fs.unlinkSync(TEST_CHECKPOINT_PATH);
         if (uninterrupted) {
           console.log(`[test-workflow] UNINTERRUPTED PASS: ${allFiles.length} files under one unchanged project identity`);
@@ -578,10 +656,14 @@ if (invokedDirectly) {
           console.log('[test-workflow] no full-suite PASS was issued; rerun with --fresh for one uninterrupted result');
         }
       }
+      writeTestInvocationResult({
+        invocationId, status, outcome: failureOutcome || 'completed', completion,
+      });
       process.exitCode = status;
     }
   } catch (error) {
-    console.error(`[test-workflow] FAIL: ${error.message}`);
-    process.exitCode = 1;
+    console.error(`[test-workflow] ${error instanceof ChipSelectionRequiredError ? 'NO CHIP VERDICT' : 'FAIL'}: ${error.message}`);
+    process.exitCode = error instanceof ChipSelectionRequiredError ? CHIP_SELECTION_EXIT_CODE : 1;
+    writeTestInvocationResult({ invocationId, status: process.exitCode, outcome: 'workflow-error' });
   }
 }
