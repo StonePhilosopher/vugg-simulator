@@ -3,7 +3,7 @@
   "scope": "authored accepted-zone fixture; deterministic custody, not external geological validation",
   "sourcePilot": "5c6f11c80e31a582dbc86863a1418267b0731341",
   "runtime": "win32/x64/v24.15.0",
-  "specimenSha256": "17d0c75fe65f959d3bd0dc5232b5d45b1ee1c0c36da8fc867d8ff9d9f6ba4ddf",
+  "specimenSha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
   "geometrySha256ByStep": [
     "77314317053722be21aa0e3c76f6f5dbccc8c892372c71a2e961918610b919e1",
     "1f88433e44a80bf56ca1fb06b075c2a3c4a262c55f4228f13e941f3fc7564fa2",

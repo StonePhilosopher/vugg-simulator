@@ -1,19 +1,10 @@
 // Calcite-only authority boundary. No simulator, fluid, RNG, DOM, or Three.js.
 // The growth driver writes events; completed historical surfaces are data.
 import {clone,freeze,SpecimenRecorder,validateFrame} from './specimen.js';
+import {CALCITE_VOLUME_CONTRACT} from './volume-contract.js';
 
-export const AUTHORITY_SCHEMA='vugg-calcite-scientific-solid-authority-v1';
-export const VOLUME_RELATIONSHIP=freeze({
-  status:'scientific-solid-closure-unresolved',
-  booked:'accepted-zone ellipsoid inventory; chemistry and fill authority',
-  completed:'procedurally completed Wulff/contact surface at recorded scale',
-  relationship:'completed = booked * fullToBooked * attachmentRetention * contactRetention',
-  factorsAre:'measured representation factors, not porosity or a new density',
-  conversionTolerance:{relative:1e-8,absoluteMm3:1e-10},
-  allowedConsumers:{booked:['chemistry','fill','dissolution-inventory'],
-    completed:['surface-reconstruction','surface-inspection']},
-  forbidden:'No geometry-to-mass substitution, renderer rescaling, or feedback.',
-});
+export const AUTHORITY_SCHEMA='vugg-calcite-scientific-solid-authority-v2';
+export const VOLUME_RELATIONSHIP=CALCITE_VOLUME_CONTRACT;
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const finite=(n)=>typeof n==='number'&&Number.isFinite(n);
 const extentKeys=['cLengthMm','aWidthMm','bookedVolumeMm3','totalGrowthUm'];
@@ -89,6 +80,7 @@ export class CalciteAuthorityWriter {
 }
 
 export function assertCalciteSpecimen(specimen){
+  if(specimen?.schema==='vugg-calcite-scientific-solid-authority-v1')throw Error('Legacy calcite specimen: volume contract requires explicit recapture; no automatic upgrade');
   if(specimen?.schema!==AUTHORITY_SCHEMA||!specimen.model?.kind
     ||!same(specimen.volumeRelationship,VOLUME_RELATIONSHIP)||!Array.isArray(specimen.events)
     ||!Array.isArray(specimen.frames))throw Error('Invalid calcite specimen contract');

@@ -21,7 +21,7 @@ const result={schema:'calcite-volume-census-v1',seed:42,simVersion:h.SIM_VERSION
   scope:'plain untwinned Wulff calcite; all other calcite explicitly counted as excluded',
   decision:'Preserve existing mass/growth rules; record measured factors; hold production integration.',
   sourceHashes:Object.fromEntries(['js/27-geometry-crystal.ts','js/45-morphology.ts','js/46-wulff-geometry.ts',
-    'js/99i-renderer-three.ts','pilots/calcite/specimen.js','pilots/calcite/capture.mjs','pilots/calcite/census.mjs'].map(file=>[file,
+    'js/99i-renderer-three.ts','pilots/calcite/specimen.js','pilots/calcite/volume-contract.js','pilots/calcite/capture.mjs','pilots/calcite/census.mjs'].map(file=>[file,
     createHash('sha256').update(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n')).digest('hex')])),scenarios:[]};
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const measure=frame=>validateFrame(frame).crystals.map(r=>({id:r.id,habit:r.facts.habit,

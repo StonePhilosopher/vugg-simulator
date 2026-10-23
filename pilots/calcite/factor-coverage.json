@@ -6,11 +6,83 @@
     "arch": "x64"
   },
   "runtimeDigest": "f8beeb096dd0d76d9b9d15c8fe3a561c901ef549642189fa30a9be1c225b6119",
+  "volumeContract": {
+    "schema": "calcite-volume-reconciliation-v1",
+    "status": "scientific-solid-closure-unresolved",
+    "units": {
+      "volumes": "mm^3",
+      "dimensions": "mm",
+      "factors": "dimensionless"
+    },
+    "quantities": {
+      "booked": {
+        "field": "facts.bookedVolumeMm3",
+        "owner": "accepted growth-zone inventory",
+        "meaning": "Legacy ellipsoid-equivalent accounting volume; not a measured closed surface.",
+        "consumers": [
+          "chemistry",
+          "fill",
+          "occupancy",
+          "dissolution-inventory"
+        ]
+      },
+      "full": {
+        "field": "completion.volumeAudit.fullVolumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Full Wulff body at the captured normalization, including O1a/O1b; before clipping.",
+        "consumers": [
+          "factor-inspection"
+        ]
+      },
+      "attached": {
+        "field": "completion.volumeAudit.attachedVolumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Full body intersected with the recorded attachment half-space.",
+        "consumers": [
+          "factor-inspection"
+        ]
+      },
+      "completed": {
+        "field": "completion.volumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Closed stored surface after attachment and contact half-spaces; visibility scale exactly one.",
+        "consumers": [
+          "surface-reconstruction",
+          "surface-inspection"
+        ]
+      }
+    },
+    "relationship": "completed = booked * fullToBooked * attachmentRetention * contactRetention",
+    "dimensionConvention": "booked = pi/6 * aWidthMm^2 * cLengthMm; this does not constrain Wulff extents",
+    "factorsAre": "per-record measured representation ratios; not porosity, density, hidden material, or calibration",
+    "conversionTolerance": {
+      "relative": 1e-8,
+      "absoluteMm3": 1e-10,
+      "dimensionlessAbsolute": 1e-12
+    },
+    "conservation": "Only accepted growth events change booked inventory. Completion, clipping, save/load, and display return no mass.",
+    "physicalReconciliation": "unresolved; no equality, rescaling, or inverse conversion is authorized",
+    "legacy": "Old or incomplete records remain historical evidence; refuse this contract and require original sources for recapture. Never infer missing factors or history from current fluid.",
+    "allowedConsumers": {
+      "booked": [
+        "chemistry",
+        "fill",
+        "occupancy",
+        "dissolution-inventory"
+      ],
+      "completed": [
+        "surface-reconstruction",
+        "surface-inspection"
+      ]
+    },
+    "forbidden": "No geometry-to-mass substitution, renderer rescaling, or feedback."
+  },
   "sourceHashes": {
     "pilots/calcite/factor-audit.js": "947467367e679ff0970eed397e2ef36f68fc073eb6642a836b2f3ee54a2a43df",
-    "pilots/calcite/factor-report.mjs": "309457da16cf31ad11352b5c1e4c893861f3490e0e1f918c46342f980682c727"
+    "pilots/calcite/factor-report.mjs": "5d033926a4e5d97e4ba898b255799c0af1287fec80d44005cee8d1131e91e568",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb"
   },
-  "fleetReceiptSha256": "b720f5d916a80f5f6a22b13f4d87f1102f32865a998992ab76bfbcc762fff956",
+  "fleetReceiptSha256": "9b265befd5f40140fb17074d2661a3bd9a7890e9486b53e6fc348eda96e54ab4",
   "fleet": {
     "scenarios": 41,
     "endpointCalcites": 44,
@@ -34,8 +106,136 @@
   },
   "examples": {
     "controlled": {
-      "specimenSha256": "17d0c75fe65f959d3bd0dc5232b5d45b1ee1c0c36da8fc867d8ff9d9f6ba4ddf",
+      "specimenSha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
       "sourceClass": "authored accepted-zone fixture",
+      "volumeContracts": [
+        {
+          "step": 1,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.44602238100565506,
+          "full": 0.2133034193386773,
+          "attached": 0.10665170966933865,
+          "completed": 0.10665170966933865,
+          "completedToBooked": 0.23911739457753003,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 2,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.372582774304405,
+          "full": 0.6564168336673346,
+          "attached": 0.35715769087349425,
+          "completed": 0.3336172149443644,
+          "completedToBooked": 0.24305799343390008,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 2,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.24429024474314237,
+          "full": 0.11682809368737472,
+          "attached": 0.06356639566571713,
+          "completed": 0.05971921387382639,
+          "completedToBooked": 0.24446008450569867,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.8869560970408275,
+          "full": 1.380642840368236,
+          "attached": 0.76488752209429,
+          "completed": 0.6413010204719611,
+          "completedToBooked": 0.22213743434799862,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.7959438003021653,
+          "full": 0.8588828046718435,
+          "attached": 0.47582815846828524,
+          "completed": 0.40021605584848036,
+          "completedToBooked": 0.22284442073362457,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.987075281417621,
+          "full": 0.9502885282439879,
+          "attached": 0.5245749324159696,
+          "completed": 0.45154802675513234,
+          "completedToBooked": 0.22724253629333488,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.4512472490406438,
+          "full": 0.6940369221568132,
+          "attached": 0.3831198217317861,
+          "completed": 0.33112712163927177,
+          "completedToBooked": 0.22816726912534405,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 4.4046824625603795,
+          "full": 2.1064723887775547,
+          "attached": 1.1715797835083512,
+          "completed": 0.9514492617987592,
+          "completedToBooked": 0.21600859310200882,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.4090761234600833,
+          "full": 1.1521040119614225,
+          "attached": 0.6407782870091085,
+          "completed": 0.5213931777505683,
+          "completedToBooked": 0.21642868511838761,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        }
+      ],
       "audit": {
         "model": {
           "kind": "authored-accepted-zone-fixture",
@@ -409,8 +609,136 @@
       }
     },
     "elmwood": {
-      "specimenSha256": "d16b3ce527bb6ab994b5dc1f028cb679bfe5e09b58aa97428f481166db8ab9c4",
+      "specimenSha256": "7d9389af26373079535780eb6b3b6a544181a89f5dd325c8bdee67c8d0ce6920",
       "sourceClass": "live Elmwood with explicit Wulff override",
+      "volumeContracts": [
+        {
+          "step": 1,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.0007780284148403779,
+          "full": 0.00041331989628487015,
+          "attached": 0.0002469719529747091,
+          "completed": 0.0002469719529747091,
+          "completedToBooked": 0.31743307604694415,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.019280394398944377,
+          "full": 0.010101709762985772,
+          "attached": 0.006035530968658669,
+          "completed": 0.006035530968658669,
+          "completedToBooked": 0.3130398084070895,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.041877342651164405,
+          "full": 0.02192746508048301,
+          "attached": 0.013100591651469026,
+          "completed": 0.013100591651469026,
+          "completedToBooked": 0.3128324488159652,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.08909935091298266,
+          "full": 0.046615974402005066,
+          "attached": 0.02784927550545037,
+          "completed": 0.02784927550545037,
+          "completedToBooked": 0.3125642916596428,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 12,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.1174720162367062,
+          "full": 0.582872447996126,
+          "attached": 0.348152255476304,
+          "completed": 0.348152255476304,
+          "completedToBooked": 0.31155344421847014,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 13,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.3820060189548715,
+          "full": 0.7206503202742681,
+          "attached": 0.43044064584055286,
+          "completed": 0.43044064584055286,
+          "completedToBooked": 0.311460760616708,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 14,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.672524589867523,
+          "full": 0.8719301198140286,
+          "attached": 0.5207923529702143,
+          "completed": 0.5207923529702143,
+          "completedToBooked": 0.3113809842469731,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 15,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.066314724176812,
+          "full": 1.0765981720464513,
+          "attached": 0.643028739565902,
+          "completed": 0.643028739565902,
+          "completedToBooked": 0.3111959335343142,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 16,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.506916373882476,
+          "full": 1.3054767931565754,
+          "attached": 0.7797225823038548,
+          "completed": 0.7797225823038548,
+          "completedToBooked": 0.3110285570061892,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        }
+      ],
       "audit": {
         "model": {
           "kind": "live-model-capture",
@@ -421,13 +749,14 @@
           "simVersion": 285,
           "runtimeDigest": "f8beeb096dd0d76d9b9d15c8fe3a561c901ef549642189fa30a9be1c225b6119",
           "sourceHashes": {
-            "pilots/calcite/authority.js": "73b8df9be6d0740fbd74a4ffda9fc9fe0e6c152c21c9d26f4be870d9dba9f2d4",
-            "pilots/calcite/specimen.js": "2dc1432179630aaf7a7ed4d1ced3e871f360295866b85ca3594b67b58a15f86d",
+            "pilots/calcite/authority.js": "e214e82c8360c92d0f8065ae96d9df3971f3a977d545fc8af3ffaf4ff8de00a3",
+            "pilots/calcite/specimen.js": "591cb08033f43a6a1a48ae177b75b26a88d6ce8ca1f224d0bff1b00f25044eda",
+            "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
             "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",
             "pilots/calcite/growth-capture.mjs": "a6e18225b06daf0a2a9a5cb6c7c044ab58717d2c0512f5ca72f92bab5d13138b",
             "pilots/calcite/render.js": "ff62a926b9286127c493eb293065b79eccf4dcdcdf72ea0fde2fa4aabd55ff24",
             "pilots/calcite/fixture.mjs": "0bba869da1e6a2951a8ecbdfd9542c4b41b57c007b0a1f05e8590ca4161ba309",
-            "pilots/calcite/record.mjs": "eca3d913041fccd36be727346103f30c8e61a010217d899d72919b4ea79b67e2"
+            "pilots/calcite/record.mjs": "f440a7ebd5403d1f5176ceb17d97edc2d845395f0c37490c56b12327440fc404"
           }
         },
         "supportedCrystalSteps": 9,
