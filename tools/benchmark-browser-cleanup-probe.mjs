@@ -19,6 +19,12 @@ import { cleanupOwnedBrowserResources, terminateExactBrowserProcess } from './be
 import { findOwnedBrowserExecutable, ownedBrowserExecutableIdentity } from './owned-browser-runtime.mjs';
 
 if (process.platform !== 'win32') throw new Error('This real-browser ownership probe requires Windows');
+// A fresh hosted Windows runner can keep an otherwise healthy Chrome launch in
+// startup for longer than the generic 10 s helper bound. Waiting longer here
+// changes no ownership decision: the probe still accepts only the exact
+// profile receipt, authenticated endpoint, native port owner, process birth,
+// executable identity, and listener birth recorded below.
+const REAL_BROWSER_STARTUP_TIMEOUT_MS = 30_000;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runId = randomUUID();
 const outputRoot = path.join(root, '.local-evidence', 'benchmark-browser-cleanup-probe');
@@ -72,7 +78,10 @@ let failed = false;
 for (const mode of ['recovery', 'forced', 'unknown-owner', 'reused-owner-pid', 'reused-before-handle', 'endpoint-still-alive']) {
   const profile = await mkdtemp(path.join(os.tmpdir(), 'vugg-cleanup-probe-'));
   await writeFile(path.join(profile, 'probe-owner.json'), JSON.stringify({runId}));
-  const result = {mode, profile, receipts: [], started_utc: new Date().toISOString(), expiry_seconds: 90};
+  const result = {
+    mode, profile, receipts: [], started_utc: new Date().toISOString(), expiry_seconds: 90,
+    startup_timeout_ms: REAL_BROWSER_STARTUP_TIMEOUT_MS,
+  };
   record.cases.push(result);
   let browser, client, timer, server, devtools, rootReceipt, canary;
   const collectRows = async () => {
@@ -102,7 +111,7 @@ for (const mode of ['recovery', 'forced', 'unknown-owner', 'reused-owner-pid', '
     assert.equal(await waitForOwnedExit(browser, 10_000), true);
     assert.equal(browser.exitCode, 0);
     result.launcher = {pid: browser.pid, exit_code: browser.exitCode, output: launchOutput.trim()};
-    devtools = await waitForDevToolsReceipt(profile, browser, 10_000);
+    devtools = await waitForDevToolsReceipt(profile, browser, REAL_BROWSER_STARTUP_TIMEOUT_MS);
     result.devtools = devtools;
     const version = await (await fetch(`http://127.0.0.1:${devtools.port}/json/version`, {signal: AbortSignal.timeout(2_000)})).json();
     assertOwnedDevToolsVersion(version, devtools);
@@ -129,7 +138,9 @@ for (const mode of ['recovery', 'forced', 'unknown-owner', 'reused-owner-pid', '
         {stdio: 'ignore', windowsHide: true});
       assert.equal(await waitForOwnedExit(canary.browser, 10_000), true);
       assert.equal(canary.browser.exitCode, 0);
-      canary.devtools = await waitForDevToolsReceipt(canaryProfile, canary.browser, 10_000);
+      canary.devtools = await waitForDevToolsReceipt(
+        canaryProfile, canary.browser, REAL_BROWSER_STARTUP_TIMEOUT_MS,
+      );
       canary.owned = await captureOwnedBrowserProcessReceiptsForPort(canary.devtools.port, {devtoolsReceipt: canary.devtools});
       Object.assign(result.canary, {devtools: canary.devtools, receipts: canary.owned.receipts});
       await save();
