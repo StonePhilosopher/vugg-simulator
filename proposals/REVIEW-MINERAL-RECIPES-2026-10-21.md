@@ -743,12 +743,26 @@ and structural, and later A/Bs should measure real growth rather than a name in 
 
 The audit sorts each contracted species into four tiers:
 - born: a nucleation event (`tools/birth-census.mjs`);
-- grown: at least one nonzero zone (no instrument yet);
-- visible: past a size threshold (the assemblage census in PR #26 measures this);
+- grown: at least one stored zone thicker than zero;
+- visible: a surviving crystal of at least 0.1 or 1 mm (the definition of PR #26's assemblage census);
 - showcase: the scenario's story role (PR #26's story-pockets proposal).
 
 Its "grown" tier is red for the five fahlores until R9 lands. So it starts report-only, and the
 contracts tighten in R9's own commit.
+
+**The audit, built 2026-10-23** (`tools/born-grown-audit.mjs`, report-only; first fleet output in
+Appendix B). It reads growth from the stored-zone ledger, past competition, the growth budget and the
+clamps. It also counts each crystal's candidate zones, so every ghost shows the stage that drops it.
+Its controls hold at seeds 1, 2 and 42, and each fails on a deliberately broken copy of the tool. The
+five R9 fahlores read born, not grown, with R9's own 313 competition skips; bisbee's malachite (66 mm)
+and the Zn-bearing sunnyside fahlores read grown.
+
+At seed 42, 10 of the 359 contracted pairs are born but not grown. Five are the fahlores. The other
+five fail by mechanisms R9 does not touch (B1–B3 in the appendix), and all ten are ghosts at every
+seed of the panel. Another 7 pairs grew and then converted in place, 45 leave nothing of 0.1 mm or
+more, and 89 reach only 0.1–1 mm. So a "grown" contract added in R9's commit would hold for every pair
+except the B1–B3 five, plus, across the panel, three pairs that are ghosts at one seed only. Where
+those go in the order is open; nothing here moves a contract.
 
 1. **Metadata and display tranche.** Expected zero baseline move; measured where noted.
    - Text: R8 formula strings, M3 leftovers, M4–M8 and M11 comments, adamite's Cu-activator text (R1).
@@ -1175,3 +1189,185 @@ A/B had a control that reproduced the shipped hash. All findings were re-checked
 | | | | | wurtzite | 95–600 | —–350 |
 
 Whether a gate value is enforced hard, inline or only softly is a separate axis — see M9 and M13.
+
+---
+
+## Appendix B — born / grown / visible audit, first fleet output (2026-10-23)
+
+`tools/born-grown-audit.mjs` is the passive audit §6 asks for. It is report-only: it exits 0 and
+writes only to `.local-evidence/born-grown-audit/`. It reruns every scenario and classifies each
+contracted species — the deterministic tier as the claim cards build it (`expects_species`, H, then
+`deterministic_species`, D) and `statistical_species` (S):
+
+| tier | what it reads |
+|---|---|
+| born | a `nucleate()` call as the species (the capture `tools/birth-census.mjs` uses), or "conversion" when the name arrives only by an in-place transformation (argentite → acanthite) |
+| grown | a zone thicker than zero, stored by `Crystal.add_zone` while the crystal carried the name; "inherited" when it grew only under an earlier name. Zero-thickness zones are stored too (overprints, masked stalls, the cavity clamp), so "has a zone" is not growth |
+| visible | a surviving crystal of the final name whose longest dimension, max(c, a, growth), is at least 0.1 or 1 mm (PR #26's assemblage census); crystals flagged `enclosed_by` are listed apart |
+| showcase | the PR #26 story-pocket role (primary, alternate, showpiece, companion), else n/a. The role only: its verdicts stay with that PR's scoreboard |
+
+Beside the stored zones it counts each crystal's candidate zones (the engine's own proposal, before
+competition and the growth budget) and the competition's "edge-of-gate skip" lines. Each ghost
+therefore shows the stage that drops its growth.
+
+Two checks cover the instrument itself. Every seed-42 run reproduces
+`tests-js/baselines/seed42_v285.json`, so its wrappers move nothing, and its births equal
+`tools/birth-census.mjs`'s, species by species. Each control was also run against a deliberately
+broken copy of the tool:
+- Grading growth by the candidate makes all five fahlores read grown. That fails the positive control.
+- Dropping the zone capture makes malachite, azurite and the sunnyside fahlores read born but not
+  grown. That fails both negative controls, while the positive one still passes.
+
+So neither control alone is enough.
+
+**Ghosts beyond R9 (leads for the boss, not yet reviewed).** Five more species are born and never
+grow, at every seed of the panel, for reasons R9's fix does not reach. The stage comes from the audit's
+own counts; the σ, fill and concentration values come from in-memory probes at seed 42 (scratchpad, not
+committed):
+- **B1 — born into a full cavity.** `radioactive_pegmatite`'s opal (5 crystals) and plumbogummite (2)
+  nucleate at vug fill 1.00, admitted by their `late_stage_propensity` (0.3 and 0.9;
+  `js/85b-simulator-nucleate.ts:685–699`). At full fill the growth loop applies only negative zones
+  (`js/85-simulator.ts:704–737`), so the engine's positive candidates — σ 1.4–5.0 on every call — never
+  land.
+- **B2 — admitted on the bulk fluid, read on a cell that cannot grow it.** `searles_lake`'s mirabilite
+  (8 crystals; an `expects_species`) is admitted at bulk `concentration` 3, σ 77.1. Its engine reads
+  the crystal's cell, where Na (1,500 ppm) and S (400 ppm) are the same but `concentration` is 1.
+  `supersaturation_mirabilite` returns 0 below 1.5 (`js/40-supersat-sulfate.ts:431`): 1,545 engine
+  calls, no zone. `deccan_zeolite`'s feldspar is a milder case: σ 1.043 on the bulk fluid at its birth,
+  0.956 on its cell in the same step, and below 1 from then on.
+- **B3 — a nucleation gate below the growth floor.** `sunnyside_american_tunnel`'s native silver
+  (4 crystals) is born at σ 1.000444, which passes the strict `σ > sigma_crit` test (sigma_crit 1.0;
+  `js/86-nucleation-native.ts:94`, `js/36-supersat-native.ts:52`). The engine's rate,
+  4.5 (σ − 1) × U(0.8, 1.2) ≈ 0.002 µm, is below its own floor of 0.1 (`js/56-engines-native.ts:210`).
+  Two of the four cells read σ 0.96–0.99, the B2 split again.
+
+Rung 6 reaches none of them, so the grown tier stays red for these five after R9 lands. So does it,
+across the panel, for three pairs that are ghosts at one seed only (the last list below). R9's commit
+can tighten every other contract; these wait for their own decisions.
+
+The generated fragment (`.local-evidence/born-grown-audit/report.md`, verbatim):
+
+**SIM 285, seeds 1, 2, 42, 41 scenarios** (`node tools/born-grown-audit.mjs --seeds 1,2,42`, Node 24.15.0; inputs `54f35f1b2b2c`; story roles from origin/review/locality-abundance @ e1cb0d3a:proposals/DATA-STORY-POCKET-TARGETS-2026-10-22.json).
+
+Integrity: seed-42 baseline (tests-js/baselines/seed42_v285.json): 41 of 41 runs reproduced; births vs tools/birth-census.mjs: match, 1212 births over 41 scenarios; capture failures: 0.
+
+Controls:
+- **positive: PASS at seed 1, PASS at seed 2, PASS at seed 42** — the R9 fahlores: Zn-free fluids, booked Zn 1.5, rationed to 0 % (review R9 counted 313 skips, 64/64/60/60/65); expect "born, not grown".
+  - seed 1: bisbee tetrahedrite ghost (64 skips); bisbee tennantite ghost (64 skips); porphyry tetrahedrite ghost (60 skips); porphyry tennantite ghost (60 skips); schneeberg tennantite ghost (65 skips)
+  - seed 2: bisbee tetrahedrite ghost (64 skips); bisbee tennantite ghost (64 skips); porphyry tetrahedrite ghost (60 skips); porphyry tennantite ghost (60 skips); schneeberg tennantite ghost (65 skips)
+  - seed 42: bisbee tetrahedrite: born, not grown (1 born; 64 positive candidate steps, 64 competition skips, 0 stored positive zones, largest 0 mm) ok
+  - seed 42: bisbee tennantite: born, not grown (1 born; 64 positive candidate steps, 64 competition skips, 0 stored positive zones, largest 0 mm) ok
+  - seed 42: porphyry tetrahedrite: born, not grown (1 born; 60 positive candidate steps, 60 competition skips, 0 stored positive zones, largest 0 mm) ok
+  - seed 42: porphyry tennantite: born, not grown (1 born; 60 positive candidate steps, 60 competition skips, 0 stored positive zones, largest 0 mm) ok
+  - seed 42: schneeberg tennantite: born, not grown (1 born; 65 positive candidate steps, 65 competition skips, 0 stored positive zones, largest 0 mm) ok
+- **negative: PASS at seed 1, PASS at seed 2, PASS at seed 42** — bisbee's malachite and azurite, species known to grow there; expect "grown and visible".
+  - seed 1: bisbee malachite visible; bisbee azurite < 1 mm
+  - seed 2: bisbee malachite visible; bisbee azurite < 1 mm
+  - seed 42: bisbee malachite: visible (1 born; 167 positive candidate steps, 0 competition skips, 167 stored positive zones, largest 66.0 mm) ok
+  - seed 42: bisbee azurite: grown, under 1 mm (5 born; 139 positive candidate steps, 0 competition skips, 139 stored positive zones, largest 0.288 mm) ok
+- **negative: PASS at seed 1, PASS at seed 2, PASS at seed 42** — the same fahlores where the fluid carries Zn (sunnyside_american_tunnel, 120 ppm); expect "grown".
+  - seed 1: sunnyside_american_tunnel tetrahedrite < 1 mm; sunnyside_american_tunnel tennantite visible
+  - seed 2: sunnyside_american_tunnel tetrahedrite < 1 mm; sunnyside_american_tunnel tennantite visible
+  - seed 42: sunnyside_american_tunnel tetrahedrite: grown, under 1 mm (1 born; 11 positive candidate steps, 0 competition skips, 11 stored positive zones, largest 0.454 mm) ok
+  - seed 42: sunnyside_american_tunnel tennantite: visible (1 born; 143 positive candidate steps, 0 competition skips, 143 stored positive zones, largest 2.51 mm) ok
+
+| seed 42 | pairs | not born | born, not grown | grown, converted | grown, not visible | grown, under 1 mm | visible |
+|---|---|---|---|---|---|---|---|
+| headline | 175 | 0 | 1 | 4 | 18 | 44 | 108 |
+| accessory | 180 | 0 | 9 | 3 | 26 | 44 | 98 |
+| statistical | 4 | 1 | 0 | 0 | 1 | 1 | 1 |
+
+H = expects_species, D = deterministic_species, S = statistical_species; a role is the PR #26 story-pocket role, "record" its median size target.
+
+**Born, not grown (10):**
+- bisbee tennantite (D): 1 crystal, first born step 1; engine ran 340× (no zone 276, zero 0, negative 0, positive 64); positive on 64 steps, 64 skipped by competition, 0 dropped after it; 0 stored positive zones; "Zn-limited after residual redistribution (scaling 0%)"
+- bisbee tetrahedrite (D): 1 crystal, first born step 1; engine ran 340× (no zone 276, zero 0, negative 0, positive 64); positive on 64 steps, 64 skipped by competition, 0 dropped after it; 0 stored positive zones; "Zn-limited after residual redistribution (scaling 0%)"
+- deccan_zeolite feldspar (D): 1 crystal, first born step 110; engine ran 91× (no zone 91, zero 0, negative 0, positive 0); 0 stored positive zones
+- porphyry tennantite (D): 1 crystal, first born step 25; engine ran 96× (no zone 36, zero 0, negative 0, positive 60); positive on 60 steps, 60 skipped by competition, 0 dropped after it; 0 stored positive zones; "Zn-limited after residual redistribution (scaling 0%)"
+- porphyry tetrahedrite (D, alternate): 1 crystal, first born step 25; engine ran 96× (no zone 36, zero 0, negative 0, positive 60); positive on 60 steps, 60 skipped by competition, 0 dropped after it; 0 stored positive zones; "Zn-limited after residual redistribution (scaling 0%)"
+- radioactive_pegmatite opal (D): 5 crystals, first born step 94; engine ran 105× (no zone 0, zero 0, negative 0, positive 105); positive on 105 steps, 0 skipped by competition, 105 dropped after it; 0 stored positive zones
+- radioactive_pegmatite plumbogummite (D): 2 crystals, first born step 107; engine ran 21× (no zone 0, zero 0, negative 0, positive 21); positive on 21 steps, 0 skipped by competition, 21 dropped after it; 0 stored positive zones
+- schneeberg tennantite (D): 1 crystal, first born step 20; engine ran 141× (no zone 76, zero 0, negative 0, positive 65); positive on 65 steps, 65 skipped by competition, 0 dropped after it; 0 stored positive zones; "Zn-limited after residual redistribution (scaling 0%)"
+- searles_lake mirabilite (H): 8 crystals, first born step 31; engine ran 1545× (no zone 1545, zero 0, negative 0, positive 0); 0 stored positive zones
+- sunnyside_american_tunnel native_silver (D): 4 crystals, first born step 167; engine ran 103× (no zone 103, zero 0, negative 0, positive 0); 0 stored positive zones
+
+Crystal level: 42 crystals of contracted species never stored a positive zone: 25 in the 10 species born but not grown, 17 beside grown crystals of 10 other species.
+
+**Grown, then converted in place (7):** bisbee argentite → acanthite; porphyry argentite → acanthite; sabkha_dolomitization selenite → anhydrite; schneeberg torbernite → metatorbernite; schneeberg zeunerite → metazeunerite; schneeberg argentite → acanthite; sulphur_bank realgar → pararealgar.
+
+**Grown, not visible — nothing ≥ 0.1 mm survives (45), largest survivor:**
+- bisbee: native_copper (D, alternate, record 54 mm proxy) 0.057 mm; native_silver (D) 1.4e-3 mm; mimetite (D) 0.063 mm; dioptase (D) 0.074 mm
+- chiastolite_hornfels: albite (D) 1.3e-3 mm
+- epithermal_telluride: native_tellurium (H) 0.037 mm
+- gem_pegmatite: lepidolite (H, companion) 6.9e-3 mm; cassiterite (H) 7.5e-3 mm
+- mvt: barite (H) 0.042 mm; quartz (D) 6.0e-3 mm
+- porphyry: stibnite (D) 3.0e-3 mm; magnetite (D) all 1 dissolved
+- pulse: quartz (H) 8.3e-3 mm; rhodochrosite (S) 2.4e-3 mm
+- reactive_wall: marcasite (H, companion) all 1 dissolved
+- roughten_gill: chalcopyrite (H) 0.021 mm; tennantite (D) 5.0e-3 mm; tetrahedrite (D) 7.2e-3 mm; acanthite (D) 0.059 mm; mimetite (D, alternate) 0.030 mm
+- sabkha_dolomitization: dolomite (H) 0.044 mm; aragonite (D) 0.019 mm; calcite (D) 1.9e-3 mm; HMC (D) 3.0e-4 mm
+- schneeberg: native_bismuth (H, companion) 0.067 mm; cobaltite (H) 0.093 mm; cassiterite (H) 0.028 mm; spodumene (D) 0.043 mm; topaz (D) 0.021 mm; naumannite (D) all 2 dissolved; cuprite (D) 4.7e-3 mm; goethite (D) 4.3e-3 mm
+- searles_lake: halite (H, primary, record 101.5 mm proxy) 4.7e-3 mm; borax (H, companion) all 1 dissolved; calcite (D) 8.4e-3 mm
+- sunnyside_american_tunnel: sylvanite (D) 0.017 mm; calaverite (D) 0.013 mm
+- supergene_oxidation: cuprite (D, companion) 0.080 mm
+- tormiq_alpine_cleft: quartz (H, alternate) 7.7e-3 mm
+- tutorial_first_crystal: quartz (H) 7.2e-3 mm
+- tutorial_mn_calcite: quartz (D) 2.0e-3 mm
+- ultramafic_supergene: calcite (H) 1.4e-3 mm; dolomite (D) 0 mm
+- wittichen: skutterudite (H, companion) 0.060 mm; native_bismuth (H) 0.057 mm
+
+**Grown, under 1 mm (89), largest survivor in mm:**
+- amethyst_geode: chalcedony (H, alternate) 0.154; quartz (H, primary) 0.847
+- asbestos_hills_crack_seal: magnetite (H, companion) 0.145; quartz (D, companion) 0.300; hematite (D, companion) 0.990
+- asbestos_hills_surficial_alteration: magnetite (H, companion) 0.145; quartz (D, companion) 0.295; lepidocrocite (D) 0.132
+- bisbee: azurite (H, alternate, record 54 mm proxy) 0.288; chalcocite (D) 0.787; covellite (D) 0.310; marcasite (D) 0.956; cuprite (D, alternate, record 45 mm proxy) 0.312; turquoise (D) 0.599; bornite (D) 0.332; native_gold (D) 0.816; lepidocrocite (D) 0.453; alunite (D) 0.503
+- chiastolite_hornfels: feldspar (H) 0.710
+- colorado_plateau: carnotite (H, companion) 0.758
+- cooling: quartz (H, primary, record 16 mm) 0.565
+- deccan_zeolite: mesolite (H, companion) 0.845; stilbite (H, alternate, record 73 mm proxy) 0.660; apophyllite (H, primary, record 26.5 mm) 0.349; prehnite (D, companion) 0.274
+- elmwood: barite (H, companion) 0.612; chalcedony (D) 0.555
+- gem_pegmatite: tourmaline (H, primary, record 52 mm proxy) 0.294; spodumene (H) 0.125
+- grimsel_alpine_cleft: fluorite (H, alternate, record 12 mm) 0.514
+- jeffrey_mine: brucite (H) 0.788; wollastonite (H) 0.390; datolite (H) 0.396; pectolite (D, alternate, record 64.5 mm proxy) 0.311
+- porphyry: pyrite (H, primary) 0.647; malachite (D) 0.888; anglesite (D) 0.774; goethite (D) 0.337; hematite (D) 0.444
+- pulse: siderite (D) 0.116
+- radioactive_pegmatite: lepidolite (H) 0.883; cassiterite (H) 0.141; topaz (D) 0.175
+- reactivated_fluorite_vein: sphalerite (H, companion) 0.922
+- reactive_wall: pyrite (H, companion) 0.469; anhydrite (D) 0.197
+- roughten_gill: quartz (H, alternate) 0.225; aurichalcite (H) 0.228; plumbogummite (H, companion) 0.780; smithsonite (D, companion) 0.240; azurite (D) 0.405
+- schneeberg: autunite (H) 0.839; uranospinite (H) 0.735; native_arsenic (H) 0.240; erythrite (H, primary, record 67.5 mm proxy) 0.706; annabergite (H) 0.268; morganite (D) 0.115; proustite (D) 0.800; native_silver (D, companion) 0.224; brochantite (D) 0.481; metatorbernite (D) 0.724; metazeunerite (D) 0.649; turquoise (S) 0.224
+- searles_lake: celestine (D) 0.349
+- shigar_pegmatite: topaz (H, alternate, record 43.5 mm proxy) 0.601
+- sicily_solfifera: selenite (H, companion) 0.112
+- stalactite_demo: calcite (H) 0.753
+- sulphur_bank: pyrite (H, companion) 0.558
+- sunnyside_american_tunnel: pyrite (H, companion) 0.834; sphalerite (H, companion) 0.439; chalcopyrite (H, companion) 0.439; native_gold (H, alternate) 0.829; tetrahedrite (D) 0.454
+- supergene_oxidation: selenite (H) 0.654; goethite (D) 0.594; jarosite (D) 0.849; lepidocrocite (D) 0.246; olivenite (D) 0.340; annabergite (D) 0.710; erythrite (D) 0.702; descloizite (D) 0.207
+- tutorial_mn_calcite: rhodochrosite (D) 0.604; siderite (D) 0.259
+- wittichen: safflorite (H, companion) 0.572; native_silver (H, companion) 0.592; barite (H, companion) 0.934; anhydrite (D) 0.302
+- zoned_dripstone_cave: calcite (H) 0.611; dolomite (D) 0.361
+
+**Visible ≥ 1 mm only as crystals flagged `enclosed_by` (17)** — not visible under PR #26's stricter reading: bisbee pyrite, bisbee acanthite, bisbee jarosite, bisbee siderite, bisbee feldspar, grimsel_alpine_cleft epidote, mvt sphalerite, radioactive_pegmatite uraninite, reactivated_fluorite_vein siderite, roughten_gill pyrite, schneeberg nickeline, schneeberg arsenopyrite, schneeberg acanthite, supergene_oxidation smithsonite, supergene_oxidation conichalcite, supergene_oxidation azurite, supergene_oxidation aurichalcite.
+
+**Seed panel 1, 2, 42** (all tiers):
+
+| seed | pairs | not born | born, not grown | grown, converted | grown, not visible | grown, under 1 mm | visible |
+|---|---|---|---|---|---|---|---|
+| 1 | 359 | 1 | 11 | 8 | 50 | 82 | 207 |
+| 2 | 359 | 2 | 12 | 9 | 41 | 81 | 214 |
+| 42 | 359 | 1 | 10 | 7 | 45 | 89 | 207 |
+
+Pairs born but not grown at any seed (13):
+- bisbee tennantite (D): s1 ghost, s2 ghost, s42 ghost
+- bisbee tetrahedrite (D): s1 ghost, s2 ghost, s42 ghost
+- deccan_zeolite feldspar (D): s1 ghost, s2 ghost, s42 ghost
+- porphyry tennantite (D): s1 ghost, s2 ghost, s42 ghost
+- porphyry tetrahedrite (D): s1 ghost, s2 ghost, s42 ghost
+- radioactive_pegmatite opal (D): s1 ghost, s2 ghost, s42 ghost
+- radioactive_pegmatite plumbogummite (D): s1 ghost, s2 ghost, s42 ghost
+- roughten_gill mimetite (D): s1 < 0.1 mm, s2 ghost, s42 < 0.1 mm
+- schneeberg tennantite (D): s1 ghost, s2 ghost, s42 ghost
+- schneeberg goethite (D): s1 ghost, s2 < 0.1 mm, s42 < 0.1 mm
+- searles_lake mirabilite (H): s1 ghost, s2 ghost, s42 ghost
+- sunnyside_american_tunnel native_silver (D): s1 ghost, s2 ghost, s42 ghost
+- sunnyside_american_tunnel sylvanite (D): s1 < 0.1 mm, s2 ghost, s42 < 0.1 mm
