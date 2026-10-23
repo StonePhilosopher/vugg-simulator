@@ -25,7 +25,7 @@
     "mechanism-witnesses": "b66c8e8f5b9f5680770fa8d4db29d0cfbcac21eac461bfe56d8877c7170e5197",
     "science-provenance": "0b424545a3db5260c99b727b909b7355d7617e928cfbf5ba881de63152498f0b",
     "science-receipt": "5f41181e1b5fa600f585e20860e6bbe06bc2a4eb4bcb5c7a1b4997a4fd36138b",
-    "guided-tutorial-browser": "923558b53019dfd8e5dad51c28a6dd0cd34ddbf187f55cae6cd98fa9ba94da8c"
+    "guided-tutorial-browser": "7680c1b4dc23f89d50d4720d2892b86c590ce3b67aad2fb5640e685790e15c73"
   },
   "artifacts": {
     "archive/claim-cards/v285/amethyst_geode.json": "f1573ab46872d210bdf8084bac61b9a33f4d385037af009997f669e09907e60f",
@@ -110,7 +110,7 @@
     "archive/claim-cards/v285/wittichen.md": "e3588dbc9022fcab8a2d9eb04f14d7f793e4a0ac2f0333b02a8a5cfb1c7c92a5",
     "archive/claim-cards/v285/zoned_dripstone_cave.json": "2a7c93748e9f5f221c2261773f1c06aa2f6b17fa7bdce7200644b0a3babd10e1",
     "archive/claim-cards/v285/zoned_dripstone_cave.md": "cf17eef51dc20b943d4297e7d8db5f97290cb35334422498000e029840179a03",
-    "archive/evidence/guided-tutorial-browser-v285.json": "66d9454b5fed6ff2de70b1f69b1ca746db6c65f9a6013169f55e8fe90ee3dab7",
+    "archive/evidence/guided-tutorial-browser-v285.json": "921de100e0185e46929f9cb608e4cb3c250331cae1b7882018e4473d47618d78",
     "archive/evidence/mechanism-witnesses-v285.json": "74203015ce276a1772c9fe86c6d07eca71a3b1d1742b7f77e241872c81669a7f",
     "archive/strips/v285/amethyst_geode.json": "c28d5efd12d7f44ea84c5654f7c9933724c10de26f901d2fd34321af94cfff27",
     "archive/strips/v285/asbestos_hills_crack_seal.json": "f57671cff402bb41f3bd6dd1a5f945293118737dfeb466469d3d73c3c3138701",

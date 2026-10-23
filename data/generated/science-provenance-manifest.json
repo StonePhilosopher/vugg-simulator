@@ -127,7 +127,7 @@
   },
   "science_evidence": {
     "path": "archive/evidence/v285.json",
-    "sha256": "fababebf7d44643ac20a099fbf9fb21d0a7ea0718f1c4da53006bb9980125d02",
+    "sha256": "6febce304a214ce12514713bce8130ddfd1783cf23b79aa0381069af555eebcf",
     "schema": "vugg-science-evidence-receipt-v2",
     "browser_bundle_sha256": "196cd924fff6f025c040ba8f1f23357e181cb4314eb74dd5249e27d7cc4ec520",
     "execution_set_sha256": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
@@ -150,7 +150,7 @@
       "mechanism-witnesses": "b66c8e8f5b9f5680770fa8d4db29d0cfbcac21eac461bfe56d8877c7170e5197",
       "science-provenance": "0b424545a3db5260c99b727b909b7355d7617e928cfbf5ba881de63152498f0b",
       "science-receipt": "5f41181e1b5fa600f585e20860e6bbe06bc2a4eb4bcb5c7a1b4997a4fd36138b",
-      "guided-tutorial-browser": "923558b53019dfd8e5dad51c28a6dd0cd34ddbf187f55cae6cd98fa9ba94da8c"
+      "guided-tutorial-browser": "7680c1b4dc23f89d50d4720d2892b86c590ce3b67aad2fb5640e685790e15c73"
     },
     "artifact_count": 128
   },
