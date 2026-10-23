@@ -44,8 +44,8 @@ jobs:
       - run: npm run build
       - run: npm run build:check
 
-      - name: Calcite authority and celestine lineage
-        run: npm test -- --file tests-js/calcite-solid-authority.test.ts --file tests-js/celestine-lineage.test.ts
+      - name: Specimen history and viewer compatibility
+        run: npm test -- --file tests-js/calcite-solid-authority.test.ts --file tests-js/celestine-lineage.test.ts --file tests-js/wall-display-control.test.ts --file tests-js/tutorial-guidance.test.ts --file tests-js/cavity-field-fallback.test.ts
 
       # These cleanup regressions protect the engineering benchmarks. Ordinary
       # calibration CI does not otherwise execute their focused test files.

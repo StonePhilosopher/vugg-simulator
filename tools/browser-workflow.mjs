@@ -2109,6 +2109,34 @@ async function runWorkflow(driver, diagnostics) {
     await driver.waitFor(`window.vugg.fortressSim.step === 3`, 'third Creative state');
   });
 
+  await check('cycles the existing 3D wall and retains the flat cavity viewer', async () => {
+    const before = await driver.evaluate(`simulationStateFingerprint(window.vugg.fortressSim)`);
+    if (!(await driver.evaluate(`topoThreeRendererEnabled()`))) await driver.click('#topo-three-btn');
+    await driver.waitFor(`topoThreeRendererEnabled() && !!_topoThreeState?.cavity`, '3D cavity for wall controls');
+    await driver.evaluate(`void (window.__wallControlQaState = _topoThreeState)`);
+    for (const [mode, label] of [[1, 'translucent'], [2, 'hidden'], [0, 'normal']]) {
+      await driver.click('#topo-wall-btn');
+      await driver.waitFor(`_topoThreeState === window.__wallControlQaState
+        && _topoThreeState.wallDisplay === ${mode}
+        && _topoThreeState.cavity.visible === ${mode !== 2}
+        && (${mode} !== 1 || !!_topoThreeState.specimen || _topoThreeState.cavity.material.opacity === 0.18)
+        && document.querySelector('#topo-wall-btn').dataset.wallDisplay === '${label}'`,
+      `wall display ${label} without scene replacement`);
+    }
+    await driver.click('#topo-three-btn');
+    await driver.waitFor(`!topoThreeRendererEnabled()
+      && getComputedStyle(document.querySelector('#topo-canvas-three')).display === 'none'
+      && getComputedStyle(document.querySelector('#topo-canvas')).display !== 'none'
+      && getComputedStyle(document.querySelector('#topo-canvas')).visibility !== 'hidden'
+      && document.querySelector('#topo-canvas').getBoundingClientRect().width > 0
+      && document.querySelector('#topo-canvas').getBoundingClientRect().height > 0`, 'flat cavity retained');
+    await driver.click('#topo-three-btn');
+    await driver.waitFor(`topoThreeRendererEnabled()`, '3D cavity restored');
+    assert.equal(await driver.evaluate(`simulationStateFingerprint(window.vugg.fortressSim)`), before,
+      'viewer controls changed scientific state');
+    await driver.evaluate(`delete window.__wallControlQaState`);
+  });
+
   await check('shows causal mineral formation evidence by pointer and keyboard', async () => {
     await driver.waitFor(`!!document.querySelector('#f-sat-bar .sat-indicator')`, 'mineral saturation pill');
     await driver.hover('#f-sat-bar .sat-indicator');

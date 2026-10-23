@@ -9275,18 +9275,27 @@ function _topoApplyWallDisplay(state: any) {
 function topoToggleWallDisplay() {
   if (_topoExactFlatPresentationActive) return false;
   const state = _topoThreeState;
-  if (!state) return;
+  if (!state || !state.cavity || state.threeShaderUnusable) return false;
   state.wallDisplay = ((state.wallDisplay | 0) + 1) % 3;
   _topoApplyWallDisplay(state);
   const btn = document.getElementById('topo-wall-btn');
   if (btn) {
     const mode = state.wallDisplay | 0;
+    const label = mode === 0 ? 'normal' : mode === 1 ? 'translucent' : 'hidden';
+    btn.dataset.wallDisplay = label;
     btn.style.color = mode !== 0 ? '#f0c050' : '';
-    btn.title = mode === 0 ? 'Vug wall: solid (click: translucent)'
+    btn.setAttribute('aria-label', `Vug wall display: ${label}`);
+    btn.title = mode === 0 ? 'Vug wall: normal (click: translucent)'
       : mode === 1 ? 'Vug wall: translucent (click: hidden)'
-      : 'Vug wall: hidden (click: solid)';
+      : 'Vug wall: hidden (click: normal)';
   }
-  if (typeof topoRender === 'function') topoRender();
+  // This material-only control must redraw the existing scene. A full
+  // topoRender can recommission the state and restart its cycle at normal.
+  // Use the shared frame path so specimen post-processing stays active.
+  if (state.renderer && state.scene && state.camera) {
+    _topoRenderFrame(state);
+  }
+  return true;
 }
 
 // One-time default-on setup. Runs the first time _topoRenderThree
