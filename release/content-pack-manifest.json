@@ -16,8 +16,8 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "196cd924fff6f025c040ba8f1f23357e181cb4314eb74dd5249e27d7cc4ec520",
-      "runtime_execution_sha256": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+      "browser_bundle_sha256": "db3b37a8758ad0e4b9abe26abc665d49a2161800504be0a286f9359776f94667",
+      "runtime_execution_sha256": "93116cf2c9a7b2dccdd1d7ea802882001f70d0cfe3c8af0f05d5f3a5464feab9",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
@@ -31,8 +31,8 @@
         },
         {
           "path": "data/minerals.json",
-          "bytes": 953558,
-          "sha256": "9e426c0a32fd2009b11f42b9edbe8813bb5c80a4912a32e6c38fddd6c5f42a09"
+          "bytes": 953870,
+          "sha256": "ba2980ed1d0113126757ca8b0a1e401c8249a749fe0615cbcecc5ce3078bfcc2"
         },
         {
           "path": "data/scenarios.json5",
@@ -529,5 +529,5 @@
   ],
   "producer_contract_sha256": "768db3d90bf9f07bbe44162d42a35043a573c5b33617ef269a997c6c3da7316f",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "1635901b484ff5e77996eda4d6022adf324c58115fe9594813ceaf1086b5339f"
+  "catalog_sha256": "53616f03ae30d6b1fe914d038f7bde95baa7dcae58e64a4c4ee487d0e2f95e5e"
 }
