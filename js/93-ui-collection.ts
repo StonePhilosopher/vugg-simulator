@@ -63,9 +63,18 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
   _collectionBoundedOptionalText(record.habit, 'habit', 512);
   _collectionBoundedOptionalText(record.twin_law, 'twin law', 512);
   _collectionBoundedOptionalText(record.position, 'position', 512);
+  _collectionBoundedOptionalText(record.celestine_legacy_accounting_habit, 'celestine accounting habit', 512);
+  if (record.celestine_origin != null) {
+    const origin = record.celestine_origin;
+    if (record.mineral !== 'celestine' || origin.schema !== 'celestine-lineage-origin-v1'
+        || !Number.isSafeInteger(origin.crystal_id) || !Number.isSafeInteger(origin.nucleation_step)) {
+      throw new Error(`${label} has invalid celestine origin`);
+    }
+  }
   if (record.twinned !== undefined && typeof record.twinned !== 'boolean') {
     throw new Error(`${label} has invalid twin state`);
   }
+  assertCollectionQuartzForm(record);
   if (record.forms !== undefined
       && (!Array.isArray(record.forms) || record.forms.length > 128
         || record.forms.some(value => typeof value !== 'string' || value.length > 512))) {
@@ -87,9 +96,13 @@ function assertCrystalCollectionRecord(record, label = 'Library specimen') {
       if (record.zones.length > COLLECTION_MAX_ZONE_RECORDS) {
         throw new Error(`${label} has invalid growth zones`);
       }
-      for (const zone of record.zones) {
+      for (const [zoneIndex, zone] of record.zones.entries()) {
         if (!zone || typeof zone !== 'object' || Array.isArray(zone)) {
           throw new Error(`${label} has invalid growth zone`);
+        }
+        if (zone.celestine_history) {
+          if (record.mineral !== 'celestine') throw new Error(`${label} has misplaced celestine history`);
+          assertCelestineGrowthHistory(zone.celestine_history, zone.step, zoneIndex);
         }
         for (const key of [
           'step', 'temperature', 'thickness_um', 'growth_rate',
@@ -252,7 +265,9 @@ function _collectionRecordHasSurvivingSolid(record: any): boolean {
 // Turn a live Crystal + the run it came from into a persistent record.
 // Stores the full zones array so the Record Player can spiral the
 // crystal later — without this the Groove would have nothing to draw.
-function buildCrystalRecord(crystal, meta) {
+function buildCrystalRecord(crystal, meta, quartzSchema:string|null=COLLECTION_QUARTZ_FORM_SCHEMA) {
+  if(quartzSchema!==null&&quartzSchema!==COLLECTION_QUARTZ_FORM_SCHEMA)throw new Error('Unsupported quartz collection producer');
+  const quartzForm=quartzSchema===null?undefined:collectionQuartzFormForPersistence(crystal);
   if (!_crystalHasCollectibleSolid(crystal)) {
     throw new Error('This crystal has no surviving solid specimen to collect.');
   }
@@ -271,7 +286,8 @@ function buildCrystalRecord(crystal, meta) {
   }
 
   // Serialize zones with the fields the Groove visualization reads.
-  // Everything else on a GrowthZone is recomputable or decorative.
+  // Formation history is not recomputable from a final habit; retain its
+  // exact receipt alongside the older Groove fields.
   const zones = liveZones.map(z => ({
     step: z.step,
     temperature: z.temperature,
@@ -288,6 +304,7 @@ function buildCrystalRecord(crystal, meta) {
     fluid_inclusion: !!z.fluid_inclusion,
     inclusion_type: z.inclusion_type || '',
     note: z.note || '',
+    ...(z.celestine_history ? { celestine_history: _celestineFrozenCopy(z.celestine_history) } : {}),
     is_phantom: !!z.is_phantom,
     // Calcite-morphology arc Phase 1: per-zone growth-regime tags ride
     // into the collection so a stepped calcite remembers its terraces.
@@ -313,6 +330,7 @@ function buildCrystalRecord(crystal, meta) {
     collected_at: new Date().toISOString(),
     name: meta.name || defaultName,
     mineral: crystal.mineral,
+    ...(quartzForm!==undefined?{quartz_form:quartzForm}:{}),
     source: {
       mode: meta.mode || 'unknown',
       scenario: meta.scenario || null,
@@ -328,8 +346,12 @@ function buildCrystalRecord(crystal, meta) {
     },
     mm: +crystal.c_length_mm.toFixed(3),
     a_mm: +((crystal.a_width_mm || 0).toFixed(3)),
-    habit: crystal.habit || '',
-    forms: (crystal.dominant_forms || []).slice(),
+    habit: celestinePresentation(crystal).habit || '',
+    forms: (celestinePresentation(crystal).dominant_forms || []).slice(),
+    ...(crystal.mineral === 'celestine' ? {
+      celestine_origin: _celestineFrozenCopy(crystal.celestine_origin || null),
+      celestine_legacy_accounting_habit: crystal.habit,
+    } : {}),
     twinned: !!crystal.twinned,
     twin_law: crystal.twin_law || null,
     position: crystal.position || '',
@@ -345,11 +367,14 @@ function buildCrystalRecord(crystal, meta) {
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
 function reconstructCrystalFromRecord(rec): any {
+  if (rec.mineral === 'celestine'||rec.quartz_form!==undefined) assertCrystalCollectionRecord(rec);
   const zones = Array.isArray(rec.zones)
-    ? rec.zones.map(z => Object.assign({}, z))
+    ? rec.zones.map(z => Object.assign({}, z, z.celestine_history
+      ? { celestine_history: _celestineFrozenCopy(z.celestine_history) } : {}))
     : [];
   const stand = {
     mineral: rec.mineral,
+    ...(rec.celestine_origin ? { celestine_origin: _celestineFrozenCopy(rec.celestine_origin) } : {}),
     crystal_id: `C${(rec.id || '').slice(-4)}`,
     nucleation_step: rec.source?.nucleation_step ?? 0,
     nucleation_temp: rec.source?.nucleation_temp ?? 0,
@@ -380,6 +405,8 @@ function reconstructCrystalFromRecord(rec): any {
       return rec.habit && rec.habit.includes('smoky') ? 'smoky' : 'typical for species';
     },
     describe_morphology() {
+      const celestine = celestineMorphologyDescription(this);
+      if (celestine) return celestine;
       const parts = [this.habit || 'massive'];
       if (this.dominant_forms && this.dominant_forms.length) {
         parts.push(`[${this.dominant_forms.slice(0, 2).join(', ')}]`);
@@ -394,6 +421,7 @@ function reconstructCrystalFromRecord(rec): any {
       return `step ${z.step}, T=${z.temperature.toFixed(1)}°C, +${z.thickness_um.toFixed(1)} µm`;
     },
   };
+  restoreCollectionQuartzForm(stand,rec);
   return stand;
 }
 

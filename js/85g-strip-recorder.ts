@@ -122,6 +122,8 @@ class StripRecorder {
   private layerGrowthTestimony: any[];
   private lastSeenZoneCounts: Map<number | string, number>;
   private latestHabitMorphology: Map<number | string, any>;
+  private latestQuartzForms = new Map<number|string,StripQuartzFormTestimony>();
+  private quartzFormFailure: string|null = null;
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -288,10 +290,35 @@ class StripRecorder {
   // step's slice of chip data + any new nucleation events this step.
   // Safe to call when the recorder is finished — just becomes a no-op.
   captureStep(sim: any): void {
+    if(!this.active)return;
+    try{this._captureStep(sim);}
+    catch(error){this.quartzFormFailure='strip: capture failed; quartz form history may be incomplete';throw error;}
+  }
+
+  private _captureQuartzForms(sim:any):void {
+    const staged=new Map(this.latestQuartzForms),seen=new Set<number|string>();
+    for(const c of Array.isArray(sim?.crystals)?sim.crystals:[]){
+      if(!c)continue;
+      const history=quartzFormHistoryForPersistence(c,sim.step),id=_quartzFormValue(c,'crystal_id');
+      if(history===undefined){if(staged.has(id))throw new Error('strip: previously recorded quartz history disappeared');continue;}
+      if(seen.has(id))throw new Error('strip: duplicate quartz history identity');seen.add(id);
+      const count=history.observed_zone_count??0,zones=[];
+      if(count>STRIP_QUARTZ_FORM_LIMITS.zonesPerRow)throw new Error('strip: quartz zone witness limit');
+      const liveZones=_quartzFormValue(c,'zones'),birth=_quartzFormValue(c,'nucleation_step');
+      for(let i=0;i<count;i++)zones.push({zone_index:i,step:_quartzFormZoneStep(liveZones,i)});
+      staged.set(id,_quartzFormFreeze({schema:'strip-quartz-form-observations-v1',crystal_id:id,
+        captured_step:sim.step,sample_index:this.capturedSteps,...(birth!==undefined?{nucleation_step:birth}:{}),zones,history}));
+    }
+    stripValidateQuartzFormTestimony(Array.from(staged.values()),this.manifest.axes.steps);
+    this.latestQuartzForms=staged;
+  }
+
+  private _captureStep(sim:any):void {
     if (!this.active) return;
     if (this.capturedSteps >= this.manifest.axes.steps) {
       this._growCapacity();
     }
+    this._captureQuartzForms(sim);
 
     const wall = sim?.wall_state || sim?.conditions?.wall;
     const step = this.capturedSteps;
@@ -443,6 +470,7 @@ class StripRecorder {
             returned_budget_inventory: z._returned_budget_inventory || null,
             formula_stoichiometry: z.formula_stoichiometry || null,
             solid_solution: z.solid_solution || null,
+            ...(z.celestine_history ? { celestine_history: z.celestine_history } : {}),
             competition_allocation: allocation && (
               Number(allocation.scaling) < 1 - 1e-12
               || Number(allocation.allocation_rounds) > 1
@@ -479,6 +507,12 @@ class StripRecorder {
           crystal_id: crystalId,
           mineral: String(c.mineral || ''),
           habit: String(c.habit || ''),
+          ...(c.mineral === 'celestine' ? {
+            habit_authority: 'legacy-numerical-classifier-not-lineage-identity',
+            celestine_origin: c.celestine_origin || null,
+            celestine_morphology: celestineGrowthHistoryAtStep(c)?.morphology || null,
+            celestine_disclosure: celestineMorphologyDescription(c),
+          } : {}),
           extent_kind: c.extent_kind || size?.extent_kind || 'individual',
           dominant_forms: Array.isArray(c.dominant_forms) ? [...c.dominant_forms] : [],
           total_growth_um: Number(c.total_growth_um) || 0,
@@ -603,6 +637,7 @@ class StripRecorder {
   // serialization / IndexedDB.
   finalize(): StripDataset {
     this.active = false;
+    if(this.quartzFormFailure)throw new Error(this.quartzFormFailure);
     if (this.capturedSteps < this.manifest.axes.steps) {
       // Shrink axes.steps + slice chipData to match what we actually
       // captured. Keeps the dataset honest.
@@ -634,6 +669,7 @@ class StripRecorder {
       player_action_testimony: this.playerActionTestimony,
       layer_growth_testimony: this.layerGrowthTestimony,
       habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
+      ...(this.latestQuartzForms.size?{quartz_form_testimony:Object.freeze(Array.from(this.latestQuartzForms.values())) as any}:{}),
     };
   }
 

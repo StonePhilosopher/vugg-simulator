@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { realpathSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,6 +13,9 @@ import {
   captureOwnedBrowserProcessReceiptsForPort,
   CdpClient,
   findOwnedBrowserRootPid,
+  NATIVE_HELPER_CALL_TIMEOUT_MS,
+  NATIVE_HELPER_COMPILE_TIMEOUT_MS,
+  NATIVE_HELPER_LOAD,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
@@ -20,8 +24,25 @@ import {
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
+  windowsOwnedProcessSnapshot,
   windowsProcessTree,
 } from '../tools/browser-workflow.mjs';
+
+const HELPER_IMAGE = 'TVqQAAMAAAAEAAAA//8AALgAAAA=';
+type HelperCall = { command: string; timeout: number; env: Record<string, string> };
+// Answers the one-time helper compile with the loaded type name and its image,
+// and every capture with `stdout`, recording each PowerShell command and budget.
+function fakePowerShell(stdout: string, {
+  compile = async () => ({ stdout: `VuggProcessTree\r\n${HELPER_IMAGE}\r\n` }),
+}: { compile?: () => Promise<{ stdout: string }> } = {}) {
+  const calls: HelperCall[] = [];
+  const runner = async (_file: string, args: string[], options: { timeout: number; env: Record<string, string> }) => {
+    const command = args[args.length - 1];
+    calls.push({ command, timeout: options.timeout, env: options.env });
+    return command.includes('-OutputAssembly') ? compile() : { stdout };
+  };
+  return { runner: runner as never, calls };
+}
 
 class FakeOwnedProcess extends EventEmitter {
   pid: number;
@@ -47,12 +68,111 @@ class FakeOwnedProcess extends EventEmitter {
 
 describe('browser workflow owned-resource cleanup', () => {
   it('preserves the native port-owner lifetime separately from enumerated rows', async () => {
-    const snapshot = await windowsProcessTree({ownerPort: 43123, execFileRunner: async () => ({
-      stdout: 'OWNER|5000|500000|500100|C:\\Chrome\\chrome.exe\n5000|4000|500000|C:\\Chrome\\chrome.exe\n',
-    }) as never});
+    const {runner} = fakePowerShell('OWNER|5000|500000|500100|C:\\Chrome\\chrome.exe\n5000|4000|500000|C:\\Chrome\\chrome.exe\n');
+    const snapshot = await windowsProcessTree({ownerPort: 43123, execFileRunner: runner});
     expect(snapshot).toEqual({rootPid: 5000, listenerStartTicks: '500100',
       rootReceipt: {pid: 5000, start_ticks: '500000', executable_path: 'C:\\Chrome\\chrome.exe'},
       rows: [{pid: 5000, parentPid: 4000, start_ticks: '500000', executable_path: 'C:\\Chrome\\chrome.exe'}]});
+  });
+
+  it('compiles the process-tree helper once under the setup budget and loads its bytes for each capture', async () => {
+    const {runner, calls} = fakePowerShell('5000|4000|500000|C:\\Chrome\\chrome.exe\n');
+    await windowsProcessTree({execFileRunner: runner});
+    await windowsProcessTree({execFileRunner: runner, ownerPort: 43123});
+    expect(calls.map(call => call.timeout)).toEqual([
+      NATIVE_HELPER_COMPILE_TIMEOUT_MS, NATIVE_HELPER_CALL_TIMEOUT_MS, NATIVE_HELPER_CALL_TIMEOUT_MS,
+    ]);
+    // The cold-runner overrun was the compile, not an observation: setup gets
+    // a hang budget an order of magnitude above the slowest first capture seen.
+    expect(NATIVE_HELPER_COMPILE_TIMEOUT_MS).toBeGreaterThanOrEqual(120_000);
+    expect(NATIVE_HELPER_CALL_TIMEOUT_MS).toBe(10_000);
+    const [compile, ...captures] = calls;
+    expect(compile.command).toMatch(/^Add-Type -TypeDefinition \$env:VUGG_NATIVE_HELPER_SOURCE -OutputAssembly /);
+    expect(compile.env.VUGG_NATIVE_HELPER_SOURCE).toContain('public static class VuggProcessTree');
+    expect(compile.env.VUGG_NATIVE_HELPER_TYPE).toBe('VuggProcessTree');
+    expect(NATIVE_HELPER_LOAD).toBe('[void][Reflection.Assembly]::Load([Convert]::FromBase64String($env:VUGG_NATIVE_HELPER_IMAGE))');
+    for (const capture of captures) {
+      expect(capture.command.startsWith(`${NATIVE_HELPER_LOAD}; [VuggProcessTree]::`)).toBe(true);
+      expect(capture.command).not.toMatch(/-TypeDefinition|-Path|-OutputAssembly/);
+      expect(capture.env.VUGG_NATIVE_HELPER_IMAGE).toBe(HELPER_IMAGE);
+    }
+    expect(captures.map(call => call.command.split('::').at(-1))).toEqual([
+      'Rows()', 'RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)',
+    ]);
+  });
+
+  it('shares one helper compile between concurrent first captures', async () => {
+    let compiles = 0;
+    let release: (value: { stdout: string }) => void = () => {};
+    const compiled = new Promise<{ stdout: string }>(resolve => { release = resolve; });
+    const {runner, calls} = fakePowerShell('5000|4000|500000|chrome.exe\n', {
+      compile: () => { compiles += 1; return compiled; },
+    });
+    const captures = Promise.all([windowsProcessTree({execFileRunner: runner}), windowsProcessTree({execFileRunner: runner})]);
+    release({stdout: `VuggProcessTree\r\n${HELPER_IMAGE}\r\n`});
+    await captures;
+    expect(compiles).toBe(1);
+    expect(calls).toHaveLength(3);
+  });
+
+  it('compiles again after a failed compile instead of caching the failure', async () => {
+    let compiles = 0;
+    const {runner, calls} = fakePowerShell('5000|4000|500000|chrome.exe\n', {
+      compile: async () => {
+        if (++compiles === 1) throw Object.assign(new Error('Command failed'), {killed: true, signal: 'SIGTERM'});
+        return {stdout: `VuggProcessTree\r\n${HELPER_IMAGE}\r\n`};
+      },
+    });
+    await expect(windowsProcessTree({execFileRunner: runner})).rejects.toThrow(/Command failed/);
+    expect(calls).toHaveLength(1);
+    await expect(windowsProcessTree({execFileRunner: runner})).resolves.toHaveLength(1);
+    expect(calls.map(call => call.command.includes('-OutputAssembly'))).toEqual([true, true, false]);
+  });
+
+  it.each(['', 'VuggProcessTree', `OtherHelper\r\n${HELPER_IMAGE}`, 'VuggProcessTree\r\nnot an image!'])(
+    'refuses a helper compile that did not load the expected type and image: %j', async stdout => {
+      const {runner, calls} = fakePowerShell('5000|4000|500000|chrome.exe\n', {compile: async () => ({stdout})});
+      await expect(windowsProcessTree({execFileRunner: runner})).rejects.toThrow(/did not load from its compiled assembly/);
+      expect(calls).toHaveLength(1);
+    },
+  );
+
+  it('prepares the owner observer with the same compiled helper its observation loads', async () => {
+    const {runner, calls} = fakePowerShell('OWNER|5000|500000|500100|chrome.exe\n5000|4000|500000|chrome.exe\n');
+    const observer = windowsOwnedProcessSnapshot({execFileRunner: runner});
+    await observer.prepare();
+    expect(calls.map(call => call.timeout)).toEqual([NATIVE_HELPER_COMPILE_TIMEOUT_MS]);
+    await expect(observer(43123)).resolves.toMatchObject({rootPid: 5000, listenerStartTicks: '500100'});
+    expect(calls.map(call => call.timeout)).toEqual([NATIVE_HELPER_COMPILE_TIMEOUT_MS, NATIVE_HELPER_CALL_TIMEOUT_MS]);
+  });
+
+  it('finishes a slow helper compile before the owner-observation deadline starts', async () => {
+    const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    const snapshot = {rootPid: 5000, rootReceipt: root, listenerStartTicks: '500100', rows: [{...root, parentPid: 4000}]};
+    const order: string[] = [];
+    const owned = await captureOwnedBrowserProcessReceiptsForPort(43123, {
+      platform: 'win32', timeoutMs: 20,
+      ownedSnapshotProvider: Object.assign(async () => { order.push('observe'); return snapshot; }, {
+        prepare: async () => { await new Promise(resolve => setTimeout(resolve, 100)); order.push('prepared'); },
+      }),
+    });
+    expect(order).toEqual(['prepared', 'observe']);
+    expect(owned.receipts.map(row => row.pid)).toEqual([5000]);
+    // Negative control: the same 20 ms deadline still bounds the observation.
+    await expect(captureOwnedBrowserProcessReceiptsForPort(43123, {
+      platform: 'win32', timeoutMs: 20,
+      ownedSnapshotProvider: Object.assign(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return snapshot;
+      }, {prepare: async () => {}}),
+    })).rejects.toThrow(/DevTools owner observation timed out/);
+  });
+
+  it.skipIf(process.platform !== 'win32')('captures this process through the compiled helper', async () => {
+    const self = (await windowsProcessTree()).find(row => row.pid === process.pid);
+    expect(self?.start_ticks).toMatch(/^[1-9]\d*$/);
+    expect(realpathSync.native(self?.executable_path || '.').toLowerCase())
+      .toBe(realpathSync.native(process.execPath).toLowerCase());
   });
 
   it('binds the listening owner to the same captured lifetime', async () => {

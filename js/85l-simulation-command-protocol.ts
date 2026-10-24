@@ -178,6 +178,9 @@ function _simulationCrystalProjection(crystal: any): any {
     cLengthMm: Number(crystal.c_length_mm) || 0,
     aWidthMm: Number(crystal.a_width_mm) || 0,
     habit: crystal.habit || null,
+    ...(crystal.celestine_origin ? {
+      celestineOrigin: _simulationCanonicalProjection(crystal.celestine_origin),
+    } : {}),
     position: crystal.position || null,
     enclosedBy: crystal.enclosed_by ?? null,
     enclosedCrystals: _simulationCanonicalProjection(crystal.enclosed_crystals || []),

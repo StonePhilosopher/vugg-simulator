@@ -510,6 +510,8 @@ class Crystal {
   }
 
   describe_morphology() {
+    const celestine = celestineMorphologyDescription(this);
+    if (celestine) return celestine;
     const forms = this.dominant_forms.length ? this.dominant_forms.join(', ') : this.habit;
     const twin_str = this.twinned ? `, ${this.twin_law} twin` : '';
     // Show in µm if crystal is < 0.1mm, otherwise mm

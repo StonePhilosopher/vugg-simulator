@@ -117037,6 +117037,100 @@
         "surface_film": null,
         "zone_count": 5
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 17,
+        "captured_step": 200,
+        "sample_index": 199,
+        "nucleation_step": 151,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 151
+          },
+          {
+            "zone_index": 1,
+            "step": 152
+          },
+          {
+            "zone_index": 2,
+            "step": 153
+          },
+          {
+            "zone_index": 3,
+            "step": 154
+          },
+          {
+            "zone_index": 4,
+            "step": 155
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 17,
+          "initial": {
+            "step": 151,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.5890438412411709,
+                "azim": 1.0396750630738205
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "prismatic",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100} prism",
+                "r{101}",
+                "z{011}"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 155,
+              "zone_count": 5,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.5890438412411709,
+                  "azim": 1.0396750630738205
+                },
+                "enclosed_by": 6,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "prismatic",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100} prism",
+                  "r{101}",
+                  "z{011}"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            }
+          ],
+          "observed_through_step": 200,
+          "observed_zone_count": 5
+        }
+      }
     ]
   }
 }
