@@ -39,9 +39,10 @@ const MINERAL_GATES_plumbogummite: MineralGates = {
 // Caldbeck V suite (vanadinite + mottramite + descloizite): Kingsbury
 // & Hartley 1956 MinMag; Stanley, Symes & Jones 1991 MinMag 55:121.
 const MINERAL_GATES_descloizite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 40,
-  fluid_min: { Pb: 40, Zn: 50, V: 4, Cu: 0.5 },
+  fluid_min: { Pb: 40, Zn: 50, V: 4 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',
@@ -50,9 +51,10 @@ const MINERAL_GATES_descloizite: MineralGates = {
 };
 
 const MINERAL_GATES_mottramite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.0,
   T_optimal: 40,
-  fluid_min: { Pb: 40, Cu: 50, V: 4, Zn: 0.5 },
+  fluid_min: { Pb: 40, Cu: 50, V: 4 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',
@@ -220,6 +222,7 @@ const MINERAL_GATES_apatite: MineralGates = {
 };
 
 const MINERAL_GATES_turquoise: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.3,
   T_min: 5, T_max: 80, T_optimal: 32,
   fluid_min: { Cu: 5, Al: 3, P: 1 },
@@ -290,7 +293,8 @@ Object.assign(VugConditions.prototype, {
   const g = MINERAL_GATES_descloizite;
   if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Zn < g.fluid_min!.Zn || this.fluid.V < g.fluid_min!.V) return 0;
   if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  if (this.fluid.Cu < g.fluid_min!.Cu) return 0;
+  // No recessive-side Cu floor (removed in recipe-review rung 1d, as for
+  // mottramite on 2026-06-16); the Zn fraction below is the series gate.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;
   if (zn_fraction < 0.5) return 0;

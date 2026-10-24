@@ -161,8 +161,8 @@ describe('Conichalcite — Ca-Cu arsenate engine (v87)', () => {
 
   describe('cation fork — Cu-dominant blocks conichalcite, routes to olivenite', () => {
     it('high Cu (no Ca) blocks conichalcite even with As + redox', () => {
-      // Olivenite needs Zn>=0.5 trace too (its own broth-ratio gate);
-      // give it a small Zn floor so it fires while conichalcite blocks.
+      // The Zn 5 predates rung 1d, when olivenite needed a Zn >= 0.5 trace;
+      // it no longer does (tests-js/recessive-floor-removal.test.ts).
       const fluid = new FluidChemistry({ Ca: 5, Cu: 400, Zn: 5, As: 25, O2: 1.5, pH: 6.5 });
       const cond = new VugConditions({ temperature: 30, fluid });
       expect(cond.supersaturation_conichalcite()).toBe(0);

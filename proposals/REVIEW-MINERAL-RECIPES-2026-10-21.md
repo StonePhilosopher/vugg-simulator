@@ -296,6 +296,9 @@ the sulfide tables stale metadata; it is metadata a player reads.
   per-Ca form. The stoichiometry line's comment repeats the wrong string, marked "(per-Ca)".
 - **Meta-autunite** is given as `·8H2O`, and its description says "three water molecules gone". It
   is the 6-water member, Ca(UO2)2(PO4)2·6H2O; 8 H2O is the metatorbernite/metazeunerite count.
+  SIM 277 (`ea3bfeb4`) had changed 6 to 8 to match that description and pinned it in
+  `tests-js/meta-autunite-trio.test.ts`. Rung 1 changes the formula, the description's water
+  fraction and that test together.
 
 ### R9. Booked cations are mandatory — and five contracted fahlore crystals never grow
 `MINERAL_STOICHIOMETRY` makes every booked species mandatory, twice over:
@@ -604,6 +607,34 @@ from `js/87-nucleation-oxide.ts:200`). Birnessite and todorokite are both dead a
     and reads `eh[c.nucleation_step]`, also the end of step n + 1 (`:66–69`).
 
   Births next to an event can be misplaced by either. Re-run before trusting a boundary case.
+
+  *Corrected while fixing it (rung 1, 2026-10-22):* no single sample is right for T, so §5's
+  "usually n − 2" is the wrong fix.
+  - A birth lies between its step's start (n − 2) and end (n − 1). Events apply before births and
+    the ambient thermal path after, and the archive cannot order them within a step.
+  - Against the exact values of all 1,212 births (`birth-census.mjs`, the archive's
+    `raw_environment` series):
+
+    | sample | births off > 5 °C | worst T | worst Eh |
+    |---|---|---|---|
+    | n − 2 (step start) | 95 | 315 °C | 278 mV |
+    | n − 1 (step end) | 7 | 93 °C | 24 mV |
+    | n (the old read) | 32 | 318 °C | 278 mV |
+
+  - No birth is outside its declared T envelope, yet n − 2 alone flags 18, n − 1 alone 4 and n 8.
+    The T census now flags only births outside at both ends of their step and lists one-end cases
+    as boundary steps. The Eh census reads n − 1, exact for 1,202 births.
+  - The chips' T series is quantised for display, so the T census reads `raw_environment.T`. Its
+    five remaining "definite" rows are sabkha's selenite births later converted to anhydrite: the
+    archive names a crystal by its final species.
+  - The corrected Eh census changes the redox leads. Porphyry's stibnite (+322 mV, an artefact)
+    drops out. Bisbee's step-73 malachite and goethite come in: born at +83.4 mV and pH 4.00
+    (exact), below the census's +100 mV line, which the old read hid by showing the next step's
+    +110.9. The malachite is M10's pH-4.00 crystal. Goethite at pH 4 needs at least about +300 mV
+    to be stable against micromolar Fe²⁺. Both are leads for the R2/M10 survival-window work, not
+    verdicts.
+  - A third tool made the same read: `tools/sulfide-nucleation-eh-census.mjs`, the rung-4b
+    sulfide-only census. It is fixed the same way.
 - **M13.** Three static-census artefacts in `tools/t-envelope-census.mjs`:
   - "HMC has no σ function" — `supersaturation_HMC(mg_content?)` exists at `js/32-supersat-carbonate.ts:424`;
     the regex misses parameterised methods.
@@ -655,7 +686,9 @@ Fleet-wide, matching each birth's temperature exactly to archive samples n, n �
 | none of the three (mid-step changes) | 183 |
 
 Loosening the match to 0.05 °C moves 16 births from n − 1 into ties. Sample n never matches alone at
-any tolerance tried (up to 0.5 °C).
+any tolerance tried (up to 0.5 °C). Matching exactly most often is not the same as never being far
+off: at event steps n − 2 misses by up to 315 °C. M12's correction says which samples a census
+should read.
 
 Location was not the issue either. Every birth's nucleation temperature equals the bulk temperature,
 and the thermal field never activates at seed 42.
@@ -696,6 +729,26 @@ needs a rebake, and so does an edit to `data/minerals.json` ("Runtime, runtime-d
 changes require a fresh `npm run science:rebake`", AGENTS.md). A gate-constant edit can also move
 baselines, because the initiative module reads gate T windows (`js/43-initiative.ts:106–121`) and
 drives graduated competition.
+
+**Dependencies, and the order adopted (2026-10-22).** Few rungs must precede others:
+- rung 1 comes first, because every later rung rebakes anyway;
+- rung 2 (R2's survival schema) comes before rung 3, because both move jarosite's pH limits;
+- R4 and S8 change together (rung 4);
+- a born/grown audit comes before rung 6, so R9's effect shows as ghosts becoming crystals.
+
+Everything else is free to reorder. The numbers below are kept so cross-references hold. After an
+outside review (rock bot, forwarded by the boss), the work order is: 1, then a passive
+born/grown/visible contract audit, then 2, 6, 3, 4, 5, 7, 8, 9. Rung 6 moves up because R9 is live
+and structural, and later A/Bs should measure real growth rather than a name in an event log.
+
+The audit sorts each contracted species into four tiers:
+- born: a nucleation event (`tools/birth-census.mjs`);
+- grown: at least one nonzero zone (no instrument yet);
+- visible: past a size threshold (the assemblage census in PR #26 measures this);
+- showcase: the scenario's story role (PR #26's story-pockets proposal).
+
+Its "grown" tier is red for the five fahlores until R9 lands. So it starts report-only, and the
+contracts tighten in R9's own commit.
 
 1. **Metadata and display tranche.** Expected zero baseline move; measured where noted.
    - Text: R8 formula strings, M3 leftovers, M4–M8 and M11 comments, adamite's Cu-activator text (R1).

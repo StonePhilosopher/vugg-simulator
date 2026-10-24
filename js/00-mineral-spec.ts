@@ -19,8 +19,8 @@
 // size-cap and nucleation threshold logic can still function. The
 // Library Mode always waits for the fetched version.
 //
-// Keep MINERAL_SPEC_FALLBACK in sync with data/minerals.json via
-// `node tools/sync-spec.js` — the drift checker will flag mismatches.
+// Keep MINERAL_SPEC_FALLBACK in sync with data/minerals.json by hand: the
+// `tools/sync-spec.js` this comment used to name no longer exists.
 const MINERAL_SPEC_FALLBACK = {
   quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
   chalcedony: { formula: "SiO2", nucleation_sigma: 1.12, max_size_cm: 100, growth_rate_mult: 0.45, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0, requires: { F: 20 } } },
@@ -45,7 +45,7 @@ const MINERAL_SPEC_FALLBACK = {
   arsenopyrite: { formula: "FeAsS", nucleation_sigma: 1.2, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: 720, fluorescence: null, twin_laws: [{ name: "trillings_120", miller_indices: "{120}", trigger: "growth (uncommon)", probability: 0.01 }], acid_dissolution: null },
   scorodite: { formula: "FeAsO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 8, growth_rate_mult: 0.25, thermal_decomp_C: 160, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.5 } },
   molybdenite: { formula: "MoS2", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.3, thermal_decomp_C: 1185, fluorescence: null, twin_laws: [], acid_dissolution: null },
-  adamite: { formula: "Zn2(AsO4)(OH)", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 500, fluorescence: { activator: "intrinsic", color: "green_yellow_SW", quencher: { species: "Cu", threshold_ppm: 10 } }, twin_laws: [], acid_dissolution: { pH_threshold: 3.5 } },
+  adamite: { formula: "Zn2(AsO4)(OH)", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 500, fluorescence: { activator: "uranyl_trace", color: "lime_green_SW_UV", quencher: { species: "Cu", threshold_ppm: 0.1 } }, twin_laws: [], acid_dissolution: { pH_threshold: 3.5 } },
   mimetite: { formula: "Pb5(AsO4)3Cl", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 400, fluorescence: { activator: "intrinsic", color: "orange_SW" }, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
   erythrite: { formula: "Co3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
   annabergite: { formula: "Ni3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },

@@ -11,9 +11,13 @@
 
 // ---- Sulfide MINERAL_GATES exports (38 minerals — biggest engine class) ----
 
+// The six primary sulfides' O2_max (sphalerite, wurtzite, pyrite, marcasite,
+// chalcopyrite, galena) mirrors PRIMARY_SULFIDE_CEILING_O2 = 0.5 (js/20c,
+// Eh ≤ +100 mV). Display only: the σ bodies read the constant, so these
+// fields exist for the σ panel and Library (recipe review R7).
 const MINERAL_GATES_sphalerite: MineralGates = {
   sigma_crit: 1.0, T_optimal: 175,
-  fluid_min: { Zn: 10, S: 10 }, surface_energy: 'medium',
+  fluid_min: { Zn: 10, S: 10 }, O2_max: 0.5, surface_energy: 'medium',
   _sources: ['sphalerite engine v17+', 'Karthikeyan et al. 2002', 'Scott & Barnes 1972 GCA 36:1275 (inversion ~1020°C, f(S2)-univariant)'],
   // v228 (rung 2): the old note "wurtzite dimorph above 95°C" was the T>95
   // polymorph-selection lie the hostile review retired — the real inversion
@@ -36,32 +40,38 @@ const MINERAL_GATES_wurtzite: MineralGates = {
   // marcasite, GCA 50:2615); the metastable-branch conditions stand on the
   // verified sources above.
   sigma_crit: 1.0, T_max: 350, T_optimal: 250,
-  fluid_min: { Zn: 10, S: 10, Fe: 5 }, pH_max: 4.0,
+  fluid_min: { Zn: 10, S: 10, Fe: 5 }, O2_max: 0.5, pH_max: 4.0,
   surface_energy: 'medium',
   _sources: ['wurtzite engine v17+', 'Scott & Barnes 1972 GCA 36:1275', 'GCA 340:99 (2023) nanoscale ZnS surface energetics', 'VMS black-smoker wurtzite ~250-300°C (sphalerite-wurtzite assemblages)'],
   _notes: 'ZnS hexagonal — METASTABLE kinetic-trap polymorph only (v228): pH<4 + σ_base≥1 + Fe≥5, T≤350. Aachen schalenblende / AMD / VMS acid-vent wurtzite. The equilibrium field starts ~1020°C — not a vug regime.',
 };
 const MINERAL_GATES_pyrite: MineralGates = {
-  sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
-  fluid_min: { Fe: 5, S: 10 }, O2_max: 1.5, pH_min: 3.5,
+  soft: ['T_max', 'pH_min'],
+  // No T_min: the old 100°C floor was soft in the σ and wrong (pyrite forms at
+  // sulphur_bank's 66°C and in low-T sediments) — recipe review M9.
+  sigma_crit: 1.0, T_max: 400, T_optimal: 250,
+  fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_min: 3.5,
   surface_energy: 'medium', _sources: ['pyrite engine v17+'],
   _notes: 'FeS2 cubic — fool\'s gold. Marcasite is the orthorhombic acid-loving dimorph.',
 };
 const MINERAL_GATES_marcasite: MineralGates = {
   sigma_crit: 1.0, T_max: 240, T_optimal: 100,
-  fluid_min: { Fe: 5, S: 10 }, O2_max: 1.5, pH_max: 5.0,
+  fluid_min: { Fe: 5, S: 10 }, O2_max: 0.5, pH_max: 5.0,
   surface_energy: 'medium', _sources: ['marcasite engine v17+'],
   _notes: 'FeS2 orthorhombic — acid pH<5 + T<240 required (pyrite is the alkaline/hot dimorph).',
 };
 const MINERAL_GATES_chalcopyrite: MineralGates = {
-  sigma_crit: 1.0, T_min: 180, T_max: 600, T_optimal: 400,
-  fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 1.5,
+  soft: ['T_max'],
+  // No T_min: the old 180°C floor was soft in the σ and wrong (Roughton Gill's
+  // documented 110-130°C primary stage grows chalcopyrite) — recipe review M9.
+  sigma_crit: 1.0, T_max: 600, T_optimal: 400,
+  fluid_min: { Cu: 10, Fe: 5, S: 15 }, O2_max: 0.5,
   surface_energy: 'medium', _sources: ['chalcopyrite engine v17+', 'Seo et al. 2012'],
   _notes: 'CuFeS2 — primary porphyry Cu mineral. 300-500°C sweet spot.',
 };
 const MINERAL_GATES_galena: MineralGates = {
   sigma_crit: 1.0, T_optimal: 300,
-  fluid_min: { Pb: 5, S: 10 }, O2_max: 1.5,
+  fluid_min: { Pb: 5, S: 10 }, O2_max: 0.5,
   surface_energy: 'medium', _sources: ['galena engine v13+', 'Anderson 1962'],
   _notes: 'PbS cubic — MVT diagnostic. Most heavily exercised mineral in sim.',
 };
@@ -84,18 +94,21 @@ const MINERAL_GATES_argentite: MineralGates = {
   _notes: 'Ag2S cubic — high-T (>173°C). Paramorphs to acanthite on cooling.',
 };
 const MINERAL_GATES_nickeline: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 200, T_max: 500, T_optimal: 375,
   fluid_min: { Ni: 15, As: 30 }, O2_max: 0.6, pH_min: 3, pH_max: 8,
   surface_energy: 'medium', _sources: ['nickeline engine v17+', 'Burkhardt 2001'],
   _notes: 'NiAs — five-element-vein primary arsenide. As(III) state required.',
 };
 const MINERAL_GATES_millerite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 275,
   fluid_min: { Ni: 50, S: 30 }, O2_max: 0.6, pH_min: 3, pH_max: 8,
   surface_energy: 'medium', _sources: ['millerite engine v17+'],
   _notes: 'NiS trigonal — hairlike radiating crystals. As(III) > 30 + T > 200 routes to nickeline.',
 };
 const MINERAL_GATES_cobaltite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.2, T_min: 300, T_max: 600, T_optimal: 450,
   fluid_min: { Co: 20, As: 30, S: 20 }, O2_max: 0.5, pH_min: 3, pH_max: 8,
   surface_energy: 'medium', _sources: ['cobaltite engine v17+ Arc 3'],
@@ -129,48 +142,58 @@ const MINERAL_GATES_tennantite: MineralGates = {
   _notes: '(Cu,Fe,Zn)12As4S13 — As-end fahlore. Intermediate-sulfidation regime.',
 };
 const MINERAL_GATES_cinnabar: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 20, T_max: 350, T_optimal: 125,
   fluid_min: { Hg: 1.0, S: 50 }, O2_max: 1.0, pH_max: 9,
   surface_energy: 'medium', _sources: ['cinnabar engine v81+', 'White & Roberson 1962'],
   _notes: 'HgS trigonal α — Sulphur Bank + Sicily hot-spring + sedimentary BSR habitat. Most O2-tolerant sulfide.',
 };
 const MINERAL_GATES_realgar: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 20, T_max: 250, T_optimal: 115,
   fluid_min: { As: 5, S: 30 }, O2_max: 0.5, pH_max: 9,  // rung-4d: SO₄/HS cap (was 1.2)
   surface_energy: 'low', _sources: ['realgar engine v82+'],
   _notes: 'α-As4S4 orange-red monoclinic — hot-spring + epithermal low-T.',
 };
 const MINERAL_GATES_orpiment: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 20, T_max: 280, T_optimal: 130,
   fluid_min: { As: 8, S: 50 }, O2_max: 0.5, pH_max: 9.5,  // rung-4d: with realgar (was 1.2)
   surface_energy: 'low', _sources: ['orpiment engine v82+'],
   _notes: 'As2S3 golden yellow — Carlin-type + hot-spring habitat. More alkali-tolerant than realgar.',
 };
 const MINERAL_GATES_stibnite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 225,
   fluid_min: { Sb: 10, S: 15 }, O2_max: 1.0, pH_min: 2.0,
   surface_energy: 'medium', _sources: ['stibnite engine v17+'],
   _notes: 'Sb2S3 — needle/blade habit. 150-300°C sweet spot.',
 };
 const MINERAL_GATES_bismuthinite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.3, T_min: 150, T_max: 500, T_optimal: 300,
   fluid_min: { Bi: 5, S: 15 }, O2_max: 1.0, pH_min: 2.0,
   surface_energy: 'medium', _sources: ['bismuthinite engine v17+'],
   _notes: 'Bi2S3 — pegmatite + epithermal-vein. Paragenetic predecessor to native_bismuth.',
 };
 const MINERAL_GATES_bornite: MineralGates = {
-  sigma_crit: 1.0, T_min: 80, T_max: 500, T_optimal: 190,
+  soft: ['T_max'],
+  // No T_min: the old 80°C floor was soft in the σ and wrong (low-T supergene
+  // bornite, logged in proposals/BACKLOG.md) — recipe review M9.
+  sigma_crit: 1.0, T_max: 500, T_optimal: 190,
   fluid_min: { Cu: 25, Fe: 8, S: 20 }, O2_max: 1.8, pH_min: 3.0,
   surface_energy: 'medium', _sources: ['bornite engine v17+'],
   _notes: 'Cu5FeS4 — peacock-ore. Cu:Fe > 2 required.',
 };
 const MINERAL_GATES_chalcocite: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.1, T_max: 150, T_optimal: 80,
   fluid_min: { Cu: 30, S: 15 }, O2_max: 1.9, pH_min: 3.0,
   surface_energy: 'medium', _sources: ['chalcocite engine v17+'],
   _notes: 'Cu2S — supergene Cu-enrichment-blanket signature.',
 };
 const MINERAL_GATES_covellite: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.2, T_max: 100, T_optimal: 60,
   fluid_min: { Cu: 20, S: 25 }, O2_max: 2.0, pH_min: 3.0,
   surface_energy: 'medium', _sources: ['covellite engine v17+'],
