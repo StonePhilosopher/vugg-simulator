@@ -1,0 +1,236 @@
+{
+  "schema": "pr32-fresh-fleet-validation-v1",
+  "incoming_head": "f0a4bb5970cad7a0832e86194e5022093dec0790",
+  "validated_release": "f38459a8a28dcb6470a74622f6bf6f9464829b77",
+  "fleet_source_commit": "a62d4bbc0a27f3ef2a1b242ab80df04b68646e89",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+  "source_sha256": "dea0d8132f09dc7598c1eac66c7621a387266d1fbcfc8af9362fc2b2e097bbfd",
+  "report_sha256": "c3dc66a9e2b1988d4adb19b16a856b3f9d957d893873bb1480ce7e8365c1b78b",
+  "raw_rows_sha256": "c3be2bf2dedddce474d107ce82420e08d416921dffba0844cbe40f5734e21ed6",
+  "scenarios": 41,
+  "seeds": [
+    42
+  ],
+  "baseline_reproduced": 41,
+  "capture_errors": 0,
+  "control_pairs_passed": 9,
+  "raw_measurement_tier_differences_from_original_rounding": [],
+  "birth_census": {
+    "status": "not compared",
+    "note": "no .local-evidence/birth-census/birth-events.json (run node tools/birth-census.mjs)"
+  },
+  "story_roles": {
+    "source": ".local-evidence/pr32-review/story-targets-940ee35c.json",
+    "sha256": "2cba1c894649ef632cb6d73d34cc680202b444e10575674161c9d6268f1fe994",
+    "input_provenance": {
+      "source_commit": "940ee35ca0b7a78c2eeb0567d48dcae1c53caafd",
+      "source": "proposals/DATA-STORY-POCKET-TARGETS-2026-10-22.json",
+      "output": ".local-evidence/pr32-review/story-targets-940ee35c.json",
+      "sha256": "2cba1c894649ef632cb6d73d34cc680202b444e10575674161c9d6268f1fe994",
+      "trust": "external report-only labels from held PR26, not approved geological calibration"
+    }
+  },
+  "trust": "local-reproduction-not-independent-attestation-not-full-cold-CI",
+  "boundary": "Size-tier differences are reporting corrections only. No birth-census input was available; external story labels are not approved calibration.",
+  "contract_pairs": 359,
+  "negative_tier_births": [],
+  "synthetic_tests": {
+    "passed": 9,
+    "scope": "actual CLI in isolated synthetic fixtures; no cross-runtime scientific claim"
+  },
+  "viewers": {
+    "source_sha256": "41ffc78aaddb9119d87b576a8b25087ed5d27fbde9fbf856bec0233e059b525c",
+    "result_sha256": "d5684d470946fc8bc9855511890f30b44803f03e89662fc43b0eb669d24219c4",
+    "cases": [
+      {
+        "disableWebGL": false,
+        "passed": true,
+        "checks": [
+          "native WebGL availability",
+          "Three viewer and all existing wall modes",
+          "visible exact flat cavity with bounded canvas",
+          "return to Three",
+          "scientific fingerprint unchanged"
+        ],
+        "cleanup": true
+      },
+      {
+        "disableWebGL": true,
+        "passed": true,
+        "checks": [
+          "native WebGL availability",
+          "WebGL construction failure is visible and falls back",
+          "visible exact flat cavity with bounded canvas",
+          "scientific fingerprint unchanged"
+        ],
+        "cleanup": true
+      }
+    ]
+  },
+  "commands": [
+    {
+      "name": "build",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "build:check"
+      ],
+      "started_utc": "2026-10-24T06:50:03.7297906Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:50:09.0260659Z"
+    },
+    {
+      "name": "fleet",
+      "executable": "node.exe",
+      "arguments": [
+        "--max-old-space-size=1024",
+        "tools/born-grown-audit.mjs",
+        "--seeds",
+        "42",
+        "--fresh",
+        "--story-targets",
+        ".local-evidence/pr32-review/story-targets-940ee35c.json"
+      ],
+      "started_utc": "2026-10-24T06:50:09.0385775Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:58:41.9198208Z"
+    },
+    {
+      "name": "assert-fleet",
+      "executable": "node.exe",
+      "arguments": [
+        ".local-evidence/pr32-review/verify-fleet.mjs"
+      ],
+      "started_utc": "2026-10-24T06:58:41.9303574Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:58:42.4509227Z"
+    },
+    {
+      "name": "typecheck",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "typecheck"
+      ],
+      "started_utc": "2026-10-24T06:59:12.1917417Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:15.4483720Z"
+    },
+    {
+      "name": "build-check",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "build:check"
+      ],
+      "started_utc": "2026-10-24T06:59:15.4594541Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:20.6193652Z"
+    },
+    {
+      "name": "focused",
+      "executable": "npm.cmd",
+      "arguments": [
+        "test",
+        "--",
+        "--file",
+        "tests-js/born-grown-audit.test.ts"
+      ],
+      "started_utc": "2026-10-24T06:59:20.6223660Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:28.8018773Z"
+    },
+    {
+      "name": "audit-science",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "audit:science"
+      ],
+      "started_utc": "2026-10-24T06:59:28.8048811Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:31.4326800Z"
+    },
+    {
+      "name": "audit-evidence",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "audit:evidence"
+      ],
+      "started_utc": "2026-10-24T06:59:31.4366820Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:34.8634731Z"
+    },
+    {
+      "name": "audit-release",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "audit:release"
+      ],
+      "started_utc": "2026-10-24T06:59:34.8674759Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:36.5794413Z"
+    },
+    {
+      "name": "audit-browser-receipt",
+      "executable": "npm.cmd",
+      "arguments": [
+        "run",
+        "audit:browser-receipt"
+      ],
+      "started_utc": "2026-10-24T06:59:36.5834442Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:38.0298395Z"
+    },
+    {
+      "name": "viewers",
+      "executable": "node.exe",
+      "arguments": [
+        "tools/check-viewer-paths.mjs"
+      ],
+      "started_utc": "2026-10-24T06:59:38.0328403Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:56.3271113Z"
+    },
+    {
+      "name": "diff-hygiene",
+      "executable": "git.exe",
+      "arguments": [
+        "diff",
+        "--check"
+      ],
+      "started_utc": "2026-10-24T06:59:56.3301109Z",
+      "exit_code": 0,
+      "finished_utc": "2026-10-24T06:59:56.3776235Z"
+    }
+  ],
+  "runtime_data_receipt_baseline_changes": [],
+  "evidence_files": [
+    {
+      "file": "proposals/evidence/born-grown-visible-v286.json",
+      "sha256": "c3dc66a9e2b1988d4adb19b16a856b3f9d957d893873bb1480ce7e8365c1b78b"
+    },
+    {
+      "file": "proposals/evidence/born-grown-visible-v286-runs.jsonl",
+      "sha256": "c3be2bf2dedddce474d107ce82420e08d416921dffba0844cbe40f5734e21ed6"
+    }
+  ],
+  "boundaries": [
+    "Raw rows and derived report are copied byte-for-byte from this fresh run.",
+    "External story labels come from held PR26 at the recorded commit/hash; they are not approved geological calibration.",
+    "Birth-census comparison was unavailable and remains unverified.",
+    "No true threshold crossing was affected by old rounding in this seed42 fleet; synthetic boundary fixtures prove the correction.",
+    "The instrument is passive and does not certify machine cleanliness, cold-CI completeness, or geological truth."
+  ]
+}
