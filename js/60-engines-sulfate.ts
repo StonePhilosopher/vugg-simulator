@@ -124,12 +124,18 @@ function grow_celestine(crystal, conditions, step) {
   crystal.extent_kind = classified.extent_kind;
   crystal.dominant_forms = Array.from(classified.dominant_forms);
 
-  return new GrowthZone({
+  const interpretation = celestineGrowthInterpretation(crystal, classified);
+  const zone = new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.001,
-    note: classified.note
+    note: interpretation.status === 'unresolved'
+      ? 'celestine growth; later morphology unresolved; earlier blanket history retained; solid Ba incorporation not modeled'
+      : `${interpretation.display_habit} celestine — procedural fluid-context analogy; solid Ba incorporation not modeled`,
   });
+  zone.celestine_growth_conditions = celestineFluidEvidence(conditions, sigma);
+  zone.celestine_growth_interpretation = interpretation;
+  return zone;
 }
 
 function grow_chalcanthite(crystal, conditions, step) {

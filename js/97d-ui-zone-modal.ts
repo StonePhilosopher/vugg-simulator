@@ -55,6 +55,8 @@ function showZoneHistory(crystal) {
   `;
   grooveModalCrystal = crystal;
   body.appendChild(summary);
+  const quartzFormText=quartzFormCollectionText(crystal);
+  if(quartzFormText){const note=document.createElement('p');note.className='quartz-form-history';note.textContent=quartzFormText;body.appendChild(note);}
 
   if (!crystal.zones.length) {
     const noZones = document.createElement('div');

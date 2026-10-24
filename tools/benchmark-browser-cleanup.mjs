@@ -4,8 +4,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   captureOwnedBrowserProcessReceipts, captureOwnedBrowserProcessReceiptsForPort, CdpClient,
-  fetchWithDeadline, runCleanupActions, terminateOwned, waitForDevToolsReceipt,
-  waitForOwnedExit, windowsProcessTree,
+  fetchWithDeadline, NATIVE_HELPER_LOAD, nativeHelperImage, runCleanupActions, terminateOwned, waitForDevToolsReceipt,
+  waitForOwnedExit, windowsOwnedProcessSnapshot, windowsProcessTree,
 } from './browser-workflow.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -18,6 +18,20 @@ function lifetimeState(rows, receipt) {
   if (!/^\d+$/.test(current.start_ticks) || BigInt(current.start_ticks) <= 0n
       || !current.executable_path) return 'unknown';
   return sameLifetime(current, receipt) ? 'present' : 'ended';
+}
+
+// A dying process can read as live but unreadable for tens of ms: its image
+// query fails before its handle signals. Look again before an unreadable
+// lifetime becomes a verdict; one capture takes far longer than that window.
+// A lifetime still unreadable at the last look stays unknown, so cleanup still
+// fails closed on a live process whose identity cannot be read.
+export async function settledLifetimeRows(processTreeProvider, receipts, { observations = 3, rows: first = null } = {}) {
+  let rows = first || await processTreeProvider();
+  for (let observed = 1; observed < observations
+    && receipts.some(receipt => lifetimeState(rows, receipt) === 'unknown'); observed++) {
+    rows = await processTreeProvider();
+  }
+  return rows;
 }
 
 function connectionRefused(error, seen = new Set()) {
@@ -72,8 +86,15 @@ function ownedLifetimeRows(rootPid, rows) {
 // The identity comparison and termination use one native handle. Checking a PID
 // and subsequently launching taskkill leaves a PID-reuse window, and /T would
 // grant termination authority over descendants we have never authenticated.
-export async function terminateExactBrowserProcess(receipt) {
-  const source = String.raw`
+// That handle also pins the PID, so once it is signaled the lifetime has ended
+// whatever the receipt says. An ending process can fail identity queries and
+// termination first: while tearing down it refuses its image path and a second
+// TerminateProcess with ACCESS_DENIED for tens of ms before it signals, and once
+// exited, if another handle keeps it open (Chrome holds its children's), it
+// still reports creation times but no image path (ERROR_GEN_FAILURE). A failing
+// query or termination therefore waits, bounded, for that signal before it
+// reports the failure.
+export const VUGG_BENCHMARK_STOP_SOURCE = String.raw`
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -90,21 +111,25 @@ public static class VuggBenchmarkStop {
     IntPtr p=OpenProcess(0x101001, false, pid); // synchronize, query-limited, terminate
     if(p==IntPtr.Zero) { int e=Marshal.GetLastWin32Error(); if(e==87) return "exited"; throw new Win32Exception(e); }
     try {
+      if(WaitForSingleObject(p,0)==0) return "exited";
       FT created, exited, kernel, user;
-      if(!GetProcessTimes(p,out created,out exited,out kernel,out user)) throw new Win32Exception(Marshal.GetLastWin32Error());
+      if(!GetProcessTimes(p,out created,out exited,out kernel,out user)) { int e=Marshal.GetLastWin32Error(); if(WaitForSingleObject(p,5000)==0) return "exited"; throw new Win32Exception(e); }
       var path=new StringBuilder(32768); int size=path.Capacity;
-      if(!QueryFullProcessImageName(p,0,path,ref size)) throw new Win32Exception(Marshal.GetLastWin32Error());
+      if(!QueryFullProcessImageName(p,0,path,ref size)) { int e=Marshal.GetLastWin32Error(); if(WaitForSingleObject(p,5000)==0) return "exited"; throw new Win32Exception(e); }
       if((((ulong)created.high<<32)|created.low)!=ticks || !String.Equals(path.ToString(),expectedPath,StringComparison.OrdinalIgnoreCase)) return "identity-changed";
       if(WaitForSingleObject(p,0)==0) return "exited";
-      if(!TerminateProcess(p,1)) throw new Win32Exception(Marshal.GetLastWin32Error());
+      if(!TerminateProcess(p,1)) { int e=Marshal.GetLastWin32Error(); if(WaitForSingleObject(p,5000)==0) return "exited"; throw new Win32Exception(e); }
       if(WaitForSingleObject(p,5000)!=0) throw new Exception("Exact owned process did not exit before cleanup deadline");
       return "terminated";
     } finally { CloseHandle(p); }
   }
 }`;
-  const {stdout} = await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    'Add-Type -TypeDefinition $env:VUGG_BENCHMARK_STOP_SOURCE; $r=ConvertFrom-Json $env:VUGG_BENCHMARK_STOP_RECEIPT; [VuggBenchmarkStop]::Stop([uint32]$r.pid,[uint64]$r.start_ticks,[string]$r.executable_path)'], {
-    env: {...process.env, VUGG_BENCHMARK_STOP_SOURCE:source,
+
+export async function terminateExactBrowserProcess(receipt, { execFileRunner = execFileAsync } = {}) {
+  const image = await nativeHelperImage('VuggBenchmarkStop', VUGG_BENCHMARK_STOP_SOURCE, {execFileRunner});
+  const {stdout} = await execFileRunner('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+    `${NATIVE_HELPER_LOAD}; $r=ConvertFrom-Json $env:VUGG_BENCHMARK_STOP_RECEIPT; [VuggBenchmarkStop]::Stop([uint32]$r.pid,[uint64]$r.start_ticks,[string]$r.executable_path)`], {
+    env: {...process.env, VUGG_NATIVE_HELPER_IMAGE:image,
       VUGG_BENCHMARK_STOP_RECEIPT:JSON.stringify(receipt)},
     windowsHide:true, timeout:15_000,
   });
@@ -118,7 +143,7 @@ export async function cleanupOwnedBrowserResources({
 }, {
   platform = process.platform,
   processTreeProvider = windowsProcessTree,
-  ownedSnapshotProvider = port => windowsProcessTree({ownerPort:port}),
+  ownedSnapshotProvider = windowsOwnedProcessSnapshot(),
   fetcher = globalThis.fetch,
   createCdpClient = (url, options) => new CdpClient(url, options),
   terminateReceipt = terminateExactBrowserProcess,
@@ -196,12 +221,12 @@ export async function cleanupOwnedBrowserResources({
           if(!cleanupReceipts.length) return;
           if(platform !== 'win32') throw new Error('Browser process observation is unavailable');
           for(const receipt of cleanupReceipts) {
-            const current=await processTreeProvider();
+            const current=await settledLifetimeRows(processTreeProvider,[receipt]);
             const state=lifetimeState(current,receipt);
             if(state==='unknown') throw new Error(`Browser process ${receipt.pid} identity is unavailable; shutdown is unproven`);
             if(state==='present') await terminateReceipt(receipt);
           }
-          const current=await processTreeProvider();
+          const current=await settledLifetimeRows(processTreeProvider,cleanupReceipts);
           const unresolved=cleanupReceipts.filter(receipt=>lifetimeState(current,receipt)!=='ended');
           if(unresolved.length) throw new Error(`Authenticated browser process shutdown is unproven: ${unresolved.map(row=>row.pid).join(', ')}`);
         }],

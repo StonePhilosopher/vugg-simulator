@@ -80,6 +80,7 @@ interface StripStoredRecord {
   player_action_testimony?: any[];
   layer_growth_testimony?: any[];
   habit_morphology_testimony?: any[];
+  quartz_form_testimony?: StripQuartzFormTestimony[];
 }
 
 interface StripListEntry {
@@ -223,6 +224,7 @@ function stripStoredRecordFromDataset(
     ...(ds.player_action_testimony ? { player_action_testimony: ds.player_action_testimony } : {}),
     ...(ds.layer_growth_testimony ? { layer_growth_testimony: ds.layer_growth_testimony } : {}),
     ...(ds.habit_morphology_testimony ? { habit_morphology_testimony: ds.habit_morphology_testimony } : {}),
+    ...(ds.quartz_form_testimony!==undefined?{quartz_form_testimony:ds.quartz_form_testimony}:{}),
   };
 }
 
@@ -242,6 +244,7 @@ function stripDatasetFromStoredRecord(rec: StripStoredRecord): StripDataset {
     ...(rec.player_action_testimony ? { player_action_testimony: rec.player_action_testimony } : {}),
     ...(rec.layer_growth_testimony ? { layer_growth_testimony: rec.layer_growth_testimony } : {}),
     ...(rec.habit_morphology_testimony ? { habit_morphology_testimony: rec.habit_morphology_testimony } : {}),
+    ...(rec.quartz_form_testimony!==undefined?{quartz_form_testimony:rec.quartz_form_testimony}:{}),
   };
 }
 
@@ -358,6 +361,7 @@ async function stripDatasetFromAuthenticatedStoredRecord(rec: StripStoredRecord)
       throw new Error('strip: legacy dataset key does not match its manifest');
     }
   }
+  if(ds.quartz_form_testimony!==undefined)_quartzFormFreeze(ds.quartz_form_testimony);
   return ds;
 }
 

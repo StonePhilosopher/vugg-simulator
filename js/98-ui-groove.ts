@@ -164,6 +164,8 @@ function grooveSelectCrystal() {
   infoHtml += ` — ${collectionPlayerTextHTML(grooveCrystal.describe_morphology())}`;
   infoHtml += `<br>${grooveCrystal.zones.length} growth zones, nucleated step ${grooveCrystal.nucleation_step} at ${grooveCrystal.nucleation_temp.toFixed(0)}°C`;
   if (grooveCrystal.twinned) infoHtml += `<br><span style="color:#bb66ee">⟁ ${collectionPlayerTextHTML(grooveCrystal.twin_law)}</span>`;
+  const quartzFormText=quartzFormCollectionText(grooveCrystal);
+  if(quartzFormText)infoHtml+=`<br><span class="quartz-form-history">${collectionPlayerTextHTML(quartzFormText)}</span>`;
   infoHtml += `<br>Fluorescence: ${collectionPlayerTextHTML(grooveCrystal.predict_fluorescence())}`;
   infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${collectionPlayerTextHTML(data.source)}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
   info.innerHTML = infoHtml;

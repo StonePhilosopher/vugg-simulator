@@ -44,11 +44,11 @@ function quartzRenderHistory(crystal: any, replayStep: number | null): any {
   const bands = candidates.sort((a, b) => b.strength - a.strength || a.at - b.at).slice(0, 16)
     .sort((a, b) => a.at - b.at);
   return { contrast: Math.round((0.12 + variability * 0.12) * 100) / 100,
-    phase: ((Math.abs(crystal.crystal_id || 0) * 5) % 16) * Math.PI / 8,
+    phase: ((Math.abs(crystalRenderSeed(crystal)) * 5) % 16) * Math.PI / 8,
     bands, variability, growth_um: total };
 }
 
-function quartzRenderFaces(widthRatio: number, contrast: number, phase: number): any[] {
+function quartzRenderFaces(widthRatio: number, contrast: number, phase: number, doubleEnded = false): any[] {
   // Unit c length, uniform final scale. Change distances to develop aspect;
   // never anisotropically stretch the completed termination.
   const radius = 0.4 * Math.max(0.2, Math.min(1.1, widthRatio));
@@ -68,15 +68,22 @@ function quartzRenderFaces(widthRatio: number, contrast: number, phase: number):
   if (!first?.vertices.length) return faces;
   const peak = Math.max(...first.vertices.map((v: number[]) => v[1]));
   for (const face of faces) if (face.n[1] > 0) face.d += face.n[1] * (0.5 - peak);
+  if(doubleEnded){
+    // Selected source-branch dependency: the recorded habit already names
+    // both terminations. Quartz's existing 32 group relates ends by C2 about
+    // a; this rotates the recorded upper families, without new form tuning.
+    faces.splice(faces.findIndex(f=>f.family==='scar'),1);
+    for(const f of faces.filter(f=>f.n[1]>0))faces.push({n:[f.n[0],-f.n[1],-f.n[2]],d:f.d,family:f.family});
+  }
   return faces;
 }
 
-function makeQuartzRenderGeometry(widthRatio: number, contrast: number, phase: number): any {
-  const faces = quartzRenderFaces(widthRatio, contrast, phase);
+function makeQuartzRenderGeometry(widthRatio: number, contrast: number, phase: number, doubleEnded = false): any {
+  const faces = quartzRenderFaces(widthRatio, contrast, phase, doubleEnded);
   const poly = wulffPolyhedron(faces);
-  if (!poly || poly.faces.length !== 13) return null;
+  if (!poly || (doubleEnded?poly.faces.length<12:poly.faces.length!==13)) return null;
   const geometry = _wulffPolyToGeom(poly, 1);
-  if (geometry) geometry.userData.quartzR4 = { widthRatio, contrast, phase,
+  if (geometry) geometry.userData.quartzR4 = { widthRatio, contrast, phase, doubleEnded,
     families: poly.faces.map((f: any) => faces[f.plane].family) };
   return geometry;
 }
