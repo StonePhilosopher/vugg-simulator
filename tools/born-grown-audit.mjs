@@ -61,8 +61,10 @@
  * PASSIVE instrument: reads, reports, exits 0 whatever it finds. Imports only tools/_harness.mjs and
  * node builtins (no evidence producer) and writes only .local-evidence/born-grown-audit/, the directory
  * the identity guard excludes: runs.jsonl (one row per scenario × seed; a row is reused unless --fresh
- * only when its audit version, SIM version and input digest — dist, data, the harness and this file —
- * all match), report.txt, report.json, report.md.
+ * only when its audit version, SIM version and input digest — runtime formation, dist, data, the
+ * harness, this file, dependency lock and current seed-42 reference bytes/presence — all match),
+ * report.txt, report.json, report.md. Size tiers use unrounded millimetres; human-readable lengths
+ * prefixed with ≈ are rounded for display only. External story roles are joined afresh after reuse.
  *
  * Usage:
  *   node tools/born-grown-audit.mjs                      # every scenario, seed 42 (~20 min)
@@ -79,7 +81,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const OUT = path.join(ROOT, '.local-evidence', 'born-grown-audit');
-const AUDIT_VERSION = 1;
+const AUDIT_VERSION = 2;
+const RUNTIME = Object.freeze({node: process.version, v8: process.versions.v8, icu: process.versions.icu,
+  platform: process.platform, arch: process.arch, locale: Intl.DateTimeFormat().resolvedOptions().locale});
 // PR #26's size edges (tools/assemblage-census.mjs SIZE_EDGES_MM[0..1]) and its longest dimension: the
 // renderer's c/a and the growth ledger's c-advance can differ by habit, and a collector sees the larger.
 const MICRO_MM = 0.1;
@@ -143,10 +147,11 @@ for (let i = 0; i < argv.length; i++) {
 const sha256 = (text) => crypto.createHash('sha256').update(String(text).replace(/\r\n/g, '\n')).digest('hex');
 
 // What a row depends on: the compiled bundle the harness evaluates, the data files it fetches, the
-// harness, and this tool's own capture and classification code. A row made from other inputs is never
-// reused, so an edit here re-runs the fleet rather than mixing old rows into a new report.
+// harness, this tool's capture/classification code, actual runtime formation, dependency lock, and
+// seed-42 comparison reference. Include an existing reference's path and bytes; its absence also
+// changes this digest. Story roles are deliberately excluded: they are a fresh report-only join.
 function inputDigest() {
-  const files = [path.join(ROOT, 'tools', '_harness.mjs'), fileURLToPath(import.meta.url)];
+  const files = [path.join(ROOT, 'tools', '_harness.mjs'), fileURLToPath(import.meta.url), path.join(ROOT, 'package-lock.json')];
   const walk = (dir) => {
     for (const n of fs.readdirSync(dir).sort()) {
       const p = path.join(dir, n);
@@ -158,7 +163,10 @@ function inputDigest() {
   for (const n of fs.readdirSync(path.join(ROOT, 'data')).sort()) {
     if (/\.json5?$/.test(n)) files.push(path.join(ROOT, 'data', n));
   }
+  const baselineFile = path.join(ROOT, 'tests-js', 'baselines', `seed42_v${SIM_VERSION}.json`);
+  if (fs.existsSync(baselineFile)) files.push(baselineFile);
   const h = crypto.createHash('sha256');
+  h.update('runtime-formation\0').update(JSON.stringify(RUNTIME)).update('\0');
   for (const f of files) {
     h.update(path.relative(ROOT, f).replaceAll('\\', '/')).update('\0');
     h.update(fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n')).update('\0');
@@ -288,14 +296,14 @@ function runOne(name, seed) {
       id: c.crystal_id, born: rec.born, step: rec.step, final: c.mineral, conv: rec.conv, z, cand,
       calls: rec.calls, skips: rec.skip.size, why: [...new Set(rec.skip.values())],
       dissolved: !!c.dissolved, active: !!c.active, inactive_from: rec.inactive_from,
-      enclosed: c.enclosed_by != null, L_mm: +longestMm(c).toFixed(4), um: +(Number(c.total_growth_um) || 0).toFixed(3),
+      enclosed: c.enclosed_by != null, L_mm: longestMm(c), um: +(Number(c.total_growth_um) || 0).toFixed(3),
     });
   }
   let baseline = 'n/a';
   if (seed === 42 && BASELINE?.[name]) {
     baseline = JSON.stringify(baselineSummary(sim)) === JSON.stringify(BASELINE[name]) ? 'reproduced' : 'differs';
   }
-  const row = { schema: 'vugg-born-grown-audit-run-v1', audit: AUDIT_VERSION, sim_version: SIM_VERSION,
+  const row = { schema: 'vugg-born-grown-audit-run-v1', audit: AUDIT_VERSION, sim_version: SIM_VERSION, runtime: RUNTIME,
     inputs: INPUTS, scenario: name, seed, steps, ms: Date.now() - t0, baseline, errors: cap.errors, crystals };
   cap = null;
   return row;
@@ -513,7 +521,10 @@ else if (!fs.existsSync(opts.birthCensus)) {
 }
 
 // ---- report ----
-const fmtMm = (x) => (x >= 10 ? x.toFixed(1) : x >= 1 ? x.toFixed(2) : x >= 0.01 ? x.toFixed(3) : x > 0 ? x.toExponential(1) : '0');
+const fmtMm = (x) => {
+  const text = x >= 10 ? x.toFixed(1) : x >= 1 ? x.toFixed(2) : x >= 0.01 ? x.toFixed(3) : x > 0 ? x.toExponential(1) : '0';
+  return Number(text) === x ? text : `≈${text}`;
+};
 const roleText = (e) => (e.role === 'n/a' ? '' : `, ${e.role}${e.record_median_mm != null ? ` — record median ${e.record_median_mm} mm (${e.record_basis})` : ''}`);
 const tierLetter = { headline: 'H', accessory: 'D', statistical: 'S' };
 const at = (seed) => entries.filter((e) => e.seed === seed);
@@ -672,7 +683,7 @@ if (seedsRun.length > 1) {
 fs.writeFileSync(path.join(OUT, 'report.txt'), txt);
 fs.writeFileSync(path.join(OUT, 'report.md'), md);
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify({
-  schema: 'vugg-born-grown-audit-report-v1', audit: AUDIT_VERSION, sim_version: SIM_VERSION, node,
+  schema: 'vugg-born-grown-audit-report-v1', audit: AUDIT_VERSION, sim_version: SIM_VERSION, runtime: RUNTIME, node,
   model_digest_sha256: sha256(Array.isArray(MODEL_DIGEST) ? MODEL_DIGEST.join('\n') : String(MODEL_DIGEST)),
   inputs: INPUTS, seeds: seedsRun, scenarios: names, story_roles: { source: story.source, sha256: story.sha256 },
   integrity: { baseline: baselineTally, births: census, capture_errors: captureErrors },

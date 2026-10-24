@@ -44,6 +44,9 @@ jobs:
       - run: npm run build
       - run: npm run build:check
 
+      - name: Born-grown measurement boundaries
+        run: npm test -- --file tests-js/born-grown-audit.test.ts
+
       - name: Specimen history and viewer compatibility
         run: >-
           npm test --
