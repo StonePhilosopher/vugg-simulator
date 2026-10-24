@@ -1,0 +1,533 @@
+{
+  "schema": "pr32-upstream-cation-reconciliation-v1",
+  "upstream": "2c8b16ae66e04493c74ccbf4a5465265202031c5",
+  "prior_head": "51d73e9e1d16d0026d5a4e6e5718de3811a89964",
+  "prior_ci": {
+    "run": "https://github.com/Syntaxswine/vugg-simulator/actions/runs/40072768440",
+    "status": "CANCELLED",
+    "reason": "Verified deterministic missing SIM286 cation checkpoint inherited from PR28; no green verdict is borrowed."
+  },
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+  "instrument_source_sha256": "dea0d8132f09dc7598c1eac66c7621a387266d1fbcfc8af9362fc2b2e097bbfd",
+  "reconciliation": {
+    "files_conflicted": [
+      ".github/workflows/ci.yml"
+    ],
+    "resolution": "retain both born-grown measurement and cation exact-identity test steps",
+    "official_runtime_data_receipts_baselines_release_and_bundle_unchanged_from_upstream": true
+  },
+  "input_comparison": {
+    "schema": "pr32-upstream-input-comparison-v1",
+    "runtime": {
+      "schema": "vugg-evidence-node-runtime-v1",
+      "node": "24.15.0",
+      "v8": "13.6.233.17-node.48",
+      "platform": "win32",
+      "arch": "x64",
+      "icu": "78.2",
+      "locale": "en-US"
+    },
+    "upstream": "2c8b16ae66e04493c74ccbf4a5465265202031c5",
+    "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+    "instrument_source_sha256": "dea0d8132f09dc7598c1eac66c7621a387266d1fbcfc8af9362fc2b2e097bbfd",
+    "first_fresh_input": "ee8e6a61a5b3c850215fc9295fd84ed8c5ca2ee8048288bd411ab5715e4b21bd",
+    "second_input": "a8383cbd51c397472892c0f72a634f9f135dd8e3cd73e3be8ad675dfb9f2c8be",
+    "second_input_without_nonexecuted_fixture": "ee8e6a61a5b3c850215fc9295fd84ed8c5ca2ee8048288bd411ab5715e4b21bd",
+    "exact_extra_input": {
+      "file": "dist/.test-bundle.js",
+      "sha256": "01cd90ccb73cc4854dc4c8ea08f165404a3ba716a38d305e2a961cd8932cfd6f",
+      "bytes": 6457767,
+      "producer": "tools/prep-test-bundle.mjs",
+      "purpose": "generated Vitest concatenation",
+      "scientific_harness_use": "excluded by dot-prefixed file filter in tools/_harness.mjs; also excluded from runtime execution identity"
+    },
+    "consequence": "conservative cache invalidation and extra execution; no scientific runtime or producer correction",
+    "policy_change": false,
+    "boundary": "The cache remains overinclusive. No measurement is relabelled or reused under a different identity."
+  },
+  "second_panel": {
+    "scenarios": 41,
+    "seeds": [
+      42
+    ],
+    "new_engine_runs": 41,
+    "reused_engine_runs": 0,
+    "baselines_reproduced": 41,
+    "capture_errors": [],
+    "production_control_pairs_passed": 9,
+    "captured_physical_changes": 0,
+    "per_case_comparisons": [
+      {
+        "scenario": "amethyst_geode",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 3998,
+        "followup_elapsed_ms": 3900
+      },
+      {
+        "scenario": "asbestos_hills_crack_seal",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2655,
+        "followup_elapsed_ms": 2444
+      },
+      {
+        "scenario": "asbestos_hills_surficial_alteration",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2395,
+        "followup_elapsed_ms": 2153
+      },
+      {
+        "scenario": "bisbee",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 36938,
+        "followup_elapsed_ms": 35912
+      },
+      {
+        "scenario": "chiastolite_hornfels",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2847,
+        "followup_elapsed_ms": 2674
+      },
+      {
+        "scenario": "colorado_plateau",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 4519,
+        "followup_elapsed_ms": 3708
+      },
+      {
+        "scenario": "cooling",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2529,
+        "followup_elapsed_ms": 2357
+      },
+      {
+        "scenario": "deccan_zeolite",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5991,
+        "followup_elapsed_ms": 5116
+      },
+      {
+        "scenario": "elmwood",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 8155,
+        "followup_elapsed_ms": 7123
+      },
+      {
+        "scenario": "epithermal_telluride",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5443,
+        "followup_elapsed_ms": 4658
+      },
+      {
+        "scenario": "gem_pegmatite",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5163,
+        "followup_elapsed_ms": 4545
+      },
+      {
+        "scenario": "great_salt_plains",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 4555,
+        "followup_elapsed_ms": 3684
+      },
+      {
+        "scenario": "grimsel_alpine_cleft",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5454,
+        "followup_elapsed_ms": 4601
+      },
+      {
+        "scenario": "jeffrey_mine",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 6227,
+        "followup_elapsed_ms": 5241
+      },
+      {
+        "scenario": "marble_contact_metamorphism",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 3266,
+        "followup_elapsed_ms": 2850
+      },
+      {
+        "scenario": "mvt",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5745,
+        "followup_elapsed_ms": 5295
+      },
+      {
+        "scenario": "naica_geothermal",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 7714,
+        "followup_elapsed_ms": 6516
+      },
+      {
+        "scenario": "ouro_preto",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 6089,
+        "followup_elapsed_ms": 5120
+      },
+      {
+        "scenario": "porphyry",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 3275,
+        "followup_elapsed_ms": 3376
+      },
+      {
+        "scenario": "pulse",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2662,
+        "followup_elapsed_ms": 2255
+      },
+      {
+        "scenario": "radioactive_pegmatite",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 3742,
+        "followup_elapsed_ms": 3338
+      },
+      {
+        "scenario": "reactivated_fluorite_vein",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 7106,
+        "followup_elapsed_ms": 5899
+      },
+      {
+        "scenario": "reactive_wall",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 47903,
+        "followup_elapsed_ms": 47830
+      },
+      {
+        "scenario": "roughten_gill",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 12041,
+        "followup_elapsed_ms": 10275
+      },
+      {
+        "scenario": "sabkha_dolomitization",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 13371,
+        "followup_elapsed_ms": 10438
+      },
+      {
+        "scenario": "schneeberg",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 4749,
+        "followup_elapsed_ms": 4215
+      },
+      {
+        "scenario": "searles_lake",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 5981,
+        "followup_elapsed_ms": 4691
+      },
+      {
+        "scenario": "shigar_pegmatite",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2574,
+        "followup_elapsed_ms": 2399
+      },
+      {
+        "scenario": "sicily_solfifera",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 7953,
+        "followup_elapsed_ms": 7175
+      },
+      {
+        "scenario": "stalactite_demo",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2431,
+        "followup_elapsed_ms": 2120
+      },
+      {
+        "scenario": "sulphur_bank",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 8249,
+        "followup_elapsed_ms": 7184
+      },
+      {
+        "scenario": "sunnyside_american_tunnel",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 6656,
+        "followup_elapsed_ms": 5976
+      },
+      {
+        "scenario": "supergene_oxidation",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 109008,
+        "followup_elapsed_ms": 104026
+      },
+      {
+        "scenario": "tn457_barite_pulses",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 127171,
+        "followup_elapsed_ms": 125690
+      },
+      {
+        "scenario": "tormiq_alpine_cleft",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 4646,
+        "followup_elapsed_ms": 3273
+      },
+      {
+        "scenario": "tutorial_first_crystal",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 1898,
+        "followup_elapsed_ms": 1738
+      },
+      {
+        "scenario": "tutorial_mn_calcite",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 1891,
+        "followup_elapsed_ms": 1758
+      },
+      {
+        "scenario": "tutorial_travertine",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 2466,
+        "followup_elapsed_ms": 2254
+      },
+      {
+        "scenario": "ultramafic_supergene",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 4139,
+        "followup_elapsed_ms": 3862
+      },
+      {
+        "scenario": "wittichen",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 8236,
+        "followup_elapsed_ms": 7563
+      },
+      {
+        "scenario": "zoned_dripstone_cave",
+        "seed": 42,
+        "captured_state_equal": true,
+        "original_elapsed_ms": 3883,
+        "followup_elapsed_ms": 3865
+      }
+    ],
+    "allowed_row_differences": [
+      "inputs (nonexecuted test fixture added to key)",
+      "ms (measured wall-clock duration)"
+    ],
+    "report_differences": [
+      "inputs"
+    ],
+    "raw_append_log_rows": 82,
+    "rows_per_input_identity": 41,
+    "raw_log_policy": "Exact producer append log, including both historical and new input sets. No row is rebound or normalized."
+  },
+  "raw_evidence": [
+    {
+      "file": "proposals/evidence/born-grown-upstream-v286.json",
+      "sha256": "0e72fbac7fbef829cad33360a0554941c1f2b65aa191d3b2901fa1de1dbca31d",
+      "bytes": 302633
+    },
+    {
+      "file": "proposals/evidence/born-grown-upstream-v286-runs.jsonl",
+      "sha256": "994f13cc1d5107ca257ba4c5b27705b3148a476337010c29d70647150269cc79",
+      "bytes": 760016
+    }
+  ],
+  "focused_tests": {
+    "files": 2,
+    "passed": 15,
+    "born_grown": 9,
+    "cation": 6,
+    "log_sha256": "db775eae715944ade9c2ac9971fed9f60e079803b27e2d163400654da723bd87"
+  },
+  "verification": {
+    "status": "PASS",
+    "started_utc": "2026-10-24T07:32:18.2237303Z",
+    "finished_utc": "2026-10-24T07:41:08.0265867Z",
+    "commands": [
+      {
+        "name": "typecheck",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "typecheck"
+        ],
+        "started_utc": "2026-10-24T07:32:18.3024567Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:32:21.3924896Z"
+      },
+      {
+        "name": "build-check",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "build:check"
+        ],
+        "started_utc": "2026-10-24T07:32:21.4075575Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:32:26.2302408Z"
+      },
+      {
+        "name": "focused",
+        "executable": "npm.cmd",
+        "arguments": [
+          "test",
+          "--",
+          "--file",
+          "tests-js/born-grown-audit.test.ts",
+          "--file",
+          "tests-js/cation-sink-audit.test.ts"
+        ],
+        "started_utc": "2026-10-24T07:32:26.2332476Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:32:52.7479653Z"
+      },
+      {
+        "name": "cached-input-verification",
+        "executable": "node.exe",
+        "arguments": [
+          "--max-old-space-size=1024",
+          "tools/born-grown-audit.mjs",
+          "--seeds",
+          "42",
+          "--story-targets",
+          ".local-evidence/pr32-review/story-targets-940ee35c.json"
+        ],
+        "started_utc": "2026-10-24T07:32:52.7509657Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:40:52.9354060Z"
+      },
+      {
+        "name": "assert-fleet",
+        "executable": "node.exe",
+        "arguments": [
+          ".local-evidence/pr32-review/verify-fleet.mjs"
+        ],
+        "started_utc": "2026-10-24T07:40:52.9454147Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:40:53.4406241Z"
+      },
+      {
+        "name": "audit-cations",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:cations"
+        ],
+        "started_utc": "2026-10-24T07:40:53.4476208Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:40:59.2693926Z"
+      },
+      {
+        "name": "audit-science",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:science"
+        ],
+        "started_utc": "2026-10-24T07:40:59.2729010Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:41:01.7448818Z"
+      },
+      {
+        "name": "audit-evidence",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:evidence"
+        ],
+        "started_utc": "2026-10-24T07:41:01.7488811Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:41:04.9534929Z"
+      },
+      {
+        "name": "audit-release",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:release"
+        ],
+        "started_utc": "2026-10-24T07:41:04.9564932Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:41:06.5981956Z"
+      },
+      {
+        "name": "audit-browser-receipt",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:browser-receipt"
+        ],
+        "started_utc": "2026-10-24T07:41:06.6021959Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:41:07.9773391Z"
+      },
+      {
+        "name": "diff-hygiene",
+        "executable": "git.exe",
+        "arguments": [
+          "diff",
+          "--check"
+        ],
+        "started_utc": "2026-10-24T07:41:07.9803392Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:41:08.0235873Z"
+      }
+    ]
+  },
+  "birth_census": {
+    "status": "not compared",
+    "note": "no .local-evidence/birth-census/birth-events.json (run node tools/birth-census.mjs)"
+  },
+  "trust": "local-reproduction-not-independent-attestation-not-full-cold-CI",
+  "limitations": [
+    "Cache identity conservatively includes generated dist/.test-bundle.js; extra invalidation can cost a full rerun. No cache policy was changed.",
+    "External story roles remain report-only metadata from held PR26; no birth-census comparison was available.",
+    "The second comparison is equality of captured audit fields, not an additional claim of independent geological truth or every simulator field.",
+    "Fresh configured CI, exact tested tree and deployment are checked separately at the committed delivery head."
+  ]
+}

@@ -47,6 +47,9 @@ jobs:
       - name: Recipe endmember, initiative, and identity controls
         run: npm test -- --file tests-js/recessive-floor-removal.test.ts --file tests-js/recipe-rung1-initiative.test.ts
 
+      - name: Born-grown measurement boundaries
+        run: npm test -- --file tests-js/born-grown-audit.test.ts
+
       - name: Cation commissioning identity guards
         run: npm test -- --file tests-js/cation-sink-audit.test.ts
 
