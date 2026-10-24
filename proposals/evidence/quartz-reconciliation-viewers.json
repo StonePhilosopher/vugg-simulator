@@ -1,0 +1,63 @@
+{
+  "schema": "vugg-viewer-paths-v1",
+  "base": "91e5cc1102b453acac1638adb40b51587b75115e",
+  "sourceSha256": "41ffc78aaddb9119d87b576a8b25087ed5d27fbde9fbf856bec0233e059b525c",
+  "indexSha256": "196cd924fff6f025c040ba8f1f23357e181cb4314eb74dd5249e27d7cc4ec520",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtimeExecutionDigest": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+  "cases": [
+    {
+      "disableWebGL": false,
+      "browser": "Chrome/155.0.8059.41",
+      "checks": [
+        "native WebGL availability",
+        "Three viewer and all existing wall modes",
+        "visible exact flat cavity with bounded canvas",
+        "return to Three",
+        "scientific fingerprint unchanged"
+      ],
+      "flat": {
+        "exact": true,
+        "width": 1741,
+        "height": 676
+      },
+      "passed": true,
+      "cleanup": true,
+      "uncaughtExceptions": 0
+    },
+    {
+      "disableWebGL": true,
+      "browser": "Chrome/155.0.8059.41",
+      "checks": [
+        "native WebGL availability",
+        "WebGL construction failure is visible and falls back",
+        "visible exact flat cavity with bounded canvas",
+        "scientific fingerprint unchanged"
+      ],
+      "flat": {
+        "exact": true,
+        "width": 1741,
+        "height": 676
+      },
+      "passed": true,
+      "cleanup": true,
+      "uncaughtExceptions": 0
+    }
+  ],
+  "helperCleanup": {
+    "checkedUtc": "2026-10-23T05:25:18.6226766Z",
+    "recordedLifetimes": 33,
+    "remainingLifetimes": 0,
+    "remainingListeners": 0,
+    "retainedHelpers": 0,
+    "terminationActions": "None; verified normal foreground/finally exit"
+  }
+}

@@ -47,7 +47,7 @@ describe('local release systems', () => {
       compatibility: { sim_version: SIM_VERSION, save_format: RELEASE_RUNTIME_CONTRACT.save_format },
       counts: { scenarios: 41, minerals: 184, narratives: 94 },
     });
-    expect(CORE_CONTENT_VERSION).toBe('1.0.2');
+    expect(CORE_CONTENT_VERSION).toBe('1.0.3');
     expect(assets.renderer_lod_contract.scientific_authority)
       .toEqual(RELEASE_RUNTIME_CONTRACT.scientific_authority);
     expect(assets.renderer_lod_contract.presentation)

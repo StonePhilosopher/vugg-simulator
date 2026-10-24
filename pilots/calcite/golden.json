@@ -1,0 +1,35 @@
+{
+  "schema": "calcite-authority-golden-v1",
+  "scope": "authored accepted-zone fixture; deterministic custody, not external geological validation",
+  "sourcePilot": "5c6f11c80e31a582dbc86863a1418267b0731341",
+  "runtime": "win32/x64/v24.15.0",
+  "specimenSha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
+  "geometrySha256ByStep": [
+    "77314317053722be21aa0e3c76f6f5dbccc8c892372c71a2e961918610b919e1",
+    "1f88433e44a80bf56ca1fb06b075c2a3c4a262c55f4228f13e941f3fc7564fa2",
+    "81bd81a96c92d6f474de994f2f5714314cc29db02854a13c5f65b8c92936e50e",
+    "1e942484d8c8046fe3d659394c8e01e76af81c5f011f325f64e20c653f3820c0",
+    "fa291af9c7e018e658678b4d2bb8ca0d560b5076c3f4bce0f307e201fffe6fc6"
+  ],
+  "bookedVolumeMm3ByStep": [
+    [
+      0.44602238100565506
+    ],
+    [
+      1.372582774304405,
+      0.24429024474314237
+    ],
+    [
+      2.8869560970408275,
+      1.7959438003021653
+    ],
+    [
+      1.987075281417621,
+      1.4512472490406438
+    ],
+    [
+      4.4046824625603795,
+      2.4090761234600833
+    ]
+  ]
+}

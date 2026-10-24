@@ -1,0 +1,54 @@
+{
+  "schema": "quartz-browser-payload-validation-v1",
+  "base": "91e5cc1102b453acac1638adb40b51587b75115e",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtimeExecutionDigest": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+  "browser": {
+    "schema": "vugg-owned-devtools-browser-runtime-v2",
+    "executable_name": "chrome.exe",
+    "executable_sha256": "9ca2beaa7a9fd1109f01e562788c22e045a01cec0f6015ade689325af7f8a521",
+    "devtools_browser_product": "Chrome/155.0.8059.41",
+    "devtools_protocol_version": "1.3"
+  },
+  "sourceSha256": "f8eadd2bd13d6cf4ac81caea6aa268cecc8d904645627b965648a11c230938d1",
+  "proof": {
+    "manifest": {
+      "format_version": 5,
+      "sim_version": 285,
+      "scenario_id": "shigar_pegmatite",
+      "scenario_spec_hash": "4bf9eaa8d9c625e651e8797704da5e64bab450ed0fe61c734f805c046da654b4",
+      "seed": 42,
+      "recorded_at": 42,
+      "duration_steps": 70,
+      "axes": {
+        "steps": 70,
+        "angular_indices": 24,
+        "height_positions": 16,
+        "depth_positions": 4
+      },
+      "notes": "Simulation — shigar_pegmatite @ seed 42",
+      "modelDigestSha256": "588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e",
+      "chipsSha256": "792e4040ec42bf02093d821de2b03a22020273a8b8a6fff0be9d7838f9cc71dd"
+    },
+    "fingerprint": "1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6",
+    "rawSha256": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586",
+    "downloadSha256": "858e176d22de18c61ffec67767b5404e38c7238d01412ffa02d2d8b0e4168c3b",
+    "withoutQuartzRawSha256": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+    "withoutQuartzDownloadSha256": "2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b",
+    "roundtripRawSha256": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586",
+    "quartzCrystals": 3,
+    "quartzSnapshots": 8,
+    "channelSha256": "f76a23600e2159e8a5a317b1b047138d379c6f6fac5f9d4bdfb82549db6e7b59"
+  },
+  "comparison": "Removing only quartz_form_testimony from the actual Chrome download recovers exact baseline raw and compressed bytes.",
+  "scientificFingerprintUnchanged": true,
+  "roundtripRawBytesUnchanged": true
+}

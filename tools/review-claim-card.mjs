@@ -1207,6 +1207,7 @@ function buildExecutedScienceTestimony(strip, science, spec) {
       layer_count: layerGrowth.length,
       formula_layers: layerGrowth.filter((z) => z?.formula_stoichiometry),
       solid_solution_layers: layerGrowth.filter((z) => z?.solid_solution),
+      celestine_history_layers: layerGrowth.filter((z) => z?.celestine_history),
       binding_competition_allocations: layerGrowth.filter((z) => z?.competition_allocation),
       reactive_transformation_layers: layerGrowth.filter((z) => z?.transformation_reactivity),
       masked_horizons: layerGrowth.filter((z) => z?.masked_horizon),
@@ -1638,6 +1639,10 @@ export function renderMarkdown(card) {
       + `coverage term/prism=${row.masked_phi_term}/${row.masked_phi_prism}; thickness=${row.thickness_um} µm.`);
   }
   for (const crystal of ex.habit_morphology.crystals) {
+    if (crystal.celestine_disclosure) {
+      L.push(`  - Celestine lineage ${crystal.crystal_id}: ${crystal.celestine_disclosure}`);
+      continue;
+    }
     L.push(`  - Habit crystal ${crystal.crystal_id}: ${crystal.mineral}; ${crystal.habit}; `
       + `extent=${crystal.extent_kind}; forms=${JSON.stringify(crystal.dominant_forms)}; `
       + `size authority=${JSON.stringify(crystal.size_authority)}; CDR=${JSON.stringify(crystal.cdr_replacement_evidence)}.`);

@@ -112,10 +112,10 @@ the RSS watchdog, and the project-identity guard. Chip runs never resume or
 write a full-suite checkpoint/result. Passing batches still record advisory
 cost measurements. No full-suite speedup or broader tier equivalence is claimed.
 
-GitHub Actions CI (`.github/workflows/ci.yml`) runs on **Node 24**, the
-calibration-authority runtime for the committed baselines (SIM 285 /
-`seed42_v285.json`). Node 20/22/23 flip deterministic crystal counts against
-the committed `supergene_oxidation` seed-42 baseline (measured at v237:
+GitHub Actions CI (`.github/workflows/ci.yml`) uses the commissioned
+**Windows x64 / Node 24.15.0** runtime for the committed baselines (SIM 286 /
+`seed42_v286.json`). Historical Node 20/22/23 runs changed deterministic
+`supergene_oxidation` seed-42 counts (measured at v237:
 duftite 8→9, erythrite 5→4); see
 [BUG-supergene-calibration-v237.md](BUG-supergene-calibration-v237.md). CI
 validates the committed science — receipt audits plus a calibration

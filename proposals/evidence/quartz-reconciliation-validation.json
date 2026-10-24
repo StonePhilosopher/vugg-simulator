@@ -1,0 +1,229 @@
+{
+  "schema": "quartz-reconciliation-validation-v1",
+  "base": "91e5cc1102b453acac1638adb40b51587b75115e",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtimeExecutionDigest": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+  "sourceCommits": [
+    "3751060e94bc9ba8aba9a3b488d454b4f5ec4897",
+    "0f0be7f7f94c9f8d5b2f7806504914c818f2da93",
+    "c045bb62802dec95504ccb97c7de53a0af8572b8"
+  ],
+  "sourceHashes": {
+    "js/44e-quartz-form-history.ts": "001179a4dc5d3b85c398a4940658b1800a77da43d5c3ae2e31f02e1f50cb2df3",
+    "js/44f-quartz-form-persistence.ts": "24fa29b2d05c38bd7048fc26747180a8849fb1c347271b3ba7700490abaed41c",
+    "js/46a-quartz-render.ts": "06c38877e1f2e21edd87ec209ae43ead296aeb38a4d87f9eacbfe957c4e381dd",
+    "js/46m-quartz-form-display.ts": "f355a8211c69041e8e8a332b784197a5bb0d25af0d30760987a068882c1fb76f",
+    "js/85-simulator.ts": "0970373607b78fdad3769a594bf3ec3fda644c2bcc8ed76aaed931d84959e641",
+    "js/85f-strip-dataset.ts": "0408529c9928b5557b3c2307945976ac0530f3364727df965511ca5bf2a56239",
+    "js/85g-strip-recorder.ts": "821e8ec79e51c7f464d1d9d232c4d53422a78d754e4fa0f3ae4330c51667e89a",
+    "js/85h-strip-storage.ts": "fa70a3ffc1fb993df88d3fd06721d883c45616a067c23be3e9304c9062ae025d",
+    "js/93-ui-collection.ts": "ae4891bf68b8d38d28f0f10a0af43e3c47f25eb1cd3792b712f7f6be9877f367",
+    "js/93a-ui-saves.ts": "fd79f706c1e1290533fb46823637749888b377434676238fe414d4bc02301b94",
+    "js/99i-renderer-three.ts": "04bd627da41b4f66e3a4e2807cf40696758e584d6a64ff17eb9df869c5a0ef66",
+    "tools/gen-strip-archive.mjs": "89a1d7bf47dabf1f1a07a95d7bd976f691ba7b93d0f7e9e846bc66288382f4be",
+    "tools/browser-workflow.mjs": "c0a68837268fe7f84e407a80214e8339ef762ae8dda92aed5f53b2d89ca3d772",
+    "tools/check-quartz-browser-payload.mjs": "f8eadd2bd13d6cf4ac81caea6aa268cecc8d904645627b965648a11c230938d1",
+    "tools/guided-tutorial-browser-receipt.mjs": "4eb8266658f047bc51230b93e354324a76b429baa4cb44f57a78fe1a755c859c",
+    "tools/check-quartz-reconciliation.mjs": "5510a16a76df1ba91ce4bafef55a65e94495d37225227641c5fd5fc7d1f90f7a"
+  },
+  "comparison": {
+    "existingHistoryPayloadsUnchanged": 41,
+    "numericalBaselinesUnchanged": 3,
+    "freshFleetScenarioValuesAndFingerprintsUnchanged": 41,
+    "scenarioMineralThermoSourcesUnchanged": true
+  },
+  "observationChannels": [
+    {
+      "scenario": "amethyst_geode",
+      "crystals": 1,
+      "snapshots": 96,
+      "projectionChecks": 0,
+      "channelSha256": "ddf2115957649fe7123ac05cde0c2d692fd75819a750547427cadd2a8a90f920"
+    },
+    {
+      "scenario": "asbestos_hills_crack_seal",
+      "crystals": 1,
+      "snapshots": 2,
+      "projectionChecks": 3,
+      "channelSha256": "a13196e3f5acddcc1bc316909df6057d4ac4b01854c369bada8df327cadf98f5"
+    },
+    {
+      "scenario": "asbestos_hills_surficial_alteration",
+      "crystals": 1,
+      "snapshots": 2,
+      "projectionChecks": 3,
+      "channelSha256": "7915a5437a45ea58de1599ce56dd18d2f7c93be8cb878691a5b344ab0f399c4e"
+    },
+    {
+      "scenario": "cooling",
+      "crystals": 1,
+      "snapshots": 1,
+      "projectionChecks": 2,
+      "channelSha256": "3e5761dea40d1b1714a8b3c864fc24d2154c6d96f2e8b369a474ead75a03e7b8"
+    },
+    {
+      "scenario": "deccan_zeolite",
+      "crystals": 3,
+      "snapshots": 5,
+      "projectionChecks": 6,
+      "channelSha256": "335792affb01b67c7126b569c4d852c0f374ef0db33b311730f85260b90f9472"
+    },
+    {
+      "scenario": "epithermal_telluride",
+      "crystals": 3,
+      "snapshots": 38,
+      "projectionChecks": 16,
+      "channelSha256": "ad30a46062850982f7efd8a49f11e59819e8a1c5498db0450103ae56c54af8c0"
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "crystals": 3,
+      "snapshots": 3,
+      "projectionChecks": 0,
+      "channelSha256": "933f32f772660e24f29ff5b736232b586f1bd3d1fb077317c35261395dfabc95"
+    },
+    {
+      "scenario": "grimsel_alpine_cleft",
+      "crystals": 4,
+      "snapshots": 237,
+      "projectionChecks": 233,
+      "channelSha256": "454f42a9304b375d0706435e9eae924fb30bea8a728f7c018a7f582bd514041d"
+    },
+    {
+      "scenario": "mvt",
+      "crystals": 1,
+      "snapshots": 1,
+      "projectionChecks": 0,
+      "channelSha256": "5457ff647bd6474c934660d70513364cbe53f1e088259e783e012f653ac988fa"
+    },
+    {
+      "scenario": "ouro_preto",
+      "crystals": 7,
+      "snapshots": 159,
+      "projectionChecks": 57,
+      "channelSha256": "7985e521a33ab481b073ed9dcb3c4b25ca86881662ccd4f3eb00e1ff8d67574d"
+    },
+    {
+      "scenario": "pulse",
+      "crystals": 1,
+      "snapshots": 2,
+      "projectionChecks": 3,
+      "channelSha256": "e8f62d0c526db7be5e508e118d96eef3a7465294190c0e856c4ad249a30a1d15"
+    },
+    {
+      "scenario": "radioactive_pegmatite",
+      "crystals": 3,
+      "snapshots": 10,
+      "projectionChecks": 1,
+      "channelSha256": "396dd02ec370f7aaab86321bbae2614a93fedbf343d4897a19eda9333e54cbbf"
+    },
+    {
+      "scenario": "roughten_gill",
+      "crystals": 1,
+      "snapshots": 1,
+      "projectionChecks": 2,
+      "channelSha256": "24b4d6141cb3c7d0226b2a48a3bc91cfdbee0b4c4bdd5e9c6f7a5955ba1885d7"
+    },
+    {
+      "scenario": "schneeberg",
+      "crystals": 3,
+      "snapshots": 6,
+      "projectionChecks": 2,
+      "channelSha256": "04d881bc99f8d0f2c355cde03cdba305c77d5530abecd38830361ecec1cf6fa1"
+    },
+    {
+      "scenario": "shigar_pegmatite",
+      "crystals": 3,
+      "snapshots": 8,
+      "projectionChecks": 6,
+      "channelSha256": "f76a23600e2159e8a5a317b1b047138d379c6f6fac5f9d4bdfb82549db6e7b59"
+    },
+    {
+      "scenario": "sunnyside_american_tunnel",
+      "crystals": 3,
+      "snapshots": 4,
+      "projectionChecks": 7,
+      "channelSha256": "aa5dc290789c36c73c4f952092b1b19fd38b1f51003b51c0f4f1abd0db5e65fb"
+    },
+    {
+      "scenario": "tormiq_alpine_cleft",
+      "crystals": 1,
+      "snapshots": 2,
+      "projectionChecks": 1,
+      "channelSha256": "c7b40186628950d6f59a8da12d9326747ec8677c14c97bfec17f712ef4f3b088"
+    },
+    {
+      "scenario": "tutorial_first_crystal",
+      "crystals": 1,
+      "snapshots": 1,
+      "projectionChecks": 2,
+      "channelSha256": "6dfe49c90e701b1348a76cfe1ba226a1bfca8c54b7da91c05dc48b4b714d4bb3"
+    },
+    {
+      "scenario": "tutorial_mn_calcite",
+      "crystals": 1,
+      "snapshots": 1,
+      "projectionChecks": 2,
+      "channelSha256": "cff2dec9c31611190b7d8fcd3967de5fea20db65f77e833758e944b66d040b9b"
+    }
+  ],
+  "browserJourneyChanges": [
+    {
+      "path": "simulation.collected.record_id",
+      "before": "cry-16-wr2",
+      "after": "cry-16-vqk"
+    },
+    {
+      "path": "simulation.geology_preservation.before.run_id",
+      "before": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+      "after": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
+    },
+    {
+      "path": "simulation.geology_preservation.after.run_id",
+      "before": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+      "after": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
+    },
+    {
+      "path": "player_surfaces.collection_record_groove.record_id",
+      "before": "cry-16-wr2",
+      "after": "cry-16-vqk"
+    },
+    {
+      "path": "player_surfaces.strip_view.download_sha256",
+      "before": "2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b",
+      "after": "858e176d22de18c61ffec67767b5404e38c7238d01412ffa02d2d8b0e4168c3b"
+    },
+    {
+      "path": "player_surfaces.strip_view.imported_key",
+      "before": "imported:shigar_pegmatite@42#42@sha256-c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+      "after": "imported:shigar_pegmatite@42#42@sha256-8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
+    },
+    {
+      "path": "player_surfaces.strip_view.dataset_digest_sha256",
+      "before": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+      "after": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
+    },
+    {
+      "path": "player_surfaces.strip_view.imported_digest_sha256",
+      "before": "c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2",
+      "after": "8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586"
+    }
+  ],
+  "browserPayloadProof": "Actual Chrome bytes minus only quartz observations equal both exact baseline raw/download hashes.",
+  "compatibility": "Both viewers, exact flat cavity, non-WebGL fallback, wall controls and tutorial timing retained.",
+  "boundaries": [
+    "Finalized classifier observations are not measured face velocities or geological validation.",
+    "Topology scope and nucleation tilt are observed in quartz v2 because the general R7 replay layer was not imported.",
+    "Historical width and display material retain existing approximations; this is not a complete physical-solid reconstruction.",
+    "Twins, split/fabric growth, casts, enclosed hosts, parent inheritance and gaps keep explicit latest-form display fallbacks.",
+    "Legacy records remain readable without invented quartz testimony; old producer selection is retained for old authenticated receipts."
+  ]
+}

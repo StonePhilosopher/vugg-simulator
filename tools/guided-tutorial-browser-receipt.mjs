@@ -105,7 +105,7 @@ const EXPECTED_GEOLOGY = Object.freeze({
     // visual-realism review (proposals/PROPOSAL-HOSTILE-REVIEW-VISUAL-REALISM-2026-09-04.md,
     // F1): euhedral crystals are no longer classified as crusts and coverage is mass-floored,
     // so the recorded testimony changed while the simulation fingerprint above did not.
-    run_id: 'c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2',
+    run_id: '8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586',
   }),
 });
 // The collection id draws from the QA-pinned Math.random stream, which three.js also consumes
@@ -113,14 +113,16 @@ const EXPECTED_GEOLOGY = Object.freeze({
 // geometries/materials before the "Collect topaz" click shifts this suffix. Re-pinned
 // 2026-09-05 (review F13 records the coupling as canonical debt), and again the same day for
 // the R1 lighting rig (PMREM room + key target allocated at renderer init).
-const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-wr2';   // re-pinned 2026-09-08: R4a quartz allocations; exact journey diff is this ID only (F13)
+const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-vqk';   // 2026-10-23 selective quartz replay allocation stream; geology unchanged (F13).
 const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
 // Replaced with the exact SIM 285 values after the owned-browser source freeze.
 // Re-pinned 2026-09-05: the strip dataset records each crystal's surface-growth testimony
 // (js/85g), which the visual-realism review corrected (F1) — the dataset and its download
 // digests move with that testimony while the simulation fingerprint does not.
-const EXPECTED_GAME04_DATASET_SHA256 = 'c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2';
-const EXPECTED_GAME04_DOWNLOAD_SHA256 = '2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b';
+// Actual Chrome bytes with only quartz_form_testimony removed recover both old
+// hashes exactly; see proposals/evidence/quartz-browser-payload-validation.json.
+const EXPECTED_GAME04_DATASET_SHA256 = '8b6164b5b255b93f6a61fe40e93559626d47c238afbc437f428d091cf8fa3586';
+const EXPECTED_GAME04_DOWNLOAD_SHA256 = '858e176d22de18c61ffec67767b5404e38c7238d01412ffa02d2d8b0e4168c3b';
 // Replaced with the exact controlled Shigar product after the renderer source
 // freezes. These values are independently pinned so a self-rehashed receipt
 // cannot merely invent a plausible flat view while the public control is dead.

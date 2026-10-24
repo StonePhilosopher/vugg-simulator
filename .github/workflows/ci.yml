@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    # SIM285's authenticated receipt commissions Windows x64 / Node 24.15.0.
+    # SIM286's authenticated receipt commissions Windows x64 / Node 24.15.0.
     # CI must inhabit that envelope; a Linux runner is useful for portable
     # checks but cannot honestly authenticate the published evidence.
     runs-on: windows-latest
@@ -43,6 +43,26 @@ jobs:
       # built bundle), then the generated-artifact drift check.
       - run: npm run build
       - run: npm run build:check
+
+      - name: Recipe endmember, initiative, and identity controls
+        run: npm test -- --file tests-js/recessive-floor-removal.test.ts --file tests-js/recipe-rung1-initiative.test.ts
+
+      - name: Specimen history and viewer compatibility
+        run: >-
+          npm test --
+          --file tests-js/calcite-solid-authority.test.ts
+          --file tests-js/celestine-lineage.test.ts
+          --file tests-js/wall-display-control.test.ts
+          --file tests-js/tutorial-guidance.test.ts
+          --file tests-js/cavity-field-fallback.test.ts
+          --file tests-js/quartz-form-history.test.ts
+          --file tests-js/quartz-form-strip.test.ts
+          --file tests-js/quartz-form-collection.test.ts
+          --file tests-js/quartz-form-display.test.ts
+          --file tests-js/quartz-r4.test.ts
+          --file tests-js/fortress-saves.test.ts
+          --file tests-js/collection-player-names.test.ts
+          --file tests-js/guided-tutorial-browser-receipt.test.ts
 
       # These cleanup regressions protect the engineering benchmarks. Ordinary
       # calibration CI does not otherwise execute their focused test files.
@@ -80,7 +100,7 @@ jobs:
 
       # Calibration-authority sentinel: the one scenario with a documented
       # cross-runtime differential, checked against the CURRENT committed
-      # baseline (tests-js/baselines/seed42_v285.json). 220 s on the
+      # baseline (tests-js/baselines/seed42_v286.json). 220 s on the
       # canonical Windows box; the generous job timeout is for this step.
       # The full 232-file suite is NOT run here — a cold run is ~3.5 h under
       # tools/test-workflow.mjs and belongs to the foreman-controlled local

@@ -234,6 +234,41 @@ describe('guided tutorial target authority', () => {
     expect(home?.text).toContain('geological run remains available through Saves');
   });
 
+  it('names the required Advance action while geological-time lessons are pending', async () => {
+    const sourceSteps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
+    await startTutorial('tutorial_first_crystal');
+    const commissioned = tutorialViewerCommissioningReceipt();
+    const steps = commissioned?.after?.topo_three_renderer_enabled === true
+      ? sourceSteps
+      : sourceSteps.filter((step: any) => step.requiresCapability !== 'three-renderer');
+    const zoneHistoryIndex = steps.findIndex((step: any) => step.anchor === '#zone-modal');
+    const dissolutionIndex = steps.findIndex((step: any) => step.step === 16);
+
+    expect(zoneHistoryIndex).toBeGreaterThanOrEqual(0);
+    expect(steps[zoneHistoryIndex].text).toContain('press Advance');
+    expect(steps[zoneHistoryIndex].text).toContain('step 16');
+    expect(steps[dissolutionIndex].text).toContain('Keep pressing Advance');
+    expect(steps[dissolutionIndex].text).toContain('step 25');
+
+    advanceTutorialTo(zoneHistoryIndex);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    const continueButton = document.querySelector(
+      '.tutorial-callout-btn',
+    ) as HTMLButtonElement | null;
+    expect(continueButton?.disabled).toBe(false);
+    expect(document.querySelector('.tutorial-callout-text')?.textContent)
+      .toContain('press Advance');
+
+    continueButton?.click();
+    expect(tutorialStateSnapshot()).toMatchObject({
+      step_index: zoneHistoryIndex + 1,
+      current_trigger: 'simstep',
+    });
+    expect(continueButton?.disabled).toBe(true);
+    expect(document.querySelector('.tutorial-callout-text')?.textContent)
+      .toContain('step 16');
+  });
+
   it('renders the Saves lesson as a real continue step anchored to its quick-nav control', async () => {
     const steps = SCENARIOS.tutorial_first_crystal._json5_spec.tutorial.steps;
     const savesIndex = steps.findIndex((step: any) => step.anchor === '#mode-saves');

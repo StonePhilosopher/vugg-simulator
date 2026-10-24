@@ -1,0 +1,40 @@
+{
+  "schema": "calcite-volume-contract-validation-v1",
+  "base": "91e5cc1102b453acac1638adb40b51587b75115e",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtimeExecutionDigest": "f8beeb096dd0d76d9b9d15c8fe3a561c901ef549642189fa30a9be1c225b6119",
+  "sourceHashes": {
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
+    "pilots/calcite/authority.js": "e214e82c8360c92d0f8065ae96d9df3971f3a977d545fc8af3ffaf4ff8de00a3",
+    "pilots/calcite/specimen.js": "591cb08033f43a6a1a48ae177b75b26a88d6ce8ca1f224d0bff1b00f25044eda",
+    "pilots/calcite/census.mjs": "1bb68fd08fda89748d01c4e2a6a5347010d63c71ca8b5f50318220e4152bf5d4",
+    "pilots/calcite/factor-report.mjs": "5d033926a4e5d97e4ba898b255799c0af1287fec80d44005cee8d1131e91e568",
+    "tests-js/calcite-solid-authority.test.ts": "16698a74086d8cd4347d59247a20e22ee6252196988b97a0353c63b3869c013c",
+    "tools/check-calcite-volume-contract.mjs": "d0f306241260d44bc713e79fe1a2a5972ae1c46b4ba4dbfae69c0ee8f5dc7aaf"
+  },
+  "comparison": {
+    "freshScenarioCensus": 41,
+    "allMeasurementsAndFingerprintsUnchanged": true,
+    "historyPayloadsUnchanged": 41,
+    "numericalBaselinesUnchanged": 3,
+    "geometryGoldenUnchanged": true,
+    "bookedVolumeGoldenUnchanged": true,
+    "envelopeChange": "v2 explicitly carries executable volume reconciliation; legacy v1 refused, not upgraded"
+  },
+  "physicalClosure": "unresolved",
+  "productionOptIn": "withheld",
+  "independentChecks": "Stored planes independently re-intersected by factor audit; factors are per-record representation ratios, not a physical calibration.",
+  "unverified": [
+    "Dense-solid mass/dimension/geometry reconciliation",
+    "Scientifically resolved face arrest and internal surviving boundaries",
+    "43 excluded fleet calcites; scalar fleet receipt has no phase/contact-topology evidence"
+  ]
+}
