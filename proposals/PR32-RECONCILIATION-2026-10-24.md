@@ -31,3 +31,6 @@ runtime identities, commands, pass/fail counts, CI, deployment, and remaining
 unverified boundaries will be recorded before promotion. Historical SIM285
 numbers in the recipe review remain historical; they are not rebound to SIM286.
 No birth-census comparison is claimed without its independently supplied input.
+The visibility tiers are size proxies, not testimony that the camera can see
+an enclosed crystal. Exposed and enclosed counts remain separate. The audit
+reports the existing fahlore growth restriction; it does not repair that model.
