@@ -230,8 +230,67 @@ async function waitForDevToolsReceipt(profileDir, child, timeoutMs = DEFAULT_TIM
   throw new Error(`Timed out waiting for ${receiptPath} (${launcherState}): ${lastError?.message || 'missing'}`);
 }
 
-async function windowsProcessTree({ execFileRunner = execFileAsync, ownerPort = null } = {}) {
-  const source = String.raw`
+// Add-Type compiles C# with csc.exe inside every fresh PowerShell host. On a
+// cold GitHub Windows runner the first host start plus that compile overran the
+// old 10 s per-capture budget before any process was observed (Actions run
+// 39693703832, attempt 1: killed with empty output; completed first captures
+// took 2.8-5.1 s, slow runners 8-10 s). Host start and compile are one-time
+// setup, not observation. Each helper is compiled once per process under a
+// generous hang budget and kept in memory; every capture loads those bytes
+// under the budget for a hung observation. A byte load also skips the scan
+// that an image load of a never-seen DLL draws on a Defender host (1.1-1.9 s
+// per new DLL here, once 11 s), and leaves no file behind to clean up.
+const NATIVE_HELPER_COMPILE_TIMEOUT_MS = 120_000;
+const NATIVE_HELPER_CALL_TIMEOUT_MS = 10_000;
+const NATIVE_HELPER_LOAD = '[void][Reflection.Assembly]::Load([Convert]::FromBase64String($env:VUGG_NATIVE_HELPER_IMAGE))';
+const NATIVE_HELPER_IMAGES = new WeakMap();
+
+async function compileNativeHelper(typeName, source, execFileRunner) {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'vugg-native-helper-'));
+  try {
+    const { stdout } = await execFileRunner('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      'Add-Type -TypeDefinition $env:VUGG_NATIVE_HELPER_SOURCE -OutputAssembly $env:VUGG_NATIVE_HELPER_ASSEMBLY -OutputType Library; '
+        + '$image = [IO.File]::ReadAllBytes($env:VUGG_NATIVE_HELPER_ASSEMBLY); [void][Reflection.Assembly]::Load($image); '
+        + '([type]$env:VUGG_NATIVE_HELPER_TYPE).FullName; [Convert]::ToBase64String($image)',
+    ], {
+      env: {
+        ...process.env,
+        VUGG_NATIVE_HELPER_SOURCE: source,
+        VUGG_NATIVE_HELPER_ASSEMBLY: path.join(directory, `${typeName}.dll`),
+        VUGG_NATIVE_HELPER_TYPE: typeName,
+      },
+      windowsHide: true,
+      timeout: NATIVE_HELPER_COMPILE_TIMEOUT_MS,
+    });
+    // The type resolves only once these exact bytes are loaded.
+    const [loadedType, image] = String(stdout).trim().split(/\r?\n/);
+    if (loadedType !== typeName || !/^[A-Za-z0-9+/]+={0,2}$/.test(image || '')) {
+      throw new Error(`native helper ${typeName} did not load from its compiled assembly`);
+    }
+    return image;
+  } finally {
+    await rm(directory, { recursive: true, force: true, maxRetries: 4, retryDelay: 150 })
+      .catch(() => { /* best-effort temp cleanup */ });
+  }
+}
+
+// One compile per helper source and command runner. A failed compile is not
+// cached: the next capture compiles again instead of inheriting the failure.
+function nativeHelperImage(typeName, source, { execFileRunner = execFileAsync } = {}) {
+  let compiled = NATIVE_HELPER_IMAGES.get(execFileRunner);
+  if (!compiled) NATIVE_HELPER_IMAGES.set(execFileRunner, compiled = new Map());
+  const key = `${typeName}:${createHash('sha256').update(source).digest('hex')}`;
+  let image = compiled.get(key);
+  if (!image) {
+    image = compileNativeHelper(typeName, source, execFileRunner);
+    compiled.set(key, image);
+    image.catch(() => { if (compiled.get(key) === image) compiled.delete(key); });
+  }
+  return image;
+}
+
+const VUGG_PROCESS_TREE_SOURCE = String.raw`
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -316,7 +375,8 @@ public static class VuggProcessTree {
       ulong creationTicks = 0;
       string executablePath = entry.szExeFile;
       IntPtr process;
-      if (handles.TryGetValue(entry.th32ProcessID, out process) && WaitForSingleObject(process, 0) == 258) {
+      bool held = handles.TryGetValue(entry.th32ProcessID, out process);
+      if (held && WaitForSingleObject(process, 0) == 258) {
         FILETIME creation, exit, kernel, user;
         if (GetProcessTimes(process, out creation, out exit, out kernel, out user)) {
           creationTicks = ((ulong)creation.high << 32) | creation.low;
@@ -327,7 +387,12 @@ public static class VuggProcessTree {
         } else creationTicks = 0;
         if (WaitForSingleObject(process, 0) != 258) creationTicks = 0;
       }
-      rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
+      // A held handle pins its PID: Windows does not reuse a process ID while a
+      // handle to that process is open. A signaled held handle therefore proves
+      // this row's lifetime ended while the snapshot was read. Omit it rather
+      // than report an unreadable birth, which consumers treat as possibly live.
+      if (!held || WaitForSingleObject(process, 0) != 0)
+        rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
       entry.dwSize = (uint)Marshal.SizeOf(entry);
     } while (Process32Next(snapshot, ref entry));
     return rows.ToArray();
@@ -368,19 +433,22 @@ public static class VuggProcessTree {
     } finally { CloseHandle(process); }
   }
 }`;
+
+async function windowsProcessTree({ execFileRunner = execFileAsync, ownerPort = null } = {}) {
+  const image = await nativeHelperImage('VuggProcessTree', VUGG_PROCESS_TREE_SOURCE, { execFileRunner });
   const { stdout } = await execFileRunner('powershell.exe', [
     '-NoProfile', '-NonInteractive', '-Command',
     ownerPort == null
-      ? 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::Rows()'
-      : 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)',
+      ? `${NATIVE_HELPER_LOAD}; [VuggProcessTree]::Rows()`
+      : `${NATIVE_HELPER_LOAD}; [VuggProcessTree]::RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)`,
   ], {
     env: {
       ...process.env,
-      VUGG_TOOLHELP_SOURCE: source,
+      VUGG_NATIVE_HELPER_IMAGE: image,
       ...(ownerPort == null ? {} : { VUGG_DEVTOOLS_PORT: String(ownerPort) }),
     },
     windowsHide: true,
-    timeout: 10_000,
+    timeout: NATIVE_HELPER_CALL_TIMEOUT_MS,
   });
   const lines = String(stdout).split(/\r?\n/);
   const ownerLine = lines.find(line => line.startsWith('OWNER|'));
@@ -399,6 +467,15 @@ public static class VuggProcessTree {
   const rootReceipt = { pid: Number(ownerPid || 0), start_ticks: ownerTicks || '',
     executable_path: ownerPath.join('|') };
   return { rootPid: rootReceipt.pid, rootReceipt, listenerStartTicks: listenerStartTicks || '', rows };
+}
+
+// The default DevTools-owner observer. `prepare` is its one-time helper
+// compile, which callers finish before an observation deadline starts.
+function windowsOwnedProcessSnapshot({ execFileRunner = execFileAsync } = {}) {
+  return Object.assign(
+    requestedPort => windowsProcessTree({ execFileRunner, ownerPort: requestedPort }),
+    { prepare: () => nativeHelperImage('VuggProcessTree', VUGG_PROCESS_TREE_SOURCE, { execFileRunner }) },
+  );
 }
 
 async function captureOwnedBrowserProcessReceipts(rootPid, {
@@ -448,10 +525,13 @@ async function captureOwnedBrowserProcessReceipts(rootPid, {
 async function captureOwnedBrowserProcessReceiptsForPort(port, {
   timeoutMs = 10_000,
   platform = process.platform,
-  ownedSnapshotProvider = requestedPort => windowsProcessTree({ ownerPort: requestedPort }),
+  ownedSnapshotProvider = windowsOwnedProcessSnapshot(),
   devtoolsReceipt = null,
   fetcher = globalThis.fetch,
 } = {}) {
+  // Setup first, so neither the observation deadline nor the endpoint-nonce
+  // bracket below spans a cold helper compile.
+  await ownedSnapshotProvider.prepare?.();
   const checkEndpoint = async () => {
     if (!devtoolsReceipt) return;
     if (devtoolsReceipt.port !== port) throw new Error('DevTools receipt port differs from ownership request');
@@ -2837,6 +2917,10 @@ export {
   fetchWithDeadline,
   formatErrorTree,
   findOwnedBrowserRootPid,
+  NATIVE_HELPER_CALL_TIMEOUT_MS,
+  NATIVE_HELPER_COMPILE_TIMEOUT_MS,
+  NATIVE_HELPER_LOAD,
+  nativeHelperImage,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
@@ -2845,6 +2929,7 @@ export {
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
+  windowsOwnedProcessSnapshot,
   windowsProcessTree,
 };
 
