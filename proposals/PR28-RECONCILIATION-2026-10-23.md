@@ -1,6 +1,8 @@
 # PR 28 — explicit recipe corrections on the current baseline
 
-Validation in progress. The evidence below must be completed before promotion.
+Local validation is complete for execution digest `d1944009…bb77`. Publication
+and promotion additionally require fresh configured CI at the published head.
+This is not a claim that the full local cold suite ran.
 
 The seven model corrections remain isolated in
 `b4b575b6c6d930ff7cf38d9a7bf8457ef2763b3c`. Their acceptance requires
@@ -14,6 +16,11 @@ Reconciliation merges that main into the existing branch. All 17 original
 recipe source/data files remain byte-identical after LF normalization to the
 reviewed PR head. Existing celestine lineage, quartz recording/replay, viewers,
 and browser ownership fixes come from the current baseline.
+
+The incoming branch advanced during measurement to
+`d8b420b2b9505bfa934cc782ad433bcd9b373baf` (merge `97d9157e`, evidence updates
+`ffa0610d` and `d8b420b2`). Those commits are also preserved as ancestors. They
+add no runtime/data differences beyond the already inspected recipe edits.
 
 ## The scientific seam
 
@@ -30,8 +37,9 @@ and browser ownership fixes come from the current baseline.
 The four temperature edits also change the initiative bonus normalization:
 300/420/420/250 C becomes the existing 50 C fallback. That narrows the bonus
 window and can lower initiative at moderate temperatures. Both signs of delta
-are intentional parts of the inspected commit, not an inference that every
-crystal gains priority. This tranche adds no further tuning of that function.
+are consequences of the inspected seven edits; this tranche preserves them
+and adds no further tuning. It does not imply that every crystal gains priority
+or independently validate the geological calibration of the 50 C bonus span.
 
 The earlier seed-42-only agreement was insufficient to establish a wider
 behavioral boundary. The new comparison is against the *current reconciled*
@@ -83,7 +91,9 @@ npm run science:rebake
 npm run gen:release
 node pilots/calcite/census.mjs --output pilots/calcite/volume-census.json
 node pilots/calcite/record.mjs
+node pilots/calcite/golden.mjs
 node pilots/calcite/factor-report.mjs
+node --max-old-space-size=1024 tools/recipe-rung1-mechanism-proof.mjs
 ```
 
 `recipe-rung1-audit.mjs` compares all 41 authored scenarios at seeds 1, 2, and
@@ -114,6 +124,73 @@ The two specific control files also run in GitHub CI. The expensive fleet audit
 and evidence generation remain local commissioning operations; CI validates
 committed evidence and never rebakes it.
 
+## Completed scenario and rule measurements
+
+The first panel completed 123/123 pairs with identical raw scientific state,
+booked volumes, summaries, and intermediate growth timelines. The SIM286 panel
+completed 123 fresh candidate runs against the same 123 byte-verified baseline
+observations. Every pair has exactly two changed leaves:
+`projection.simVersion` and `projection.modelDigest`; every other scientific
+value and all 123 growth timelines agree. This is 369 actual engine evaluations,
+not a claim of 492 fresh evaluations. No case timed out or was retried.
+
+The measured execution digest is
+`d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77`.
+The original audit producer remains
+`723fd754113087bee45844ca531a7aca01ea0dc1983bad5a75ee8137ba8338d7`.
+The identity repair changed only `dist/15-version.js`; 283 other execution inputs
+are unchanged. After the compiler removes comments, the executable differences
+are exactly the version literal and the two appended semantic tokens.
+
+All 22 endmember/initiative/identity controls passed. The first new fixture test
+attempt failed because JSDOM supplied a non-file `import.meta` URL; reading the
+repository-relative historical fixture repaired that test plumbing. The failed
+attempt is retained. Neither the fix nor the retry changed a mineral rule.
+
+The first browser commissioning attempt completed the public-control journeys,
+then correctly refused the SIM286 fingerprints against the old SIM285 pins.
+The replacement commissioning command uses `--recipe-identity-proof`: in the
+actual producing Chrome it must recover each exact prior fingerprint by changing
+only SIM/model fields on a comparison copy. It must also recover the prior raw
+and compressed download hashes with only those two manifest fields substituted.
+The actual run, saves, specimen data, and published download retain SIM286.
+No verifier check is removed. The first refusal and owned cleanup verification
+are retained separately from the successful commissioning receipt.
+
+Normal science generation and its verification suite passed: 55 tests in seven
+files. Release generation then correctly refused the omitted SIM286 changelog
+entry. That failed command is retained. After adding the release notes, the
+normal release/calcite stages resumed and passed; the completed science outputs
+were preserved rather than rebound or relabelled.
+
+The final artifact comparison passed these separate checks:
+
+| Artifact | Observed change |
+|---|---|
+| Seed-42 calibration baseline | No numerical changes |
+| Three-seed occurrence and chemistry tripwire baselines | Only root SIM/model identity |
+| All 41 full recording payloads | Only root SIM/model identity |
+| Actual controlled Chrome journeys | 15 identity-derived fields, hashes and keys; eight state observations recover exact old fingerprints on comparison copies |
+| Production mechanism witnesses | Seven identity-derived fields/hashes, including the browser-proof reference; the observed producer exactly reproduces the normal receipt |
+| Calcite fleet | 41 changed fingerprints, each matched to the independent raw projection; every other census field unchanged |
+| Calcite geometry and booked-volume goldens | Unchanged |
+| Historical v285 artifacts | All 129 files preserved |
+
+The mechanism proof observes the unchanged producer through its shared harness
+API, always returns the original values, and restores the observed references
+in `finally`. Only separate comparison copies receive old identity fields.
+No official receipt, simulator state, zone, or source is rewritten by that
+proof. See the [browser proof](evidence/recipe-identity-browser-validation.json)
+and [mechanism proof](evidence/recipe-identity-mechanism-validation.json).
+
+The incoming D8 quartz-browser proof remains historical SIM285/R1 evidence at
+its recorded execution digest. Current SIM286 download/replay coverage is the
+new browser identity proof; the historical receipt is not relabelled as current.
+
+The Test Quarry cost label also advances to SIM286 so old measurement rows are
+not presented as current-model measurements. Its existing rejection path is
+tested; this adds no scheduler or science authority.
+
 ## Evidence and production boundaries
 
 The rebuilt bundle and regenerated receipts must describe the reconciled bytes.
@@ -129,6 +206,32 @@ PR 26's separate census-cache defect is outside this correction. PR 32's audit
 has its own stacked integration boundary; neither is closed merely by this
 scientific approval.
 
-Final case counts, changed outcomes, generated-artifact differences, focused
-tests, CI/deployment SHAs, retries, and remaining limits will be recorded here
-when validation completes.
+## Final local checks
+
+| Check group | Passed | Files |
+|---|---:|---:|
+| Endmember / initiative / identity controls | 22 | 2 |
+| Normal science verification | 55 | 7 |
+| Save and command replay | 79 | 2 |
+| Release data / offline bundle | 10 | 2 |
+| Browser receipt / native cleanup / cost label | 73 | 4 |
+| Affected model and calcite regressions | 270 | 16 |
+
+Groups overlap; these are per-command results, not a summed unique-test count.
+Typecheck, exact generated build, science/evidence/release/browser-receipt audits,
+and diff hygiene passed. Both real viewer cases passed: existing Three wall
+controls and flat view, plus actual disabled-WebGL fallback. All six real-Chrome
+ownership/cleanup probe cases passed. Owned test profiles, browser lifetimes,
+and temporary ports closed; no new retained helper was created.
+
+The three failed attempts are preserved: the fixture URL plumbing error, the
+expected old browser-pin refusal, and the missing changelog token. Their fixes
+and successful follow-ups are recorded in the
+[machine-readable receipt](evidence/recipe-rung1-validation.json), with exact
+commands, runtime, source identities, per-case hashes, and remaining boundaries.
+No scenario comparison was retried, and no physical value or tolerance was
+changed to make a result agree.
+
+Fresh PR CI, the tested merge tree, main CI, and deployed bytes are verified
+separately at delivery and linked from the PR. These local measurements do not
+borrow a green CI verdict from the earlier C2/D8 heads.

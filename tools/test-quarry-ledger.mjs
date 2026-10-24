@@ -35,7 +35,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 export const TEST_QUARRY_LEDGER_SCHEMA = 'test-quarry-cost-ledger-v1';
 export const TEST_QUARRY_LEDGER_TRUST = 'measurement-only-does-not-authenticate-science';
-export const TEST_QUARRY_SIM_LINEAGE = 'SIM285/seed42_v285';
+export const TEST_QUARRY_SIM_LINEAGE = 'SIM286/seed42_v286';
 export const TEST_QUARRY_PACKING = 'cost-weighted-lpt-by-authored-duration-steps';
 export const TEST_QUARRY_TIERS = Object.freeze(['presubmit', 'canary', 'evidence']);
 export const TEST_QUARRY_EVIDENCE_SEEDS = LOCALITY_FREQUENCY_SEEDS;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
@@ -1060,6 +1060,38 @@ function assertSafeBounds(rect, width, height, insets, label) {
 }
 
 async function runWorkflow(driver, diagnostics) {
+  // A SIM identity change moves fingerprints and download hashes even when
+  // the physical state is identical. Prove that boundary in the producing
+  // browser before commissioning replacement pins. Copies used for this
+  // comparison never enter saves, simulation state, or published run products.
+  const identityReference = process.argv.includes('--recipe-identity-proof') ? {
+    browser: JSON.parse(readFileSync(path.join(ROOT, 'archive/evidence/guided-tutorial-browser-v285.json'), 'utf8')),
+    strip: JSON.parse(readFileSync(path.join(ROOT, 'archive/strips/v285/cooling.json'), 'utf8')),
+  } : null;
+  const recipeIdentityProof = identityReference ? {schema: 'recipe-identity-browser-proof-v1',
+    reference_sim: 285, actual_sim: SIM_VERSION, comparison_only_identity_substitution: true,
+    observations: [], download: null} : null;
+  const verifyIdentityOnly = async (expression, identity) => {
+    if (!identityReference) return;
+    assert.equal(SIM_VERSION, 286, 'This bounded commissioning proof is only for SIM286');
+    const prior = ['creative', 'simulation', 'save_load_policy', 'skip_cleanup']
+      .map(key => identityReference.browser.payload.journeys[key].geology_preservation.before)
+      .find(value => value.runtime === identity.runtime && value.scenario === identity.scenario && value.step === identity.step);
+    assert.ok(prior, 'No pinned prior identity for this controlled journey');
+    const proof = await driver.evaluate(`(() => {
+      const sim = ${expression}, projection = simulationStateProjection(sim);
+      const actual = simulationStateFingerprint(sim);
+      const comparison = {...projection, simVersion: 285,
+        modelDigest: ${JSON.stringify(identityReference?.strip.model_digest)}};
+      return {actual, priorIdentityOnly: sha256HexUtf8(JSON.stringify(comparison)),
+        originalStillUnchanged: actual === simulationStateFingerprint(sim)};
+    })()`);
+    assert.equal(proof.actual, identity.fingerprint);
+    assert.equal(proof.priorIdentityOnly, prior.fingerprint, 'Browser state changed beyond SIM/model identity');
+    assert.equal(proof.originalStillUnchanged, true);
+    recipeIdentityProof.observations.push({runtime: identity.runtime, scenario: identity.scenario,
+      step: identity.step, ...proof});
+  };
   const checks = [];
   const guidedTutorialJourneys = {
     schema: 'guided-tutorial-browser-journeys-v4',
@@ -1326,7 +1358,8 @@ async function runWorkflow(driver, diagnostics) {
       if (requireNoSim) assert.equal(cleanup.sim_present, false, `${label} retained geology`);
       return cleanup;
     };
-    const captureFortressGeologyIdentity = async () => driver.evaluate(`(() => {
+    const captureFortressGeologyIdentity = async () => {
+      const identity = await driver.evaluate(`(() => {
       const sim = window.vugg.fortressSim;
       const save = _liveSaveActiveRecord();
       return {
@@ -1337,7 +1370,11 @@ async function runWorkflow(driver, diagnostics) {
         run_id: save?.run_id || save?.id || null,
       };
     })()`);
-    const captureSimulationGeologyIdentity = async () => driver.evaluate(`(() => {
+      await verifyIdentityOnly('window.vugg.fortressSim', identity);
+      return identity;
+    };
+    const captureSimulationGeologyIdentity = async () => {
+      const identity = await driver.evaluate(`(() => {
       const sim = window.vugg.legendsSim;
       const receipt = stripLatestDurableRunReceipt();
       return {
@@ -1348,6 +1385,9 @@ async function runWorkflow(driver, diagnostics) {
         run_id: receipt?.dataset_digest_sha256 || null,
       };
     })()`);
+      await verifyIdentityOnly('window.vugg.legendsSim', identity);
+      return identity;
+    };
     const closeGeologyPreservation = (before, after, label) => {
       for (const [key, value] of Object.entries(before)) {
         assert.notEqual(value, null, `${label} lacks before ${key}`);
@@ -1888,6 +1928,29 @@ async function runWorkflow(driver, diagnostics) {
     const downloadedFile = await waitForDownloadedFile(diagnostics.download_dir, downloadFilename);
     const downloadSha256 = sha256File(downloadedFile);
     if(process.argv.includes('--quartz-reconciliation-proof'))await verifyQuartzBrowserPayload(driver,downloadedFile,diagnostics);
+    if (identityReference) {
+      const actual = await readFile(downloadedFile);
+      const proof = await driver.evaluate(`(async () => {
+        const input = Uint8Array.from(atob(${JSON.stringify(actual.toString('base64'))}), c => c.charCodeAt(0));
+        const ds = await stripDeserialize(input);
+        const comparison = {...ds, manifest: {...ds.manifest, sim_version: 285,
+          model_digest: ${JSON.stringify(identityReference?.strip.model_digest)}}};
+        const digest = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2,'0')).join('');
+        const raw = await stripSerialize(ds, false);
+        return {actualDownloadSha256: await digest(input), actualDatasetSha256: await digest(raw),
+          priorIdentityOnlyDatasetSha256: await digest(await stripSerialize(comparison, false)),
+          priorIdentityOnlyDownloadSha256: await digest(await stripSerialize(comparison, true)),
+          roundtripDatasetSha256: await digest(await stripSerialize(await stripDeserialize(await stripSerialize(ds, true)), false)),
+          quartzCrystals: ds.quartz_form_testimony.length,
+          quartzChannelSha256: await digest(new TextEncoder().encode(JSON.stringify(ds.quartz_form_testimony)))};
+      })()`);
+      const prior = identityReference.browser.payload.journeys.player_surfaces.strip_view;
+      assert.equal(proof.actualDownloadSha256, createHash('sha256').update(actual).digest('hex'));
+      assert.equal(proof.priorIdentityOnlyDatasetSha256, prior.dataset_digest_sha256);
+      assert.equal(proof.priorIdentityOnlyDownloadSha256, prior.download_sha256);
+      assert.equal(proof.roundtripDatasetSha256, proof.actualDatasetSha256);
+      recipeIdentityProof.download = proof;
+    }
     await driver.click('#strip-view-back');
     await driver.waitFor(
       `!!document.querySelector('#strip-view-upload-input')
@@ -2621,7 +2684,11 @@ async function runWorkflow(driver, diagnostics) {
     assert.deepEqual(setup.undersized, [], 'Creative setup has touch targets below 44px');
   });
 
-  return { checks, guidedTutorialJourneys };
+  if (recipeIdentityProof) {
+    assert.equal(recipeIdentityProof.observations.length, 8);
+    assert.ok(recipeIdentityProof.download);
+  }
+  return { checks, guidedTutorialJourneys, recipeIdentityProof };
 }
 
 async function main() {
@@ -2853,6 +2920,13 @@ async function main() {
         ROOT, SIM_VERSION, workflow.guidedTutorialJourneys, diagnostics.browser_runtime,
       );
       const output = writeGuidedTutorialBrowserReceipt(ROOT, receipt);
+      if (workflow.recipeIdentityProof) {
+        await writeFile(path.join(ROOT, 'proposals/evidence/recipe-identity-browser-validation.json'),
+          JSON.stringify({base: 'e2142582c5fa69e6b0dff306ccdc84597533ad1f',
+            execution_set_sha256: receipt.execution_set_sha256,
+            producer_contract_sha256: receipt.producer_contract_sha256,
+            browser_runtime: diagnostics.browser_runtime, ...workflow.recipeIdentityProof}, null, 2) + '\n');
+      }
       process.stdout.write(`[browser-workflow] wrote ${path.relative(ROOT, output).replaceAll('\\', '/')}\n`);
     }
     process.stdout.write(`${JSON.stringify({

@@ -4,6 +4,26 @@ This changelog records player-facing and release-system changes. Scientific
 engine changes remain identified separately by `SIM_VERSION`, `MODEL_DIGEST`,
 and the exact-execution evidence receipt.
 
+## Unreleased — SIM 286 recipe reconciliation
+
+- Removes the artificial recessive-cation admission floors for olivenite,
+  adamite, and descloizite, and the contradicted lower initiative temperature
+  bounds for pyrite, chalcopyrite, bornite, and native silver. The original
+  seven edits remain isolated in `b4b575b6`; no further rule tuning is added.
+- Names both the removed low-temperature penalties and the existing 50 C
+  fallback bonus span in `MODEL_DIGEST`. The narrower span can reduce initiative
+  at moderate temperatures. All 41 scenarios at seeds 1, 2, and 42 retain their
+  scientific state and growth timelines; arbitrary inputs are not proved
+  unchanged by that bounded panel.
+- Commissions core content pack 1.0.3 separately. Historical SIM 285 archives
+  remain intact; old-model checkpoints are preserved for diagnosis/export and
+  are not relabelled as SIM 286 runs.
+- Keeps calcite production authority withheld. Booked mass volume and completed
+  surface volume remain distinct; this release does not rescale or reconcile
+  them as one physical solid. Both viewers and the non-WebGL fallback remain.
+
+See [the reconciliation evidence](proposals/PR28-RECONCILIATION-2026-10-23.md).
+
 ## Unreleased — local AAA completion tranche
 
 ### Added
@@ -48,7 +68,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 285**. SIM 268 separated sulfate,
+- The earlier AAA tranche was commissioned as **SIM 285**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
