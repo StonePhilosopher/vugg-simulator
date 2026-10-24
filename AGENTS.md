@@ -47,9 +47,9 @@ this section only records the non-obvious startup/run caveats.
 
 ## Verification
 
-- Use **Node 24** for anything that compares against committed baselines or
+- Use **Windows x64 / Node 24.15.0** for anything that compares against committed baselines or
   receipts — it is the calibration-authority runtime. Current tip authority
-  is **SIM 285 / `seed42_v285.json`**. The committed `supergene_oxidation`
+  is **SIM 286 / `seed42_v286.json`**. The committed `supergene_oxidation`
   seed-42 check is green under Node 24 and flips deterministic counts under
   Node 20/22/23 (historically measured at v237 — duftite 8→9, erythrite 5→4;
   see `BUG-supergene-calibration-v237.md`). Never rebake a baseline or

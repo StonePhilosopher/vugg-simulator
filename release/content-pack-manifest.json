@@ -5,10 +5,10 @@
   "packs": [
     {
       "id": "core",
-      "content_version": "1.0.2",
+      "content_version": "1.0.3",
       "compatibility": {
-        "sim_version": 285,
-        "model_digest_sha256": "588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e",
+        "sim_version": 286,
+        "model_digest_sha256": "6f03ef2a233521ab2d18d1c536974e18a0b0d470df45fd278c007e24e1b9036f",
         "save_format": 3
       },
       "counts": {
@@ -16,8 +16,8 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "db3b37a8758ad0e4b9abe26abc665d49a2161800504be0a286f9359776f94667",
-      "runtime_execution_sha256": "93116cf2c9a7b2dccdd1d7ea802882001f70d0cfe3c8af0f05d5f3a5464feab9",
+      "browser_bundle_sha256": "fa0f057fa8883133f0e2d49e330501d92f71393b4f955852f934fc8f7d66f726",
+      "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
@@ -527,7 +527,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "768db3d90bf9f07bbe44162d42a35043a573c5b33617ef269a997c6c3da7316f",
+  "producer_contract_sha256": "087a027714f57651a5b70fe6e9e2b525cd00dd553586c61196e339a38106b1a9",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "53616f03ae30d6b1fe914d038f7bde95baa7dcae58e64a4c4ee487d0e2f95e5e"
+  "catalog_sha256": "881071bffb593deac4cf527f540847b37cd47ac2beede1e1b9e8a6e72e863525"
 }

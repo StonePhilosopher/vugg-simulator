@@ -13136,7 +13136,14 @@
 // enforce that domain pointwise after bulk-to-pore-fluid propagation. Generic
 // sulfur timelines are refused because they cannot provide valence-specific
 // boundary and ledger authority.
-const SIM_VERSION = 285;
+// v286 — recipe admission and temperature-initiative corrections (2026-10-24).
+// Olivenite/adamite/descloizite no longer require a recessive fluid cation.
+// Pyrite/chalcopyrite/bornite/native silver no longer have their contradicted
+// lower initiative bounds; retained ceilings and the existing 50 C fallback
+// bonus span are explicit. The original seven edits remain in b4b575b6.
+// These rules can change other inputs even when a seed panel agrees, so they
+// require a new scientific identity. See PR28-RECONCILIATION-2026-10-23.md.
+const SIM_VERSION = 286;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -13219,5 +13226,7 @@ const MODEL_DIGEST = [
   'guided-tutorial:run-owned-teardown+semantic-keyboard-and-programmatic-control-locks+shared-async-run-launch-epoch+one-use-legends-grow+complete-scenario-seed-steps-shape-cavity-command-authority+typed-mineral-run-value-targets+canonical-and-receipted-viewer-state+committed-carbonate-titration-with-pending-solid-transfer-interval+collection-and-byte-authenticated-strip-products+seed42-executed-Shigar-topaz-not-admitted-beryl+production-witness+full-public-control-browser-journeys-and-save-policy-v6',
   'collection-product:typed-bounded-backup-records+released-safe-integer-zone-count-migration+census-only-numeric-zones+signed-nonphantom-remaining-solid-required-across-collect-groove-save-finish+current-zone-array-cap10000+atomic-oversize-collect-refusal+actual-zone-array-required-for-groove+exact-player-owned-name+shared-text-only-library-and-record-groove-fields-and-actions-v4',
   'strip-storage:production-vs-import-origin+legacy-unverified+content-addressed-import-key+full-payload-readback-digest+bounded-structural-import+svg-text-only+per-origin-five-cache+atomic-eviction-and-insertion+commit-before-presentation-v2',
+  'CuZn-endmember-admission:olivenite-Zn0+adamite-Cu0+descloizite-Cu0+dominant-fraction-guards-v1',
+  'temperature-initiative:pyrite-chalcopyrite-bornite-native-silver-no-lower-floor+retained-ceilings+50C-bonus-span-v1',
 ].join('|');
 

@@ -150,6 +150,8 @@ describe('Test Quarry measurement-only cost ledger', () => {
         peak_rss_bytes: 51_000_000,
         tiers: ['canary'],
       });
+      fs.writeFileSync(ledgerPath, JSON.stringify({...ledger, sim_lineage: 'SIM285/seed42_v285'}));
+      expect(readCostLedger({ledgerPath})).toBeNull();
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
     }
@@ -159,6 +161,8 @@ describe('Test Quarry measurement-only cost ledger', () => {
     const report = formatPackingReport();
     expect(report).toContain('does not change science, baselines, or receipts');
     expect(report).toContain(TEST_QUARRY_SIM_LINEAGE);
+    const version = (globalThis as any).SIM_VERSION;
+    expect(TEST_QUARRY_SIM_LINEAGE).toBe(`SIM${version}/seed42_v${version}`);
     expect(report).toContain('bisbee: 340 steps × 3 seeds');
     expect(report).toContain(`CI sentinel ${CALIBRATION_CI_SENTINEL} stays on calibration shard 0`);
     expect(report).not.toMatch(/SIM 237|seed42_v237/);

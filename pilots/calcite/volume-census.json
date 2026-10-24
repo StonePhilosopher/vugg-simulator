@@ -1,7 +1,7 @@
 {
   "schema": "calcite-volume-census-v1",
   "seed": 42,
-  "simVersion": 285,
+  "simVersion": 286,
   "source": "actual scenario runs at authored duration; no scenario flags overridden",
   "pilotSourceCommit": "5c6f11c80e31a582dbc86863a1418267b0731341",
   "runtime": {
@@ -9,7 +9,7 @@
     "platform": "win32",
     "arch": "x64"
   },
-  "runtimeDigest": "93116cf2c9a7b2dccdd1d7ea802882001f70d0cfe3c8af0f05d5f3a5464feab9",
+  "runtimeDigest": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
   "scope": "plain untwinned Wulff calcite; all other calcite explicitly counted as excluded",
   "decision": "Preserve existing mass/growth rules; record measured factors; hold production integration.",
   "sourceHashes": {
@@ -32,7 +32,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "11160e34f2999c22f24dc11ae858c745edcdbded5540e08c6c05b4ee85e4352d",
+      "fingerprint": "fedabec1d49e0f4306863c22b77fe43a8390a9f3d31468273b4a0bf7ac3a37da",
       "historical": [],
       "crystals": []
     },
@@ -45,7 +45,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "15ddfb22d51a04d1e694f320408f9a1fa09818ee044c1491d7d55b7f06482724",
+      "fingerprint": "f278739f37e569588276d6d898a45eb4550176788926071a4eb0679b20367617",
       "historical": [],
       "crystals": []
     },
@@ -58,7 +58,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "6ab12c805c4abc09c49a4a2b6176c6404237a297a143d132ecfa30dca1f9fbd4",
+      "fingerprint": "e305cf6c869e5f1962fa81bc9036f2e821ccfa6fb1645d7018c5ed2ea8669d4d",
       "historical": [],
       "crystals": []
     },
@@ -71,7 +71,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "19c427d8a7dd7fff5b2a62e0a47b94ae016e67084b05252a13fd9a22aa49a13a",
+      "fingerprint": "99a7b94d902345039064b30a822a7b55da5c0254324bd22677fefe792094875f",
       "historical": [],
       "crystals": []
     },
@@ -84,7 +84,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "784a1eefa1ad43f3a4ff61e8062478fafd3261b11b2666a2988203256d26361e",
+      "fingerprint": "bf40f8b1eccad7b00bad2eb8ecda02f1a734b63b08a435e14b07882ab8a47e60",
       "historical": [],
       "crystals": []
     },
@@ -97,7 +97,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "654cc7a195b06c2a2791f460a3f45a135e7da7a29fccf6940f31a1e12870f00c",
+      "fingerprint": "e5ff196c6516b50e08508927c8d6ac53e9e5f2a3a7a8b687d57984720c92655a",
       "historical": [],
       "crystals": []
     },
@@ -110,7 +110,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "08afcdcfaafb961ce5027cbf5f7709952bdc92461a8c083a5e8c36e1e4413f40",
+      "fingerprint": "5346f34d6a577243a9420f77d9b6052c5fbbfce31e9d077ab3bf0afd998c8b1e",
       "historical": [],
       "crystals": []
     },
@@ -134,7 +134,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "9edf019555e245e6a78da7021ed056605d1e8b8bfc066e5359fd04f6fbb3135b",
+      "fingerprint": "f283eced647b2d524bd0e1cea5f94d4b7375ea77173aa2f03ea53906670eafca",
       "historical": [],
       "crystals": []
     },
@@ -158,7 +158,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "4793c1fcdf9c84ef9dd2e6afeca65da0328ba9d0e23d6866bf46fdcf599d0a2c",
+      "fingerprint": "350d47970a13d8f1197df3844261ea2ba34833dcd3789285d5d43abed3933624",
       "historical": [],
       "crystals": []
     },
@@ -171,7 +171,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "d02d3027bbda8827c6bfe067d55e79e7f8c913ffe046afab9aaa6798888ebe6e",
+      "fingerprint": "acce0f534c5fe7bc7dd4396c93e95fdf617817cf56b20e6cc2086ef47b91b596",
       "historical": [],
       "crystals": []
     },
@@ -184,7 +184,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "399d92eb63bd58ce0aa6b3b2875ae3e8b2533acb82c416a1b920b87ce656ef3a",
+      "fingerprint": "d5a4fa03716f8289501dab7e160a6d4ef44ca06b64e614372d89807649f74bc9",
       "historical": [],
       "crystals": []
     },
@@ -197,7 +197,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "bf5f41d4b689d375f249443d0575a425968ddbe0162349554896ba2a64a9d55b",
+      "fingerprint": "bd2ddcd34d7609abc932390cccbbbd37397b953f6acc62773cc1993a8828b621",
       "historical": [],
       "crystals": []
     },
@@ -221,7 +221,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "9c0aebbfd754be0d816cd9e37f234dd467b51ffdcae35f35156ff26276adba62",
+      "fingerprint": "099deab249dbacec307d0b24228118b95e9e098899df68a5b17388a5d6c7a24e",
       "historical": [],
       "crystals": []
     },
@@ -245,7 +245,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "6ed2724428fc7bc8398ef381990b68d0130614323af527a21148386daf802670",
+      "fingerprint": "7fd612279cdd8e567194d346085823727dd009b9c843e2ba4819e4fe7e50da8c",
       "historical": [],
       "crystals": []
     },
@@ -258,7 +258,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "0e98ee96529e7a2afe2faf4a82a9007076bd96536fe3cdb1a63280b39b4436a1",
+      "fingerprint": "3cc6d797b5c1d8a06f14660894b7fa2742e7f829a5cff72653cc900186bd39f7",
       "historical": [],
       "crystals": []
     },
@@ -271,7 +271,7 @@
       "eligibleCount": 1,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "27758febb11e3c43f451e917cb5bbc9637d721f7443e63f42dfdb7c53ae9b4b0",
+      "fingerprint": "d99496bad8b56dea01847d16a01dbe109dc1ed7d994b3affd6f2497d69ae0822",
       "historical": [
         {
           "step": 5,
@@ -2387,7 +2387,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "1e1316bf55a1281564d2b7db4e6de22a5b2839cebbd93d64acaafd134ad13292",
+      "fingerprint": "69bc22d2d00a0280a336b6d14e6d9205fe8f55425e8de2dbdccc0b962b8d1400",
       "historical": [],
       "crystals": []
     },
@@ -2400,7 +2400,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "4b232551c3bb46db703ccb1ce8a2b0110aa76af23753af337b1db333951be522",
+      "fingerprint": "afa31051e0fb3710533468d437c8cc4b71eb4000ed49561b6303e136dc20c2aa",
       "historical": [],
       "crystals": []
     },
@@ -2413,7 +2413,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "87ebffb5b3ec76322ed629ff7ba8cf36f2d68e8c612a5503f65f39e976889fc9",
+      "fingerprint": "086872b0898647702259404a05bfd0b88c227050d94543c06f2505c1f1c22d4f",
       "historical": [],
       "crystals": []
     },
@@ -2426,7 +2426,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "6d8a324cc3b37cd689198836c03eb71935f9c721da35ebfcb8b9d0cbfbd7d0a2",
+      "fingerprint": "64ce6c94cd391f4a7bad4653b991ecccd88fb192bf4a86325c80b25edc012c39",
       "historical": [],
       "crystals": []
     },
@@ -2439,7 +2439,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "15dae4381fd6ea08fe4a517f2076131941dced07c4e8415e1576bc0c9c1f58f8",
+      "fingerprint": "34cf819108741524c52a0250e425f35a8898135fbcdb577a0c165184bf4078d2",
       "historical": [],
       "crystals": []
     },
@@ -2463,7 +2463,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "009293b9813759641130de75c0289427b8eed649b7d4de90054b8351ce803afd",
+      "fingerprint": "c1d7de5589e2119471d8091c51800a235b41084bba1747f88401b5b9f4dc7ad0",
       "historical": [],
       "crystals": []
     },
@@ -2476,7 +2476,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "0dfbda770f0cfb6b10bc737d34f368e580dd5f69fa89e05482473f40f8a7dd87",
+      "fingerprint": "010a174f65fab6c0bddd55861c0a0443aee5378d6d757f1fca92018cecb41ce6",
       "historical": [],
       "crystals": []
     },
@@ -2500,7 +2500,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "c69973319640f642528b5d723cbbdff45048a64faec171c31069a46993ce8618",
+      "fingerprint": "d4ae6be63f5830bae0095084fd380d3700788396f43aae41b3f54d06e286ae66",
       "historical": [],
       "crystals": []
     },
@@ -2714,7 +2714,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "3c20a396e7096b544a87cb391a226c818db23485e73fb068ecbf82378de692be",
+      "fingerprint": "650560df63966d3fdb2875109b226c723586f8e1e5a7d1334d84bf5a5cb734ca",
       "historical": [],
       "crystals": []
     },
@@ -2727,7 +2727,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "8a5726dd8fd521e4a54790f958645ab03282dc8c6d049daae2310266244ae079",
+      "fingerprint": "f5a3057e091e258efbfea38d6a3aa4d7e68fc3c587b48d4beee6028c48ead15e",
       "historical": [],
       "crystals": []
     },
@@ -2771,7 +2771,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "d5a2db7305b151e89573211a1a022f3fb488ed231f2052cd85979d60822b4bce",
+      "fingerprint": "96b544dbc670d32a1ee914543a5043490e74d292742ad9e3d6a4fb97b688e2a3",
       "historical": [],
       "crystals": []
     },
@@ -2784,7 +2784,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "384b240d63fbf775e334455375d24f69084102498d6d02f58ec8d544b0ad9c14",
+      "fingerprint": "0772395e7aeb9583ef06e6d3c2579606afcbe72fde9792877448ec1333970d1c",
       "historical": [],
       "crystals": []
     },
@@ -2808,7 +2808,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "7cccbb9e4fcbf8838bfaa10d5b5fd375097a966d9e42d0d4af759faab1ec2090",
+      "fingerprint": "aeb873fa95694792927f731631f96c298fbca0f67bd6c2ce38f9f0304c09d60e",
       "historical": [],
       "crystals": []
     },
@@ -2842,7 +2842,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "33b5378ec08944a559c607267a2283a862a671a07b790ec8cf39fd7e49006f51",
+      "fingerprint": "4e898d16daf61ebb130cb7497e654dfa68de247b5c5fb862c9a0539aa879c775",
       "historical": [],
       "crystals": []
     },
@@ -2855,7 +2855,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "b263e67295d641ff7bc3f526d9be39650cb336f845d3317ce6fe4169a4c65699",
+      "fingerprint": "f82e59e25d81352e42981be5319551644f3e52a67354a9dc149c4df14cd656da",
       "historical": [],
       "crystals": []
     },
@@ -2879,7 +2879,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "708ab57e0f283e09b33bfcdd4c3d45c8a085ce3f0b62eb91e3feb5b81aa83fbd",
+      "fingerprint": "b4fe46f103f74ba4ebba190dfd70ddf7d7b47b0b30945dd494fc6204ffc19279",
       "historical": [],
       "crystals": []
     },
@@ -2892,7 +2892,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "631acbe7c5e4bf02226fb777d1481cfa3238f3de9c4e9a65f1f99a07c4a659fc",
+      "fingerprint": "e22cc6039d2707ec0139235cd7b6ad91bc1cfa537d600738224ab674a0fecc1f",
       "historical": [],
       "crystals": []
     },
@@ -2905,7 +2905,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "d555ceb73f077f9db7eada8bd5ab7ac3bec98682233783cf95063bd903958268",
+      "fingerprint": "001fb127a2409d9a5f436c23b0873e4cb3efb99642cff445470de7a81ac50944",
       "historical": [],
       "crystals": []
     },
@@ -2918,7 +2918,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "ccec17cd9e8a2f5015202fe0781cc30576a06f2c96ad0b30cb849d74524a4571",
+      "fingerprint": "f79849b59ca61429222836cac80b72423366aadd8e07a729bca97f711ce47c43",
       "historical": [],
       "crystals": []
     },
@@ -2931,7 +2931,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "ff5b6d55ded893764ee9464df9e9193c4e552689ef09e8504fe33e9f40065672",
+      "fingerprint": "5080e740dd76a788c3cf0bfb4afad8590b5ee713940972cef083a780b723f884",
       "historical": [],
       "crystals": []
     },
@@ -2955,7 +2955,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "4685b59c825026301e9b0fcd08bf752aa92e545a2b37a14bbb82887378851ddc",
+      "fingerprint": "add3e1d2fa11644766dc62d9f676338df9144b8165a0880ff706e9249bddc1f5",
       "historical": [],
       "crystals": []
     },
@@ -2979,7 +2979,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "2f7124518a92dad11b7257974b07659de617842774f7b8d31e4deed8a9d9c936",
+      "fingerprint": "389b9952ed2de1e58bab8218552d44b221b55220f29247c9c24dcd32a120f4c8",
       "historical": [],
       "crystals": []
     },
@@ -3033,7 +3033,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "308e3e737a25b2686c430aa5ccaf74bada1047a4cafe86f20d4a81597f266974",
+      "fingerprint": "1532490b17dd23d7224e6f4eb8de3b4a262158f3d6cf1c48def01547845440ac",
       "historical": [],
       "crystals": []
     },
@@ -3046,7 +3046,7 @@
       "eligibleCount": 0,
       "excluded": [],
       "observationDidNotMutate": true,
-      "fingerprint": "2042b9ae4ca4a56601d5d229b1079c7c33f541955e64ad24b83005cebedf3033",
+      "fingerprint": "7e30b8271cb00ecbc79c4636f9feb67eecb8f30ad62da1cd14ed2cf5ec80c45f",
       "historical": [],
       "crystals": []
     },
@@ -3100,7 +3100,7 @@
         }
       ],
       "observationDidNotMutate": true,
-      "fingerprint": "86250d6566ed3963fe32c78a5cf7601bbce02627461575f1db2285ce50b689c2",
+      "fingerprint": "ddb80cdb540a897838c7a6aff8c8850ff83ec605287deb0d80a2342f6ee9d473",
       "historical": [],
       "crystals": []
     }

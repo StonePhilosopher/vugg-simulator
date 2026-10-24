@@ -1,0 +1,35 @@
+{
+  "schema": "recipe-rung1-mechanism-identity-proof-v1",
+  "base": "e2142582c5fa69e6b0dff306ccdc84597533ad1f",
+  "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+  "producer_source_sha256": "dec40a21cb56d65bd23028b9c66b78401062b5264156c06e088a2ab5bf4ff38e",
+  "observer_source_sha256": "8b48e4485a03173cd758018efda1541ce7c2baf7ce093d8c04760679b6a34dcd",
+  "comparison_only_identity_substitution": true,
+  "actual_normal_receipt_reproduced": true,
+  "physical_payload_changes": 0,
+  "proved_identity_derived_changes": 7,
+  "projections": [
+    {
+      "actual": "5346f34d6a577243a9420f77d9b6052c5fbbfce31e9d077ab3bf0afd998c8b1e",
+      "priorIdentityOnly": "08afcdcfaafb961ce5027cbf5f7709952bdc92461a8c083a5e8c36e1e4413f40"
+    },
+    {
+      "actual": "2669912680e81eb9707a876c25169fc1dcc88ec8baffc264ed67158843cc9fa4",
+      "priorIdentityOnly": "05419cdc4dfdb897ae0375c6de3706e2ecba2870f3f5892aafd713b06cd076d2"
+    }
+  ],
+  "datasets": [
+    {
+      "actual": "0b8c261cbd11355eba6742f487a8b943d3acfe44c59583a2960c9348c8fdb6cf",
+      "priorIdentityOnly": "f6dfeebf08020c6cfe8ac2db19ce04eb8a3ad9fed765da36900bd515b2960f0f",
+      "actualManifest": "62390794f3a353de65be3eb979b0a0ddd685ca217813af0e30ed5b1a111dba90",
+      "priorIdentityOnlyManifest": "d4b76440bc2e31334d27474ab91e0f092ec27554671dd6faf5d3fba5690faccb"
+    }
+  ],
+  "browser_payload_reference": {
+    "before": "baeb27adb925c9df5625771e05b864df2bc48331fdc3812542b3cff9afa9fe52",
+    "after": "3a201876642118a1d1924e35d6e9049129c436b39fe240d4874b30ec61015fc8",
+    "proof": "recipe-identity-browser-validation.json checks the complete browser payload and actual old-identity recovery"
+  },
+  "trust": "local-commissioned-Node-reproduction-not-independent-attestation"
+}
