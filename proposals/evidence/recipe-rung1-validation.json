@@ -5643,5 +5643,13 @@
     "Old v285 archives remain historical. Normal producers generated v286 artifacts.",
     "Calcite completed geometry is not substituted for booked volume; production authority remains withheld.",
     "Full configured CI and deployment are checked after commit; this receipt is not a full cold-suite result."
-  ]
+  ],
+  "cation_commissioning_followup": {
+    "receipt": "proposals/evidence/cation286-commissioning.json",
+    "sha256": "42536b380f227dc177eda3e5863645439dfa1bbd6111071887fdd765efd54cca",
+    "prior_ci": "40071616729: FAILURE (missing identity)",
+    "focused_tests_passed": 6,
+    "runtime_execution_unchanged": true,
+    "normal_science_workflow": "PASS; unchanged exact-input facts resumed, verification rerun"
+  }
 }

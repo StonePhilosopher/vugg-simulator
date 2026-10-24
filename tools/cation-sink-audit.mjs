@@ -94,13 +94,22 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // pharmacolite crystals, all 7,680 zero-Zn control volumes, and zero booked Zn;
 // bind that exact model identity instead of treating the SIM 280 checkpoint as
 // transferable.
-const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
+const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze([Object.freeze({
   sim_version: 285,
   model_digest_sha256: '588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
-});
+}), Object.freeze({
+  // SIM 286: normal old/new producer replays agree in every reported physical
+  // field. See proposals/evidence/cation286-commissioning.json. These values
+  // and tolerances are unchanged; the measured semantic identity is new.
+  sim_version: 286,
+  model_digest_sha256: '6f03ef2a233521ab2d18d1c536974e18a0b0d470df45fd278c007e24e1b9036f',
+  pharmacolite_crystals: 5,
+  final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
+  proxy_tolerance: 5e-7,
+})]);
 
 const scenarioId = process.argv[2] || 'schneeberg';
 const seed = Number.isFinite(Number(process.argv[3])) ? Number(process.argv[3]) : 42;
@@ -349,9 +358,9 @@ if (check) {
     );
   }
   if (seed === 42) {
-    const commissioned = SCHNEEBERG_SEED42_COMMISSIONING;
-    if (SIM_VERSION !== commissioned.sim_version
-        || MODEL_DIGEST_SHA256 !== commissioned.model_digest_sha256) {
+    const commissioned = SCHNEEBERG_SEED42_COMMISSIONING.find(candidate =>
+      candidate.sim_version === SIM_VERSION && candidate.model_digest_sha256 === MODEL_DIGEST_SHA256);
+    if (!commissioned) {
       failures.push(
         `seed 42 has no commissioning checkpoint for SIM ${SIM_VERSION} model ${MODEL_DIGEST_SHA256}`,
       );
