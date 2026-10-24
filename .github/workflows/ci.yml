@@ -50,6 +50,9 @@ jobs:
       - name: Born-grown measurement boundaries
         run: npm test -- --file tests-js/born-grown-audit.test.ts
 
+      - name: Cation commissioning identity guards
+        run: npm test -- --file tests-js/cation-sink-audit.test.ts
+
       - name: Specimen history and viewer compatibility
         run: >-
           npm test --

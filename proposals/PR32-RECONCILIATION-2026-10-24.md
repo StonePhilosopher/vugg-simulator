@@ -85,3 +85,38 @@ explicitly **not compared**. This audit does not certify physical occurrence,
 machine cleanliness, ownership, reservation, or cold-CI completeness.
 
 CI and deployed-byte evidence are linked separately at the exact delivered head.
+
+## Upstream checkpoint repair and repeat measurement
+
+PR28's follow-up `2c8b16ae66e04493c74ccbf4a5465265202031c5` repairs a missing
+exact SIM286 cation-audit checkpoint. The old checkpoint and all numerical
+targets/tolerances are preserved. This branch retains that fix and both focused
+CI groups. Its earlier dependent CI run `40072768440` was canceled after the
+shared missing-checkpoint failure was confirmed; it supplies no green verdict.
+
+The upstream repair changes no scientific runtime, data, baseline, official
+receipt, release asset or generated bundle. Fifteen focused tests pass: nine
+born-grown measurement controls and six cation identity/field controls.
+Typecheck, exact build, all five affected audits and diff hygiene pass.
+
+An intended cache-verification invocation correctly rejected the earlier rows
+because focused tests had created `dist/.test-bundle.js`. The audit includes
+that file in its key, while the scientific harness and execution digest exclude
+dot-prefixed test fixtures. Recomputing the key with only that fixture omitted
+recovers the exact earlier key. This is conservative extra invalidation, not
+permission to reuse evidence under a different identity; no cache policy changed.
+
+That invocation therefore performed **41 additional actual scenario runs**.
+All baselines reproduced, all nine production control pairs passed and capture
+errors remained zero. Every captured row agrees with its original counterpart
+except `inputs` and measured `ms`; the derived report differs only in `inputs`.
+The original raw rows/report remain intact. The
+[follow-up report](evidence/born-grown-upstream-v286.json) is the exact producer
+output, and its [raw append log](evidence/born-grown-upstream-v286-runs.jsonl)
+retains both 41-row input sets. Consumers must select the report's exact input
+identity when reading that log. The [follow-up receipt](evidence/born-grown-upstream-validation.json)
+records the key proof, every command, per-case comparison and raw hashes.
+
+The cache's inclusion of this generated test fixture remains a performance
+limitation. The second pass proves equality of captured audit fields; it does
+not add an independent birth census or geological calibration claim.

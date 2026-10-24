@@ -235,3 +235,31 @@ changed to make a result agree.
 Fresh PR CI, the tested merge tree, main CI, and deployed bytes are verified
 separately at delivery and linked from the PR. These local measurements do not
 borrow a green CI verdict from the earlier C2/D8 heads.
+
+## Cation commissioning follow-up
+
+Configured CI at `f38459a8` failed at `audit:cations`: the guard still named only
+SIM285's exact commissioning identity. This was an identity refusal, not a
+failed conservation check. The dependent PR32 run was canceled after that
+shared cause was confirmed; neither run is reported as green.
+
+Before adding the SIM286 checkpoint, normal producer runs on pinned baseline
+`e2142582` and `f38459a8` were compared exactly. Only `sim_version` and
+`model_digest_sha256` changed. Every reported physical field and compact
+trajectory agreed: 161 audited rows, 7,680 finite zero-Zn control volumes,
+five pharmacolites and final Ca proxy `0.581977988422356`. This does not claim
+that every voxel at every step was persisted.
+
+The old SIM285 entry remains intact. The new entry requires the exact SIM286
+version **and** model hash, with the same numerical targets and `5e-7` proxy
+tolerance. Unknown identities still fail closed. Six focused tests pass,
+including actual CLI runs that reject independently mismatched reported
+version/model identities while retaining all physical checks. Those fixtures
+change reported metadata only; they are not scientific runs of another model
+or Node version. CI now runs this focused file explicitly.
+
+The [commissioning receipt](evidence/cation286-commissioning.json) retains the
+failed CI, the test plumbing failure, the inconclusive sandbox RSS-monitor
+attempt, successful controls, normal producer outputs, unchanged-runtime
+proof and normal science-workflow verification. Unchanged, exact-input cached
+facts remain cached facts; they are not described as fresh cold executions.

@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname, basename } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { COMMISSIONED_EVIDENCE_NODE_RUNTIME, nodeRuntimeIdentity } from '../tools/evidence-runtime.mjs';
 
 import {
   auditTrajectoryIntegrityFailures,
@@ -57,4 +63,46 @@ describe('cation sink audit fail-closed receipts', () => {
       'step 1 (post-step): spatial Zn maximum is non-finite',
     ]);
   });
+});
+
+const commissioned = JSON.stringify(nodeRuntimeIdentity()) === JSON.stringify(COMMISSIONED_EVIDENCE_NODE_RUNTIME);
+describe.skipIf(!commissioned)('cation commissioning identity through the actual CLI', () => {
+  let fixture: string;
+  beforeAll(() => { fixture = mkdtempSync(join(tmpdir(), 'vugg-cation-identity-')); });
+  afterAll(() => {
+    if (!fixture) return;
+    const target = realpathSync(fixture), parent = realpathSync(tmpdir());
+    if (dirname(target) !== parent || !basename(target).startsWith('vugg-cation-identity-')) {
+      throw Error('Refusing cleanup outside the owned identity fixture');
+    }
+    rmSync(target, {recursive: true, force: true});
+  });
+  const invoke = (preload?: string) => execFileSync(process.execPath, [
+    '--max-old-space-size=768', ...(preload ? ['--import', pathToFileURL(preload).href] : []),
+    join(process.cwd(), 'tools/cation-sink-audit.mjs'), 'schneeberg', '42', '--check',
+  ], {cwd: process.cwd(), encoding: 'utf8', windowsHide: true, timeout: 60_000, maxBuffer: 8 * 1024 * 1024});
+
+  it('accepts the measured current identity with unchanged count and zero-Zn checks', () => {
+    const output = invoke();
+    expect(output).toContain(`[cation-sink-audit] PASS SIM ${(globalThis as any).SIM_VERSION}`);
+    expect(output).toContain('161 rows × 7680 finite Zn volumes');
+    expect(output).toContain('pharmacolite 5');
+  }, 90_000);
+
+  it.each(['version', 'model'])('refuses an unknown %s even when the numerical replay matches', field => {
+    const preload = join(fixture, `${field}.mjs`);
+    const harness = pathToFileURL(join(process.cwd(), 'tools/_harness.mjs')).href;
+    // Override only the harness's reported identity. The engine, data and its
+    // internal scientific constants remain real/current: this is not a run of
+    // another physical model or Node version.
+    writeFileSync(preload, `import {loadSimBundle} from ${JSON.stringify(harness)};\n`
+      + `const api=await loadSimBundle({extraExports:['MINERAL_STOICHIOMETRY','arsenateAvailablePpm','arsenateCompetingCationMolarFraction']});\n`
+      + (field === 'version' ? 'api.SIM_VERSION=999999;\n' : "api.MODEL_DIGEST+='|synthetic-identity-mismatch';\n"));
+    let failure: any;
+    try { invoke(preload); } catch (error) { failure = error; }
+    expect(failure?.status).toBe(1);
+    const lines = String(failure.stderr).split(/\r?\n/).filter(line => /^\s+- /.test(line));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('no commissioning checkpoint');
+  }, 90_000);
 });

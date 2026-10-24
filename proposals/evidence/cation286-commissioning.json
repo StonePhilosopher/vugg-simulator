@@ -1,0 +1,1268 @@
+{
+  "schema": "vugg-cation286-commissioning-v1",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+  "original_science_correction_commit": "b4b575b6c6d930ff7cf38d9a7bf8457ef2763b3c",
+  "trust": "local-reproduction-not-independent-attestation-not-full-cold-CI",
+  "discovery": {
+    "head": "f38459a8a28dcb6470a74622f6bf6f9464829b77",
+    "ci": "https://github.com/Syntaxswine/vugg-simulator/actions/runs/40071616729",
+    "status": "FAILURE",
+    "step": "npm run audit:cations",
+    "cause": "No exact commissioning identity for SIM286; no numerical conservation check failed.",
+    "dependent_ci": {
+      "url": "https://github.com/Syntaxswine/vugg-simulator/actions/runs/40072768440",
+      "head": "51d73e9e1d16d0026d5a4e6e5718de3811a89964",
+      "status": "CANCELLED",
+      "reason": "Canceled after verifying it inherited the same deterministic missing commissioning guard; not a passing CI verdict."
+    }
+  },
+  "measurements": {
+    "before": {
+      "source_commit": "e2142582c5fa69e6b0dff306ccdc84597533ad1f",
+      "started_utc": "2026-10-24T07:15:46.041Z",
+      "finished_utc": "2026-10-24T07:15:51.547Z",
+      "exit_status": 0,
+      "command": "node --max-old-space-size=768 tools/cation-sink-audit.mjs schneeberg 42",
+      "runtime_execution_sha256": "7066403a67d0e4effa67c1671be8c081dac47b55d26d1fc15517a05173ab0dee",
+      "producer_sha256": "b4d27fbb8ff467613b65462af20426a10d5b07f617e6ec9d15b4a9c7a239d0f5",
+      "report_sha256": "d7ed7b5e2d4a21ea3436a87c6891382636c37c3bb1c8aff2db418720129ea6bf",
+      "report": {
+        "audit": "analytical-cation-sink-receipt-v1",
+        "sim_version": 285,
+        "model_digest_sha256": "588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e",
+        "scenario": "schneeberg",
+        "seed": 42,
+        "steps": 160,
+        "result": {
+          "audited_trajectory_rows": 161,
+          "final_fluid_Zn_ppm": 0,
+          "final_spatial_Zn": {
+            "addressable_control_volumes": 7680,
+            "valid_Zn_control_volumes": 7680,
+            "total_ppm_control_volume_sum": 0,
+            "mean_ppm": 0,
+            "min_ppm": 0,
+            "max_ppm": 0,
+            "nonzero_control_volumes": 0
+          },
+          "addressable_control_volumes_final": 7680,
+          "valid_Zn_control_volumes_final": 7680,
+          "minimum_valid_Zn_control_volumes": 7680,
+          "peak_bulk_Zn_ppm": 0,
+          "minimum_bulk_Zn_ppm": 0,
+          "peak_spatial_Zn_ppm": 0,
+          "minimum_spatial_Zn_ppm": 0,
+          "peak_spatial_Zn_nonzero_control_volumes": 0,
+          "final_booked_Zn_ppm": 0,
+          "final_booked_Zn_by_mineral_ppm": {},
+          "final_pharmacolite_Ca_molar_fraction_proxy": 0.581977988422356,
+          "pharmacolite_crystals": 5,
+          "koettigite_crystals": 0,
+          "Zn_sink_sigma_maxima": {
+            "tennantite": {
+              "max_sigma": 11.576378329751085,
+              "step": 53
+            }
+          },
+          "spatial_Zn_sink_sigma_maxima": {}
+        },
+        "trajectory": [
+          {
+            "label": "initial",
+            "step": 0,
+            "temperature_C": 450,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 5,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.36905492725904965,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 20,
+            "temperature_C": 348.5688353108239,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0.015848931924611134,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 10.877685119414757,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.36598374628892927,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 8.904906407500834,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 70,
+            "temperature_C": 178.77218320984377,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0.015848931924611134,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 79.32379864349474,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.33365054433601365,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 11.330637092684285,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 85,
+            "temperature_C": 25,
+            "pH": 6,
+            "Eh_mV": -138.75000000000043,
+            "O2": 0.05559042572704014,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 4,
+              "As_V_available": 0,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 113.67448618321176,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.24734680120725486,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 105,
+            "temperature_C": 22,
+            "pH": 6,
+            "Eh_mV": 290,
+            "O2": 1.4962356560944334,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 21.9408460243411,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 138.21677348857375,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.23931810303740245,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 110,
+            "temperature_C": 20,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 142.17073722488718,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.23807311028023825,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 125,
+            "temperature_C": 20,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 4,
+              "As_V_available": 4,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 153.73262843382744,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.5989885971907719,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 145,
+            "temperature_C": 18,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 168.4484833790811,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.5889471418384533,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 160,
+            "temperature_C": 18,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 178.96037458802138,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.581977988422356,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          }
+        ]
+      }
+    },
+    "after": {
+      "source_commit": "f38459a8a28dcb6470a74622f6bf6f9464829b77",
+      "started_utc": "2026-10-24T07:15:51.777Z",
+      "finished_utc": "2026-10-24T07:15:57.173Z",
+      "exit_status": 0,
+      "command": "node --max-old-space-size=768 tools/cation-sink-audit.mjs schneeberg 42",
+      "runtime_execution_sha256": "d1944009b39d0dee86ede656a15c0b98d2be5e56dcc0d6a77d9b94f27be2bb77",
+      "producer_sha256": "b4d27fbb8ff467613b65462af20426a10d5b07f617e6ec9d15b4a9c7a239d0f5",
+      "report_sha256": "455ee69349e24171e74c082cf6f2a1d184960b1d7c3a9602c36f405a97c85c10",
+      "report": {
+        "audit": "analytical-cation-sink-receipt-v1",
+        "sim_version": 286,
+        "model_digest_sha256": "6f03ef2a233521ab2d18d1c536974e18a0b0d470df45fd278c007e24e1b9036f",
+        "scenario": "schneeberg",
+        "seed": 42,
+        "steps": 160,
+        "result": {
+          "audited_trajectory_rows": 161,
+          "final_fluid_Zn_ppm": 0,
+          "final_spatial_Zn": {
+            "addressable_control_volumes": 7680,
+            "valid_Zn_control_volumes": 7680,
+            "total_ppm_control_volume_sum": 0,
+            "mean_ppm": 0,
+            "min_ppm": 0,
+            "max_ppm": 0,
+            "nonzero_control_volumes": 0
+          },
+          "addressable_control_volumes_final": 7680,
+          "valid_Zn_control_volumes_final": 7680,
+          "minimum_valid_Zn_control_volumes": 7680,
+          "peak_bulk_Zn_ppm": 0,
+          "minimum_bulk_Zn_ppm": 0,
+          "peak_spatial_Zn_ppm": 0,
+          "minimum_spatial_Zn_ppm": 0,
+          "peak_spatial_Zn_nonzero_control_volumes": 0,
+          "final_booked_Zn_ppm": 0,
+          "final_booked_Zn_by_mineral_ppm": {},
+          "final_pharmacolite_Ca_molar_fraction_proxy": 0.581977988422356,
+          "pharmacolite_crystals": 5,
+          "koettigite_crystals": 0,
+          "Zn_sink_sigma_maxima": {
+            "tennantite": {
+              "max_sigma": 11.576378329751085,
+              "step": 53
+            }
+          },
+          "spatial_Zn_sink_sigma_maxima": {}
+        },
+        "trajectory": [
+          {
+            "label": "initial",
+            "step": 0,
+            "temperature_C": 450,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 5,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.36905492725904965,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 20,
+            "temperature_C": 348.5688353108239,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0.015848931924611134,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 10.877685119414757,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.36598374628892927,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 8.904906407500834,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 70,
+            "temperature_C": 178.77218320984377,
+            "pH": 6.5,
+            "Eh_mV": -200,
+            "O2": 0.015848931924611134,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 60,
+              "As_V_available": 0,
+              "Ca": 50,
+              "Cu": 80,
+              "Pb": 79.32379864349474,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.33365054433601365,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 11.330637092684285,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 85,
+            "temperature_C": 25,
+            "pH": 6,
+            "Eh_mV": -138.75000000000043,
+            "O2": 0.05559042572704014,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 4,
+              "As_V_available": 0,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 113.67448618321176,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.24734680120725486,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 105,
+            "temperature_C": 22,
+            "pH": 6,
+            "Eh_mV": 290,
+            "O2": 1.4962356560944334,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 21.9408460243411,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 138.21677348857375,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.23931810303740245,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 110,
+            "temperature_C": 20,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 35,
+              "Cu": 80,
+              "Pb": 142.17073722488718,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.23807311028023825,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 125,
+            "temperature_C": 20,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 4,
+              "As_V_available": 4,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 153.73262843382744,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.5989885971907719,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 145,
+            "temperature_C": 18,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 168.4484833790811,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.5889471418384533,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          },
+          {
+            "label": "post-step",
+            "step": 160,
+            "temperature_C": 18,
+            "pH": 6,
+            "Eh_mV": 322.1090020413224,
+            "O2": 1.8,
+            "fluid_ppm": {
+              "Zn": 0,
+              "S": 30,
+              "As_total": 22,
+              "As_V_available": 22,
+              "Ca": 100,
+              "Cu": 5,
+              "Pb": 178.96037458802138,
+              "Co": 30,
+              "Ni": 20,
+              "CO3": 20,
+              "SiO2_reactive": 8000
+            },
+            "pharmacolite_Ca_molar_fraction_proxy": 0.581977988422356,
+            "booked_Zn_ppm": 0,
+            "booked_Zn_by_mineral_ppm": {},
+            "Zn_sink_sigma": {
+              "adamite": 0,
+              "aurichalcite": 0,
+              "austinite": 0,
+              "descloizite": 0,
+              "hemimorphite": 0,
+              "hydrozincite": 0,
+              "koettigite": 0,
+              "legrandite": 0,
+              "rosasite": 0,
+              "smithsonite": 0,
+              "sphalerite": 0,
+              "tennantite": 0,
+              "tetrahedrite": 0,
+              "willemite": 0,
+              "wurtzite": 0
+            },
+            "spatial_Zn": {
+              "addressable_control_volumes": 7680,
+              "valid_Zn_control_volumes": 7680,
+              "total_ppm_control_volume_sum": 0,
+              "mean_ppm": 0,
+              "min_ppm": 0,
+              "max_ppm": 0,
+              "nonzero_control_volumes": 0
+            },
+            "spatial_Zn_sink_sigma_max": {}
+          }
+        ]
+      }
+    }
+  },
+  "changed_fields": {
+    "count": 2,
+    "examples": [
+      {
+        "path": "sim_version",
+        "before": 285,
+        "after": 286
+      },
+      {
+        "path": "model_digest_sha256",
+        "before": "588ede04dd1b3c534778fadaa2a403538338aae97169dd0608e7099fc1061f9e",
+        "after": "6f03ef2a233521ab2d18d1c536974e18a0b0d470df45fd278c007e24e1b9036f"
+      }
+    ]
+  },
+  "physical_output_changes": 0,
+  "policy": {
+    "old_checkpoint_preserved": true,
+    "lookup": "exact version AND SHA256(model digest)",
+    "unknown_identity": "fails closed",
+    "pharmacolite_count_target": 5,
+    "Ca_fraction_proxy_target": 0.581977988422356,
+    "proxy_tolerance": 5e-7,
+    "numerical_targets_and_tolerances_changed": false
+  },
+  "identity_controls": {
+    "command": "npm test -- --file tests-js/cation-sink-audit.test.ts",
+    "passed": 6,
+    "files": 1,
+    "successful_log_sha256": "b21bca52f8302636dc3f286a97961c46406183440f4d2bc88484d95f50c86dcd",
+    "cases": [
+      "three existing missing/non-finite spatial-field controls",
+      "actual current CLI passes all existing checks",
+      "unknown reported version fails with only the exact-identity refusal",
+      "unknown reported model fails with only the exact-identity refusal"
+    ],
+    "boundary": "Identity overrides change harness-reported metadata only, not engine constants, data, or runtime; not cross-model or cross-Node scientific experiments."
+  },
+  "local_attempts": [
+    {
+      "attempt": 1,
+      "status": "FAIL",
+      "passed": 4,
+      "failed": 2,
+      "cause": "Windows --import preload was passed as a drive path rather than a file URL; repaired with pathToFileURL."
+    },
+    {
+      "attempt": 2,
+      "status": "INCONCLUSIVE",
+      "exit": 2,
+      "cause": "Sandbox denied tasklist RSS observation; foreman stopped safely without PASS or cost-ledger advancement."
+    },
+    {
+      "attempt": 3,
+      "status": "PASS",
+      "exit": 0,
+      "passed": 6,
+      "scope": "same tests with Windows RSS observation available"
+    },
+    {
+      "stage": "rebake wrapper launch",
+      "status": "NOT STARTED",
+      "cause": "System script execution policy rejected startup; subsequent task-owned invocation used process-scoped execution permission."
+    }
+  ],
+  "normal_workflow": {
+    "status": "PASS",
+    "started_utc": "2026-10-24T07:24:49.2690275Z",
+    "finished_utc": "2026-10-24T07:29:56.0153535Z",
+    "commands": [
+      {
+        "name": "runtime",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:runtime"
+        ],
+        "started_utc": "2026-10-24T07:24:49.3548511Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:24:49.7326264Z"
+      },
+      {
+        "name": "science-rebake",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "science:rebake"
+        ],
+        "started_utc": "2026-10-24T07:24:49.7441417Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:15.1106447Z"
+      },
+      {
+        "name": "typecheck",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "typecheck"
+        ],
+        "started_utc": "2026-10-24T07:29:15.1136453Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:18.2340719Z"
+      },
+      {
+        "name": "build-check",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "build:check"
+        ],
+        "started_utc": "2026-10-24T07:29:18.2420695Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:23.0345266Z"
+      },
+      {
+        "name": "audit-cations",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:cations"
+        ],
+        "started_utc": "2026-10-24T07:29:23.0390384Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:28.9884615Z"
+      },
+      {
+        "name": "audit-science",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:science"
+        ],
+        "started_utc": "2026-10-24T07:29:28.9924549Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:31.4308049Z"
+      },
+      {
+        "name": "audit-evidence",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:evidence"
+        ],
+        "started_utc": "2026-10-24T07:29:31.4348064Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:34.7211320Z"
+      },
+      {
+        "name": "audit-release",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:release"
+        ],
+        "started_utc": "2026-10-24T07:29:34.7251385Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:36.3591865Z"
+      },
+      {
+        "name": "audit-browser-receipt",
+        "executable": "npm.cmd",
+        "arguments": [
+          "run",
+          "audit:browser-receipt"
+        ],
+        "started_utc": "2026-10-24T07:29:36.3621925Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:37.7295805Z"
+      },
+      {
+        "name": "artifact-comparison",
+        "executable": "node.exe",
+        "arguments": [
+          ".local-evidence/integration-review/check-recipe28-v286-evidence.mjs"
+        ],
+        "started_utc": "2026-10-24T07:29:37.7335818Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:55.5202328Z"
+      },
+      {
+        "name": "diff-check",
+        "executable": "git.exe",
+        "arguments": [
+          "diff",
+          "--check"
+        ],
+        "started_utc": "2026-10-24T07:29:55.5232311Z",
+        "exit_code": 0,
+        "finished_utc": "2026-10-24T07:29:56.0133523Z"
+      }
+    ],
+    "cache_boundary": "Unchanged producer/input facts resume under the existing exact cache identity; no cached fact is relabelled as a fresh cold run."
+  },
+  "source_hashes": [
+    {
+      "file": "tools/cation-sink-audit.mjs",
+      "sha256": "1801dc40f989fc7a255a55ee57f709e7f29fe3b6e6545a69b96103de73a6ceb3"
+    },
+    {
+      "file": "tests-js/cation-sink-audit.test.ts",
+      "sha256": "ac93ccc83f0aa43d4f65aca6b71e3cd296c790aec678a2b2637bf97072fc0969"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "a21fb192da681d467733c1f2fa79818de60d6c13566176a6249754981067705a"
+    }
+  ],
+  "unchanged_runtime_data_and_recipe_sources": true,
+  "boundaries": [
+    "Normal producer output is compared exactly; compact trajectory output plus all-row integrity checks, not a claim of persisting every voxel at every step.",
+    "This guard commission does not change science, targets, tolerances, morphology or renderer authority.",
+    "Only the existing Schneeberg seed42 checkpoint is commissioned; unsupported identities remain refused.",
+    "Configured CI, exact merge trees and deployment are verified separately after this repair is committed."
+  ]
+}

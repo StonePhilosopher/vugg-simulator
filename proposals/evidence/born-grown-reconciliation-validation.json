@@ -232,5 +232,13 @@
     "Birth-census comparison was unavailable and remains unverified.",
     "No true threshold crossing was affected by old rounding in this seed42 fleet; synthetic boundary fixtures prove the correction.",
     "The instrument is passive and does not certify machine cleanliness, cold-CI completeness, or geological truth."
-  ]
+  ],
+  "upstream_followup": {
+    "validated_upstream": "2c8b16ae66e04493c74ccbf4a5465265202031c5",
+    "receipt": "proposals/evidence/born-grown-upstream-validation.json",
+    "sha256": "24b907bc10d4af4e258afe374a137c1f2570ebddbaf4a3ae53f57c36f013a646",
+    "runtime_execution_unchanged": true,
+    "first_panel_retained_unmodified": true,
+    "additional_actual_runs": 41
+  }
 }
