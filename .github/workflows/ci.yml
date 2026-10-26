@@ -50,6 +50,9 @@ jobs:
       - name: Born-grown measurement boundaries
         run: npm test -- --file tests-js/born-grown-audit.test.ts
 
+      - name: Isolated local acid and finite carbonate pilot (unit tests and reference replay)
+        run: npm test -- --file tests-js/local-acid-buffer.test.ts
+
       - name: Cation commissioning identity guards
         run: npm test -- --file tests-js/cation-sink-audit.test.ts
 
