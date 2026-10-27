@@ -229,6 +229,7 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
   return {
     simVersion: SIM_VERSION,
     modelDigest: MODEL_DIGEST,
+    ...(localStateFoundationFor(sim) ? {localConservedFoundation: localStateFoundationFor(sim)} : {}),
     scenarioId: runtime?.origin?.scenarioId || sim?.conditions?._scenario?.id || null,
     seed: runtime?.origin?.seed ?? null,
     step: Number(sim?.step) || 0,

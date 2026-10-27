@@ -524,6 +524,7 @@ class VugSimulator {
   }
 
   run_step() {
+    assertLegacyStepHasNoLocalStateFoundation(this);
     this.log = [];
     this.step++;
     this.conditions._sim_step = this.step;

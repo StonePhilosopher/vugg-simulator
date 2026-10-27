@@ -1501,6 +1501,7 @@ function _saveReplayCompatibility(rec) {
 function _saveSealActiveState() {
   if (!_saveActiveRecord) return;
   const sim = _liveFortressSim();
+  assertLegacySaveHasNoLocalStateFoundation(sim);
   if (sim && typeof simulationStateFingerprint === 'function') {
     _saveActiveRecord.replay_state_digest = simulationStateFingerprint(sim);
     _saveActiveRecord.replay_integrity = 'state-fingerprint-v1';
@@ -1718,6 +1719,7 @@ function _saveCommitAction() {
 // per action; also the mode-leave hook (94-ui-menu switchMode).
 function _savePersistActive() {
   if (_fortressReplaying || !_saveActiveRecord) return false;
+  assertLegacySaveHasNoLocalStateFoundation(_liveFortressSim());
   _saveActiveRecord.updated_at = new Date().toISOString();
   _saveActiveRecord.summary = _saveSummaryFromSim() || _saveActiveRecord.summary;
   _saveActiveRecord.broth_final = _saveCaptureBroth();
