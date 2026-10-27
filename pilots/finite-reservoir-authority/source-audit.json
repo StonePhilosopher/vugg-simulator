@@ -1,0 +1,917 @@
+{
+  "schema": "vugg-finite-reservoir-source-audit-v1",
+  "base": "c2651d4f2c2526b4944ef853ea6676bd9b4afd97",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "productionExecutionDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "productionRuntimeUnchanged": true,
+  "registeredProducerContractsUnchanged": true,
+  "producerContracts": {
+    "seed42-baseline": "f8ccf28164355a79c2e00033c283bbb7a7aa45cd27451020f6042f46ce4db7a3",
+    "strip-archive": "f74be774ec9fcc98053bfae81ea2a8e0688d40951e10489ce775742f7b9d6ca7",
+    "locality-frequency": "4012da7d90b3d8f74ac310d23217fdd686ecbf9b72b21a109f2965e05a731db5",
+    "strip-digest": "8a0964a47a4d54bdba33bd9acd2b56d6877121a5ae91d8b57d00c892396104df",
+    "claim-cards": "240ceadfcb0470401fd0fe837bc8cf49c12be72a3e3ed87227b677fca25a139b",
+    "mechanism-witnesses": "279c8fc0ae4f1a81b2b673e90827b4e1cde1f7cbfdd8dad8c062d4be3a038daa",
+    "science-provenance": "a4d305d4070be40e9ada121ca99f1d7e5c013559c44a8f42891238b0c0cf2bfa",
+    "science-receipt": "29c0e5fc0f93ff70ec571bc274dea71243b79e884d31be013e47b3654c2d0c19",
+    "guided-tutorial-browser": "71a2aa779891a90e54888c9bacc0eaf8d0b2781642dcbc367f3a9588eeb10e64"
+  },
+  "sourceHashes": {
+    "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
+    "js/19-mineral-stoichiometry.ts": "2d3e5414d486dc9759005cfb439f8eaebe865b65b0dd9bf21a8e149c74ca4c64",
+    "js/20-chemistry-fluid.ts": "ef9c8ec76c98a9d7322273e4573de5b1408cfa44339b2a50adcf5f11e2a69da6",
+    "js/20b-chemistry-carbonate-system.ts": "075fcdf19e03893df19997e1bee05eed220cea03d43f88e0ad0162e87d095012",
+    "js/22-geometry-wall.ts": "162f3c91181689141d1b4ee1690c13ba47185a72b005cf380fce7170b9b707a9",
+    "js/22a-geometry-cavity-evolution.ts": "27090b3fdcddf58cb101f724606b312a2f1a28d3ba52e592bf7915b9eec5549b",
+    "js/24-geometry-voxel-grid.ts": "f17314ef72446175aa3c8da183a1e53d3e0e8942bcf866e43bf01ec745c04a72",
+    "js/24e-local-conserved-state.ts": "3ea7549f4cf71536fa4a5161e5a19a0664a37467badcc46f9808373a956663f6",
+    "js/27-geometry-crystal.ts": "f82d36decad0613b5238dd40168c44ce0eb3533c7664240a45b3f99e23e2b729",
+    "js/85c-simulator-state.ts": "050557ebf44fbfa6724a7d9e006d6885e9894cb60c863a36dd091d1426ce6a37",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
+    "pilots/finite-reservoir-authority/contract.mjs": "392195155899ea4d8dff859dfba9058beffa46063e8ca53dae33260a616c19f1",
+    "pilots/finite-reservoir-authority/audit.mjs": "cbb9f881ec43b7c3fa05b8e7bdbc1b94fcbec69a6839830e38cd2f8d018c7e4b"
+  },
+  "observation": "raw authored declarations only; no growth or transport executed; absent raw values are null, never inferred zero",
+  "summary": {
+    "authoredScenarios": 41,
+    "scenariosWithFiniteWaterDeclarations": 0,
+    "scenariosWithDeclaredDICAndReducedAlkalinity": 2,
+    "modeledLimestoneWallProxies": 15,
+    "modeledDolomiteWallProxies": 4
+  },
+  "candidates": {
+    "water": {
+      "owner": "no legacy physical per-cell mass owner",
+      "basis": "mg/kg-solvent concentrations do not supply kg water",
+      "missing": [
+        "physical water mass or an evidenced wet-volume/density mapping",
+        "canonical cell allocation"
+      ],
+      "eligible": false
+    },
+    "wall": {
+      "owner": "one conditions.wall host ledger",
+      "basis": "calibrated mmol formula/kg solvent reference; transactions name a 1 kg reference",
+      "missing": [
+        "physical/reference-stock reconciliation",
+        "explicit spatial stock allocation"
+      ],
+      "eligible": false,
+      "rule": "never duplicate the global host stock into every voxel; dolomite is not calcite"
+    },
+    "crystal": {
+      "owner": "accepted-zone remaining booked uptake",
+      "basis": "remaining thickness times booked mg/kg-reference per micrometre",
+      "missing": [
+        "reference-to-absolute inventory mapping",
+        "per-crystal spatial debit ownership"
+      ],
+      "eligible": false
+    },
+    "surface": {
+      "owner": "procedural completed surface",
+      "basis": "mm3; scientific-solid closure unresolved",
+      "rule": "forbidden as a substitute for chemical inventory",
+      "eligible": false
+    }
+  },
+  "primaryEvidence": [
+    {
+      "url": "https://water.usgs.gov/water-resources/software/PHREEQC/documentation/phreeqc3-html/phreeqc3-48.htm",
+      "supports": "Explicit kg solvent converts molality into absolute component moles; pH is not that water inventory."
+    },
+    {
+      "url": "https://water.usgs.gov/water-resources/software/PHREEQC/documentation/phreeqc3-html/phreeqc3-13.htm",
+      "supports": "Pure-phase amount is an independently specified finite stock in moles, not an aqueous concentration."
+    }
+  ],
+  "productionAllowed": false,
+  "reactions": false,
+  "transport": false,
+  "scenarios": [
+    {
+      "scenario": "amethyst_geode",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 40,
+        "CO3": 20,
+        "Fe": 45,
+        "S_sulfate": null,
+        "O2": 0.4
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "asbestos_hills_crack_seal",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 10,
+        "CO3": 5,
+        "Fe": 300,
+        "S_sulfate": null,
+        "O2": 0.28
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 9,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "banded_iron_formation",
+      "rawWallThicknessMm": 1000
+    },
+    {
+      "scenario": "asbestos_hills_surficial_alteration",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 10,
+        "CO3": 5,
+        "Fe": 300,
+        "S_sulfate": null,
+        "O2": 0.28
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 9,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "banded_iron_formation",
+      "rawWallThicknessMm": 1000
+    },
+    {
+      "scenario": "bisbee",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 60,
+        "CO3": 30,
+        "Fe": 200,
+        "S_sulfate": null,
+        "O2": 0.05
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "chiastolite_hornfels",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 30,
+        "CO3": 20,
+        "Fe": 20,
+        "S_sulfate": null,
+        "O2": 0.05
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": 800
+    },
+    {
+      "scenario": "colorado_plateau",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 100,
+        "CO3": 60,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 1.2
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "sandstone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "cooling",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 80,
+        "CO3": 30,
+        "Fe": 5,
+        "S_sulfate": null,
+        "O2": 0.1
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.8,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "dolomite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "deccan_zeolite",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 180,
+        "CO3": 0,
+        "Fe": 0,
+        "S_sulfate": null,
+        "O2": 1.5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 8.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": 200
+    },
+    {
+      "scenario": "elmwood",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 350,
+        "CO3": 180,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 0.25
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.1,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "dolomite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "epithermal_telluride",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 80,
+        "CO3": 30,
+        "Fe": 12,
+        "S_sulfate": null,
+        "O2": 0.05
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "phonolite",
+      "rawWallThicknessMm": 200
+    },
+    {
+      "scenario": "gem_pegmatite",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 30,
+        "CO3": 15,
+        "Fe": 50,
+        "S_sulfate": null,
+        "O2": 0.1
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.8,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "great_salt_plains",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 1500,
+        "CO3": 15,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 1.6
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.6,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "sandstone",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "grimsel_alpine_cleft",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 200,
+        "CO3": 30,
+        "Fe": 30,
+        "S_sulfate": null,
+        "O2": 1.5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "jeffrey_mine",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 350,
+        "CO3": 5,
+        "Fe": 50,
+        "S_sulfate": null,
+        "O2": 0.1
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 10,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "ultramafic",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "marble_contact_metamorphism",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 800,
+        "CO3": 50,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 0.3
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 8,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 1200
+    },
+    {
+      "scenario": "mvt",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 300,
+        "CO3": 250,
+        "Fe": 15,
+        "S_sulfate": null,
+        "O2": 0.25
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "naica_geothermal",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 600,
+        "CO3": 15,
+        "Fe": 3,
+        "S_sulfate": null,
+        "O2": 1.5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 1000
+    },
+    {
+      "scenario": "ouro_preto",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 40,
+        "CO3": 20,
+        "Fe": 6,
+        "S_sulfate": null,
+        "O2": 0.3
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "porphyry",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 80,
+        "CO3": 50,
+        "Fe": 30,
+        "S_sulfate": null,
+        "O2": 0.2
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 4.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "pulse",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 200,
+        "CO3": 120,
+        "Fe": 5,
+        "S_sulfate": null,
+        "O2": null
+      },
+      "missingRawFields": [
+        "S_sulfate",
+        "O2"
+      ],
+      "rawPH": null,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "radioactive_pegmatite",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 50,
+        "CO3": 20,
+        "Fe": 60,
+        "S_sulfate": null,
+        "O2": 0
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "reactivated_fluorite_vein",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 300,
+        "CO3": 250,
+        "Fe": 15,
+        "S_sulfate": null,
+        "O2": 0.25
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "reactive_wall",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 250,
+        "CO3": 200,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 0.05
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "dolomite",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "roughten_gill",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 350,
+        "CO3": 350,
+        "Fe": 30,
+        "S_sulfate": 0,
+        "O2": 0.05
+      },
+      "missingRawFields": [],
+      "rawPH": 6,
+      "rawSulfurPoolsExplicit": true,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "sabkha_dolomitization",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 400,
+        "CO3": 300,
+        "Fe": 5,
+        "S_sulfate": 2700,
+        "O2": 1.5
+      },
+      "missingRawFields": [],
+      "rawPH": 8.3,
+      "rawSulfurPoolsExplicit": true,
+      "declaredCarbonateDIC": true,
+      "declaredReducedAlkalinity": true,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 300
+    },
+    {
+      "scenario": "schneeberg",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 50,
+        "CO3": 20,
+        "Fe": 40,
+        "S_sulfate": null,
+        "O2": 0
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "searles_lake",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 25,
+        "CO3": 80,
+        "Fe": 1,
+        "S_sulfate": null,
+        "O2": 1.6
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 9.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "shigar_pegmatite",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 20,
+        "CO3": 8,
+        "Fe": 40,
+        "S_sulfate": null,
+        "O2": 0.15
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": 500
+    },
+    {
+      "scenario": "sicily_solfifera",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 600,
+        "CO3": 80,
+        "Fe": 5,
+        "S_sulfate": 300,
+        "O2": 0.02
+      },
+      "missingRawFields": [],
+      "rawPH": 6,
+      "rawSulfurPoolsExplicit": true,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "stalactite_demo",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 2500,
+        "CO3": 2500,
+        "Fe": 1,
+        "S_sulfate": null,
+        "O2": 5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 8.3,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "sulphur_bank",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 80,
+        "CO3": 5,
+        "Fe": 25,
+        "S_sulfate": 0,
+        "O2": 0.4
+      },
+      "missingRawFields": [],
+      "rawPH": 1.8,
+      "rawSulfurPoolsExplicit": true,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "sunnyside_american_tunnel",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 200,
+        "CO3": 50,
+        "Fe": 45,
+        "S_sulfate": null,
+        "O2": 0.05
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 4.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "supergene_oxidation",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 120,
+        "CO3": 110,
+        "Fe": 40,
+        "S_sulfate": null,
+        "O2": 1.8
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.8,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "dolomite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "tn457_barite_pulses",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 40,
+        "CO3": 20,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": 0.15
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": 200
+    },
+    {
+      "scenario": "tormiq_alpine_cleft",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 600,
+        "CO3": 50,
+        "Fe": 40,
+        "S_sulfate": null,
+        "O2": 1.5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 7,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "tutorial_first_crystal",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 150,
+        "CO3": 100,
+        "Fe": 8,
+        "S_sulfate": null,
+        "O2": null
+      },
+      "missingRawFields": [
+        "S_sulfate",
+        "O2"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "tutorial_mn_calcite",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 300,
+        "CO3": 250,
+        "Fe": 60,
+        "S_sulfate": null,
+        "O2": null
+      },
+      "missingRawFields": [
+        "S_sulfate",
+        "O2"
+      ],
+      "rawPH": 7,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "tutorial_travertine",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 350,
+        "CO3": 500,
+        "Fe": 5,
+        "S_sulfate": null,
+        "O2": null
+      },
+      "missingRawFields": [
+        "S_sulfate",
+        "O2"
+      ],
+      "rawPH": 6.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": true,
+      "declaredReducedAlkalinity": true,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "ultramafic_supergene",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 30,
+        "CO3": 80,
+        "Fe": 15,
+        "S_sulfate": null,
+        "O2": 1.5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 8.5,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "basalt",
+      "rawWallThicknessMm": 300
+    },
+    {
+      "scenario": "wittichen",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 250,
+        "CO3": 45,
+        "Fe": 10,
+        "S_sulfate": null,
+        "O2": 0.15
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 6.2,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "pegmatite",
+      "rawWallThicknessMm": null
+    },
+    {
+      "scenario": "zoned_dripstone_cave",
+      "authoredFiniteWaterFields": [],
+      "rawFluidFields": {
+        "Ca": 2000,
+        "CO3": 2200,
+        "Fe": 1,
+        "S_sulfate": null,
+        "O2": 5
+      },
+      "missingRawFields": [
+        "S_sulfate"
+      ],
+      "rawPH": 8.4,
+      "rawSulfurPoolsExplicit": null,
+      "declaredCarbonateDIC": false,
+      "declaredReducedAlkalinity": false,
+      "rawWallComposition": "limestone",
+      "rawWallThicknessMm": null
+    }
+  ]
+}
