@@ -1,0 +1,4 @@
+reference-transcript.json.gz binary
+# The SHA-pinned, untouched USGS fixture has one space-before-tab indentation.
+# Preserve its exact source; retain all other whitespace checks.
+references/official-ex5.pqi whitespace=-space-before-tab
