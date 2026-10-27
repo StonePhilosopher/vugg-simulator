@@ -373,6 +373,7 @@ class CavityVoxelGrid {
   // inline neighbor indices, per-field variance skip) and ready to
   // ship; only the dispatch is gated.
   diffuse(rate: number, fieldNames: string[]): void {
+    assertLegacyDiffusionHasNoLocalStateFoundation(this);
     if (!(rate > 0)) return;
     if (!fieldNames || !fieldNames.length) return;
     // v160 (Phase 2b) — real per-voxel 3D Laplacian. The d=0 slab is

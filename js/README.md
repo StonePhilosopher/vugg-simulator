@@ -116,6 +116,7 @@ visible to later files.
 | 23a    | `23a-geometry-cavity-field.ts` | deterministic Cartesian shadow field: exact bubble union + authored radial masks + replayable star-shaped ledger projection |
 | 23b    | `23b-geometry-marching-cubes.ts` | indexed Marching Cubes extraction with shared-face asymptotic decider |
 | 24     | `24-geometry-voxel-grid.ts` | `CavityVoxelGrid` — interior 3D fluid store ((r,c,d) voxels) + `_diffuseFull` 3D diffusion |
+| 24e    | `24e-local-conserved-state.ts` | Dormant explicit per-cell inventories and initial checkpoints; reactions/transport withheld ([contract](../proposals/HANDOFF-PRODUCTION-LOCAL-STATE-V1.md)) |
 | 25     | `25-chemistry-conditions.ts` | `VugConditions` class (T/P/fluid/wall/ring fields + small helpers like `effective_temperature`, `silica_equilibrium`, `ring_water_state`) |
 | 26     | `26-mineral-paragenesis.ts` | substrate-affinity + paragenesis tables (which minerals seed on which) |
 | 27     | `27-geometry-crystal.ts`   | `GrowthZone` + `Crystal` classes          |
