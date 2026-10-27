@@ -110293,6 +110293,936 @@
         "surface_film": null,
         "zone_count": 1
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 28,
+        "captured_step": 200,
+        "sample_index": 199,
+        "nucleation_step": 110,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 110
+          },
+          {
+            "zone_index": 1,
+            "step": 111
+          },
+          {
+            "zone_index": 2,
+            "step": 112
+          },
+          {
+            "zone_index": 3,
+            "step": 113
+          },
+          {
+            "zone_index": 4,
+            "step": 114
+          },
+          {
+            "zone_index": 5,
+            "step": 115
+          },
+          {
+            "zone_index": 6,
+            "step": 116
+          },
+          {
+            "zone_index": 7,
+            "step": 117
+          },
+          {
+            "zone_index": 8,
+            "step": 118
+          },
+          {
+            "zone_index": 9,
+            "step": 119
+          },
+          {
+            "zone_index": 10,
+            "step": 120
+          },
+          {
+            "zone_index": 11,
+            "step": 121
+          },
+          {
+            "zone_index": 12,
+            "step": 122
+          },
+          {
+            "zone_index": 13,
+            "step": 123
+          },
+          {
+            "zone_index": 14,
+            "step": 124
+          },
+          {
+            "zone_index": 15,
+            "step": 125
+          },
+          {
+            "zone_index": 16,
+            "step": 126
+          },
+          {
+            "zone_index": 17,
+            "step": 127
+          },
+          {
+            "zone_index": 18,
+            "step": 128
+          },
+          {
+            "zone_index": 19,
+            "step": 129
+          },
+          {
+            "zone_index": 20,
+            "step": 130
+          },
+          {
+            "zone_index": 21,
+            "step": 131
+          },
+          {
+            "zone_index": 22,
+            "step": 132
+          },
+          {
+            "zone_index": 23,
+            "step": 133
+          },
+          {
+            "zone_index": 24,
+            "step": 134
+          },
+          {
+            "zone_index": 25,
+            "step": 135
+          },
+          {
+            "zone_index": 26,
+            "step": 136
+          },
+          {
+            "zone_index": 27,
+            "step": 137
+          },
+          {
+            "zone_index": 28,
+            "step": 138
+          },
+          {
+            "zone_index": 29,
+            "step": 139
+          },
+          {
+            "zone_index": 30,
+            "step": 140
+          },
+          {
+            "zone_index": 31,
+            "step": 141
+          },
+          {
+            "zone_index": 32,
+            "step": 142
+          },
+          {
+            "zone_index": 33,
+            "step": 143
+          },
+          {
+            "zone_index": 34,
+            "step": 144
+          },
+          {
+            "zone_index": 35,
+            "step": 145
+          },
+          {
+            "zone_index": 36,
+            "step": 146
+          },
+          {
+            "zone_index": 37,
+            "step": 147
+          },
+          {
+            "zone_index": 38,
+            "step": 148
+          },
+          {
+            "zone_index": 39,
+            "step": 149
+          },
+          {
+            "zone_index": 40,
+            "step": 150
+          },
+          {
+            "zone_index": 41,
+            "step": 151
+          },
+          {
+            "zone_index": 42,
+            "step": 152
+          },
+          {
+            "zone_index": 43,
+            "step": 153
+          },
+          {
+            "zone_index": 44,
+            "step": 154
+          },
+          {
+            "zone_index": 45,
+            "step": 155
+          },
+          {
+            "zone_index": 46,
+            "step": 156
+          },
+          {
+            "zone_index": 47,
+            "step": 157
+          },
+          {
+            "zone_index": 48,
+            "step": 158
+          },
+          {
+            "zone_index": 49,
+            "step": 159
+          },
+          {
+            "zone_index": 50,
+            "step": 160
+          },
+          {
+            "zone_index": 51,
+            "step": 161
+          },
+          {
+            "zone_index": 52,
+            "step": 162
+          },
+          {
+            "zone_index": 53,
+            "step": 163
+          },
+          {
+            "zone_index": 54,
+            "step": 164
+          },
+          {
+            "zone_index": 55,
+            "step": 165
+          },
+          {
+            "zone_index": 56,
+            "step": 166
+          },
+          {
+            "zone_index": 57,
+            "step": 167
+          },
+          {
+            "zone_index": 58,
+            "step": 168
+          },
+          {
+            "zone_index": 59,
+            "step": 169
+          },
+          {
+            "zone_index": 60,
+            "step": 170
+          },
+          {
+            "zone_index": 61,
+            "step": 171
+          },
+          {
+            "zone_index": 62,
+            "step": 172
+          },
+          {
+            "zone_index": 63,
+            "step": 173
+          },
+          {
+            "zone_index": 64,
+            "step": 174
+          },
+          {
+            "zone_index": 65,
+            "step": 175
+          },
+          {
+            "zone_index": 66,
+            "step": 176
+          },
+          {
+            "zone_index": 67,
+            "step": 177
+          },
+          {
+            "zone_index": 68,
+            "step": 178
+          },
+          {
+            "zone_index": 69,
+            "step": 179
+          },
+          {
+            "zone_index": 70,
+            "step": 180
+          },
+          {
+            "zone_index": 71,
+            "step": 181
+          },
+          {
+            "zone_index": 72,
+            "step": 182
+          },
+          {
+            "zone_index": 73,
+            "step": 183
+          },
+          {
+            "zone_index": 74,
+            "step": 184
+          },
+          {
+            "zone_index": 75,
+            "step": 185
+          },
+          {
+            "zone_index": 76,
+            "step": 186
+          },
+          {
+            "zone_index": 77,
+            "step": 187
+          },
+          {
+            "zone_index": 78,
+            "step": 188
+          },
+          {
+            "zone_index": 79,
+            "step": 189
+          },
+          {
+            "zone_index": 80,
+            "step": 190
+          },
+          {
+            "zone_index": 81,
+            "step": 191
+          },
+          {
+            "zone_index": 82,
+            "step": 192
+          },
+          {
+            "zone_index": 83,
+            "step": 193
+          },
+          {
+            "zone_index": 84,
+            "step": 194
+          },
+          {
+            "zone_index": 85,
+            "step": 195
+          },
+          {
+            "zone_index": 86,
+            "step": 196
+          },
+          {
+            "zone_index": 87,
+            "step": 197
+          },
+          {
+            "zone_index": 88,
+            "step": 198
+          },
+          {
+            "zone_index": 89,
+            "step": 199
+          },
+          {
+            "zone_index": 90,
+            "step": 200
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 28,
+          "initial": {
+            "step": 110,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.0979936019518385,
+                "azim": 1.4302977095721126
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "prismatic",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [
+            {
+              "step": 150,
+              "zone_count": 41,
+              "snapshot": {
+                "mineral": "quartz",
+                "_nucTilt": {
+                  "theta": 0.0979936019518385,
+                  "azim": 1.4302977095721126
+                },
+                "enclosed_by": null,
+                "cdr_replaces_crystal_id": null,
+                "dissolved": false,
+                "perimorph_eligible": false,
+                "habit": "scepter overgrowth possible",
+                "twin_law": "",
+                "_polymorph": "alpha-quartz",
+                "growth_environment": "fluid",
+                "twinned": false,
+                "dominant_forms": [
+                  "m{100}",
+                  "r{101}",
+                  "z{011} dominant"
+                ],
+                "split_presence": "absent",
+                "surface_growth_presence": "absent"
+              }
+            }
+          ],
+          "observed_through_step": 200,
+          "observed_zone_count": 91
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 30,
+        "captured_step": 200,
+        "sample_index": 199,
+        "nucleation_step": 150,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 150
+          },
+          {
+            "zone_index": 1,
+            "step": 151
+          },
+          {
+            "zone_index": 2,
+            "step": 152
+          },
+          {
+            "zone_index": 3,
+            "step": 153
+          },
+          {
+            "zone_index": 4,
+            "step": 154
+          },
+          {
+            "zone_index": 5,
+            "step": 155
+          },
+          {
+            "zone_index": 6,
+            "step": 156
+          },
+          {
+            "zone_index": 7,
+            "step": 157
+          },
+          {
+            "zone_index": 8,
+            "step": 158
+          },
+          {
+            "zone_index": 9,
+            "step": 159
+          },
+          {
+            "zone_index": 10,
+            "step": 160
+          },
+          {
+            "zone_index": 11,
+            "step": 161
+          },
+          {
+            "zone_index": 12,
+            "step": 162
+          },
+          {
+            "zone_index": 13,
+            "step": 163
+          },
+          {
+            "zone_index": 14,
+            "step": 164
+          },
+          {
+            "zone_index": 15,
+            "step": 165
+          },
+          {
+            "zone_index": 16,
+            "step": 166
+          },
+          {
+            "zone_index": 17,
+            "step": 167
+          },
+          {
+            "zone_index": 18,
+            "step": 168
+          },
+          {
+            "zone_index": 19,
+            "step": 169
+          },
+          {
+            "zone_index": 20,
+            "step": 170
+          },
+          {
+            "zone_index": 21,
+            "step": 171
+          },
+          {
+            "zone_index": 22,
+            "step": 172
+          },
+          {
+            "zone_index": 23,
+            "step": 173
+          },
+          {
+            "zone_index": 24,
+            "step": 174
+          },
+          {
+            "zone_index": 25,
+            "step": 175
+          },
+          {
+            "zone_index": 26,
+            "step": 176
+          },
+          {
+            "zone_index": 27,
+            "step": 177
+          },
+          {
+            "zone_index": 28,
+            "step": 178
+          },
+          {
+            "zone_index": 29,
+            "step": 179
+          },
+          {
+            "zone_index": 30,
+            "step": 180
+          },
+          {
+            "zone_index": 31,
+            "step": 181
+          },
+          {
+            "zone_index": 32,
+            "step": 182
+          },
+          {
+            "zone_index": 33,
+            "step": 183
+          },
+          {
+            "zone_index": 34,
+            "step": 184
+          },
+          {
+            "zone_index": 35,
+            "step": 185
+          },
+          {
+            "zone_index": 36,
+            "step": 186
+          },
+          {
+            "zone_index": 37,
+            "step": 187
+          },
+          {
+            "zone_index": 38,
+            "step": 188
+          },
+          {
+            "zone_index": 39,
+            "step": 189
+          },
+          {
+            "zone_index": 40,
+            "step": 190
+          },
+          {
+            "zone_index": 41,
+            "step": 191
+          },
+          {
+            "zone_index": 42,
+            "step": 192
+          },
+          {
+            "zone_index": 43,
+            "step": 193
+          },
+          {
+            "zone_index": 44,
+            "step": 194
+          },
+          {
+            "zone_index": 45,
+            "step": 195
+          },
+          {
+            "zone_index": 46,
+            "step": 196
+          },
+          {
+            "zone_index": 47,
+            "step": 197
+          },
+          {
+            "zone_index": 48,
+            "step": 198
+          },
+          {
+            "zone_index": 49,
+            "step": 199
+          },
+          {
+            "zone_index": 50,
+            "step": 200
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 30,
+          "initial": {
+            "step": 150,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.6269426511237604,
+                "azim": 3.917291910040265
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "scepter overgrowth possible",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 200,
+          "observed_zone_count": 51
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 31,
+        "captured_step": 200,
+        "sample_index": 199,
+        "nucleation_step": 151,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 151
+          },
+          {
+            "zone_index": 1,
+            "step": 152
+          },
+          {
+            "zone_index": 2,
+            "step": 153
+          },
+          {
+            "zone_index": 3,
+            "step": 154
+          },
+          {
+            "zone_index": 4,
+            "step": 155
+          },
+          {
+            "zone_index": 5,
+            "step": 156
+          },
+          {
+            "zone_index": 6,
+            "step": 157
+          },
+          {
+            "zone_index": 7,
+            "step": 158
+          },
+          {
+            "zone_index": 8,
+            "step": 159
+          },
+          {
+            "zone_index": 9,
+            "step": 160
+          },
+          {
+            "zone_index": 10,
+            "step": 161
+          },
+          {
+            "zone_index": 11,
+            "step": 162
+          },
+          {
+            "zone_index": 12,
+            "step": 163
+          },
+          {
+            "zone_index": 13,
+            "step": 164
+          },
+          {
+            "zone_index": 14,
+            "step": 165
+          },
+          {
+            "zone_index": 15,
+            "step": 166
+          },
+          {
+            "zone_index": 16,
+            "step": 167
+          },
+          {
+            "zone_index": 17,
+            "step": 168
+          },
+          {
+            "zone_index": 18,
+            "step": 169
+          },
+          {
+            "zone_index": 19,
+            "step": 170
+          },
+          {
+            "zone_index": 20,
+            "step": 171
+          },
+          {
+            "zone_index": 21,
+            "step": 172
+          },
+          {
+            "zone_index": 22,
+            "step": 173
+          },
+          {
+            "zone_index": 23,
+            "step": 174
+          },
+          {
+            "zone_index": 24,
+            "step": 175
+          },
+          {
+            "zone_index": 25,
+            "step": 176
+          },
+          {
+            "zone_index": 26,
+            "step": 177
+          },
+          {
+            "zone_index": 27,
+            "step": 178
+          },
+          {
+            "zone_index": 28,
+            "step": 179
+          },
+          {
+            "zone_index": 29,
+            "step": 180
+          },
+          {
+            "zone_index": 30,
+            "step": 181
+          },
+          {
+            "zone_index": 31,
+            "step": 182
+          },
+          {
+            "zone_index": 32,
+            "step": 183
+          },
+          {
+            "zone_index": 33,
+            "step": 184
+          },
+          {
+            "zone_index": 34,
+            "step": 185
+          },
+          {
+            "zone_index": 35,
+            "step": 186
+          },
+          {
+            "zone_index": 36,
+            "step": 187
+          },
+          {
+            "zone_index": 37,
+            "step": 188
+          },
+          {
+            "zone_index": 38,
+            "step": 189
+          },
+          {
+            "zone_index": 39,
+            "step": 190
+          },
+          {
+            "zone_index": 40,
+            "step": 191
+          },
+          {
+            "zone_index": 41,
+            "step": 192
+          },
+          {
+            "zone_index": 42,
+            "step": 193
+          },
+          {
+            "zone_index": 43,
+            "step": 194
+          },
+          {
+            "zone_index": 44,
+            "step": 195
+          },
+          {
+            "zone_index": 45,
+            "step": 196
+          },
+          {
+            "zone_index": 46,
+            "step": 197
+          },
+          {
+            "zone_index": 47,
+            "step": 198
+          },
+          {
+            "zone_index": 48,
+            "step": 199
+          },
+          {
+            "zone_index": 49,
+            "step": 200
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 31,
+          "initial": {
+            "step": 151,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.15175785374941414,
+                "azim": 0.30204612840506134
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "scepter overgrowth possible",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 200,
+          "observed_zone_count": 50
+        }
+      }
     ]
   }
 }

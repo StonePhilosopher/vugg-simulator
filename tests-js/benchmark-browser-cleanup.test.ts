@@ -1,10 +1,17 @@
+import { execFile, spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { captureOwnedBrowserProcessReceipts, ownedProcessExited, waitForDevToolsReceipt } from '../tools/browser-workflow.mjs';
-import { cleanupOwnedBrowserResources as cleanupImplementation } from '../tools/benchmark-browser-cleanup.mjs';
+import {
+  captureOwnedBrowserProcessReceipts, NATIVE_HELPER_COMPILE_TIMEOUT_MS, NATIVE_HELPER_LOAD, ownedProcessExited,
+  waitForDevToolsReceipt, waitForOwnedExit, windowsProcessTree,
+} from '../tools/browser-workflow.mjs';
+import {
+  cleanupOwnedBrowserResources as cleanupImplementation, terminateExactBrowserProcess, VUGG_BENCHMARK_STOP_SOURCE,
+} from '../tools/benchmark-browser-cleanup.mjs';
 const devtoolsReceipt = {port: 43123, webSocketDebuggerUrl: 'ws://127.0.0.1:43123/devtools/browser/owned-profile-uuid'};
 const refused = () => {throw Object.assign(new Error('No listener'), {code: 'ECONNREFUSED'});};
 function cleanupOwnedBrowserResources(resources: any, options: any = {}) {
@@ -183,6 +190,32 @@ describe('benchmark browser cleanup', () => {
     expect(actions).toEqual(['server']);
   });
 
+  it.each(['transient', 'persistent'])('looks again, a bounded number of times, at an unreadable lifetime: %s', async kind => {
+    const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
+    const unreadable = {...root, parentPid: 4000, start_ticks: '0'};
+    let observations = 0;
+    const actions: string[] = [];
+    const cleanup = cleanupOwnedBrowserResources({browser: new FakeOwnedProcess(4000, 0), browserPid: 5000, receipts: [root],
+      closeServer: () => {actions.push('server');}, removeProfile: () => {actions.push('profile');},
+    }, {
+      platform: 'win32',
+      // A tearing-down process refuses its image path for tens of ms before it
+      // signals; by the next capture it is gone, unless it is not dying at all.
+      processTreeProvider: async () => (++observations <= 2 || kind === 'persistent' ? [unreadable] : []),
+      terminateReceipt: async () => {actions.push('terminate');},
+    });
+    if (kind === 'transient') {
+      await expect(cleanup).resolves.toBeUndefined();
+      expect(actions).toEqual(['server', 'profile']);
+    } else {
+      await expect(cleanup).rejects.toThrow(/resources failed cleanup/);
+      expect(actions).toEqual(['server']);
+    }
+    // The root refresh, then three looks at the one receipt (transient: two
+    // looks, then the final settled check).
+    expect(observations).toBe(4);
+  });
+
   it.each(['owned-profile-uuid', 'replacement-nonce', 'timeout', 'mixed-refusal'])(
     'retains the profile if the final endpoint check is unresolved: %s', async endpoint => {
       const root = {pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe'};
@@ -285,6 +318,90 @@ describe('benchmark browser cleanup', () => {
       terminateReceipt: async () => {actions.push('failed-stop');},
     })).rejects.toThrow(/resources failed cleanup/);
     expect(actions).toEqual(['failed-stop', 'server']);
+  });
+
+  it('compiles the exact-stop helper once and loads its bytes for each stop', async () => {
+    const calls: string[] = [];
+    const runner = async (_file: string, args: string[], options: { timeout: number; env: Record<string, string> }) => {
+      const command = args[args.length - 1];
+      const compile = command.includes('-OutputAssembly');
+      calls.push(`${options.timeout} ${compile ? 'compile' : `${command.split(';')[0]} ${options.env.VUGG_NATIVE_HELPER_IMAGE}`}`);
+      return { stdout: compile ? 'VuggBenchmarkStop\r\nTVqQ\r\n' : 'exited\r\n' };
+    };
+    const receipt = { pid: 5000, start_ticks: '500000', executable_path: 'chrome.exe' };
+    await expect(terminateExactBrowserProcess(receipt, { execFileRunner: runner as never })).resolves.toBe('exited');
+    await expect(terminateExactBrowserProcess(receipt, { execFileRunner: runner as never })).resolves.toBe('exited');
+    expect(calls).toEqual([
+      `${NATIVE_HELPER_COMPILE_TIMEOUT_MS} compile`,
+      `15000 ${NATIVE_HELPER_LOAD} TVqQ`,
+      `15000 ${NATIVE_HELPER_LOAD} TVqQ`,
+    ]);
+  });
+
+  it.skipIf(process.platform !== 'win32')('reports a process another handle is already terminating as exited', async () => {
+    // Chrome terminates its own children on Browser.close. Until such a child
+    // is signaled, a few ms later, its identity still reads as live and a
+    // second TerminateProcess is refused with ACCESS_DENIED. The race needs
+    // both handles in one host, so the harness calls Stop beside the first
+    // TerminateProcess on a child that has spawned nothing of its own.
+    const race = String.raw`
+public static class VuggStopRace {
+  [DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+  [DllImport("kernel32.dll", SetLastError=true)] static extern bool TerminateProcess(IntPtr p, uint code);
+  [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr p);
+  public static string Run(uint pid, ulong ticks, string path) {
+    IntPtr h = OpenProcess(0x101001, false, pid);
+    try { return TerminateProcess(h, 7) ? VuggBenchmarkStop.Stop(pid, ticks, path) : "first-terminate-failed"; }
+    finally { CloseHandle(h); }
+  }
+}`;
+    const script = [
+      'Add-Type -TypeDefinition ($env:VUGG_STOP_SOURCE + [Environment]::NewLine + $env:VUGG_STOP_RACE)',
+      '$self = (Get-Process -Id $PID).Path',
+      'foreach ($n in 1..3) {',
+      '  $i = New-Object Diagnostics.ProcessStartInfo',
+      "  $i.FileName = $self; $i.Arguments = '-NoProfile -NonInteractive -Command Start-Sleep 60'",
+      '  $i.UseShellExecute = $false; $i.CreateNoWindow = $true',
+      '  $p = [Diagnostics.Process]::Start($i)',
+      '  try { [Console]::Out.WriteLine([VuggStopRace]::Run([uint32]$p.Id, [uint64]$p.StartTime.ToFileTimeUtc(), $self)) }',
+      '  finally { if (-not $p.HasExited) { $p.Kill() }; $p.WaitForExit(); $p.Dispose() }',
+      '}',
+    ].join('\n');
+    const { stdout } = await promisify(execFile)('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+      env: { ...process.env, VUGG_STOP_SOURCE: VUGG_BENCHMARK_STOP_SOURCE, VUGG_STOP_RACE: race }, windowsHide: true,
+    });
+    expect(stdout.trim().split(/\r?\n/)).toEqual(['exited', 'exited', 'exited']);
+  });
+
+  it.skipIf(process.platform !== 'win32')('reports an exited process that another handle keeps open as exited', async () => {
+    // The holder starts a child, waits for it to exit and keeps its handle, as
+    // Chrome keeps its exited children's while it shuts down. Such a process is
+    // gone from snapshots and still reports creation times, but no image path.
+    const holder = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', [
+      '$i = New-Object Diagnostics.ProcessStartInfo',
+      '$i.FileName = $env:ComSpec', "$i.Arguments = '/c exit 0'", '$i.UseShellExecute = $false', '$i.CreateNoWindow = $true',
+      '$p = [Diagnostics.Process]::Start($i)', '$p.WaitForExit()',
+      '[Console]::Out.WriteLine([string]$p.Id + "|" + $p.StartTime.ToFileTimeUtc() + "|" + $env:ComSpec)',
+      '[Console]::Out.Flush()', '[void][Console]::In.ReadLine()',
+    ].join('; ')], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+    try {
+      const line = await new Promise<string>((resolve, reject) => {
+        let output = '';
+        holder.once('exit', code => reject(new Error(`zombie holder exited early with ${code}`)));
+        holder.stdout!.on('data', chunk => {
+          output += chunk;
+          if (output.includes('\n')) resolve(output.split(/\r?\n/)[0]);
+        });
+      });
+      const [pid, start_ticks, executable_path] = line.split('|');
+      const receipt = { pid: Number(pid), start_ticks, executable_path };
+      expect(start_ticks).toMatch(/^[1-9]\d*$/);
+      expect((await windowsProcessTree()).some(row => row.pid === receipt.pid)).toBe(false);
+      await expect(terminateExactBrowserProcess(receipt)).resolves.toBe('exited');
+    } finally {
+      holder.stdin!.end();
+      if (!(await waitForOwnedExit(holder as never, 10_000))) holder.kill();
+    }
   });
 
   it('bounds stalled CDP and termination, closes the server, and retains a live browser profile', async () => {

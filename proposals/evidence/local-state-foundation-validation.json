@@ -1,0 +1,672 @@
+{
+  "schema": "vugg-local-state-foundation-validation-v1",
+  "base": "db2c17bdac4e7fd3dbcdad1fd03d23f6654d661d",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "runtime_execution_sha256": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "trust": "local-reproduction-not-independent-attestation-not-cold-CI",
+  "checked_payloads": 92,
+  "scenario_count": 41,
+  "locality_seeds": [
+    1,
+    2,
+    42
+  ],
+  "legacy_state_fingerprints_unchanged": 41,
+  "physical_changes": 0,
+  "calcite_production_held": true,
+  "checks": [
+    {
+      "label": "tests-js/baselines/seed42_v286.json",
+      "file": "tests-js/baselines/seed42_v286.json",
+      "before_sha256": "0e3ede6f79765fe617c90661ba2b80ded0640fae7e333d28b1bbe1c0dde5f77b",
+      "after_sha256": "0e3ede6f79765fe617c90661ba2b80ded0640fae7e333d28b1bbe1c0dde5f77b",
+      "physical_changes": 0
+    },
+    {
+      "label": "tests-js/baselines/locality_frequency_v286.json",
+      "file": "tests-js/baselines/locality_frequency_v286.json",
+      "before_sha256": "e8c3a249c893bac4025c1df8e0fdd9d34ffab115a6cec0a49667dc54016d5a4f",
+      "after_sha256": "e8c3a249c893bac4025c1df8e0fdd9d34ffab115a6cec0a49667dc54016d5a4f",
+      "physical_changes": 0
+    },
+    {
+      "label": "tests-js/baselines/strip_digest_v286.json",
+      "file": "tests-js/baselines/strip_digest_v286.json",
+      "before_sha256": "aed78c2f6875158f4d925ca9861301b8865e274301454aa54f422b6afa14ffa6",
+      "after_sha256": "aed78c2f6875158f4d925ca9861301b8865e274301454aa54f422b6afa14ffa6",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/amethyst_geode.json",
+      "file": "archive/strips/v286/amethyst_geode.json",
+      "before_sha256": "6b09a0e5ee3ba70bcca892e8fe16f33f83262342f8369055700d1217470d0bc2",
+      "after_sha256": "6b09a0e5ee3ba70bcca892e8fe16f33f83262342f8369055700d1217470d0bc2",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/asbestos_hills_crack_seal.json",
+      "file": "archive/strips/v286/asbestos_hills_crack_seal.json",
+      "before_sha256": "69dc88f8e2e463e42a51d62fcfd6fa179d6686527ca80b2d3ec9365ab25de58d",
+      "after_sha256": "69dc88f8e2e463e42a51d62fcfd6fa179d6686527ca80b2d3ec9365ab25de58d",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/asbestos_hills_surficial_alteration.json",
+      "file": "archive/strips/v286/asbestos_hills_surficial_alteration.json",
+      "before_sha256": "adfdf2422f423e3ea0507f1d500bb7552cd9fbf8e1a9cfde3ae9d6c9bf93a891",
+      "after_sha256": "adfdf2422f423e3ea0507f1d500bb7552cd9fbf8e1a9cfde3ae9d6c9bf93a891",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/bisbee.json",
+      "file": "archive/strips/v286/bisbee.json",
+      "before_sha256": "6ba65b8eca0d8bdabd44b30459d7a42dad0a4313e69e609dbbdb6fc550210355",
+      "after_sha256": "6ba65b8eca0d8bdabd44b30459d7a42dad0a4313e69e609dbbdb6fc550210355",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/chiastolite_hornfels.json",
+      "file": "archive/strips/v286/chiastolite_hornfels.json",
+      "before_sha256": "c0ec7291769157423ebb54cc3f6a0afb6060b159cd183f142126b6ddec47c533",
+      "after_sha256": "c0ec7291769157423ebb54cc3f6a0afb6060b159cd183f142126b6ddec47c533",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/colorado_plateau.json",
+      "file": "archive/strips/v286/colorado_plateau.json",
+      "before_sha256": "121347dc6f8bbe9ab8d5a50bb4d11c965ab6e6676c23b54f904093dc97b17b0d",
+      "after_sha256": "121347dc6f8bbe9ab8d5a50bb4d11c965ab6e6676c23b54f904093dc97b17b0d",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/cooling.json",
+      "file": "archive/strips/v286/cooling.json",
+      "before_sha256": "e919c2687a2a4ce85916a575754c73a9ee56cfb14ebe23bc0520ebca21d211b5",
+      "after_sha256": "e919c2687a2a4ce85916a575754c73a9ee56cfb14ebe23bc0520ebca21d211b5",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/deccan_zeolite.json",
+      "file": "archive/strips/v286/deccan_zeolite.json",
+      "before_sha256": "e233f725ef5915c5224f3ffdf8c7c48fef55600f5d6c41a1e7177bac5c612958",
+      "after_sha256": "e233f725ef5915c5224f3ffdf8c7c48fef55600f5d6c41a1e7177bac5c612958",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/elmwood.json",
+      "file": "archive/strips/v286/elmwood.json",
+      "before_sha256": "27e1fea8a74509e1d2ad9565e867e9aa8a006b0bc985d87c68ca176931590009",
+      "after_sha256": "27e1fea8a74509e1d2ad9565e867e9aa8a006b0bc985d87c68ca176931590009",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/epithermal_telluride.json",
+      "file": "archive/strips/v286/epithermal_telluride.json",
+      "before_sha256": "fd046c25072259a776934e72bc97ed2f1f8d8aa308b42dea5d91fadaaf04b0ca",
+      "after_sha256": "fd046c25072259a776934e72bc97ed2f1f8d8aa308b42dea5d91fadaaf04b0ca",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/gem_pegmatite.json",
+      "file": "archive/strips/v286/gem_pegmatite.json",
+      "before_sha256": "51efd90db7d7774cf15f5e75f487480bd9b85bbc7cf6de271830a835cae00ba7",
+      "after_sha256": "51efd90db7d7774cf15f5e75f487480bd9b85bbc7cf6de271830a835cae00ba7",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/great_salt_plains.json",
+      "file": "archive/strips/v286/great_salt_plains.json",
+      "before_sha256": "42b3367bdea150966c8bb7c2096ce1a033bc549bbdd72856658fdfd20ea8822c",
+      "after_sha256": "42b3367bdea150966c8bb7c2096ce1a033bc549bbdd72856658fdfd20ea8822c",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/grimsel_alpine_cleft.json",
+      "file": "archive/strips/v286/grimsel_alpine_cleft.json",
+      "before_sha256": "8c1a5136d081c0e7ad76e55207945d86aa2417f7ec6ee4b767d76392c7127e12",
+      "after_sha256": "8c1a5136d081c0e7ad76e55207945d86aa2417f7ec6ee4b767d76392c7127e12",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/jeffrey_mine.json",
+      "file": "archive/strips/v286/jeffrey_mine.json",
+      "before_sha256": "2c7f127b48009f925c1c18f46cc3e95c7f9765dbb1dc99f9ae76daf0485ebc80",
+      "after_sha256": "2c7f127b48009f925c1c18f46cc3e95c7f9765dbb1dc99f9ae76daf0485ebc80",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/marble_contact_metamorphism.json",
+      "file": "archive/strips/v286/marble_contact_metamorphism.json",
+      "before_sha256": "edecf09c4e0c53f688a73ec34bbd7c57e4190be2568b9a74fe788bfbb0a88b58",
+      "after_sha256": "edecf09c4e0c53f688a73ec34bbd7c57e4190be2568b9a74fe788bfbb0a88b58",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/mvt.json",
+      "file": "archive/strips/v286/mvt.json",
+      "before_sha256": "0272dd52a81cf1ea8c62cc773788c5c1c62c4cdd5df075974fb5d92c1a009edf",
+      "after_sha256": "0272dd52a81cf1ea8c62cc773788c5c1c62c4cdd5df075974fb5d92c1a009edf",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/naica_geothermal.json",
+      "file": "archive/strips/v286/naica_geothermal.json",
+      "before_sha256": "ddc5092989068f25b97865b887424adc0ed97eeacf26f77ac7f20e1dbc6987dc",
+      "after_sha256": "ddc5092989068f25b97865b887424adc0ed97eeacf26f77ac7f20e1dbc6987dc",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/ouro_preto.json",
+      "file": "archive/strips/v286/ouro_preto.json",
+      "before_sha256": "5deca9d1b29687ec2b9f079fda0cc7ed18481ed98a916d51c289a63d38ff1efd",
+      "after_sha256": "5deca9d1b29687ec2b9f079fda0cc7ed18481ed98a916d51c289a63d38ff1efd",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/porphyry.json",
+      "file": "archive/strips/v286/porphyry.json",
+      "before_sha256": "4cae7eb5c2a2df677ede62f9e9df0b3c0a5df692a747f031d2d80e4da757894e",
+      "after_sha256": "4cae7eb5c2a2df677ede62f9e9df0b3c0a5df692a747f031d2d80e4da757894e",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/pulse.json",
+      "file": "archive/strips/v286/pulse.json",
+      "before_sha256": "4f544fcd92c23f68a5bed93613de0a3ea92e1a8112951e218d2d603e6601fca7",
+      "after_sha256": "4f544fcd92c23f68a5bed93613de0a3ea92e1a8112951e218d2d603e6601fca7",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/radioactive_pegmatite.json",
+      "file": "archive/strips/v286/radioactive_pegmatite.json",
+      "before_sha256": "833d1c4ccf0f9de5c95fa7f9a232610069f1acf9fb63ac7726a72c9a22181b07",
+      "after_sha256": "833d1c4ccf0f9de5c95fa7f9a232610069f1acf9fb63ac7726a72c9a22181b07",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/reactivated_fluorite_vein.json",
+      "file": "archive/strips/v286/reactivated_fluorite_vein.json",
+      "before_sha256": "fc41776476591ef365bbd50e7de97156e6a102925bb18df109529d51a46964ff",
+      "after_sha256": "fc41776476591ef365bbd50e7de97156e6a102925bb18df109529d51a46964ff",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/reactive_wall.json",
+      "file": "archive/strips/v286/reactive_wall.json",
+      "before_sha256": "f804524425a10853d3dc6696e8343c1e8859831e3c23954ae6a141173111c114",
+      "after_sha256": "f804524425a10853d3dc6696e8343c1e8859831e3c23954ae6a141173111c114",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/roughten_gill.json",
+      "file": "archive/strips/v286/roughten_gill.json",
+      "before_sha256": "db3beccca7f8fe580144be5d854fc39f39c87a636e706b75bb509f042487fc38",
+      "after_sha256": "db3beccca7f8fe580144be5d854fc39f39c87a636e706b75bb509f042487fc38",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/sabkha_dolomitization.json",
+      "file": "archive/strips/v286/sabkha_dolomitization.json",
+      "before_sha256": "6ace764fe8d4b5942f0805ea0f80eee93669d0a301e7768c66677ea55d5bac62",
+      "after_sha256": "6ace764fe8d4b5942f0805ea0f80eee93669d0a301e7768c66677ea55d5bac62",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/schneeberg.json",
+      "file": "archive/strips/v286/schneeberg.json",
+      "before_sha256": "404fa61a895af32bd3d9c2ebe7565222ceadf0c7e3b838c9a78548965437f0f0",
+      "after_sha256": "404fa61a895af32bd3d9c2ebe7565222ceadf0c7e3b838c9a78548965437f0f0",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/searles_lake.json",
+      "file": "archive/strips/v286/searles_lake.json",
+      "before_sha256": "bf336ee8829b87e14fbde6a9d4cdc19d18ca6eb0cfa78a0456387f3c7012965b",
+      "after_sha256": "bf336ee8829b87e14fbde6a9d4cdc19d18ca6eb0cfa78a0456387f3c7012965b",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/shigar_pegmatite.json",
+      "file": "archive/strips/v286/shigar_pegmatite.json",
+      "before_sha256": "c36f51d3c4e31b15b26a45f39517e546a0f3e26d8154ded20298933b1bc935ae",
+      "after_sha256": "c36f51d3c4e31b15b26a45f39517e546a0f3e26d8154ded20298933b1bc935ae",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/sicily_solfifera.json",
+      "file": "archive/strips/v286/sicily_solfifera.json",
+      "before_sha256": "32ec26c30232d1e25d97f4ec408b7fb4a567bdbd160d6d37c8a4b2385005dc7a",
+      "after_sha256": "32ec26c30232d1e25d97f4ec408b7fb4a567bdbd160d6d37c8a4b2385005dc7a",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/stalactite_demo.json",
+      "file": "archive/strips/v286/stalactite_demo.json",
+      "before_sha256": "d67dc6e8b056529f9fdb5510f014eaf6e7b731f657a1910d89714d78dd327067",
+      "after_sha256": "d67dc6e8b056529f9fdb5510f014eaf6e7b731f657a1910d89714d78dd327067",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/sulphur_bank.json",
+      "file": "archive/strips/v286/sulphur_bank.json",
+      "before_sha256": "39df76581f1b10ff94eacb4a72be0f6f6a1a45318f598822e42c4c5fb1e42502",
+      "after_sha256": "39df76581f1b10ff94eacb4a72be0f6f6a1a45318f598822e42c4c5fb1e42502",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/sunnyside_american_tunnel.json",
+      "file": "archive/strips/v286/sunnyside_american_tunnel.json",
+      "before_sha256": "a53dfedf13a3cea9bfd06918641fd3bece41e33aefc741c2f21e8331178d6ed6",
+      "after_sha256": "a53dfedf13a3cea9bfd06918641fd3bece41e33aefc741c2f21e8331178d6ed6",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/supergene_oxidation.json",
+      "file": "archive/strips/v286/supergene_oxidation.json",
+      "before_sha256": "e8719c8b89906c374e0d92eecdf012ac786819db627441b2019f06ee95556cc1",
+      "after_sha256": "e8719c8b89906c374e0d92eecdf012ac786819db627441b2019f06ee95556cc1",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/tn457_barite_pulses.json",
+      "file": "archive/strips/v286/tn457_barite_pulses.json",
+      "before_sha256": "43d4c556cd28081c77859d752cc56e5218c2c209367bdd17dbc5dea04b04765f",
+      "after_sha256": "43d4c556cd28081c77859d752cc56e5218c2c209367bdd17dbc5dea04b04765f",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/tormiq_alpine_cleft.json",
+      "file": "archive/strips/v286/tormiq_alpine_cleft.json",
+      "before_sha256": "a8ea704f2ccfd78afba09857e3718c6b94efc10b85214d2651c43d52ebf3faaa",
+      "after_sha256": "a8ea704f2ccfd78afba09857e3718c6b94efc10b85214d2651c43d52ebf3faaa",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/tutorial_first_crystal.json",
+      "file": "archive/strips/v286/tutorial_first_crystal.json",
+      "before_sha256": "2edc77f9963b94ab16e45a61f710f0f8b378d5b47cbd0d1315f3315328207487",
+      "after_sha256": "2edc77f9963b94ab16e45a61f710f0f8b378d5b47cbd0d1315f3315328207487",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/tutorial_mn_calcite.json",
+      "file": "archive/strips/v286/tutorial_mn_calcite.json",
+      "before_sha256": "299ef907abf55fafc5cca3e6ae33e5fc4fde0678d89057a562421127e34f95f4",
+      "after_sha256": "299ef907abf55fafc5cca3e6ae33e5fc4fde0678d89057a562421127e34f95f4",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/tutorial_travertine.json",
+      "file": "archive/strips/v286/tutorial_travertine.json",
+      "before_sha256": "9d656d60055e9f393af13c7c23c9a7c068bb72da0d0a52360ae0aeebd028f96c",
+      "after_sha256": "9d656d60055e9f393af13c7c23c9a7c068bb72da0d0a52360ae0aeebd028f96c",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/ultramafic_supergene.json",
+      "file": "archive/strips/v286/ultramafic_supergene.json",
+      "before_sha256": "ccfdb575c87b3d1967ab247c7f61173fdb320fde36f9ce1a2d4e9b9d2ca2bc70",
+      "after_sha256": "ccfdb575c87b3d1967ab247c7f61173fdb320fde36f9ce1a2d4e9b9d2ca2bc70",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/wittichen.json",
+      "file": "archive/strips/v286/wittichen.json",
+      "before_sha256": "003f2c8bf2e0c461815b3a2d00ea814e50b9fb0480bc09fe36f3cd5933192e47",
+      "after_sha256": "003f2c8bf2e0c461815b3a2d00ea814e50b9fb0480bc09fe36f3cd5933192e47",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/strips/v286/zoned_dripstone_cave.json",
+      "file": "archive/strips/v286/zoned_dripstone_cave.json",
+      "before_sha256": "355f666b59d067fdddcee26d8f897c558d422864416daf5ea723083ef32593d0",
+      "after_sha256": "355f666b59d067fdddcee26d8f897c558d422864416daf5ea723083ef32593d0",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/amethyst_geode.json",
+      "file": "archive/claim-cards/v286/amethyst_geode.json",
+      "before_sha256": "f1f28a59ac3818219b11c2bd4c50c2e824949e2d8bef4f854eb6aade121211ff",
+      "after_sha256": "f1f28a59ac3818219b11c2bd4c50c2e824949e2d8bef4f854eb6aade121211ff",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/asbestos_hills_crack_seal.json",
+      "file": "archive/claim-cards/v286/asbestos_hills_crack_seal.json",
+      "before_sha256": "bc3f79b2965e3a85190fe057b4be2e16702599f2d42e3f9e4c81b23da68dfdae",
+      "after_sha256": "bc3f79b2965e3a85190fe057b4be2e16702599f2d42e3f9e4c81b23da68dfdae",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/asbestos_hills_surficial_alteration.json",
+      "file": "archive/claim-cards/v286/asbestos_hills_surficial_alteration.json",
+      "before_sha256": "ec8f42261996542e8a4485b6703cc250039dddc53cee11fe04cf35ee8b90b8c5",
+      "after_sha256": "ec8f42261996542e8a4485b6703cc250039dddc53cee11fe04cf35ee8b90b8c5",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/bisbee.json",
+      "file": "archive/claim-cards/v286/bisbee.json",
+      "before_sha256": "ee0bf312285630ff39649e39163609bb1b26031dd8d0594b7d2ab5c2b48ffc59",
+      "after_sha256": "ee0bf312285630ff39649e39163609bb1b26031dd8d0594b7d2ab5c2b48ffc59",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/chiastolite_hornfels.json",
+      "file": "archive/claim-cards/v286/chiastolite_hornfels.json",
+      "before_sha256": "a235f68d88de8deac01ca4d7fda8e6fe1f094a7028562fdc57477eb520a4c3a6",
+      "after_sha256": "a235f68d88de8deac01ca4d7fda8e6fe1f094a7028562fdc57477eb520a4c3a6",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/colorado_plateau.json",
+      "file": "archive/claim-cards/v286/colorado_plateau.json",
+      "before_sha256": "828deba26b215ceb52f8152b3a47cdca3d4e7c4b4ef86f5d53c7d88d82a4552e",
+      "after_sha256": "828deba26b215ceb52f8152b3a47cdca3d4e7c4b4ef86f5d53c7d88d82a4552e",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/cooling.json",
+      "file": "archive/claim-cards/v286/cooling.json",
+      "before_sha256": "6595ea53870f056b099343e98feb242d968f6cb743ab743a4f2a95a26fb37c2c",
+      "after_sha256": "6595ea53870f056b099343e98feb242d968f6cb743ab743a4f2a95a26fb37c2c",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/deccan_zeolite.json",
+      "file": "archive/claim-cards/v286/deccan_zeolite.json",
+      "before_sha256": "5df35257f5af3c63e91fc54db5d72df91ffb7297b538d4f0ca85b7aeed21aad9",
+      "after_sha256": "5df35257f5af3c63e91fc54db5d72df91ffb7297b538d4f0ca85b7aeed21aad9",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/elmwood.json",
+      "file": "archive/claim-cards/v286/elmwood.json",
+      "before_sha256": "54047a7862ecff5a8420998f995fb2bf39912b09c7bc2b918e1e32800a439e8f",
+      "after_sha256": "54047a7862ecff5a8420998f995fb2bf39912b09c7bc2b918e1e32800a439e8f",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/epithermal_telluride.json",
+      "file": "archive/claim-cards/v286/epithermal_telluride.json",
+      "before_sha256": "849f7653863574246171af30d6db3ce5dd3e465119b6d1ab5471f80cf359ec60",
+      "after_sha256": "849f7653863574246171af30d6db3ce5dd3e465119b6d1ab5471f80cf359ec60",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/gem_pegmatite.json",
+      "file": "archive/claim-cards/v286/gem_pegmatite.json",
+      "before_sha256": "973988e5cc5ac5fdd0ba8964718c87ae186588af627313906a982da2f52ed33d",
+      "after_sha256": "973988e5cc5ac5fdd0ba8964718c87ae186588af627313906a982da2f52ed33d",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/great_salt_plains.json",
+      "file": "archive/claim-cards/v286/great_salt_plains.json",
+      "before_sha256": "bcc16e409a3109ae925fc6e77bc82f062830041953255a2fb8d3b94d2ba6d07d",
+      "after_sha256": "bcc16e409a3109ae925fc6e77bc82f062830041953255a2fb8d3b94d2ba6d07d",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/grimsel_alpine_cleft.json",
+      "file": "archive/claim-cards/v286/grimsel_alpine_cleft.json",
+      "before_sha256": "6e595b9ae593cbdc927115e74d69358b3c7fe5d83d1788150622bf79850db746",
+      "after_sha256": "6e595b9ae593cbdc927115e74d69358b3c7fe5d83d1788150622bf79850db746",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/jeffrey_mine.json",
+      "file": "archive/claim-cards/v286/jeffrey_mine.json",
+      "before_sha256": "3078cf75e8413f63aa509c5050c41665d42e86e8e762c2b1a94fbcf995a88f2e",
+      "after_sha256": "3078cf75e8413f63aa509c5050c41665d42e86e8e762c2b1a94fbcf995a88f2e",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/marble_contact_metamorphism.json",
+      "file": "archive/claim-cards/v286/marble_contact_metamorphism.json",
+      "before_sha256": "d38a906bf3f5fdaf9659d88692855cbf091cc2a397e8a163133c4f9d0b8c36c8",
+      "after_sha256": "d38a906bf3f5fdaf9659d88692855cbf091cc2a397e8a163133c4f9d0b8c36c8",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/mvt.json",
+      "file": "archive/claim-cards/v286/mvt.json",
+      "before_sha256": "999d40cfb22392273f3d5c5ac44fe2504ea1ec09ce5bd4ee3658398032df109e",
+      "after_sha256": "999d40cfb22392273f3d5c5ac44fe2504ea1ec09ce5bd4ee3658398032df109e",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/naica_geothermal.json",
+      "file": "archive/claim-cards/v286/naica_geothermal.json",
+      "before_sha256": "a9347ab518a9f87bad5adad011322dce5f98c58ec933b5b6d3dc979bceeae9e6",
+      "after_sha256": "a9347ab518a9f87bad5adad011322dce5f98c58ec933b5b6d3dc979bceeae9e6",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/ouro_preto.json",
+      "file": "archive/claim-cards/v286/ouro_preto.json",
+      "before_sha256": "38e31b4b839c645a8a70b9baed3f092c8711b356c098ffb868892c411576b803",
+      "after_sha256": "38e31b4b839c645a8a70b9baed3f092c8711b356c098ffb868892c411576b803",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/porphyry.json",
+      "file": "archive/claim-cards/v286/porphyry.json",
+      "before_sha256": "e981b62c0459292487b313f0af1ccc6e86055a1ac41d688fdb1380b53490a0cd",
+      "after_sha256": "e981b62c0459292487b313f0af1ccc6e86055a1ac41d688fdb1380b53490a0cd",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/pulse.json",
+      "file": "archive/claim-cards/v286/pulse.json",
+      "before_sha256": "aec73d207754f3d9268f2a225ec52bdeecbcf8c4f4f2192d1d1ffa29dce37d27",
+      "after_sha256": "aec73d207754f3d9268f2a225ec52bdeecbcf8c4f4f2192d1d1ffa29dce37d27",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/radioactive_pegmatite.json",
+      "file": "archive/claim-cards/v286/radioactive_pegmatite.json",
+      "before_sha256": "5c5ea1600f8cd51b536f1e7f56ef03816f46a34b412b4471422f7ba86c5446c8",
+      "after_sha256": "5c5ea1600f8cd51b536f1e7f56ef03816f46a34b412b4471422f7ba86c5446c8",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/reactivated_fluorite_vein.json",
+      "file": "archive/claim-cards/v286/reactivated_fluorite_vein.json",
+      "before_sha256": "246405966da2668e1ff4ac33f986d4396be47a363685079e63c9d81cb68f45af",
+      "after_sha256": "246405966da2668e1ff4ac33f986d4396be47a363685079e63c9d81cb68f45af",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/reactive_wall.json",
+      "file": "archive/claim-cards/v286/reactive_wall.json",
+      "before_sha256": "8fd58448484407bcd0934717f14af36d69e3c27edd826c17e891774650d257da",
+      "after_sha256": "8fd58448484407bcd0934717f14af36d69e3c27edd826c17e891774650d257da",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/roughten_gill.json",
+      "file": "archive/claim-cards/v286/roughten_gill.json",
+      "before_sha256": "7fdd558e2f93d8e96470e074366a34e6ad9ea524838b6f1cc6e7d04af8cfd600",
+      "after_sha256": "7fdd558e2f93d8e96470e074366a34e6ad9ea524838b6f1cc6e7d04af8cfd600",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/sabkha_dolomitization.json",
+      "file": "archive/claim-cards/v286/sabkha_dolomitization.json",
+      "before_sha256": "da13923194a3cda69feb9553912d3e3117f9afe7d8bd541c8b7571d5acb4dea8",
+      "after_sha256": "da13923194a3cda69feb9553912d3e3117f9afe7d8bd541c8b7571d5acb4dea8",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/schneeberg.json",
+      "file": "archive/claim-cards/v286/schneeberg.json",
+      "before_sha256": "e196bdde53eb44ec345882dc4d8846750d5fe0597841ba96076366c4949783a4",
+      "after_sha256": "e196bdde53eb44ec345882dc4d8846750d5fe0597841ba96076366c4949783a4",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/searles_lake.json",
+      "file": "archive/claim-cards/v286/searles_lake.json",
+      "before_sha256": "0a1c72d025447791e39a1e1c38d4b50478ad66cce9fa0ad81b03a9aa6c77279c",
+      "after_sha256": "0a1c72d025447791e39a1e1c38d4b50478ad66cce9fa0ad81b03a9aa6c77279c",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/shigar_pegmatite.json",
+      "file": "archive/claim-cards/v286/shigar_pegmatite.json",
+      "before_sha256": "edafe101d0c8f2a50b696f6d6a1c7b1af76eef68aa71828efa1b7b478731a3b0",
+      "after_sha256": "edafe101d0c8f2a50b696f6d6a1c7b1af76eef68aa71828efa1b7b478731a3b0",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/sicily_solfifera.json",
+      "file": "archive/claim-cards/v286/sicily_solfifera.json",
+      "before_sha256": "036536551472e349820a75d1b3e668646c57248e6af6e66a8541b75741b6e2e7",
+      "after_sha256": "036536551472e349820a75d1b3e668646c57248e6af6e66a8541b75741b6e2e7",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/stalactite_demo.json",
+      "file": "archive/claim-cards/v286/stalactite_demo.json",
+      "before_sha256": "4079bc27b8ff9e56f143a0db6f4969b163450d84df03927b37fcad3c80733939",
+      "after_sha256": "4079bc27b8ff9e56f143a0db6f4969b163450d84df03927b37fcad3c80733939",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/sulphur_bank.json",
+      "file": "archive/claim-cards/v286/sulphur_bank.json",
+      "before_sha256": "d701793ebf75e9d434bf78d42ee2b8f7ea101fa617cab893f944d8bf08e054aa",
+      "after_sha256": "d701793ebf75e9d434bf78d42ee2b8f7ea101fa617cab893f944d8bf08e054aa",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/sunnyside_american_tunnel.json",
+      "file": "archive/claim-cards/v286/sunnyside_american_tunnel.json",
+      "before_sha256": "efa62eb6879baf3e8a1f955cae1a1b4f8e239cc85f4e42e1eb3177984bb641b3",
+      "after_sha256": "efa62eb6879baf3e8a1f955cae1a1b4f8e239cc85f4e42e1eb3177984bb641b3",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/supergene_oxidation.json",
+      "file": "archive/claim-cards/v286/supergene_oxidation.json",
+      "before_sha256": "9720e237a091dc126211599c83e4516d557145450ef41763fed79ccd21fe7a8e",
+      "after_sha256": "9720e237a091dc126211599c83e4516d557145450ef41763fed79ccd21fe7a8e",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/tn457_barite_pulses.json",
+      "file": "archive/claim-cards/v286/tn457_barite_pulses.json",
+      "before_sha256": "24da1fef6a93e9f205f0377eff42eb5ee699eded5c9973000fc7d34712f24409",
+      "after_sha256": "24da1fef6a93e9f205f0377eff42eb5ee699eded5c9973000fc7d34712f24409",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/tormiq_alpine_cleft.json",
+      "file": "archive/claim-cards/v286/tormiq_alpine_cleft.json",
+      "before_sha256": "a32038c2b6077e433d606deee8a56422549c7ac1ab509afe194bc9fe0d505e70",
+      "after_sha256": "a32038c2b6077e433d606deee8a56422549c7ac1ab509afe194bc9fe0d505e70",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/tutorial_first_crystal.json",
+      "file": "archive/claim-cards/v286/tutorial_first_crystal.json",
+      "before_sha256": "a2270cb8ad6d08edf7bc183179fdbb3c0b11eb80b710cb8050d675806c35efb1",
+      "after_sha256": "a2270cb8ad6d08edf7bc183179fdbb3c0b11eb80b710cb8050d675806c35efb1",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/tutorial_mn_calcite.json",
+      "file": "archive/claim-cards/v286/tutorial_mn_calcite.json",
+      "before_sha256": "ff0b4b9ce16b82a093b6e85c7b1f8a300347d1734ca5454f100f634f1a54b5b0",
+      "after_sha256": "ff0b4b9ce16b82a093b6e85c7b1f8a300347d1734ca5454f100f634f1a54b5b0",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/tutorial_travertine.json",
+      "file": "archive/claim-cards/v286/tutorial_travertine.json",
+      "before_sha256": "7e857843b97060d5a6cf9012e22bf33557755adec40c37d77a700b7de915d2ad",
+      "after_sha256": "7e857843b97060d5a6cf9012e22bf33557755adec40c37d77a700b7de915d2ad",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/ultramafic_supergene.json",
+      "file": "archive/claim-cards/v286/ultramafic_supergene.json",
+      "before_sha256": "2ad8cf51ff1563ab33e0aab029061aee02b8ecb22c0a7f5295efbf7bf17a46b5",
+      "after_sha256": "2ad8cf51ff1563ab33e0aab029061aee02b8ecb22c0a7f5295efbf7bf17a46b5",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/wittichen.json",
+      "file": "archive/claim-cards/v286/wittichen.json",
+      "before_sha256": "90e5b390968a5c985fa742d9ce7f7658614db02bc0289ae3aa23d97a3844a716",
+      "after_sha256": "90e5b390968a5c985fa742d9ce7f7658614db02bc0289ae3aa23d97a3844a716",
+      "physical_changes": 0
+    },
+    {
+      "label": "archive/claim-cards/v286/zoned_dripstone_cave.json",
+      "file": "archive/claim-cards/v286/zoned_dripstone_cave.json",
+      "before_sha256": "d01e2fbd14bef27bd52575ac565e2498194e8c7187821c5e092fbe9973444189",
+      "after_sha256": "d01e2fbd14bef27bd52575ac565e2498194e8c7187821c5e092fbe9973444189",
+      "physical_changes": 0
+    },
+    {
+      "label": "all 41 live final state fingerprints and captured calcite factors",
+      "file": "pilots/calcite/volume-census.json",
+      "before_sha256": "7ce1b8f0f2c03bc1bb4f9683029744aee56e77c210e65fb4601ba149ba0e0362",
+      "after_sha256": "78a5317e130dfcf5da468db4a1c3eb42fdb6943284923f10584890de7e02cd95",
+      "physical_changes": 0
+    },
+    {
+      "label": "pilots/calcite/golden.json",
+      "file": "pilots/calcite/golden.json",
+      "before_sha256": "1e0f1a6a011d18ae3c094c38754dcd5b99e5855091bb1a832af85e5108ea2df6",
+      "after_sha256": "1e0f1a6a011d18ae3c094c38754dcd5b99e5855091bb1a832af85e5108ea2df6",
+      "physical_changes": 0
+    },
+    {
+      "label": "calcite contract, factors, geometry and production hold",
+      "file": "pilots/calcite/factor-coverage.json",
+      "before_sha256": "37cba353a268f2c5ba2740cd62c79a7ed2ce09cc9db7db87a768a362328b2644",
+      "after_sha256": "a3bb0f2aafbdee2b430205e2e2b1114d7523b3ae04e8f7c3cf29270418378bb4",
+      "physical_changes": 0
+    },
+    {
+      "label": "complete controlled specimen; only runtime identity may change",
+      "file": ".local-evidence/calcite-authority-v1/specimens/controlled.json",
+      "before_sha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
+      "after_sha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
+      "physical_changes": 0
+    },
+    {
+      "label": "complete elmwood specimen; only runtime identity may change",
+      "file": ".local-evidence/calcite-authority-v1/specimens/elmwood.json",
+      "before_sha256": "a811cbf5b5cc0ff5a0eb56e924131cd21c023c6a1ce554a687bf219d7adeae00",
+      "after_sha256": "b0074d2199bcb1792a6534d787108d359eec6c9d5b3b14566d2fc4a2714bcaa8",
+      "physical_changes": 0
+    },
+    {
+      "label": "real browser journey payload",
+      "file": "archive/evidence/guided-tutorial-browser-v286.json",
+      "before_sha256": "26d9d7278d675991251240b5d0fa70f69ece99af992355efabe4b74f4c959573",
+      "after_sha256": "181b94613d84d73e06798b9e6e52f082e871eea61b7968495b05c30167fd9dd1",
+      "physical_changes": 0
+    },
+    {
+      "label": "production mechanism witness payload",
+      "file": "archive/evidence/mechanism-witnesses-v286.json",
+      "before_sha256": "cae97a5dd7b71b89456791ca2fe0ad873a0cd320577feec693f026411cf191b8",
+      "after_sha256": "4e00738023565a6f3643cf7075606c25ac39e28730ecde088c3d9b26feaae87c",
+      "physical_changes": 0
+    }
+  ],
+  "source_sha256": "1ea338f57b96a8dacae09e8db48a9217b5a5408a35852c29eb03ccbfa593e0d3"
+}

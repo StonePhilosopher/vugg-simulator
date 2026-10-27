@@ -45,6 +45,7 @@ const MINERAL_GATES_uraninite: MineralGates = {
 };
 
 const MINERAL_GATES_magnetite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 100, T_max: 800, T_optimal: 450,
   fluid_min: { Fe: 25 },

@@ -12,6 +12,7 @@
 // ---- Sulfate MINERAL_GATES exports ----
 
 const MINERAL_GATES_barite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 125,
   fluid_min: { Ba: 5, S: 10 },
@@ -23,6 +24,8 @@ const MINERAL_GATES_barite: MineralGates = {
 };
 
 const MINERAL_GATES_celestine: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 80,
   fluid_min: { Sr: 3, S: 10 },
@@ -46,7 +49,9 @@ const MINERAL_GATES_anhydrite: MineralGates = {
   // mass-balanced path through evaluateCaSO4System/applyCaSO4PhaseTransition.
   T_min: 100, T_optimal: 150,
   fluid_min: { Ca: 50, S: 20 },
-  O2_min: 0.3,
+  // No O2 field: evaluateCaSO4System applies no O2 test. Redox enters only
+  // through the sulfate amount (sulfateAvailablePpm). The old O2_min 0.3 was
+  // read by nothing but the σ panel (recipe review R7).
   pH_min: 5, pH_max: 9,
   surface_energy: 'medium',
   _sources: ['anhydrite engine v17+', 'Blount & Dickson 1973', 'Ossorio et al. 2014 Chem. Geol. 386:16 (no primary anhydrite ≤120°C)', 'Voigt & Freyer 2023 Front. Nucl. Eng. 2:1208582 (kinetic floor ~100°C; equilibrium boundary 42°C is NOT a nucleation gate)'],
@@ -54,6 +59,7 @@ const MINERAL_GATES_anhydrite: MineralGates = {
 };
 
 const MINERAL_GATES_brochantite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Cu: 10, S: 15 },
@@ -65,6 +71,7 @@ const MINERAL_GATES_brochantite: MineralGates = {
 };
 
 const MINERAL_GATES_antlerite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Cu: 15, S: 20 },
@@ -76,6 +83,7 @@ const MINERAL_GATES_antlerite: MineralGates = {
 };
 
 const MINERAL_GATES_jarosite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { K: 5, Fe: 10, S: 20 },
@@ -87,6 +95,7 @@ const MINERAL_GATES_jarosite: MineralGates = {
 };
 
 const MINERAL_GATES_alunite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_optimal: 125,
   fluid_min: { K: 5, Al: 10, S: 20 },
@@ -98,6 +107,8 @@ const MINERAL_GATES_alunite: MineralGates = {
 };
 
 const MINERAL_GATES_chalcanthite: MineralGates = {
+  soft: ['T_min', 'T_max'],
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 10, T_max: 50, T_optimal: 30,
   fluid_min: { Cu: 30, S: 50 },
@@ -109,6 +120,7 @@ const MINERAL_GATES_chalcanthite: MineralGates = {
 };
 
 const MINERAL_GATES_mirabilite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_max: 32, T_optimal: 5,
   fluid_min: { Na: 50, S: 50 },
@@ -120,6 +132,7 @@ const MINERAL_GATES_mirabilite: MineralGates = {
 };
 
 const MINERAL_GATES_thenardite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 25, T_optimal: 60,
   fluid_min: { Na: 50, S: 50 },
@@ -142,13 +155,14 @@ const MINERAL_GATES_selenite: MineralGates = {
   // elmwood minted gypsum at 88.6°C from a reduced MVT brine.
   T_max: 80, T_optimal: 30,
   fluid_min: { Ca: 20, S: 15 },
-  O2_min: 0.2,
+  // No O2 field — see anhydrite: evaluateCaSO4System has no O2 test.
   surface_energy: 'low',
   _sources: ['selenite engine v17+', 'Van Driessche et al. 2016', 'Ossorio et al. 2014 Chem. Geol. 386:16 (primary-gypsum ceiling 80°C)', 'Voigt & Freyer 2023 (equilibrium 42±1°C ≠ nucleation bound)'],
   _notes: 'CaSO4·2H2O — Pulpí 20°C, Naica 54.5°C. v228: hard nucleation ceiling 80°C (Ossorio 2014); soft decay above 60°C within the window; T<40 bonus.',
 };
 
 const MINERAL_GATES_anglesite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.1,
   T_optimal: 30,
   fluid_min: { Pb: 15, S: 15 },
@@ -160,6 +174,7 @@ const MINERAL_GATES_anglesite: MineralGates = {
 };
 
 const MINERAL_GATES_linarite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 25,
   fluid_min: { Pb: 30, Cu: 10, S: 50 },
@@ -171,6 +186,7 @@ const MINERAL_GATES_linarite: MineralGates = {
 };
 
 const MINERAL_GATES_caledonite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 25,
   fluid_min: { Pb: 30, Cu: 10, S: 50, CO3: 5 },
@@ -182,6 +198,7 @@ const MINERAL_GATES_caledonite: MineralGates = {
 };
 
 const MINERAL_GATES_leadhillite: MineralGates = {
+  redox_bypass: 'explicit_sulfate_pool',
   sigma_crit: 1.0,
   T_min: 5, T_max: 60, T_optimal: 30,
   fluid_min: { Pb: 50, S: 30, CO3: 30 },

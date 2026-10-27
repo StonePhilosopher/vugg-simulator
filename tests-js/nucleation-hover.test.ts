@@ -562,3 +562,64 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     host.remove();
   });
 });
+
+// Recipe review rung 1 (R7, M9): the panel must show the gate the σ body
+// actually applies. Each case pairs the new display with a control that must
+// still fail, so a chip that went green for everything would be caught.
+describe('formation panel shows soft bounds and redox bypasses as the engine applies them', () => {
+  const why = (name: string, c: any) =>
+    _buildMineralFormationExplanation(name, c, { conditions: c, crystals: [] }, 0);
+
+  it('a declared-soft T bound is shown as soft and never fails the chip; a hard one still does', () => {
+    const tourmaline: any = {
+      temperature: 300,
+      fluid: { Na: 30, B: 20, Al: 20, SiO2: 400, Fe: 40, pH: 6.5, O2: 0.1, Eh: ehFromO2(0.1) },
+      supersaturation_tourmaline() { return 0; },
+    };
+    const soft = group(why('tourmaline', tourmaline).groups, 'Temperature gate').chips[0];
+    expect(soft.text).toContain('(soft)');
+    expect(soft.met).toBe(true);
+    expect(soft.status).toBe('observer');
+
+    const coffinite: any = {
+      temperature: 60,
+      fluid: { U: 5, SiO2: 100, pH: 6, O2: 0.05, Eh: ehFromO2(0.05) },
+      supersaturation_coffinite() { return 0; },
+    };
+    const hard = group(why('coffinite', coffinite).groups, 'Temperature gate').chips[0];
+    expect(hard.text).not.toContain('soft');
+    expect(hard.met).toBe(false);
+    expect(hard.status).toBeUndefined();
+  });
+
+  it('an explicit sulfate pool admits barite at any Eh; the same fluid without pools does not', () => {
+    const fluid = { Ba: 50, S: 100, pH: 7, O2: 0.02, Eh: ehFromO2(0.02) };
+    const pooled: any = {
+      temperature: 60, fluid: { ...fluid, sulfurPoolsExplicit: true, S_sulfate: 40 },
+      supersaturation_barite() { return 0; },
+    };
+    const bypass = group(why('barite', pooled).groups, 'Redox gate').chips[0];
+    expect(bypass.text).toContain('explicit sulfate pool');
+    expect(bypass.met).toBe(true);
+
+    const plain: any = { temperature: 60, fluid, supersaturation_barite() { return 0; } };
+    const gated = group(why('barite', plain).groups, 'Redox gate').chips[0];
+    expect(gated.text).toContain('needs');
+    expect(gated.met).toBe(false);
+  });
+
+  it("native sulfur's anaerobic pathway uses O2 ≤ 0.1; the oxidative pathway at the same Eh fails", () => {
+    const fluid = { S_elemental: 200, pH: 6, O2: 0.02, Eh: ehFromO2(0.02) };
+    const anaerobic: any = {
+      temperature: 30, fluid: { ...fluid, nativeSulfurPathway: 'anaerobic_microbial_inherited' },
+      supersaturation_native_sulfur() { return 0; },
+    };
+    expect(group(why('native_sulfur', anaerobic).groups, 'Redox gate').chips[0].met).toBe(true);
+
+    const oxidative: any = {
+      temperature: 30, fluid: { ...fluid, nativeSulfurPathway: 'oxidative_interface' },
+      supersaturation_native_sulfur() { return 0; },
+    };
+    expect(group(why('native_sulfur', oxidative).groups, 'Redox gate').chips[0].met).toBe(false);
+  });
+});

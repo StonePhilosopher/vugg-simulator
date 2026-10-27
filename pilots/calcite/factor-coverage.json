@@ -1,0 +1,1150 @@
+{
+  "schema": "calcite-factor-coverage-v1",
+  "runtime": {
+    "node": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "runtimeDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "volumeContract": {
+    "schema": "calcite-volume-reconciliation-v1",
+    "status": "scientific-solid-closure-unresolved",
+    "units": {
+      "volumes": "mm^3",
+      "dimensions": "mm",
+      "factors": "dimensionless"
+    },
+    "quantities": {
+      "booked": {
+        "field": "facts.bookedVolumeMm3",
+        "owner": "accepted growth-zone inventory",
+        "meaning": "Legacy ellipsoid-equivalent accounting volume; not a measured closed surface.",
+        "consumers": [
+          "chemistry",
+          "fill",
+          "occupancy",
+          "dissolution-inventory"
+        ]
+      },
+      "full": {
+        "field": "completion.volumeAudit.fullVolumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Full Wulff body at the captured normalization, including O1a/O1b; before clipping.",
+        "consumers": [
+          "factor-inspection"
+        ]
+      },
+      "attached": {
+        "field": "completion.volumeAudit.attachedVolumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Full body intersected with the recorded attachment half-space.",
+        "consumers": [
+          "factor-inspection"
+        ]
+      },
+      "completed": {
+        "field": "completion.volumeMm3",
+        "owner": "recorded procedural completion",
+        "meaning": "Closed stored surface after attachment and contact half-spaces; visibility scale exactly one.",
+        "consumers": [
+          "surface-reconstruction",
+          "surface-inspection"
+        ]
+      }
+    },
+    "relationship": "completed = booked * fullToBooked * attachmentRetention * contactRetention",
+    "dimensionConvention": "booked = pi/6 * aWidthMm^2 * cLengthMm; this does not constrain Wulff extents",
+    "factorsAre": "per-record measured representation ratios; not porosity, density, hidden material, or calibration",
+    "conversionTolerance": {
+      "relative": 1e-8,
+      "absoluteMm3": 1e-10,
+      "dimensionlessAbsolute": 1e-12
+    },
+    "conservation": "Only accepted growth events change booked inventory. Completion, clipping, save/load, and display return no mass.",
+    "physicalReconciliation": "unresolved; no equality, rescaling, or inverse conversion is authorized",
+    "legacy": "Old or incomplete records remain historical evidence; refuse this contract and require original sources for recapture. Never infer missing factors or history from current fluid.",
+    "allowedConsumers": {
+      "booked": [
+        "chemistry",
+        "fill",
+        "occupancy",
+        "dissolution-inventory"
+      ],
+      "completed": [
+        "surface-reconstruction",
+        "surface-inspection"
+      ]
+    },
+    "forbidden": "No geometry-to-mass substitution, renderer rescaling, or feedback."
+  },
+  "sourceHashes": {
+    "pilots/calcite/factor-audit.js": "947467367e679ff0970eed397e2ef36f68fc073eb6642a836b2f3ee54a2a43df",
+    "pilots/calcite/factor-report.mjs": "5d033926a4e5d97e4ba898b255799c0af1287fec80d44005cee8d1131e91e568",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb"
+  },
+  "fleetReceiptSha256": "78a5317e130dfcf5da468db4a1c3eb42fdb6943284923f10584890de7e02cd95",
+  "fleet": {
+    "scenarios": 41,
+    "endpointCalcites": 44,
+    "supportedEndpoints": 1,
+    "excludedEndpoints": 43,
+    "supportedHistoricalCrystalSteps": 116,
+    "supportedScenarios": [
+      "mvt"
+    ],
+    "supportedHabits": [
+      "scalenohedral"
+    ],
+    "contactVolumeLossSamples": 0,
+    "contactTopology": "not captured by the fleet scalar receipt",
+    "dissolutionAndRegrowth": "not classified by the fleet scalar receipt; unknown, not zero",
+    "boundingReference": "requires saved planes; unavailable in the fleet scalar receipt",
+    "completedToBookedRange": [
+      0.1472778827560089,
+      0.3274598987785373
+    ]
+  },
+  "examples": {
+    "controlled": {
+      "specimenSha256": "93a9f36410e0fc0d4c7dc41eee4dc1828f9f967a3c44fa67904f779e3ffdcb93",
+      "sourceClass": "authored accepted-zone fixture",
+      "volumeContracts": [
+        {
+          "step": 1,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.44602238100565506,
+          "full": 0.2133034193386773,
+          "attached": 0.10665170966933865,
+          "completed": 0.10665170966933865,
+          "completedToBooked": 0.23911739457753003,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 2,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.372582774304405,
+          "full": 0.6564168336673346,
+          "attached": 0.35715769087349425,
+          "completed": 0.3336172149443644,
+          "completedToBooked": 0.24305799343390008,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 2,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.24429024474314237,
+          "full": 0.11682809368737472,
+          "attached": 0.06356639566571713,
+          "completed": 0.05971921387382639,
+          "completedToBooked": 0.24446008450569867,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.8869560970408275,
+          "full": 1.380642840368236,
+          "attached": 0.76488752209429,
+          "completed": 0.6413010204719611,
+          "completedToBooked": 0.22213743434799862,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.7959438003021653,
+          "full": 0.8588828046718435,
+          "attached": 0.47582815846828524,
+          "completed": 0.40021605584848036,
+          "completedToBooked": 0.22284442073362457,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.987075281417621,
+          "full": 0.9502885282439879,
+          "attached": 0.5245749324159696,
+          "completed": 0.45154802675513234,
+          "completedToBooked": 0.22724253629333488,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.4512472490406438,
+          "full": 0.6940369221568132,
+          "attached": 0.3831198217317861,
+          "completed": 0.33112712163927177,
+          "completedToBooked": 0.22816726912534405,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 4.4046824625603795,
+          "full": 2.1064723887775547,
+          "attached": 1.1715797835083512,
+          "completed": 0.9514492617987592,
+          "completedToBooked": 0.21600859310200882,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 2,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.4090761234600833,
+          "full": 1.1521040119614225,
+          "attached": 0.6407782870091085,
+          "completed": 0.5213931777505683,
+          "completedToBooked": 0.21642868511838761,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        }
+      ],
+      "audit": {
+        "model": {
+          "kind": "authored-accepted-zone-fixture",
+          "limitation": "Authored composition, placement, and growth amounts; not a chemistry or conservation experiment."
+        },
+        "supportedCrystalSteps": 9,
+        "habits": [
+          "rhombohedral"
+        ],
+        "phaseCounts": {
+          "growth": 5,
+          "dissolution": 2,
+          "regrowth": 2
+        },
+        "contactFaceSamples": 8,
+        "sizeRangeMm": {
+          "c": [
+            0.9,
+            2.36
+          ],
+          "a": [
+            0.7200000000000001,
+            1.888
+          ]
+        },
+        "samples": [
+          {
+            "step": 1,
+            "id": 1,
+            "habit": "rhombohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 1.1,
+            "aWidthMm": 0.88,
+            "bookedVolumeMm3": 0.44602238100565506,
+            "fullVolumeMm3": 0.2133034193386773,
+            "attachedVolumeMm3": 0.10665170966933865,
+            "completedVolumeMm3": 0.10665170966933865,
+            "fullToBooked": 0.47823478915506007,
+            "attachmentRetention": 0.5,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.9526279441628827,
+                "c": 0.8142200765239866,
+                "b": 1.0999999999999999
+              },
+              "boundingEllipsoidMm3": 0.44674163678664774,
+              "boundingToBooked": 1.0016126002004002,
+              "polyhedronToBounding": 0.477464829275686,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672605,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 0.2133034193386773
+            }
+          },
+          {
+            "step": 2,
+            "id": 1,
+            "habit": "rhombohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 1.6,
+            "aWidthMm": 1.2800000000000002,
+            "bookedVolumeMm3": 1.372582774304405,
+            "fullVolumeMm3": 0.6564168336673346,
+            "attachedVolumeMm3": 0.35715769087349425,
+            "completedVolumeMm3": 0.3336172149443644,
+            "fullToBooked": 0.4782347891550601,
+            "attachmentRetention": 0.5441019677665643,
+            "contactRetention": 0.9340894049584728,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.3856406460551018,
+                "c": 1.184320111307617,
+                "b": 1.5999999999999999
+              },
+              "boundingEllipsoidMm3": 1.374796201561314,
+              "boundingToBooked": 1.0016126002004,
+              "polyhedronToBounding": 0.4774648292756862,
+              "dimensionRatios": {
+                "a": 1.0825317547305482,
+                "c": 0.7402000695672606,
+                "b": 1.2499999999999996
+              },
+              "fullVolumeMm3": 0.6564168336673346
+            }
+          },
+          {
+            "step": 2,
+            "id": 2,
+            "habit": "rhombohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 0.9,
+            "aWidthMm": 0.7200000000000001,
+            "bookedVolumeMm3": 0.24429024474314237,
+            "fullVolumeMm3": 0.11682809368737476,
+            "attachedVolumeMm3": 0.06356639566571713,
+            "completedVolumeMm3": 0.05971921387382639,
+            "fullToBooked": 0.4782347891550601,
+            "attachmentRetention": 0.5441019677665645,
+            "contactRetention": 0.9394777421057142,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.779422863405995,
+                "c": 0.6661800626105345,
+                "b": 0.8999999999999999
+              },
+              "boundingEllipsoidMm3": 0.24468418724077107,
+              "boundingToBooked": 1.0016126002004007,
+              "polyhedronToBounding": 0.47746482927568606,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672606,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 0.11682809368737476
+            }
+          },
+          {
+            "step": 3,
+            "id": 1,
+            "habit": "rhombohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.05,
+            "aWidthMm": 1.64,
+            "bookedVolumeMm3": 2.8869560970408275,
+            "fullVolumeMm3": 1.3806428403682354,
+            "attachedVolumeMm3": 0.76488752209429,
+            "completedVolumeMm3": 0.6413010204719611,
+            "fullToBooked": 0.47823478915506035,
+            "attachmentRetention": 0.55400824871571,
+            "contactRetention": 0.838425261162655,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.7753520777580993,
+                "c": 1.5174101426128839,
+                "b": 2.05
+              },
+              "boundingEllipsoidMm3": 2.891611603021463,
+              "boundingToBooked": 1.0016126002004007,
+              "polyhedronToBounding": 0.4774648292756859,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672605,
+                "b": 1.25
+              },
+              "fullVolumeMm3": 1.3806428403682354
+            }
+          },
+          {
+            "step": 3,
+            "id": 2,
+            "habit": "rhombohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 1.75,
+            "aWidthMm": 1.4000000000000001,
+            "bookedVolumeMm3": 1.7959438003021653,
+            "fullVolumeMm3": 0.8588828046718435,
+            "attachedVolumeMm3": 0.47582815846828524,
+            "completedVolumeMm3": 0.40021605584848036,
+            "fullToBooked": 0.4782347891550602,
+            "attachmentRetention": 0.55400824871571,
+            "contactRetention": 0.8410936778874036,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.5155444566227678,
+                "c": 1.2953501217427057,
+                "b": 1.7499999999999998
+              },
+              "boundingEllipsoidMm3": 1.7988399396344403,
+              "boundingToBooked": 1.0016126002004004,
+              "polyhedronToBounding": 0.47746482927568606,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672604,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 0.8588828046718435
+            }
+          },
+          {
+            "step": 4,
+            "id": 1,
+            "habit": "rhombohedral",
+            "phases": [
+              "dissolution"
+            ],
+            "cLengthMm": 1.81,
+            "aWidthMm": 1.4480000000000002,
+            "bookedVolumeMm3": 1.987075281417621,
+            "fullVolumeMm3": 0.9502885282439878,
+            "attachedVolumeMm3": 0.5245749324159696,
+            "completedVolumeMm3": 0.45154802675513234,
+            "fullToBooked": 0.47823478915506024,
+            "attachmentRetention": 0.5520164842832705,
+            "contactRetention": 0.860788419064353,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.567505980849834,
+                "c": 1.3397621259167416,
+                "b": 1.81
+              },
+              "boundingEllipsoidMm3": 1.9902796394146458,
+              "boundingToBooked": 1.0016126002004004,
+              "polyhedronToBounding": 0.477464829275686,
+              "dimensionRatios": {
+                "a": 1.0825317547305482,
+                "c": 0.7402000695672605,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 0.9502885282439878
+            }
+          },
+          {
+            "step": 4,
+            "id": 2,
+            "habit": "rhombohedral",
+            "phases": [
+              "dissolution"
+            ],
+            "cLengthMm": 1.63,
+            "aWidthMm": 1.304,
+            "bookedVolumeMm3": 1.4512472490406438,
+            "fullVolumeMm3": 0.6940369221568135,
+            "attachedVolumeMm3": 0.3831198217317861,
+            "completedVolumeMm3": 0.33112712163927177,
+            "fullToBooked": 0.47823478915506007,
+            "attachmentRetention": 0.5520164842832708,
+            "contactRetention": 0.864291281360761,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.4116214081686351,
+                "c": 1.2065261133946346,
+                "b": 1.6299999999999997
+              },
+              "boundingEllipsoidMm3": 1.4535875306452772,
+              "boundingToBooked": 1.0016126002004004,
+              "polyhedronToBounding": 0.4774648292756861,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672605,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 0.6940369221568135
+            }
+          },
+          {
+            "step": 5,
+            "id": 1,
+            "habit": "rhombohedral",
+            "phases": [
+              "regrowth"
+            ],
+            "cLengthMm": 2.36,
+            "aWidthMm": 1.888,
+            "bookedVolumeMm3": 4.4046824625603795,
+            "fullVolumeMm3": 2.106472388777554,
+            "attachedVolumeMm3": 1.1715797835083512,
+            "completedVolumeMm3": 0.9514492617987592,
+            "fullToBooked": 0.47823478915506024,
+            "attachmentRetention": 0.5561809353638155,
+            "contactRetention": 0.8121079547391977,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 2.0438199529312753,
+                "c": 1.7468721641787346,
+                "b": 2.3599999999999994
+              },
+              "boundingEllipsoidMm3": 4.411785454382204,
+              "boundingToBooked": 1.0016126002004002,
+              "polyhedronToBounding": 0.477464829275686,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672605,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 2.106472388777554
+            }
+          },
+          {
+            "step": 5,
+            "id": 2,
+            "habit": "rhombohedral",
+            "phases": [
+              "regrowth"
+            ],
+            "cLengthMm": 1.93,
+            "aWidthMm": 1.544,
+            "bookedVolumeMm3": 2.4090761234600833,
+            "fullVolumeMm3": 1.1521040119614225,
+            "attachedVolumeMm3": 0.6407782870091085,
+            "completedVolumeMm3": 0.5213931777505683,
+            "fullToBooked": 0.4782347891550601,
+            "attachmentRetention": 0.5561809353638155,
+            "contactRetention": 0.8136873366671314,
+            "contactPlanes": 1,
+            "activeContactFaces": 1,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 1.6714290293039666,
+                "c": 1.4285861342648127,
+                "b": 1.9299999999999997
+              },
+              "boundingEllipsoidMm3": 2.4129610000995543,
+              "boundingToBooked": 1.0016126002004002,
+              "polyhedronToBounding": 0.4774648292756861,
+              "dimensionRatios": {
+                "a": 1.0825317547305484,
+                "c": 0.7402000695672605,
+                "b": 1.2499999999999998
+              },
+              "fullVolumeMm3": 1.1521040119614225
+            }
+          }
+        ]
+      },
+      "replay": {
+        "frames": 5,
+        "factorsUnchanged": true,
+        "geometrySha256ByStep": [
+          "77314317053722be21aa0e3c76f6f5dbccc8c892372c71a2e961918610b919e1",
+          "1f88433e44a80bf56ca1fb06b075c2a3c4a262c55f4228f13e941f3fc7564fa2",
+          "81bd81a96c92d6f474de994f2f5714314cc29db02854a13c5f65b8c92936e50e",
+          "1e942484d8c8046fe3d659394c8e01e76af81c5f011f325f64e20c653f3820c0",
+          "fa291af9c7e018e658678b4d2bb8ca0d560b5076c3f4bce0f307e201fffe6fc6"
+        ],
+        "allResourcesDisposed": true
+      },
+      "productionGate": {
+        "allowed": false,
+        "reasons": [
+          "booked inventory and completed solid do not yet share a physical volume model",
+          "face arrest/retreat and surviving internal zone boundaries remain unresolved"
+        ]
+      }
+    },
+    "elmwood": {
+      "specimenSha256": "b0074d2199bcb1792a6534d787108d359eec6c9d5b3b14566d2fc4a2714bcaa8",
+      "sourceClass": "live Elmwood with explicit Wulff override",
+      "volumeContracts": [
+        {
+          "step": 1,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.0007780284148403779,
+          "full": 0.00041331989628487015,
+          "attached": 0.0002469719529747091,
+          "completed": 0.0002469719529747091,
+          "completedToBooked": 0.31743307604694415,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 3,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.019280394398944377,
+          "full": 0.010101709762985772,
+          "attached": 0.006035530968658669,
+          "completed": 0.006035530968658669,
+          "completedToBooked": 0.3130398084070895,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 4,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.041877342651164405,
+          "full": 0.02192746508048301,
+          "attached": 0.013100591651469026,
+          "completed": 0.013100591651469026,
+          "completedToBooked": 0.3128324488159652,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 5,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 0.08909935091298266,
+          "full": 0.046615974402005066,
+          "attached": 0.02784927550545037,
+          "completed": 0.02784927550545037,
+          "completedToBooked": 0.3125642916596428,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 12,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.1174720162367062,
+          "full": 0.582872447996126,
+          "attached": 0.348152255476304,
+          "completed": 0.348152255476304,
+          "completedToBooked": 0.31155344421847014,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 13,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.3820060189548715,
+          "full": 0.7206503202742681,
+          "attached": 0.43044064584055286,
+          "completed": 0.43044064584055286,
+          "completedToBooked": 0.311460760616708,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 14,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 1.672524589867523,
+          "full": 0.8719301198140286,
+          "attached": 0.5207923529702143,
+          "completed": 0.5207923529702143,
+          "completedToBooked": 0.3113809842469731,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 15,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.066314724176812,
+          "full": 1.0765981720464513,
+          "attached": 0.643028739565902,
+          "completed": 0.643028739565902,
+          "completedToBooked": 0.3111959335343142,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        },
+        {
+          "step": 16,
+          "id": 1,
+          "schema": "calcite-volume-reconciliation-v1",
+          "units": "mm^3",
+          "booked": 2.506916373882476,
+          "full": 1.3054767931565754,
+          "attached": 0.7797225823038548,
+          "completed": 0.7797225823038548,
+          "completedToBooked": 0.3110285570061892,
+          "arithmeticClosure": "passed",
+          "physicalClosure": "unresolved",
+          "productionAllowed": false
+        }
+      ],
+      "audit": {
+        "model": {
+          "kind": "live-model-capture",
+          "scenario": "elmwood",
+          "seed": 42,
+          "wulffCalciteOverride": true,
+          "limitation": "Old pilot configuration, 16 steps; not authored default Elmwood or an independent geology validation",
+          "simVersion": 286,
+          "runtimeDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+          "sourceHashes": {
+            "pilots/calcite/authority.js": "e214e82c8360c92d0f8065ae96d9df3971f3a977d545fc8af3ffaf4ff8de00a3",
+            "pilots/calcite/specimen.js": "591cb08033f43a6a1a48ae177b75b26a88d6ce8ca1f224d0bff1b00f25044eda",
+            "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
+            "pilots/calcite/capture.mjs": "01a3223028626648e6b0242cf1366710bbaf7aadff8a7caff9fc9cb60e6e022e",
+            "pilots/calcite/growth-capture.mjs": "a6e18225b06daf0a2a9a5cb6c7c044ab58717d2c0512f5ca72f92bab5d13138b",
+            "pilots/calcite/render.js": "ff62a926b9286127c493eb293065b79eccf4dcdcdf72ea0fde2fa4aabd55ff24",
+            "pilots/calcite/fixture.mjs": "0bba869da1e6a2951a8ecbdfd9542c4b41b57c007b0a1f05e8590ca4161ba309",
+            "pilots/calcite/record.mjs": "f440a7ebd5403d1f5176ceb17d97edc2d845395f0c37490c56b12327440fc404"
+          }
+        },
+        "supportedCrystalSteps": 9,
+        "habits": [
+          "scalenohedral"
+        ],
+        "phaseCounts": {
+          "growth": 9,
+          "dissolution": 0,
+          "regrowth": 0
+        },
+        "contactFaceSamples": 0,
+        "sizeRangeMm": {
+          "c": [
+            0.181141909894848,
+            2.6754719696141587
+          ],
+          "a": [
+            0.090570954947424,
+            1.3377359848070793
+          ]
+        },
+        "samples": [
+          {
+            "step": 1,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 0.181141909894848,
+            "aWidthMm": 0.090570954947424,
+            "bookedVolumeMm3": 0.0007780284148403779,
+            "fullVolumeMm3": 0.0004133198962848615,
+            "attachedVolumeMm3": 0.0002469719529747091,
+            "completedVolumeMm3": 0.0002469719529747091,
+            "fullToBooked": 0.5312401043471758,
+            "attachmentRetention": 0.597532214622666,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.06333903658124651,
+                "c": 0.18094842409373513,
+                "b": 0.07313761964078225
+              },
+              "boundingEllipsoidMm3": 0.00043890012267874286,
+              "boundingToBooked": 0.5641183719090628,
+              "polyhedronToBounding": 0.9417174316613143,
+              "dimensionRatios": {
+                "a": 0.699330559316886,
+                "c": 0.9989318551337723,
+                "b": 0.807517373348203
+              },
+              "fullVolumeMm3": 0.0004133198962848615
+            }
+          },
+          {
+            "step": 3,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 0.5281116656244431,
+            "aWidthMm": 0.26405583281222156,
+            "bookedVolumeMm3": 0.019280394398944377,
+            "fullVolumeMm3": 0.010101709762985715,
+            "attachedVolumeMm3": 0.006035530968658669,
+            "completedVolumeMm3": 0.006035530968658669,
+            "fullToBooked": 0.5239368839643058,
+            "attachmentRetention": 0.5974761807920663,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.1834827810938222,
+                "c": 0.5271614614662568,
+                "b": 0.2118676661123544
+              },
+              "boundingEllipsoidMm3": 0.010730063012461977,
+              "boundingToBooked": 0.5565271534616253,
+              "polyhedronToBounding": 0.941439929220687,
+              "dimensionRatios": {
+                "a": 0.6948635791897186,
+                "c": 0.9982007514318723,
+                "b": 0.8023593489904849
+              },
+              "fullVolumeMm3": 0.010101709762985715
+            }
+          },
+          {
+            "step": 4,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 0.6839328988067198,
+            "aWidthMm": 0.3419664494033599,
+            "bookedVolumeMm3": 0.041877342651164405,
+            "fullVolumeMm3": 0.021927465080483082,
+            "attachedVolumeMm3": 0.013100591651469026,
+            "completedVolumeMm3": 0.013100591651469026,
+            "fullToBooked": 0.5236116642628783,
+            "attachmentRetention": 0.5974512604801491,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.23757356562476772,
+                "c": 0.6825442123751841,
+                "b": 0.2743263241315974
+              },
+              "boundingEllipsoidMm3": 0.023291368723805207,
+              "boundingToBooked": 0.5561806754984628,
+              "polyhedronToBounding": 0.9414416705391757,
+              "dimensionRatios": {
+                "a": 0.6947277022037399,
+                "c": 0.9979695574902764,
+                "b": 0.8022024517616378
+              },
+              "fullVolumeMm3": 0.021927465080483082
+            }
+          },
+          {
+            "step": 5,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 0.8796541779752243,
+            "aWidthMm": 0.4398270889876121,
+            "bookedVolumeMm3": 0.08909935091298266,
+            "fullVolumeMm3": 0.0466159744020051,
+            "attachedVolumeMm3": 0.02784927550545037,
+            "completedVolumeMm3": 0.02784927550545037,
+            "fullToBooked": 0.5231909539670132,
+            "attachmentRetention": 0.5974191436026811,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.30548253475154574,
+                "c": 0.8776060316559864,
+                "b": 0.35274084734306665
+              },
+              "boundingEllipsoidMm3": 0.04951540790238685,
+              "boundingToBooked": 0.5557325322240027,
+              "polyhedronToBounding": 0.9414438126795279,
+              "dimensionRatios": {
+                "a": 0.6945514325975265,
+                "c": 0.997671646005306,
+                "b": 0.8019989131524405
+              },
+              "fullVolumeMm3": 0.0466159744020051
+            }
+          },
+          {
+            "step": 12,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.043773083129428,
+            "aWidthMm": 1.0218865415647138,
+            "bookedVolumeMm3": 1.1174720162367062,
+            "fullVolumeMm3": 0.5828724479961268,
+            "attachedVolumeMm3": 0.348152255476304,
+            "completedVolumeMm3": 0.348152255476304,
+            "fullToBooked": 0.5215991447902713,
+            "attachmentRetention": 0.5973043616544694,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.7090499460301576,
+                "c": 2.0368353121613794,
+                "b": 0.8187403544188028
+              },
+              "boundingEllipsoidMm3": 0.6191238907080153,
+              "boundingToBooked": 0.5540397269123836,
+              "polyhedronToBounding": 0.9414471913360793,
+              "dimensionRatios": {
+                "a": 0.6938636699769619,
+                "c": 0.9966054103435859,
+                "b": 0.8012047532842018
+              },
+              "fullVolumeMm3": 0.5828724479961268
+            }
+          },
+          {
+            "step": 13,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.1937666728470595,
+            "aWidthMm": 1.0968833364235298,
+            "bookedVolumeMm3": 1.3820060189548715,
+            "fullVolumeMm3": 0.7206503202742679,
+            "attachedVolumeMm3": 0.43044064584055286,
+            "completedVolumeMm3": 0.43044064584055286,
+            "fullToBooked": 0.5214523745846295,
+            "attachmentRetention": 0.5972947402239882,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.7610147810794885,
+                "c": 2.1861230491330232,
+                "b": 0.8787441774270546
+              },
+              "boundingEllipsoidMm3": 0.765471063405515,
+              "boundingToBooked": 0.5538840301031358,
+              "polyhedronToBounding": 0.9414468485172471,
+              "dimensionRatios": {
+                "a": 0.6937973764473752,
+                "c": 0.9965157535627449,
+                "b": 0.8011282041098972
+              },
+              "fullVolumeMm3": 0.7206503202742679
+            }
+          },
+          {
+            "step": 14,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.337821204953665,
+            "aWidthMm": 1.1689106024768325,
+            "bookedVolumeMm3": 1.672524589867523,
+            "fullVolumeMm3": 0.8719301198140295,
+            "attachedVolumeMm3": 0.5207923529702143,
+            "completedVolumeMm3": 0.5207923529702143,
+            "fullToBooked": 0.5213257401991873,
+            "attachmentRetention": 0.5972868021594352,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.8109190138442912,
+                "c": 2.329502409929706,
+                "b": 0.9363686218679765
+              },
+              "boundingEllipsoidMm3": 0.9261602165149595,
+              "boundingToBooked": 0.5537498355036554,
+              "polyhedronToBounding": 0.9414463116273856,
+              "dimensionRatios": {
+                "a": 0.6937391209610175,
+                "c": 0.9964416461762208,
+                "b": 0.8010609364684371
+              },
+              "fullVolumeMm3": 0.8719301198140295
+            }
+          },
+          {
+            "step": 15,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.508529887952165,
+            "aWidthMm": 1.2542649439760825,
+            "bookedVolumeMm3": 2.066314724176812,
+            "fullVolumeMm3": 1.0765981720464524,
+            "attachedVolumeMm3": 0.643028739565902,
+            "completedVolumeMm3": 0.643028739565902,
+            "fullToBooked": 0.5210233269161605,
+            "attachmentRetention": 0.59727831261649,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.8699205757662467,
+                "c": 2.4993935295007184,
+                "b": 1.0044977571844713
+              },
+              "boundingEllipsoidMm3": 1.1435675887530057,
+              "boundingToBooked": 0.5534334026529213,
+              "polyhedronToBounding": 0.9414381647703223,
+              "dimensionRatios": {
+                "a": 0.6935700307532754,
+                "c": 0.9963578833581668,
+                "b": 0.8008656879145193
+              },
+              "fullVolumeMm3": 1.0765981720464524
+            }
+          },
+          {
+            "step": 16,
+            "id": 1,
+            "habit": "scalenohedral",
+            "phases": [
+              "growth"
+            ],
+            "cLengthMm": 2.6754719696141587,
+            "aWidthMm": 1.3377359848070793,
+            "bookedVolumeMm3": 2.506916373882476,
+            "fullVolumeMm3": 1.3054767931565745,
+            "attachedVolumeMm3": 0.7797225823038548,
+            "completedVolumeMm3": 0.7797225823038548,
+            "fullToBooked": 0.5207500364819811,
+            "attachmentRetention": 0.5972703508719799,
+            "contactRetention": 1,
+            "contactPlanes": 0,
+            "activeContactFaces": 0,
+            "reference": {
+              "reference": "ellipsoid fitted to full-body a/c/b extents; diagnostic only, not a solid or porosity model",
+              "extentsMm": {
+                "a": 0.9276101819619074,
+                "c": 2.6655183196070595,
+                "b": 1.0711119765174892
+              },
+              "boundingEllipsoidMm3": 1.386694127629419,
+              "boundingToBooked": 0.5531473415213438,
+              "polyhedronToBounding": 0.9414309667470164,
+              "dimensionRatios": {
+                "a": 0.6934179782086688,
+                "c": 0.9962796657486438,
+                "b": 0.8006901127594014
+              },
+              "fullVolumeMm3": 1.3054767931565745
+            }
+          }
+        ]
+      },
+      "replay": {
+        "frames": 16,
+        "factorsUnchanged": true,
+        "geometrySha256ByStep": [
+          "aa0c5fd86800677b15fb814f93f77c23d615f66470e77076824837c52c23ec27",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "73fc12969bda95bd9ee2998977576203659b51c2454f2fa970084600ba84a38a",
+          "1917a31bbd6e81766f4b6870d8b9a7056e4631d183fcfb0a11a5f6b71e91aa35",
+          "322661ea952f473c521b07b3867f5ac0f4ed1848d5c4ad5f0cc2413ba1224164",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "d45d03e78a85ef188a3e8bd6553ba8deaef14f1b9a7152bda572d4f3bdc62f28",
+          "b010235b389892f7d252651a7e66875d41af9af3f9e29148ef75c05a9062dc1e",
+          "86eec7e65979b20dfe83590a93ad32d2fc282699237258f1fc7b286da7d0048d",
+          "2fe758834a6dbbec39ef7d4a97d4230f07d94f655756b85f66ef7e3523e9378b",
+          "aa3418e658485a6f4637534fa2d3b0f994bab3af5136557de45a075574b989d3"
+        ],
+        "allResourcesDisposed": true
+      },
+      "productionGate": {
+        "allowed": false,
+        "reasons": [
+          "booked inventory and completed solid do not yet share a physical volume model",
+          "face arrest/retreat and surviving internal zone boundaries remain unresolved"
+        ]
+      }
+    }
+  },
+  "interpretation": "Arithmetic diagnosis only. The bounding ellipsoid is a comparison reference, not a replacement solid, calibration, density or porosity.",
+  "gaps": [
+    "Contact/dissolution/regrowth witnesses are authored fixture evidence, not validated live geological episodes.",
+    "Default fleet supported historical surfaces cover MVT scalenohedra only; other habits remain excluded.",
+    "Bounding-reference diagnosis uses saved specimen planes; fleet scalar rows lack those planes.",
+    "O1a/O1b effects remain included in the recorded full-form stage, not separately attributed.",
+    "A wrong mass model cannot be established from procedural surface volume alone."
+  ],
+  "productionHeld": true
+}

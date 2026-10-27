@@ -62,14 +62,23 @@ for (const name of Object.keys(SCENARIOS).sort()) {
   const s = SCENARIOS[name]();
   const sim = new VugSimulator(s.conditions, s.events);
   const steps = s.defaultSteps ?? 100;
-  const eh = [];
-  for (let i = 0; i < steps; i++) { sim.run_step(); eh.push(sim.conditions.fluid.Eh); }
+  // ehEnd[k] is the fluid at the end of step k + 1. A birth in step n reads
+  // ehEnd[n − 1], the end of its OWN step: events apply before births, and Eh
+  // barely moves after them. Against the exact Eh of all 1,212 seed-42 births
+  // (tools/birth-census.mjs, SIM 285) that sample is exact for 1,202 and within
+  // 24 mV for every one. This census used to read ehEnd[n], the end of the
+  // NEXT step, off by up to 278 mV across that step's events: porphyry's
+  // step-84 stibnite read +322 mV, born at +44 (recipe review M12). The step's
+  // start is as bad the other way (porphyry's step-85 malachite, born at +322,
+  // starts at +44).
+  const ehEnd = [];
+  for (let i = 0; i < steps; i++) { sim.run_step(); ehEnd.push(sim.conditions.fluid.Eh); }
   for (const c of sim.crystals) {
-    const st = Math.min(c.nucleation_step ?? 0, eh.length - 1);
-    const E = eh[st];
+    const step = c.nucleation_step ?? 1;
+    const E = ehEnd[Math.max(0, Math.min(step - 1, ehEnd.length - 1))];
     const ps = perSpecies[c.mineral] || (perSpecies[c.mineral] = { min: Infinity, max: -Infinity, n: 0, minLoc: '', maxLoc: '' });
-    if (E < ps.min) { ps.min = E; ps.minLoc = `${name}@${st}`; }
-    if (E > ps.max) { ps.max = E; ps.maxLoc = `${name}@${st}`; }
+    if (E < ps.min) { ps.min = E; ps.minLoc = `${name}@${step}`; }
+    if (E > ps.max) { ps.max = E; ps.maxLoc = `${name}@${step}`; }
     ps.n++;
   }
 }

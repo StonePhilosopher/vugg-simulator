@@ -560,6 +560,7 @@ function _saveAuthenticateCollectionReceiptAgainstLive(receipt, runId) {
   const expected = buildCrystalRecord(
     crystal,
     _saveFinishSpecimenMeta(runId, receipt.crystal_index),
+    receipt.record.quartz_form===undefined?null:COLLECTION_QUARTZ_FORM_SCHEMA,
   );
   expected.id = receipt.record.id;
   if (_saveSpecimenScienceDigest(expected) !== _saveSpecimenScienceDigest(receipt.record)) {
@@ -690,11 +691,13 @@ function _saveAuthenticateFinishTransactionAgainstLive(tx, saveId, library, opts
     const crystal = fortressSim.crystals[crystalIdx];
     const recordId = mappedByCrystal.get(crystalIdx);
     const stagedRecord = stagedById.get(recordId);
+    const producerRecord=stagedRecord||libraryById.get(recordId);
     const expected = buildCrystalRecord(
       crystal,
       tx.run_id
         ? _saveFinishSpecimenMeta(tx.run_id, crystalIdx)
         : { mode: 'creative' },
+      producerRecord?.quartz_form===undefined?null:COLLECTION_QUARTZ_FORM_SCHEMA,
     );
     if (stagedRecord) {
       const expectedId = _saveAllocateFinishRecordId(specimenIdentity, crystalIdx, occupiedIds);
@@ -1498,6 +1501,7 @@ function _saveReplayCompatibility(rec) {
 function _saveSealActiveState() {
   if (!_saveActiveRecord) return;
   const sim = _liveFortressSim();
+  assertLegacySaveHasNoLocalStateFoundation(sim);
   if (sim && typeof simulationStateFingerprint === 'function') {
     _saveActiveRecord.replay_state_digest = simulationStateFingerprint(sim);
     _saveActiveRecord.replay_integrity = 'state-fingerprint-v1';
@@ -1715,6 +1719,7 @@ function _saveCommitAction() {
 // per action; also the mode-leave hook (94-ui-menu switchMode).
 function _savePersistActive() {
   if (_fortressReplaying || !_saveActiveRecord) return false;
+  assertLegacySaveHasNoLocalStateFoundation(_liveFortressSim());
   _saveActiveRecord.updated_at = new Date().toISOString();
   _saveActiveRecord.summary = _saveSummaryFromSim() || _saveActiveRecord.summary;
   _saveActiveRecord.broth_final = _saveCaptureBroth();

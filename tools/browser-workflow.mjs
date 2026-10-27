@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
@@ -23,6 +23,7 @@ import {
   attestOwnedDevToolsBrowserRuntime,
   findOwnedBrowserExecutable,
 } from './owned-browser-runtime.mjs';
+import {verifyQuartzBrowserPayload} from './check-quartz-browser-payload.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionMatch = /const SIM_VERSION = (\d+);/.exec(
@@ -229,8 +230,67 @@ async function waitForDevToolsReceipt(profileDir, child, timeoutMs = DEFAULT_TIM
   throw new Error(`Timed out waiting for ${receiptPath} (${launcherState}): ${lastError?.message || 'missing'}`);
 }
 
-async function windowsProcessTree({ execFileRunner = execFileAsync, ownerPort = null } = {}) {
-  const source = String.raw`
+// Add-Type compiles C# with csc.exe inside every fresh PowerShell host. On a
+// cold GitHub Windows runner the first host start plus that compile overran the
+// old 10 s per-capture budget before any process was observed (Actions run
+// 39693703832, attempt 1: killed with empty output; completed first captures
+// took 2.8-5.1 s, slow runners 8-10 s). Host start and compile are one-time
+// setup, not observation. Each helper is compiled once per process under a
+// generous hang budget and kept in memory; every capture loads those bytes
+// under the budget for a hung observation. A byte load also skips the scan
+// that an image load of a never-seen DLL draws on a Defender host (1.1-1.9 s
+// per new DLL here, once 11 s), and leaves no file behind to clean up.
+const NATIVE_HELPER_COMPILE_TIMEOUT_MS = 120_000;
+const NATIVE_HELPER_CALL_TIMEOUT_MS = 10_000;
+const NATIVE_HELPER_LOAD = '[void][Reflection.Assembly]::Load([Convert]::FromBase64String($env:VUGG_NATIVE_HELPER_IMAGE))';
+const NATIVE_HELPER_IMAGES = new WeakMap();
+
+async function compileNativeHelper(typeName, source, execFileRunner) {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'vugg-native-helper-'));
+  try {
+    const { stdout } = await execFileRunner('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      'Add-Type -TypeDefinition $env:VUGG_NATIVE_HELPER_SOURCE -OutputAssembly $env:VUGG_NATIVE_HELPER_ASSEMBLY -OutputType Library; '
+        + '$image = [IO.File]::ReadAllBytes($env:VUGG_NATIVE_HELPER_ASSEMBLY); [void][Reflection.Assembly]::Load($image); '
+        + '([type]$env:VUGG_NATIVE_HELPER_TYPE).FullName; [Convert]::ToBase64String($image)',
+    ], {
+      env: {
+        ...process.env,
+        VUGG_NATIVE_HELPER_SOURCE: source,
+        VUGG_NATIVE_HELPER_ASSEMBLY: path.join(directory, `${typeName}.dll`),
+        VUGG_NATIVE_HELPER_TYPE: typeName,
+      },
+      windowsHide: true,
+      timeout: NATIVE_HELPER_COMPILE_TIMEOUT_MS,
+    });
+    // The type resolves only once these exact bytes are loaded.
+    const [loadedType, image] = String(stdout).trim().split(/\r?\n/);
+    if (loadedType !== typeName || !/^[A-Za-z0-9+/]+={0,2}$/.test(image || '')) {
+      throw new Error(`native helper ${typeName} did not load from its compiled assembly`);
+    }
+    return image;
+  } finally {
+    await rm(directory, { recursive: true, force: true, maxRetries: 4, retryDelay: 150 })
+      .catch(() => { /* best-effort temp cleanup */ });
+  }
+}
+
+// One compile per helper source and command runner. A failed compile is not
+// cached: the next capture compiles again instead of inheriting the failure.
+function nativeHelperImage(typeName, source, { execFileRunner = execFileAsync } = {}) {
+  let compiled = NATIVE_HELPER_IMAGES.get(execFileRunner);
+  if (!compiled) NATIVE_HELPER_IMAGES.set(execFileRunner, compiled = new Map());
+  const key = `${typeName}:${createHash('sha256').update(source).digest('hex')}`;
+  let image = compiled.get(key);
+  if (!image) {
+    image = compileNativeHelper(typeName, source, execFileRunner);
+    compiled.set(key, image);
+    image.catch(() => { if (compiled.get(key) === image) compiled.delete(key); });
+  }
+  return image;
+}
+
+const VUGG_PROCESS_TREE_SOURCE = String.raw`
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -315,7 +375,8 @@ public static class VuggProcessTree {
       ulong creationTicks = 0;
       string executablePath = entry.szExeFile;
       IntPtr process;
-      if (handles.TryGetValue(entry.th32ProcessID, out process) && WaitForSingleObject(process, 0) == 258) {
+      bool held = handles.TryGetValue(entry.th32ProcessID, out process);
+      if (held && WaitForSingleObject(process, 0) == 258) {
         FILETIME creation, exit, kernel, user;
         if (GetProcessTimes(process, out creation, out exit, out kernel, out user)) {
           creationTicks = ((ulong)creation.high << 32) | creation.low;
@@ -326,7 +387,12 @@ public static class VuggProcessTree {
         } else creationTicks = 0;
         if (WaitForSingleObject(process, 0) != 258) creationTicks = 0;
       }
-      rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
+      // A held handle pins its PID: Windows does not reuse a process ID while a
+      // handle to that process is open. A signaled held handle therefore proves
+      // this row's lifetime ended while the snapshot was read. Omit it rather
+      // than report an unreadable birth, which consumers treat as possibly live.
+      if (!held || WaitForSingleObject(process, 0) != 0)
+        rows.Add(entry.th32ProcessID + "|" + entry.th32ParentProcessID + "|" + creationTicks + "|" + executablePath);
       entry.dwSize = (uint)Marshal.SizeOf(entry);
     } while (Process32Next(snapshot, ref entry));
     return rows.ToArray();
@@ -367,19 +433,22 @@ public static class VuggProcessTree {
     } finally { CloseHandle(process); }
   }
 }`;
+
+async function windowsProcessTree({ execFileRunner = execFileAsync, ownerPort = null } = {}) {
+  const image = await nativeHelperImage('VuggProcessTree', VUGG_PROCESS_TREE_SOURCE, { execFileRunner });
   const { stdout } = await execFileRunner('powershell.exe', [
     '-NoProfile', '-NonInteractive', '-Command',
     ownerPort == null
-      ? 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::Rows()'
-      : 'Add-Type -TypeDefinition $env:VUGG_TOOLHELP_SOURCE; [VuggProcessTree]::RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)',
+      ? `${NATIVE_HELPER_LOAD}; [VuggProcessTree]::Rows()`
+      : `${NATIVE_HELPER_LOAD}; [VuggProcessTree]::RowsAndOwner([int]$env:VUGG_DEVTOOLS_PORT)`,
   ], {
     env: {
       ...process.env,
-      VUGG_TOOLHELP_SOURCE: source,
+      VUGG_NATIVE_HELPER_IMAGE: image,
       ...(ownerPort == null ? {} : { VUGG_DEVTOOLS_PORT: String(ownerPort) }),
     },
     windowsHide: true,
-    timeout: 10_000,
+    timeout: NATIVE_HELPER_CALL_TIMEOUT_MS,
   });
   const lines = String(stdout).split(/\r?\n/);
   const ownerLine = lines.find(line => line.startsWith('OWNER|'));
@@ -398,6 +467,15 @@ public static class VuggProcessTree {
   const rootReceipt = { pid: Number(ownerPid || 0), start_ticks: ownerTicks || '',
     executable_path: ownerPath.join('|') };
   return { rootPid: rootReceipt.pid, rootReceipt, listenerStartTicks: listenerStartTicks || '', rows };
+}
+
+// The default DevTools-owner observer. `prepare` is its one-time helper
+// compile, which callers finish before an observation deadline starts.
+function windowsOwnedProcessSnapshot({ execFileRunner = execFileAsync } = {}) {
+  return Object.assign(
+    requestedPort => windowsProcessTree({ execFileRunner, ownerPort: requestedPort }),
+    { prepare: () => nativeHelperImage('VuggProcessTree', VUGG_PROCESS_TREE_SOURCE, { execFileRunner }) },
+  );
 }
 
 async function captureOwnedBrowserProcessReceipts(rootPid, {
@@ -447,10 +525,13 @@ async function captureOwnedBrowserProcessReceipts(rootPid, {
 async function captureOwnedBrowserProcessReceiptsForPort(port, {
   timeoutMs = 10_000,
   platform = process.platform,
-  ownedSnapshotProvider = requestedPort => windowsProcessTree({ ownerPort: requestedPort }),
+  ownedSnapshotProvider = windowsOwnedProcessSnapshot(),
   devtoolsReceipt = null,
   fetcher = globalThis.fetch,
 } = {}) {
+  // Setup first, so neither the observation deadline nor the endpoint-nonce
+  // bracket below spans a cold helper compile.
+  await ownedSnapshotProvider.prepare?.();
   const checkEndpoint = async () => {
     if (!devtoolsReceipt) return;
     if (devtoolsReceipt.port !== port) throw new Error('DevTools receipt port differs from ownership request');
@@ -979,6 +1060,38 @@ function assertSafeBounds(rect, width, height, insets, label) {
 }
 
 async function runWorkflow(driver, diagnostics) {
+  // A SIM identity change moves fingerprints and download hashes even when
+  // the physical state is identical. Prove that boundary in the producing
+  // browser before commissioning replacement pins. Copies used for this
+  // comparison never enter saves, simulation state, or published run products.
+  const identityReference = process.argv.includes('--recipe-identity-proof') ? {
+    browser: JSON.parse(readFileSync(path.join(ROOT, 'archive/evidence/guided-tutorial-browser-v285.json'), 'utf8')),
+    strip: JSON.parse(readFileSync(path.join(ROOT, 'archive/strips/v285/cooling.json'), 'utf8')),
+  } : null;
+  const recipeIdentityProof = identityReference ? {schema: 'recipe-identity-browser-proof-v1',
+    reference_sim: 285, actual_sim: SIM_VERSION, comparison_only_identity_substitution: true,
+    observations: [], download: null} : null;
+  const verifyIdentityOnly = async (expression, identity) => {
+    if (!identityReference) return;
+    assert.equal(SIM_VERSION, 286, 'This bounded commissioning proof is only for SIM286');
+    const prior = ['creative', 'simulation', 'save_load_policy', 'skip_cleanup']
+      .map(key => identityReference.browser.payload.journeys[key].geology_preservation.before)
+      .find(value => value.runtime === identity.runtime && value.scenario === identity.scenario && value.step === identity.step);
+    assert.ok(prior, 'No pinned prior identity for this controlled journey');
+    const proof = await driver.evaluate(`(() => {
+      const sim = ${expression}, projection = simulationStateProjection(sim);
+      const actual = simulationStateFingerprint(sim);
+      const comparison = {...projection, simVersion: 285,
+        modelDigest: ${JSON.stringify(identityReference?.strip.model_digest)}};
+      return {actual, priorIdentityOnly: sha256HexUtf8(JSON.stringify(comparison)),
+        originalStillUnchanged: actual === simulationStateFingerprint(sim)};
+    })()`);
+    assert.equal(proof.actual, identity.fingerprint);
+    assert.equal(proof.priorIdentityOnly, prior.fingerprint, 'Browser state changed beyond SIM/model identity');
+    assert.equal(proof.originalStillUnchanged, true);
+    recipeIdentityProof.observations.push({runtime: identity.runtime, scenario: identity.scenario,
+      step: identity.step, ...proof});
+  };
   const checks = [];
   const guidedTutorialJourneys = {
     schema: 'guided-tutorial-browser-journeys-v4',
@@ -1245,7 +1358,8 @@ async function runWorkflow(driver, diagnostics) {
       if (requireNoSim) assert.equal(cleanup.sim_present, false, `${label} retained geology`);
       return cleanup;
     };
-    const captureFortressGeologyIdentity = async () => driver.evaluate(`(() => {
+    const captureFortressGeologyIdentity = async () => {
+      const identity = await driver.evaluate(`(() => {
       const sim = window.vugg.fortressSim;
       const save = _liveSaveActiveRecord();
       return {
@@ -1256,7 +1370,11 @@ async function runWorkflow(driver, diagnostics) {
         run_id: save?.run_id || save?.id || null,
       };
     })()`);
-    const captureSimulationGeologyIdentity = async () => driver.evaluate(`(() => {
+      await verifyIdentityOnly('window.vugg.fortressSim', identity);
+      return identity;
+    };
+    const captureSimulationGeologyIdentity = async () => {
+      const identity = await driver.evaluate(`(() => {
       const sim = window.vugg.legendsSim;
       const receipt = stripLatestDurableRunReceipt();
       return {
@@ -1267,6 +1385,9 @@ async function runWorkflow(driver, diagnostics) {
         run_id: receipt?.dataset_digest_sha256 || null,
       };
     })()`);
+      await verifyIdentityOnly('window.vugg.legendsSim', identity);
+      return identity;
+    };
     const closeGeologyPreservation = (before, after, label) => {
       for (const [key, value] of Object.entries(before)) {
         assert.notEqual(value, null, `${label} lacks before ${key}`);
@@ -1806,6 +1927,30 @@ async function runWorkflow(driver, diagnostics) {
     const downloadFilename = 'shigar_pegmatite@seed42.stripview';
     const downloadedFile = await waitForDownloadedFile(diagnostics.download_dir, downloadFilename);
     const downloadSha256 = sha256File(downloadedFile);
+    if(process.argv.includes('--quartz-reconciliation-proof'))await verifyQuartzBrowserPayload(driver,downloadedFile,diagnostics);
+    if (identityReference) {
+      const actual = await readFile(downloadedFile);
+      const proof = await driver.evaluate(`(async () => {
+        const input = Uint8Array.from(atob(${JSON.stringify(actual.toString('base64'))}), c => c.charCodeAt(0));
+        const ds = await stripDeserialize(input);
+        const comparison = {...ds, manifest: {...ds.manifest, sim_version: 285,
+          model_digest: ${JSON.stringify(identityReference?.strip.model_digest)}}};
+        const digest = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2,'0')).join('');
+        const raw = await stripSerialize(ds, false);
+        return {actualDownloadSha256: await digest(input), actualDatasetSha256: await digest(raw),
+          priorIdentityOnlyDatasetSha256: await digest(await stripSerialize(comparison, false)),
+          priorIdentityOnlyDownloadSha256: await digest(await stripSerialize(comparison, true)),
+          roundtripDatasetSha256: await digest(await stripSerialize(await stripDeserialize(await stripSerialize(ds, true)), false)),
+          quartzCrystals: ds.quartz_form_testimony.length,
+          quartzChannelSha256: await digest(new TextEncoder().encode(JSON.stringify(ds.quartz_form_testimony)))};
+      })()`);
+      const prior = identityReference.browser.payload.journeys.player_surfaces.strip_view;
+      assert.equal(proof.actualDownloadSha256, createHash('sha256').update(actual).digest('hex'));
+      assert.equal(proof.priorIdentityOnlyDatasetSha256, prior.dataset_digest_sha256);
+      assert.equal(proof.priorIdentityOnlyDownloadSha256, prior.download_sha256);
+      assert.equal(proof.roundtripDatasetSha256, proof.actualDatasetSha256);
+      recipeIdentityProof.download = proof;
+    }
     await driver.click('#strip-view-back');
     await driver.waitFor(
       `!!document.querySelector('#strip-view-upload-input')
@@ -2107,6 +2252,34 @@ async function runWorkflow(driver, diagnostics) {
     await driver.waitFor(`window.vugg.fortressSim.step === 2`, 'Creative S shortcut');
     await driver.key('s', 'KeyS', 83);
     await driver.waitFor(`window.vugg.fortressSim.step === 3`, 'third Creative state');
+  });
+
+  await check('cycles the existing 3D wall and retains the flat cavity viewer', async () => {
+    const before = await driver.evaluate(`simulationStateFingerprint(window.vugg.fortressSim)`);
+    if (!(await driver.evaluate(`topoThreeRendererEnabled()`))) await driver.click('#topo-three-btn');
+    await driver.waitFor(`topoThreeRendererEnabled() && !!_topoThreeState?.cavity`, '3D cavity for wall controls');
+    await driver.evaluate(`void (window.__wallControlQaState = _topoThreeState)`);
+    for (const [mode, label] of [[1, 'translucent'], [2, 'hidden'], [0, 'normal']]) {
+      await driver.click('#topo-wall-btn');
+      await driver.waitFor(`_topoThreeState === window.__wallControlQaState
+        && _topoThreeState.wallDisplay === ${mode}
+        && _topoThreeState.cavity.visible === ${mode !== 2}
+        && (${mode} !== 1 || !!_topoThreeState.specimen || _topoThreeState.cavity.material.opacity === 0.18)
+        && document.querySelector('#topo-wall-btn').dataset.wallDisplay === '${label}'`,
+      `wall display ${label} without scene replacement`);
+    }
+    await driver.click('#topo-three-btn');
+    await driver.waitFor(`!topoThreeRendererEnabled()
+      && getComputedStyle(document.querySelector('#topo-canvas-three')).display === 'none'
+      && getComputedStyle(document.querySelector('#topo-canvas')).display !== 'none'
+      && getComputedStyle(document.querySelector('#topo-canvas')).visibility !== 'hidden'
+      && document.querySelector('#topo-canvas').getBoundingClientRect().width > 0
+      && document.querySelector('#topo-canvas').getBoundingClientRect().height > 0`, 'flat cavity retained');
+    await driver.click('#topo-three-btn');
+    await driver.waitFor(`topoThreeRendererEnabled()`, '3D cavity restored');
+    assert.equal(await driver.evaluate(`simulationStateFingerprint(window.vugg.fortressSim)`), before,
+      'viewer controls changed scientific state');
+    await driver.evaluate(`delete window.__wallControlQaState`);
   });
 
   await check('shows causal mineral formation evidence by pointer and keyboard', async () => {
@@ -2511,7 +2684,11 @@ async function runWorkflow(driver, diagnostics) {
     assert.deepEqual(setup.undersized, [], 'Creative setup has touch targets below 44px');
   });
 
-  return { checks, guidedTutorialJourneys };
+  if (recipeIdentityProof) {
+    assert.equal(recipeIdentityProof.observations.length, 8);
+    assert.ok(recipeIdentityProof.download);
+  }
+  return { checks, guidedTutorialJourneys, recipeIdentityProof };
 }
 
 async function main() {
@@ -2743,6 +2920,13 @@ async function main() {
         ROOT, SIM_VERSION, workflow.guidedTutorialJourneys, diagnostics.browser_runtime,
       );
       const output = writeGuidedTutorialBrowserReceipt(ROOT, receipt);
+      if (workflow.recipeIdentityProof) {
+        await writeFile(path.join(ROOT, 'proposals/evidence/recipe-identity-browser-validation.json'),
+          JSON.stringify({base: 'e2142582c5fa69e6b0dff306ccdc84597533ad1f',
+            execution_set_sha256: receipt.execution_set_sha256,
+            producer_contract_sha256: receipt.producer_contract_sha256,
+            browser_runtime: diagnostics.browser_runtime, ...workflow.recipeIdentityProof}, null, 2) + '\n');
+      }
       process.stdout.write(`[browser-workflow] wrote ${path.relative(ROOT, output).replaceAll('\\', '/')}\n`);
     }
     process.stdout.write(`${JSON.stringify({
@@ -2807,6 +2991,10 @@ export {
   fetchWithDeadline,
   formatErrorTree,
   findOwnedBrowserRootPid,
+  NATIVE_HELPER_CALL_TIMEOUT_MS,
+  NATIVE_HELPER_COMPILE_TIMEOUT_MS,
+  NATIVE_HELPER_LOAD,
+  nativeHelperImage,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
@@ -2815,6 +3003,7 @@ export {
   waitForHttp,
   waitForDevToolsReceipt,
   waitForOwnedExit,
+  windowsOwnedProcessSnapshot,
   windowsProcessTree,
 };
 

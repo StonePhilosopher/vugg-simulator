@@ -12,6 +12,7 @@
 // ---- Native MINERAL_GATES exports ----
 
 const MINERAL_GATES_native_tellurium: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 100, T_max: 400, T_optimal: 225,
   fluid_min: { Te: 0.5 },
@@ -23,6 +24,7 @@ const MINERAL_GATES_native_tellurium: MineralGates = {
 };
 
 const MINERAL_GATES_native_sulfur: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.0,
   T_max: 200, T_optimal: 50,
   fluid_min: { S_elemental: 100 },
@@ -34,6 +36,7 @@ const MINERAL_GATES_native_sulfur: MineralGates = {
 };
 
 const MINERAL_GATES_native_arsenic: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 100, T_max: 350, T_optimal: 225,
   fluid_min: { As: 5 },
@@ -45,8 +48,11 @@ const MINERAL_GATES_native_arsenic: MineralGates = {
 };
 
 const MINERAL_GATES_native_silver: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.0,
-  T_min: 50, T_max: 300, T_optimal: 150,
+  // No T_min: the old 50°C floor was soft in the σ and wrong (supergene native
+  // silver forms at ambient T, as bisbee's 25°C births show) — recipe review M9.
+  T_max: 300, T_optimal: 150,
   fluid_min: { Ag: 1.0 },
   O2_max: 0.3,                  // anoxic (Ag° reduced)
   pH_min: 4, pH_max: 9,
@@ -56,6 +62,7 @@ const MINERAL_GATES_native_silver: MineralGates = {
 };
 
 const MINERAL_GATES_native_bismuth: MineralGates = {
+  soft: ['T_min'],
   sigma_crit: 1.0,
   T_min: 100, T_max: 270, T_optimal: 175,
   fluid_min: { Bi: 5 },
@@ -67,6 +74,7 @@ const MINERAL_GATES_native_bismuth: MineralGates = {
 };
 
 const MINERAL_GATES_native_gold: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 20, T_max: 700, T_optimal: 200,
   fluid_min: { Au: 0.5 },
@@ -76,6 +84,7 @@ const MINERAL_GATES_native_gold: MineralGates = {
 };
 
 const MINERAL_GATES_native_copper: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.6,
   T_min: 20, T_max: 300, T_optimal: 85,
   fluid_min: { Cu: 50 },

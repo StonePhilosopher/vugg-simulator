@@ -77,6 +77,7 @@ const MINERAL_GATES_albite: MineralGates = {
 };
 
 const MINERAL_GATES_lepidolite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.2,
   T_min: 350, T_max: 700, T_optimal: 450,
   fluid_min: { K: 10, Li: 15, Al: 10, SiO2: 200, F: 5 },
@@ -87,6 +88,7 @@ const MINERAL_GATES_lepidolite: MineralGates = {
 };
 
 const MINERAL_GATES_spodumene: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.5,
   T_min: 400, T_max: 800, T_optimal: 525,
   fluid_min: { Li: 8, Al: 5, SiO2: 40 },
@@ -107,6 +109,7 @@ const MINERAL_GATES_chrysocolla: MineralGates = {
 };
 
 const MINERAL_GATES_beryl: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50 },
@@ -116,6 +119,7 @@ const MINERAL_GATES_beryl: MineralGates = {
 };
 
 const MINERAL_GATES_emerald: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Cr: 0.5 },
@@ -125,6 +129,7 @@ const MINERAL_GATES_emerald: MineralGates = {
 };
 
 const MINERAL_GATES_aquamarine: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 8 },
@@ -134,6 +139,7 @@ const MINERAL_GATES_aquamarine: MineralGates = {
 };
 
 const MINERAL_GATES_morganite: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Mn: 2.0 },
@@ -143,6 +149,7 @@ const MINERAL_GATES_morganite: MineralGates = {
 };
 
 const MINERAL_GATES_heliodor: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.0,
   T_min: 300, T_max: 700, T_optimal: 450,
   fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 15 },
@@ -153,6 +160,7 @@ const MINERAL_GATES_heliodor: MineralGates = {
 };
 
 const MINERAL_GATES_tourmaline: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.3,
   T_min: 350, T_max: 700, T_optimal: 500,
   fluid_min: { Na: 3, B: 6, Al: 8, SiO2: 60 },
@@ -162,6 +170,7 @@ const MINERAL_GATES_tourmaline: MineralGates = {
 };
 
 const MINERAL_GATES_topaz: MineralGates = {
+  soft: ['T_min', 'T_max'],
   sigma_crit: 1.4,
   T_min: 300, T_max: 600, T_optimal: 370,
   fluid_min: { Al: 3, SiO2: 200, F: 20 },
@@ -228,7 +237,8 @@ const MINERAL_GATES_willemite: MineralGates = {
   sigma_crit: 1.0,
   T_min: 50, T_max: 700, T_optimal: 115,
   fluid_min: { Zn: 50, SiO2: 100 },
-  O2_min: 0.3,
+  // Display only — the σ body enforces its own inline O2 ≥ 0.5 (rung 4a).
+  O2_min: 0.5,
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'medium',
   _sources: ['willemite engine v98+', 'Franklin/Sterling NJ + Skorpion literature'],
@@ -595,12 +605,14 @@ Object.assign(VugConditions.prototype, {
   // not double-fire here. Python's K-only design has been canonical
   // since the data model split feldspar/albite as separate species.
   // JS now matches Python's K-only structure, with a hard 800°C
-  // upper cap (sanidine→melt boundary) added.
+  // upper cap added.
   if (this.fluid.K < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
-  // Hard upper cap — feldspar melts above 800°C.
+  // Hard 800°C upper cap. It is a model cap, NOT the melting point: sanidine
+  // melts near 1150°C dry. Latent — no scenario runs above ~700°C.
   if (this.temperature > 800) return 0;
   let sigma = (this.fluid.K / 40.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
-  // Feldspars need HIGH temperature — they're igneous/metamorphic
+  // Soft decay below 300°C, not a floor: K-feldspar also forms at low T
+  // (epithermal adularia; the Deccan zeolite stage grows it at ~127-150°C).
   if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
   // Acid destabilization — kaolinization regime, mirrors grow_feldspar
   // dissolution at pH < 4. KAlSi₃O₈ + H⁺ → kaolinite + K⁺ + SiO₂.
@@ -1339,7 +1351,8 @@ Object.assign(VugConditions.prototype, {
 
   // v200 (2026-06-17): Stilbite — the COOLER, more-hydrated member of the
   // Deccan Stage-II zeolite couple. Ca-dominant, alkaline, moderate silica.
-  // T sweet spot 60-110°C (stilbite precedes heulandite on a cooling path).
+  // T sweet spot 60-110°C (heulandite, the hotter member, precedes stilbite on
+  // a cooling path).
   // Redox-insensitive: no redox gate. See MINERAL_GATES_stilbite.
   supersaturation_stilbite() {
     const g = MINERAL_GATES_stilbite;

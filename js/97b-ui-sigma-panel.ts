@@ -578,10 +578,44 @@ function _formationCompetition(name: string, sigma: number, c: any, sim: any) {
   return { competitors, initiative };
 }
 
+// T and pH gate chip. A bound listed in gate.soft is one the σ body only
+// attenuates, so it is shown but never by itself makes the chip "unmet".
+// With no soft bound the text and verdict are exactly the old hard-gate ones.
+function _formationBoundChip(valueText: string, value: any, lo: number | undefined,
+    hi: number | undefined, softLo: boolean, softHi: boolean, unit: string): FormationDiagnosticChip {
+  const hasLo = lo != null, hasHi = hi != null;
+  if (!hasLo && !hasHi) return { text: `${valueText} · no explicit cutoff`, met: true };
+  const need = hasLo && hasHi && softLo === softHi
+    ? `${lo}–${hi}${unit}${softLo ? ' (soft)' : ''}`
+    : [hasLo ? `≥ ${lo}${unit}${softLo ? ' (soft)' : ''}` : null,
+       hasHi ? `≤ ${hi}${unit}${softHi ? ' (soft)' : ''}` : null].filter(Boolean).join(', ');
+  const known = typeof value === 'number';
+  const belowLo = known && hasLo && value < lo!;
+  const aboveHi = known && hasHi && value > hi!;
+  const hardFail = !known || (belowLo && !softLo) || (aboveHi && !softHi);
+  const chip: FormationDiagnosticChip = { text: `${valueText} · ${need}`, met: !hardFail };
+  if (!hardFail && (belowLo || aboveHi)) {
+    chip.status = 'observer';
+    chip.note = 'Outside a soft bound: the engine attenuates σ here instead of stopping, so this alone does not block formation.';
+  }
+  return chip;
+}
+
 function _formationRedoxChip(gate: MineralGates | null, c: any): FormationDiagnosticChip {
   const f = c?.fluid || {};
   const hasMin = gate?.O2_min != null;
   const hasMax = gate?.O2_max != null;
+
+  // Mirrors sulfateRedoxAvailable (js/20c): an explicit sulfate pool admits
+  // sulfate minerals at ANY Eh; the O2 floor applies only without pools.
+  if (gate?.redox_bypass === 'explicit_sulfate_pool' && f.sulfurPoolsExplicit) {
+    const sulfate = Number(f.S_sulfate) || 0;
+    return {
+      text: `explicit sulfate pool ${_formationNumber(sulfate)} ppm · any Eh`,
+      met: sulfate > 0,
+      note: 'This fluid carries an explicit sulfate pool, so the engine admits sulfate at any Eh ("an anoxic fluid may retain and precipitate inherited sulfate"). The O₂ floor applies only to fluids without explicit pools.',
+    };
+  }
   const ehMode = typeof EH_DYNAMIC_ENABLED !== 'undefined' && EH_DYNAMIC_ENABLED
     && typeof ehFromO2 === 'function';
 
@@ -619,6 +653,16 @@ function _formationRedoxChip(gate: MineralGates | null, c: any): FormationDiagno
 // union envelope. Keep the shared registry broad for discovery, but resolve
 // the exact selected gate before building player-facing T/pH/redox chips.
 function _formationEffectiveGate(name: string, base: MineralGates | null, c: any): MineralGates | null {
+  // Native sulfur's σ picks its redox window by pathway (js/36): the
+  // oxidative pathways use the gate's O2 window, the anaerobic-inherited one
+  // replaces it with O2 ≤ 0.1.
+  if (name === 'native_sulfur' && base
+      && c?.fluid?.nativeSulfurPathway === 'anaerobic_microbial_inherited') {
+    const gate: MineralGates = { ...base };
+    delete gate.O2_min;
+    gate.O2_max = 0.1;
+    return gate;
+  }
   if (name !== 'tigers_eye' || !base) return base;
   const gate: MineralGates = { ...base };
   delete gate.O2_min;
@@ -973,15 +1017,10 @@ function _buildMineralFormationExplanation(
   });
 
   const T = c.temperature;
-  const hasTMin = gate?.T_min != null, hasTMax = gate?.T_max != null;
-  const tMet = typeof T === 'number'
-    && (!hasTMin || T >= gate!.T_min!)
-    && (!hasTMax || T <= gate!.T_max!);
-  const tNeed = hasTMin && hasTMax
-    ? `${gate!.T_min}–${gate!.T_max}°C`
-    : hasTMin ? `≥ ${gate!.T_min}°C` : hasTMax ? `≤ ${gate!.T_max}°C` : 'no explicit cutoff';
+  const softBounds = new Set(gate?.soft || []);
   const temperatureChips: FormationDiagnosticChip[] = [
-    { text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet },
+    _formationBoundChip(`${_formationNumber(T, 0)}°C`, T, gate?.T_min, gate?.T_max,
+      softBounds.has('T_min'), softBounds.has('T_max'), '°C'),
   ];
   if (typeof sulfateThermoTemperatureAssessment === 'function'
       && ['selenite', 'gypsum', 'anhydrite', 'barite', 'celestine'].indexOf(name) >= 0) {
@@ -1018,16 +1057,10 @@ function _buildMineralFormationExplanation(
   }
 
   const pH = c.fluid.pH;
-  const hasPHMin = gate?.pH_min != null, hasPHMax = gate?.pH_max != null;
-  const phMet = typeof pH === 'number'
-    && (!hasPHMin || pH >= gate!.pH_min!)
-    && (!hasPHMax || pH <= gate!.pH_max!);
-  const phNeed = hasPHMin && hasPHMax
-    ? `${gate!.pH_min}–${gate!.pH_max}`
-    : hasPHMin ? `≥ ${gate!.pH_min}` : hasPHMax ? `≤ ${gate!.pH_max}` : 'no explicit cutoff';
   groups.push({
     label: 'pH gate',
-    chips: [{ text: `pH ${_formationNumber(pH, 1)} · ${phNeed}`, met: (!hasPHMin && !hasPHMax) || phMet }],
+    chips: [_formationBoundChip(`pH ${_formationNumber(pH, 1)}`, pH, gate?.pH_min, gate?.pH_max,
+      softBounds.has('pH_min'), softBounds.has('pH_max'), '')],
   });
   groups.push({ label: 'Redox gate', chips: [_formationRedoxChip(gate, c)] });
 

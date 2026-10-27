@@ -178,6 +178,9 @@ function _simulationCrystalProjection(crystal: any): any {
     cLengthMm: Number(crystal.c_length_mm) || 0,
     aWidthMm: Number(crystal.a_width_mm) || 0,
     habit: crystal.habit || null,
+    ...(crystal.celestine_origin ? {
+      celestineOrigin: _simulationCanonicalProjection(crystal.celestine_origin),
+    } : {}),
     position: crystal.position || null,
     enclosedBy: crystal.enclosed_by ?? null,
     enclosedCrystals: _simulationCanonicalProjection(crystal.enclosed_crystals || []),
@@ -226,6 +229,7 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
   return {
     simVersion: SIM_VERSION,
     modelDigest: MODEL_DIGEST,
+    ...(localStateFoundationFor(sim) ? {localConservedFoundation: localStateFoundationFor(sim)} : {}),
     scenarioId: runtime?.origin?.scenarioId || sim?.conditions?._scenario?.id || null,
     seed: runtime?.origin?.seed ?? null,
     step: Number(sim?.step) || 0,

@@ -15,8 +15,12 @@
  *     none          function never reads temperature at all (the leak class)
  *
  *   DYNAMIC (--strips) — walk archive/strips/v<N>/*.json and list every nucleation
- *   event whose T-at-step falls OUTSIDE the nucleating species' declared envelope:
- *   the fleet-wide blast-radius map for enforcing what's declared.
+ *   event whose step falls OUTSIDE the nucleating species' declared envelope at
+ *   both its start and its end, then the boundary steps outside at only one end:
+ *   the fleet-wide blast-radius map for enforcing what's declared. The archive
+ *   names a crystal by its FINAL species at its birth step, so a converted
+ *   crystal is checked against the wrong envelope (sabkha_dolomitization's five
+ *   "anhydrite" rows are selenite births, 25–31 °C, converted by js/75).
  *
  * PASSIVE instrument: reads, reports, exits 0 regardless of findings (the
  * passive-instrument-not-gate rule). Run on demand; not part of the rebake ritual.
@@ -63,17 +67,63 @@ function collectStatic() {
       };
       gates.set(m[1], { T_min: num('T_min'), T_max: num('T_max'), T_optimal: num('T_optimal'), file: f });
     }
-    for (const m of src.matchAll(/supersaturation_(\w+)\s*\(\)\s*\{/g)) {
+    // Parameterised methods count too (`supersaturation_HMC(mg_content?: number)`
+    // was invisible to the old `\(\)` pattern — recipe review M13).
+    for (const m of src.matchAll(/supersaturation_(\w+)\s*\([^)]*\)\s*\{/g)) {
       const body = braceSlice(src, m.index + m[0].length - 1);
       if (body) fns.set(m[1], { body, file: f });
+    }
+    // Every other method body, so a σ that delegates (`this._beryl_base_sigma(…)`)
+    // is classified on what its helper does, one level deep.
+    for (const m of src.matchAll(/^\s+(_\w+)\s*\([^)]*\)\s*\{/gm)) {
+      const body = braceSlice(src, m.index + m[0].length - 1);
+      if (body && !helpers.has(m[1])) helpers.set(m[1], body);
     }
   }
   return { gates, fns };
 }
 
+const helpers = new Map();   // helper method name -> body (filled by collectStatic)
+
+// The CaSO4 phases are admitted by evaluateCaSO4System (js/40b), a free function
+// whose T conditions sit inside boolean admissibility flags rather than an
+// `if (…) return 0`. This census does not parse it, so the two hard bounds are
+// stated here, and both halves are ASSERTED in their written form: the σ's own
+// guard on the primary flag, and that flag's definition with its T conjunct.
+// If either changes, the census refuses to run rather than misclassify (recipe
+// review M13). Gypsum→anhydrite conversion (js/75) reads a separate flag that
+// the σ does not; it is why anhydrite can exist below 100 °C at all.
+const EVALUATOR_HARD_T = {
+  anhydrite: {
+    file: '40b-supersat-sulfate-Ksp.ts',
+    guard: /if\s*\(\s*!evaluation\.anhydritePrimaryAdmissible\s*\)\s*return 0/,
+    flag: /anhydritePrimaryAdmissible\s*=\s*anhydriteSI\s*>\s*0\s*&&\s*temperatureC\s*>=\s*100\b/,
+  },
+  selenite: {
+    file: '40b-supersat-sulfate-Ksp.ts',
+    guard: /if\s*\(\s*!evaluation\.gypsumPrimaryAdmissible\s*\)\s*return 0/,
+    flag: /gypsumPrimaryAdmissible\s*=\s*gypsumSI\s*>\s*0\s*&&\s*temperatureC\s*<=\s*80\b/,
+  },
+};
+function evaluatorHardT(mineral, code) {
+  const rule = EVALUATOR_HARD_T[mineral];
+  if (!rule) return false;
+  const src = fs.readFileSync(path.join(JS, rule.file), 'utf8');
+  if (!rule.guard.test(code) || !rule.flag.test(src)) {
+    throw new Error(`t-envelope-census: the ${mineral} override no longer matches its σ guard or the flag in ${rule.file} — re-derive it`);
+  }
+  return true;
+}
+
 function classifyEnforcement(mineral, body) {
   // strip comments so a cited bound in prose doesn't count as enforcement
-  const code = body.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const strip = (s) => s.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  let code = strip(body);
+  if (/^\{\s*return 0;?\s*\}$/.test(code)) return 'always-zero';   // e.g. tincalconite (paramorph only)
+  if (evaluatorHardT(mineral, code)) return 'inline-hard';
+  for (const m of code.matchAll(/this\.(_\w+)\s*\(/g)) {
+    if (helpers.has(m[1])) code += '\n' + strip(helpers.get(m[1]));
+  }
   const readsGates = new RegExp(`(g|MINERAL_GATES_${mineral})\\.(T_min|T_max)`).test(code);
   // temperature may be gated through a local alias (`const T = this.temperature;`
   // ... `if (T < 100 || T > 450) return 0;`) — collect alias names first, or the
@@ -133,40 +183,70 @@ function latestStripVersion() {
   return vs[vs.length - 1];
 }
 
+// Which bound a temperature crosses, or null.
+function crossedBound(g, T) {
+  if (g.T_min !== undefined && T < g.T_min) return `T_min ${g.T_min}`;
+  if (g.T_max !== undefined && T > g.T_max) return `T_max ${g.T_max}`;
+  return null;
+}
+
 function runStrips(gates, version) {
   const dir = path.join(ROOT, 'archive', 'strips', `v${version}`);
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
-  const violations = [];
-  const speciesT = new Map();   // species -> {min,max,events}
+  const definite = [];   // outside at both the start and the end of the birth's step
+  const boundary = [];   // outside at only one of them: the archive cannot say which the birth saw
   for (const f of files) {
     const strip = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
     const scenario = f.replace(/\.json$/, '');
-    const Tseries = strip.chips?.T?.wall;
+    // raw_environment.T is each step's exact end state; the chips' T series
+    // is quantised for display (~3 °C steps), too coarse at a bound.
+    const Tseries = strip.raw_environment?.T;
     if (!Array.isArray(Tseries)) continue;
     for (const ev of strip.nucleation_events || []) {
-      const T = Tseries[Math.min(ev.step, Tseries.length - 1)];
-      if (typeof T !== 'number') continue;
-      const st = speciesT.get(ev.mineral) || { min: Infinity, max: -Infinity, events: 0 };
-      st.min = Math.min(st.min, T); st.max = Math.max(st.max, T); st.events++;
-      speciesT.set(ev.mineral, st);
+      // Sample k holds the END of step k + 1, and an event carries its own
+      // step's sample: sample_index = step − 1. A birth's T lies between its
+      // step's start (sample n − 2) and end (n − 1), and the archive cannot
+      // order it within the step: events apply before births (bisbee's step-65
+      // births at 25–35 °C, start 259.9), the ambient thermal path after
+      // (jeffrey_mine's step-153 pectolite at 267.7, end 361.0). So neither
+      // sample alone is right. Against the exact T of all 1,212 seed-42 births
+      // (tools/birth-census.mjs, SIM 285), no birth is outside its envelope,
+      // yet reading n − 2 alone flags 18, n − 1 alone 4, and sample n — what
+      // this census used to read, the end of the NEXT step — 8, porphyry's
+      // step-84 stibnite among them (33.7 °C, born at 351.1). Requiring both
+      // samples flags none of those births past step 1, whose start is not
+      // archived; the definite rows left are the final-species quirk in the
+      // header (recipe review M12).
+      const end = ev.sample_index ?? ev.step - 1;
+      if (end < 0 || end >= Tseries.length) continue;
+      const Tend = Tseries[end];
+      const Tstart = end >= 1 ? Tseries[end - 1] : undefined;
+      if (typeof Tend !== 'number') continue;
       const g = gates.get(ev.mineral);
       if (!g) continue;
-      const below = g.T_min !== undefined && T < g.T_min;
-      const above = g.T_max !== undefined && T > g.T_max;
-      if (below || above) {
-        violations.push({ scenario, mineral: ev.mineral, step: ev.step, T,
-          bound: below ? `T_min ${g.T_min}` : `T_max ${g.T_max}` });
-      }
+      const atEnd = crossedBound(g, Tend);
+      const atStart = Tstart === undefined ? null : crossedBound(g, Tstart);
+      if (!atEnd && !atStart) continue;
+      const row = { scenario, mineral: ev.mineral, step: ev.step, Tstart, Tend, bound: atEnd || atStart };
+      if (atEnd && atStart) definite.push(row);
+      else boundary.push(row);
     }
   }
+  const fmt = (x) => (typeof x === 'number' ? x.toFixed(1) : '—').padStart(6);
+  const order = (a, b) => a.mineral.localeCompare(b.mineral) || a.scenario.localeCompare(b.scenario) || a.step - b.step;
+  const table = (rows) => {
+    console.log('  scenario                   | mineral         | step | start  | end    | bound');
+    console.log('  ---------------------------|-----------------|------|--------|--------|------');
+    for (const v of rows.sort(order)) {
+      console.log(`  ${v.scenario.padEnd(26)} | ${v.mineral.padEnd(15)} | ${String(v.step).padStart(4)} | ${fmt(v.Tstart)} | ${fmt(v.Tend)} | ${v.bound}`);
+    }
+  };
   console.log(`\nDYNAMIC CENSUS — strips v${version}: nucleation events OUTSIDE the declared envelope`);
-  console.log(`  ${violations.length} violating events across ${new Set(violations.map(v => v.scenario)).size} scenarios`);
-  console.log('  scenario                   | mineral         | step | T(°C)  | violated bound');
-  console.log('  ---------------------------|-----------------|------|--------|---------------');
-  for (const v of violations.sort((a, b) => a.mineral.localeCompare(b.mineral) || a.scenario.localeCompare(b.scenario) || a.step - b.step)) {
-    console.log(`  ${v.scenario.padEnd(26)} | ${v.mineral.padEnd(15)} | ${String(v.step).padStart(4)} | ${v.T.toFixed(1).padStart(6)} | ${v.bound}`);
-  }
-  return violations;
+  console.log(`  outside at both the start and the end of the birth's step: ${definite.length} events across ${new Set(definite.map(v => v.scenario)).size} scenarios`);
+  table(definite);
+  console.log(`\n  BOUNDARY STEPS — outside at only one end of the step (confirm with tools/birth-census.mjs): ${boundary.length}`);
+  table(boundary);
+  return { definite, boundary };
 }
 
 // ---------- main ----------

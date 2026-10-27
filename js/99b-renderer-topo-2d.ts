@@ -481,6 +481,24 @@ function _topoUpdateSliceLabel(wall) {
   lab.textContent = `${idx + 1}/${total} ${orient}`.trim();
 }
 
+function _topoCelestineNotice(panel: HTMLElement, sim: any): void {
+  // Holding the last blanket view must not imply that later growth stopped.
+  let notice = document.getElementById('topo-celestine-notice');
+  const view = sim?.crystals?.find((c: any) =>
+    c.celestine_morphology_status === 'unresolved')
+    || sim?.crystals?.find((c: any) => c.celestine_disclosure);
+  if (!notice && !view) return;
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'topo-celestine-notice';
+    notice.setAttribute('role', 'status');
+    notice.style.cssText = 'position:relative;padding:6px 10px;font-size:12px;color:var(--text,#ddd);background:var(--bg,#242322);';
+    panel.appendChild(notice);
+  }
+  notice.textContent = view?.celestine_disclosure || '';
+  notice.hidden = !view;
+}
+
 function topoRender(optOverrideSnap?) {
   const canvas = document.getElementById('topo-canvas');
   const panel = document.getElementById('topo-panel');
@@ -502,6 +520,8 @@ function topoRender(optOverrideSnap?) {
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
 
+  _topoCelestineNotice(panel, celestinePresentationSim(sim, optOverrideSnap?.step ?? Infinity));
+
   // Authenticate historical payloads before aggregation or empty-state
   // handling so malformed replay can never borrow today's live wall.
   const replayDecision = typeof _topoReplayRenderDecision === 'function'
@@ -520,7 +540,7 @@ function topoRender(optOverrideSnap?) {
     _topoPaintPlaceholder(canvas, replayDecision.message);
     return;
   }
-  let renderSim = sim;
+  let renderSim = celestinePresentationSim(sim, optOverrideSnap?.step ?? Infinity);
   if (optOverrideSnap && sim) {
     const historicalConditions = replayDecision.conditions
       || CavityWaterAppearance.replayConditions(
@@ -529,7 +549,7 @@ function topoRender(optOverrideSnap?) {
           : optOverrideSnap.conditions,
         replayDecision.wall,
       );
-    renderSim = Object.create(sim);
+    renderSim = Object.create(renderSim);
     renderSim.conditions = historicalConditions;
   }
 
@@ -778,7 +798,7 @@ function topoRender(optOverrideSnap?) {
     const rStart = boundaryR[i];
     const rMid = cellR[i];
     const rEnd = boundaryR[(i + 1) % N];
-    const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
+    const crystal = renderSim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
     const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
     const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
     const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);

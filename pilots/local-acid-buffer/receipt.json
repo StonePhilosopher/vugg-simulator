@@ -1,0 +1,3207 @@
+{
+  "schema": "vugg-local-acid-buffer-receipt-v1",
+  "scope": "isolated-pilot-production-disabled",
+  "integrationBase": "2f81c230cd17e0b9307401da441a30151ba080c3",
+  "hashPolicy": "SHA-256; source text LF-normalized, dependency and gzip bytes raw",
+  "producedAt": "2026-10-26T20:36:37.648Z",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "dependency": {
+    "version": "PHREEQC-3.8.6-17100",
+    "url": "https://water.usgs.gov/water-resources/software/PHREEQC/phreeqc-3.8.6-17100-x64.msi",
+    "packageSha256": "6e5f6697fa727f919eb4e7c1c2bc20e8c2717378aaf77731efd831ef66578243",
+    "executableSha256": "d1cc2ad3ae66af8a95c3fbb605affc4d22149c8d5aab4239919792c524635006",
+    "databaseSha256": "3be63aa92ab61fffd70e4bdf39e488bc32c1c1eaa71e1b41a4bf2fd33c1f5624",
+    "officialExampleLfSha256": "cef249a87c3f0c63b86ec3b2814981a84defeb15d3e70dee745271ff3e406cb9"
+  },
+  "sourceBindings": {
+    "pilots/local-acid-buffer/ledger.mjs": "0abad7491f391ed54aa9df9b3f53422830210e8013b25196fcd5e7cc037b099b",
+    "pilots/local-acid-buffer/phreeqc.mjs": "5d589f4de760c74b08d3de0794761f2944466c22c7e8e4abe74ae0539e3ab3ef",
+    "pilots/local-acid-buffer/experiment.mjs": "dd6038eeeab20f22719633a3f1b404c6c9d5fa59bde18fa7b6c4d0f55cf5d92c",
+    "pilots/local-acid-buffer/commission.mjs": "7b749934c062e7535ced4aaf674b74b232db7284bc65cec6cc4c0307224f95dd",
+    "pilots/local-acid-buffer/references/official-ex5.pqi": "cef249a87c3f0c63b86ec3b2814981a84defeb15d3e70dee745271ff3e406cb9",
+    "pilots/local-acid-buffer/references/example5-open.pqi": "768184f021ed9552acfcd23ef04f69a485de43058a766bef808cf534b38c8061",
+    "pilots/local-acid-buffer/references/example5-closed.pqi": "c52a445f59e439f8a8a45538322df382077641cffeb5a423969559b0c1c9b95d",
+    "tools/evidence-runtime.mjs": "acfde9e92dd4548d75aacee0b8bc7407c5bc0860d0d4ea4d617a70d08cc1d7e6"
+  },
+  "experiment": {
+    "schema": "vugg-local-acid-buffer-experiment-v1",
+    "temperatureC": 25,
+    "pressureAtm": 1,
+    "units": "mol components, eq alkalinity, kg solvent, dimensionless exchange fraction",
+    "waterKgPerCell": 1,
+    "NaClMolPerCell": 0.001,
+    "pyriteMolA": 0.002,
+    "O2MolA": 0.003,
+    "calciteMolB": 0.001,
+    "dissolvedCaAndCMolB": 0.0001,
+    "pulseMol": 0.0002,
+    "pulses": 4,
+    "cycles": 16,
+    "exchangeFraction": 0.25,
+    "kinetics": "authored extents, not a rate law; cycles have no physical duration",
+    "reactionSchedule": "oxidation -> finite calcite -> conservative exchange -> finite calcite/speciation",
+    "gas": "closed-carbon or fixed-pCO2=10^-3.5 atm, independently in each cell",
+    "phases": "finite dissolution-only calcite; prescribed Fe(OH)3 endpoint; no other precipitates"
+  },
+  "phreeqcCalls": 539,
+  "transcriptSha256": "b94fd845576401eb12cbe22bd34de6d1f978e74ce75f1dfc07f1b13d66087c76",
+  "results": {
+    "reference": {
+      "distribution": [
+        {
+          "step": 1,
+          "pH": 8.27866,
+          "gypsum": 0
+        },
+        {
+          "step": 2,
+          "pH": 8.16976,
+          "gypsum": 0
+        },
+        {
+          "step": 3,
+          "pH": 7.97867,
+          "gypsum": 0
+        },
+        {
+          "step": 4,
+          "pH": 7.8793,
+          "gypsum": 0
+        },
+        {
+          "step": 5,
+          "pH": 7.72165,
+          "gypsum": 0
+        },
+        {
+          "step": 6,
+          "pH": 7.70941,
+          "gypsum": 0.0089755
+        }
+      ],
+      "open": [
+        {
+          "reactionO2": 0,
+          "pH": 8.27865521352,
+          "waterKg": 0.9999914270525,
+          "carbon": 0.0009756075217745,
+          "calcite": 9.999508980565,
+          "pyrite": 9.999999968599,
+          "goethite": 10.00000001089,
+          "gypsum": 0,
+          "gasCarbon": 9.999515411913,
+          "gypsumSI": -6.125053221185
+        },
+        {
+          "reactionO2": 0.001,
+          "pH": 8.169764824684,
+          "waterKg": 0.9999907726661,
+          "carbon": 0.0007789098416024,
+          "calcite": 9.999075849334,
+          "pyrite": 9.999733332094,
+          "goethite": 10.00026665792,
+          "gypsum": 0,
+          "gasCarbon": 10.00014524082,
+          "gypsumSI": -2.01389513286
+        },
+        {
+          "reactionO2": 0.005,
+          "pH": 7.978665557803,
+          "waterKg": 0.9999833710386,
+          "carbon": 0.0005312121017693,
+          "calcite": 9.997068224741,
+          "pyrite": 9.998666664887,
+          "goethite": 10.00133331357,
+          "gypsum": 0,
+          "gasCarbon": 10.00240056316,
+          "gypsumSI": -1.05460602328
+        },
+        {
+          "reactionO2": 0.01,
+          "pH": 7.879299173625,
+          "waterKg": 0.9999721734207,
+          "carbon": 0.0004402172187619,
+          "calcite": 9.994447607198,
+          "pyrite": 9.997333330731,
+          "goethite": 10.00266663428,
+          "gypsum": 0,
+          "gasCarbon": 10.00511217558,
+          "gypsumSI": -0.641171870273
+        },
+        {
+          "reactionO2": 0.03,
+          "pH": 7.721651541539,
+          "waterKg": 0.9999250806133,
+          "carbon": 0.00033403926015,
+          "calcite": 9.98383460033,
+          "pyrite": 9.991999994327,
+          "goethite": 10.0079999234,
+          "gypsum": 0,
+          "gasCarbon": 10.01583136041,
+          "gypsumSI": -0.02529795367342
+        },
+        {
+          "reactionO2": 0.05,
+          "pH": 7.709413632811,
+          "waterKg": 0.9995536534154,
+          "carbon": 0.0003315278781177,
+          "calcite": 9.973169192463,
+          "pyrite": 9.986666660461,
+          "goethite": 10.01333324925,
+          "gypsum": 0.008975545835228,
+          "gasCarbon": 10.02649927966,
+          "gypsumSI": 0
+        }
+      ],
+      "closed": [
+        {
+          "reactionO2": 0,
+          "pH": 9.905783313624,
+          "waterKg": 0.9999984894165,
+          "carbon": 0.000123072128211,
+          "calcite": 9.999876927872,
+          "pyrite": 9.999999853107,
+          "goethite": 10.00000014681,
+          "gypsum": 0,
+          "gasCarbon": 0,
+          "gypsumSI": -6.288287213356
+        },
+        {
+          "reactionO2": 0.001,
+          "pH": 7.98593399923,
+          "waterKg": 0.9999883715181,
+          "carbon": 0.001056748265789,
+          "calcite": 9.998943251734,
+          "pyrite": 9.999733331568,
+          "goethite": 10.00026664746,
+          "gypsum": 0,
+          "gasCarbon": 0,
+          "gypsumSI": -1.969468070886
+        },
+        {
+          "reactionO2": 0.005,
+          "pH": 6.954058072755,
+          "waterKg": 0.9999545721673,
+          "carbon": 0.004528675859795,
+          "calcite": 9.99547132414,
+          "pyrite": 9.998666564561,
+          "goethite": 10.00133190448,
+          "gypsum": 0,
+          "gasCarbon": 0,
+          "gypsumSI": -0.933739334614
+        },
+        {
+          "reactionO2": 0.01,
+          "pH": 6.616502667365,
+          "waterKg": 0.9999258749071,
+          "carbon": 0.008118715314742,
+          "calcite": 9.991881284685,
+          "pyrite": 9.99733288107,
+          "goethite": 10.00266033537,
+          "gypsum": 0,
+          "gasCarbon": 0,
+          "gypsumSI": -0.5440859790427
+        },
+        {
+          "reactionO2": 0.03,
+          "pH": 6.166818435262,
+          "waterKg": 0.999811700416,
+          "carbon": 0.02068147382922,
+          "calcite": 9.979318526171,
+          "pyrite": 9.99199647192,
+          "goethite": 10.00795060712,
+          "gypsum": 0.0008774513504419,
+          "gasCarbon": 0,
+          "gypsumSI": 0
+        },
+        {
+          "reactionO2": 0.05,
+          "pH": 6.023747191076,
+          "waterKg": 0.9993693802332,
+          "carbon": 0.03286361014699,
+          "calcite": 9.967136389853,
+          "pyrite": 9.986659738877,
+          "goethite": 10.01323634451,
+          "gypsum": 0.01105175920348,
+          "gasCarbon": 0,
+          "gypsumSI": 0
+        }
+      ],
+      "documentationComparison": {
+        "url": "https://water.usgs.gov/water-resources/software/PHREEQC/documentation/phreeqc3-html/phreeqc3-67.htm",
+        "guideFinalGypsumMol": 0.00955,
+        "commissionedFinalGypsumMol": 0.008975545835228,
+        "differenceMol": -0.0005744541647720001,
+        "verdict": "qualitative agreement; older guide value not numerically reproduced by the pinned distribution/database"
+      }
+    },
+    "carbonateControls": {
+      "closed-carbon": {
+        "native": {
+          "simulation": 1,
+          "pH": 9.911809541624,
+          "waterKg": 0.9999997323822,
+          "Ca": 0.0001292008861309,
+          "Na": 0.001,
+          "Cl": 0.001,
+          "C": 0.0001292008861309,
+          "FeII": 0,
+          "FeIII": 0,
+          "sulfate": 0,
+          "oxygenAtoms": 3.864387820639e-14,
+          "alkalinity": 0.0002584017722618,
+          "calciteSI": 0,
+          "logPCO2": -6.17432676132,
+          "charge": -8.402566836763e-19
+        },
+        "pilot": {
+          "simulation": 1,
+          "pH": 9.911809540609,
+          "waterKg": 1,
+          "Ca": 0.0001292009194382,
+          "Na": 0.001,
+          "Cl": 0.001,
+          "C": 0.0001292009194382,
+          "FeII": 0,
+          "FeIII": 0,
+          "sulfate": 0,
+          "oxygenAtoms": 7.38061987949e-31,
+          "alkalinity": 0.0002584018388763,
+          "calciteSI": 4.320277469105e-11,
+          "logPCO2": -6.174326761302,
+          "charge": 2.710505431214e-19
+        },
+        "dissolvedMol": 0.000029200919438153507,
+        "deltaPH": -1.0150014162491061e-9,
+        "deltaDissolvedMol": 3.330725352099738e-11,
+        "deltaCaMolKg": -1.2691661686447392e-12,
+        "deltaCMolKg": -1.2691661686447392e-12,
+        "deltaWaterKg": 2.676178000315943e-7
+      },
+      "fixed-pCO2": {
+        "native": {
+          "simulation": 1,
+          "pH": 8.283593709884,
+          "waterKg": 0.9999930131977,
+          "Ca": 0.0005032017982681,
+          "Na": 0.001,
+          "Cl": 0.001,
+          "C": 0.0009992573604052,
+          "FeII": 0,
+          "FeIII": 0,
+          "sulfate": 0,
+          "oxygenAtoms": 2.605387051683e-15,
+          "alkalinity": 0.001006403596536,
+          "calciteSI": 0,
+          "logPCO2": -3.500000760314,
+          "charge": 1.575565985188e-17
+        },
+        "pilot": {
+          "simulation": 1,
+          "pH": 8.283593680193,
+          "waterKg": 1,
+          "Ca": 0.000503205239214,
+          "Na": 0.001,
+          "Cl": 0.001,
+          "C": 0.0009992641970111,
+          "FeII": 0,
+          "FeIII": 0,
+          "sulfate": 0,
+          "oxygenAtoms": 2.265182186896e-37,
+          "alkalinity": 0.001006410478428,
+          "calciteSI": -3.497699907484e-10,
+          "logPCO2": -3.500000760314,
+          "charge": 3.707463210132e-18
+        },
+        "dissolvedMol": 0.00040320523921400306,
+        "deltaPH": -2.9690999880926938e-8,
+        "deltaDissolvedMol": 3.4409459031018927e-9,
+        "deltaCaMolKg": -7.485014561284253e-11,
+        "deltaCMolKg": -1.4505650348418941e-10,
+        "deltaWaterKg": 0.000006986802300046335
+      }
+    },
+    "cases": [
+      {
+        "config": {
+          "id": "closed-ferrous-no-transport",
+          "boundary": "closed-carbon",
+          "iron": "ferrous",
+          "exchange": 0
+        },
+        "baseline": {
+          "Fe": 0.002,
+          "S": 0.004,
+          "Ca": 0.0011,
+          "C": 0.0011,
+          "Na": 0.002,
+          "Cl": 0.002,
+          "O2": 0.003,
+          "waterKg": 2,
+          "alkalinity": 0.0002
+        },
+        "conservationCheckpoints": 81,
+        "initial": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0,
+                "C": 0,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0.003,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0
+              },
+              "solid": {
+                "pyrite": 0.002,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0001292009194381535,
+                "C": 0.0001292009194381535,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0.000258401838876307
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0.0009707990805618465,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.000029200919438153507,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 6.997057319366,
+              "waterKg": 1,
+              "Ca": 0,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 0.006,
+              "alkalinity": -1.072555469461e-19,
+              "calciteSI": -99.99,
+              "logPCO2": -99.99,
+              "charge": -2.086820513772e-17
+            },
+            {
+              "simulation": 1,
+              "pH": 9.911809540609,
+              "waterKg": 1,
+              "Ca": 0.0001292009194382,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.0001292009194382,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 7.38061987949e-31,
+              "alkalinity": 0.0002584018388763,
+              "calciteSI": 4.320277469105e-11,
+              "logPCO2": -6.174326761302,
+              "charge": 2.710505431214e-19
+            }
+          ]
+        },
+        "final": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 0.999985587776,
+              "aqueous": {
+                "Ca": 0,
+                "C": 0,
+                "FeII": 0.0008,
+                "sulfate": 0.0016,
+                "O2": 0.00019999999999999987,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": -0.0016
+              },
+              "solid": {
+                "pyrite": 0.0011999999999999997,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0.0008,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0.0016,
+                "O2Consumed": 0.0028,
+                "waterConsumed": 0.0008,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0001292009194381535,
+                "C": 0.0001292009194381535,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0.000258401838876307
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0.0009707990805618465,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.000029200919438153507,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 2.868078659648,
+              "waterKg": 0.999985587776,
+              "Ca": 0,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0,
+              "FeII": 0.0008,
+              "FeIII": 0,
+              "sulfate": 0.0016,
+              "oxygenAtoms": 0.0004,
+              "alkalinity": -0.001600000000001,
+              "calciteSI": -99.99,
+              "logPCO2": -99.99,
+              "charge": 6.652664530371e-16
+            },
+            {
+              "simulation": 1,
+              "pH": 9.911809540609,
+              "waterKg": 1,
+              "Ca": 0.0001292009194382,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.0001292009194382,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 7.38061987949e-31,
+              "alkalinity": 0.0002584018388763,
+              "calciteSI": 4.320277469105e-11,
+              "logPCO2": -6.174326761302,
+              "charge": 2.710505431214e-19
+            }
+          ]
+        },
+        "maxResidual": {
+          "Fe": 4.336808689942018e-19,
+          "S": 8.673617379884035e-19,
+          "Ca": 0,
+          "C": 0,
+          "Na": 0,
+          "Cl": 0,
+          "O2": 4.336808689942018e-19,
+          "waterKg": 0,
+          "alkalinity": 0
+        },
+        "trace": [
+          {
+            "cycle": 0,
+            "stage": "initialized-and-buffered",
+            "pH": [
+              6.997057319366,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 1,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.432342078234,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 2,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.146109190217,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 3,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.982333610953,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 4,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 5,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 6,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 7,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 8,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 9,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 10,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 11,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 12,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 13,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 14,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 15,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 16,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.868078659648,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "not-undersaturated"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          }
+        ]
+      },
+      {
+        "config": {
+          "id": "closed-ferrous-transport",
+          "boundary": "closed-carbon",
+          "iron": "ferrous",
+          "exchange": 0.25
+        },
+        "baseline": {
+          "Fe": 0.002,
+          "S": 0.004,
+          "Ca": 0.0011,
+          "C": 0.0011,
+          "Na": 0.002,
+          "Cl": 0.002,
+          "O2": 0.003,
+          "waterKg": 2,
+          "alkalinity": 0.0002
+        },
+        "conservationCheckpoints": 81,
+        "initial": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0,
+                "C": 0,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0.003,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0
+              },
+              "solid": {
+                "pyrite": 0.002,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0001292009194381535,
+                "C": 0.0001292009194381535,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0.000258401838876307
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0.0009707990805618465,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.000029200919438153507,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 6.997057319366,
+              "waterKg": 1,
+              "Ca": 0,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 0.006,
+              "alkalinity": -1.072555469461e-19,
+              "calciteSI": -99.99,
+              "logPCO2": -99.99,
+              "charge": -2.086820513772e-17
+            },
+            {
+              "simulation": 1,
+              "pH": 9.911809540609,
+              "waterKg": 1,
+              "Ca": 0.0001292009194382,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.0001292009194382,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 7.38061987949e-31,
+              "alkalinity": 0.0002584018388763,
+              "calciteSI": 4.320277469105e-11,
+              "logPCO2": -6.174326761302,
+              "charge": 2.710505431214e-19
+            }
+          ]
+        },
+        "final": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 0.9999874858266572,
+              "aqueous": {
+                "Ca": 0.0005498636407323774,
+                "C": 0.0005498636407323774,
+                "FeII": 0.00034733537515407696,
+                "sulfate": 0.0006946707503081539,
+                "O2": 0.00028433969200963264,
+                "Na": 0.0009999937431706945,
+                "Cl": 0.0009999937431706945,
+                "alkalinity": 0.00040505653115660106
+              },
+              "solid": {
+                "pyrite": 0.0013053578216479567,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0.0006946421783520431,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0.0013892843567040862,
+                "O2Consumed": 0.0024312476242321504,
+                "waterConsumed": 0.0006946421783520431,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0005501363592676226,
+                "C": 0.0005501363592676226,
+                "FeII": 0.0003473068031979661,
+                "sulfate": 0.0006946136063959322,
+                "O2": 0.0002844126837582165,
+                "Na": 0.0010000062568293056,
+                "Cl": 0.0010000062568293056,
+                "alkalinity": 0.00040565911213931313
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.001,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 6.752375374022,
+              "waterKg": 0.9999874858267,
+              "Ca": 0.0005498636407324,
+              "Na": 0.0009999937431707,
+              "Cl": 0.0009999937431707,
+              "C": 0.0005498636407324,
+              "FeII": 0.0003473353751541,
+              "FeIII": 0,
+              "sulfate": 0.0006946707503082,
+              "oxygenAtoms": 0.0005686793840193,
+              "alkalinity": 0.0004050565311566,
+              "calciteSI": -1.937327176566,
+              "logPCO2": -2.367534436207,
+              "charge": -8.673617379884e-19
+            },
+            {
+              "simulation": 1,
+              "pH": 6.753976107217,
+              "waterKg": 1,
+              "Ca": 0.0005501363592676,
+              "Na": 0.001000006256829,
+              "Cl": 0.001000006256829,
+              "C": 0.0005501363592676,
+              "FeII": 0.000347306803198,
+              "FeIII": 0,
+              "sulfate": 0.0006946136063959,
+              "oxygenAtoms": 0.0005688253675164,
+              "alkalinity": 0.0004056591121393,
+              "calciteSI": -1.93488944509,
+              "logPCO2": -2.36850367279,
+              "charge": -1.51788304148e-18
+            }
+          ]
+        },
+        "maxResidual": {
+          "Fe": 4.336808689942018e-19,
+          "S": 8.673617379884035e-19,
+          "Ca": 2.168404344971009e-19,
+          "C": 2.168404344971009e-19,
+          "Na": 0,
+          "Cl": 0,
+          "O2": 8.673617379884035e-19,
+          "waterKg": 0,
+          "alkalinity": 5.149960319306146e-19
+        },
+        "trace": [
+          {
+            "cycle": 0,
+            "stage": "initialized-and-buffered",
+            "pH": [
+              6.997057319366,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 1,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.65832809431,
+              9.497466816707
+            ],
+            "calciteMolB": 0.0008742957878359035,
+            "CaMolB": 0.00019340409868409523,
+            "CMolB": 0.00019340409868409523,
+            "FeIIMolB": 0.00005,
+            "sulfateMolB": 0.0001,
+            "alkalinityEqB": 0.00028680819736819047,
+            "cellBHash": "faf762a05ce9c347ef700ae5a9732ef80e67cdc9f29826940bf17c6fb37c77c1",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -9.966559939012,
+              7.593232709269e-10
+            ]
+          },
+          {
+            "cycle": 2,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.433198992876,
+              9.02380401772
+            ],
+            "calciteMolB": 0.0007019604180072286,
+            "CaMolB": 0.00032546382063464564,
+            "CMolB": 0.00032546382063464564,
+            "FeIIMolB": 0.0001250000900764,
+            "sulfateMolB": 0.0002500001801528,
+            "alkalinityEqB": 0.0004009274611164914,
+            "cellBHash": "cbc67a6b71a77ecc985098842eb69b6a9c62bceb61800480a46b31d259fba375",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -9.737418983119,
+              -1.535660487662e-11
+            ]
+          },
+          {
+            "cycle": 3,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.346771248986,
+              8.671671397305
+            ],
+            "calciteMolB": 0.00047312157481980017,
+            "CaMolB": 0.0004910815285012229,
+            "CMolB": 0.0004910815285012229,
+            "FeIIMolB": 0.00021250038282494342,
+            "sulfateMolB": 0.00042500076564988684,
+            "alkalinityEqB": 0.000557162291352559,
+            "cellBHash": "9601f5efc48a5aaa4d2d75388ce62205a6dc921a900416b350c62f08b41ea92a",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -9.384406106336,
+              7.024851811366e-10
+            ]
+          },
+          {
+            "cycle": 4,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.470506024677,
+              8.478240380887
+            ],
+            "calciteMolB": 0.0002550889056021725,
+            "CaMolB": 0.0006202945761331324,
+            "CMolB": 0.0006202945761331324,
+            "FeIIMolB": 0.000279911400817139,
+            "sulfateMolB": 0.000559822801634278,
+            "alkalinityEqB": 0.0006807663506319867,
+            "cellBHash": "754b5988b7c2c10ae2acec5b99a479fa2dba8bdc06031ef0a329f9eaf0c6c1b9",
+            "acceptedPyriteMol": 0.00009464217835204305,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -8.704904936067,
+              -4.14159373463e-10
+            ]
+          },
+          {
+            "cycle": 5,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.982700612947,
+              8.397440190502
+            ],
+            "calciteMolB": 0.00009147082050587024,
+            "CaMolB": 0.0006849950873807876,
+            "CMolB": 0.0006849950873807876,
+            "FeIIMolB": 0.0003136171207115279,
+            "sulfateMolB": 0.0006272342414230558,
+            "alkalinityEqB": 0.0007427559333385196,
+            "cellBHash": "29b0a3d68dd82cd026b7ee8a2f75c351fff41fd289b60a6e197172fd2c52d782",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -7.361355040975,
+              -5.156408633411e-10
+            ]
+          },
+          {
+            "cycle": 6,
+            "stage": "post-transport-buffered",
+            "pH": [
+              5.820312557015,
+              8.105290077553
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0006861028021066121,
+            "CMolB": 0.0006861028021066121,
+            "FeIIMolB": 0.00033047008610852767,
+            "sulfateMolB": 0.0006609401722170553,
+            "alkalinityEqB": 0.0007112654319961691,
+            "cellBHash": "e196e5f72294141eb5209a02fad5568f42f0b5c23e5f3cded0439fe8685a7f88",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-exhausted"
+            ],
+            "calciteSI": [
+              -3.591329246363,
+              -0.2833756563929
+            ]
+          },
+          {
+            "cycle": 7,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.352238788044,
+              7.242946892223
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0006180535475556551,
+            "CMolB": 0.0006180535475556551,
+            "FeIIMolB": 0.00033889662153226016,
+            "sulfateMolB": 0.0006777932430645203,
+            "alkalinityEqB": 0.0005583138520467903,
+            "cellBHash": "a69c144d6d199ae14f0ce948ee38e840c7af7bdead90d129eeb3d2d10dac7cf1",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -2.597082289345,
+              -1.261997871641
+            ]
+          },
+          {
+            "cycle": 8,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.553871271271,
+              6.971687782732
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005840287073851348,
+            "CMolB": 0.0005840287073851348,
+            "FeIIMolB": 0.00034310991560690765,
+            "sulfateMolB": 0.0006862198312138153,
+            "alkalinityEqB": 0.0004818375835564547,
+            "cellBHash": "edd9a8f341736c6279cca7118d19e5793d2f6d3e5d047494621a6751242e1a23",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -2.252408707064,
+              -1.618446804954
+            ]
+          },
+          {
+            "cycle": 9,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.652560797007,
+              6.858427680685
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005670161808516877,
+            "CMolB": 0.0005670161808516877,
+            "FeIIMolB": 0.00034521657582570447,
+            "sulfateMolB": 0.0006904331516514089,
+            "alkalinityEqB": 0.00044359921005196685,
+            "cellBHash": "5f8b744778be7b3fbc26f1d105c8a1428521b31a1ae6b501bdeda3b53c189c3f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -2.092606026808,
+              -1.779375402159
+            ]
+          },
+          {
+            "cycle": 10,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.702467626302,
+              6.805032695525
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005585098643605377,
+            "CMolB": 0.0005585098643605377,
+            "FeIIMolB": 0.00034626991252588067,
+            "sulfateMolB": 0.0006925398250517613,
+            "alkalinityEqB": 0.0004244799036693143,
+            "cellBHash": "d93355ce85a4f23e054f909e0ab4dfab89ca1727b80dcebfb4c15164fb74fd5a",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -2.014162249637,
+              -1.858002308625
+            ]
+          },
+          {
+            "cycle": 11,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.727700322955,
+              6.778937396182
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005542566795025829,
+            "CMolB": 0.0005542566795025829,
+            "FeIIMolB": 0.0003467965841713783,
+            "sulfateMolB": 0.0006935931683427566,
+            "alkalinityEqB": 0.00041492019066240946,
+            "cellBHash": "355a86dc7fba50bed64984fa8210f215017e1cf72018eea453f5dd84c0ac765a",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.975114017326,
+              -1.897090216723
+            ]
+          },
+          {
+            "cycle": 12,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.740404867847,
+              6.766017852985
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005521300737673324,
+            "CMolB": 0.0005521300737673324,
+            "FeIIMolB": 0.00034705992164184215,
+            "sulfateMolB": 0.0006941198432836843,
+            "alkalinityEqB": 0.0004101403042509806,
+            "cellBHash": "4212902a472fc02fe25661ba0c8ecb1003c492768d6776282ac6551faff5ccc4",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.955609371341,
+              -1.916604297363
+            ]
+          },
+          {
+            "cycle": 13,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.746781593661,
+              6.759587452821
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005510667642465289,
+            "CMolB": 0.0005510667642465289,
+            "FeIIMolB": 0.0003471915912009368,
+            "sulfateMolB": 0.0006943831824018736,
+            "alkalinityEqB": 0.00040775034609118443,
+            "cellBHash": "479155799823e12b23bf2b6796436fb109d5e54e20f296d148197a90a1f2f12d",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.945858859697,
+              -1.926357084119
+            ]
+          },
+          {
+            "cycle": 14,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.749976384753,
+              6.756379265241
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005505351061595173,
+            "CMolB": 0.0005505351061595173,
+            "FeIIMolB": 0.000347257426392418,
+            "sulfateMolB": 0.000694514852784836,
+            "alkalinityEqB": 0.00040655535953419865,
+            "cellBHash": "aa858a5d5501c0f48f72a75095383d268456b095a4a9906c2b7810e4b03f4d30",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.940983659535,
+              -1.931232821153
+            ]
+          },
+          {
+            "cycle": 15,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.751575430924,
+              6.754776880062
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005502692754526961,
+            "CMolB": 0.0005502692754526961,
+            "FeIIMolB": 0.0003472903441941269,
+            "sulfateMolB": 0.0006945806883882538,
+            "alkalinityEqB": 0.0004059578625171385,
+            "cellBHash": "c77aaef62ce98b3730ffa941768fa1f20e05901e704629de2a6f7b7f89195820",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.938546017731,
+              -1.933670581836
+            ]
+          },
+          {
+            "cycle": 16,
+            "stage": "post-transport-buffered",
+            "pH": [
+              6.752375374022,
+              6.753976107217
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005501363592676226,
+            "CMolB": 0.0005501363592676226,
+            "FeIIMolB": 0.0003473068031979661,
+            "sulfateMolB": 0.0006946136063959322,
+            "alkalinityEqB": 0.00040565911213931313,
+            "cellBHash": "52eeb7f3369876e5104443c14766596053837483c9bb822c7a2b30812a24f9b0",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -1.937327176566,
+              -1.93488944509
+            ]
+          }
+        ]
+      },
+      {
+        "config": {
+          "id": "closed-hydroxide-transport",
+          "boundary": "closed-carbon",
+          "iron": "ferric-hydroxide",
+          "exchange": 0.25
+        },
+        "baseline": {
+          "Fe": 0.002,
+          "S": 0.004,
+          "Ca": 0.0011,
+          "C": 0.0011,
+          "Na": 0.002,
+          "Cl": 0.002,
+          "O2": 0.003,
+          "waterKg": 2,
+          "alkalinity": 0.0002
+        },
+        "conservationCheckpoints": 81,
+        "initial": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0,
+                "C": 0,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0.003,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0
+              },
+              "solid": {
+                "pyrite": 0.002,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0001292009194381535,
+                "C": 0.0001292009194381535,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0.000258401838876307
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0.0009707990805618465,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.000029200919438153507,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 6.997057319366,
+              "waterKg": 1,
+              "Ca": 0,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 0.006,
+              "alkalinity": -1.072555469461e-19,
+              "calciteSI": -99.99,
+              "logPCO2": -99.99,
+              "charge": -2.086820513772e-17
+            },
+            {
+              "simulation": 1,
+              "pH": 9.911809540609,
+              "waterKg": 1,
+              "Ca": 0.0001292009194382,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.0001292009194382,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 7.38061987949e-31,
+              "alkalinity": 0.0002584018388763,
+              "calciteSI": 4.320277469105e-11,
+              "logPCO2": -6.174326761302,
+              "charge": 2.710505431214e-19
+            }
+          ]
+        },
+        "final": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 0.9999579775730859,
+              "aqueous": {
+                "Ca": 0.0005499415613763929,
+                "C": 0.0005499415613763929,
+                "FeII": 1.7677899740251573e-7,
+                "sulfate": 0.0006669775427309277,
+                "O2": 0.0002494526932262731,
+                "Na": 0.0009999789972388537,
+                "Cl": 0.0009999789972388537,
+                "alkalinity": -0.00023371840471426427
+              },
+              "solid": {
+                "pyrite": 0.0013330379943541735,
+                "calcite": 0,
+                "ferricHydroxide": 0.0006662548599402376
+              },
+              "ledger": {
+                "pyriteOxidized": 0.0006669620056458264,
+                "ferrousOxidized": 0.0006662548599402376,
+                "calciteDissolved": 0,
+                "acidProduced": 0.0026664337311721287,
+                "O2Consumed": 0.0025009307347454504,
+                "waterConsumed": 0.0023325991554964203,
+                "carbonFromGas": 0
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.000550058438623607,
+                "C": 0.000550058438623607,
+                "FeII": 5.303667081862779e-7,
+                "sulfate": 0.000666946468560725,
+                "O2": 0.0002496165720282751,
+                "Na": 0.0010000210027611464,
+                "Cl": 0.0010000210027611464,
+                "alkalinity": -0.00023271532645786322
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.001,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 3.674384931131,
+              "waterKg": 0.9999579775731,
+              "Ca": 0.0005499415613764,
+              "Na": 0.0009999789972389,
+              "Cl": 0.0009999789972389,
+              "C": 0.0005499415613764,
+              "FeII": 1.767789974025e-7,
+              "FeIII": 0,
+              "sulfate": 0.0006669775427309,
+              "oxygenAtoms": 0.0004989053864525,
+              "alkalinity": -0.0002337184047143,
+              "calciteSI": -7.507752985593,
+              "logPCO2": -1.792257206724,
+              "charge": 1.084202172486e-18
+            },
+            {
+              "simulation": 1,
+              "pH": 3.676250499576,
+              "waterKg": 1,
+              "Ca": 0.0005500584386236,
+              "Na": 0.001000021002761,
+              "Cl": 0.001000021002761,
+              "C": 0.0005500584386236,
+              "FeII": 5.303667081863e-7,
+              "FeIII": 0,
+              "sulfate": 0.0006669464685607,
+              "oxygenAtoms": 0.0004992331440566,
+              "alkalinity": -0.0002327153264579,
+              "calciteSI": -7.503879494974,
+              "logPCO2": -1.792187361119,
+              "charge": 0
+            }
+          ]
+        },
+        "maxResidual": {
+          "Fe": 4.336808689942018e-19,
+          "S": 8.673617379884035e-19,
+          "Ca": 2.168404344971009e-19,
+          "C": 2.168404344971009e-19,
+          "Na": 0,
+          "Cl": 0,
+          "O2": 1.734723475976807e-18,
+          "waterKg": 0,
+          "alkalinity": 1.3823577699190182e-18
+        },
+        "trace": [
+          {
+            "cycle": 0,
+            "stage": "initialized-and-buffered",
+            "pH": [
+              6.997057319366,
+              9.911809540609
+            ],
+            "calciteMolB": 0.0009707990805618465,
+            "CaMolB": 0.0001292009194381535,
+            "CMolB": 0.0001292009194381535,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.000258401838876307,
+            "cellBHash": "bab7adbe9a7d535441a0e030f24341fd17e9f7fa86612943e3b3577a10ee391f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -99.99,
+              4.320277469105e-11
+            ]
+          },
+          {
+            "cycle": 1,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.300900884077,
+              9.240168892921
+            ],
+            "calciteMolB": 0.0008234864042218416,
+            "CaMolB": 0.0002442137732469996,
+            "CMolB": 0.0002442137732469996,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0001,
+            "alkalinityEqB": 0.00028842754649399915,
+            "cellBHash": "d39ea8dfaeb5abfde790c6145a32a5d8a1f747c7d743012d45ca9a0e84d8573f",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -10.67818415632,
+              5.578701944842e-10
+            ]
+          },
+          {
+            "cycle": 2,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.07137323515,
+              8.577423547187
+            ],
+            "calciteMolB": 0.0004974476272186192,
+            "CaMolB": 0.0005172756024240885,
+            "CMolB": 0.0005172756024240885,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0002500006305348,
+            "alkalinityEqB": 0.000534549943778577,
+            "cellBHash": "7fccdf4277d89be31ebb81b9dcb986c3834578315a4b918553cc2ec6926e92e6",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -10.31692740812,
+              7.867022588925e-10
+            ]
+          },
+          {
+            "cycle": 3,
+            "stage": "post-transport-buffered",
+            "pH": [
+              2.981907629043,
+              8.165290229418
+            ],
+            "calciteMolB": 0.000054551754276563314,
+            "CaMolB": 0.000852176659753473,
+            "CMolB": 0.000852176659753473,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0004250026797788637,
+            "alkalinityEqB": 0.0008543479599492191,
+            "cellBHash": "16b057f429913fbc3ee4ec51b0f073c5f66b47ffdc1bdb6422a911690aa7f007",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -9.803289323254,
+              -5.534506186677e-10
+            ]
+          },
+          {
+            "cycle": 4,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.168189484751,
+              6.451026791766
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0007420104624932996,
+            "CMolB": 0.0007420104624932996,
+            "FeIIMolB": 0.000016740501411456567,
+            "sulfateMolB": 0.0005459864905713972,
+            "alkalinityEqB": 0.0004255289466667182,
+            "cellBHash": "f4d0aa76ee4fb7d31df2077756588034deee6431b875edff4b35c902134a27ac",
+            "acceptedPyriteMol": 0.00006696200564582627,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-exhausted"
+            ],
+            "calciteSI": [
+              -8.898924895129,
+              -2.062675611371
+            ]
+          },
+          {
+            "cycle": 5,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.315468150344,
+              5.620025694823
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0006460128925628177,
+            "CMolB": 0.0006460128925628177,
+            "FeIIMolB": 0.000012555548905581255,
+            "sulfateMolB": 0.0006064798854619096,
+            "alkalinityEqB": 0.00010417711201297914,
+            "cellBHash": "19db52488c19b4c45831731a8b312f42d9c8e897d6cd9fa66100599b25141ef8",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.000050221504234369705,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -8.394648003686,
+              -3.552464777377
+            ]
+          },
+          {
+            "cycle": 6,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.460942989549,
+              4.241727017487
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.000598013146855713,
+            "CMolB": 0.000598013146855713,
+            "FeIIMolB": 0.00000941679190783825,
+            "sulfateMolB": 0.0006367272360839538,
+            "alkalinityEqB": -0.00005859459464080486,
+            "cellBHash": "d8b61ec5db17c19bff0b7f6d1980a5210006dc6af6ae80602015d0b51f6607ce",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.000004184952505875312,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -8.015058927862,
+              -6.301543766403
+            ]
+          },
+          {
+            "cycle": 7,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.556728985631,
+              3.887673402492
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005740127972736218,
+            "CMolB": 0.0005740127972736218,
+            "FeIIMolB": 0.000007062691936517438,
+            "sulfateMolB": 0.0006518512476290888,
+            "alkalinityEqB": -0.00014155151683789894,
+            "cellBHash": "3b797e07a52e40f9b35650f2a01185470c66c9669454c1c9994aafa35c4a0d9f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000031387569977430055,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.782302581892,
+              -7.043946039674
+            ]
+          },
+          {
+            "cycle": 8,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.613309953604,
+              3.776141931876
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005620123879128214,
+            "CMolB": 0.0005620123879128214,
+            "FeIIMolB": 0.000005297092644841602,
+            "sulfateMolB": 0.0006594134280834505,
+            "alkalinityEqB": -0.0001842078950515746,
+            "cellBHash": "d29785b2aa7cb0170f925e7d8b0e6dd371419bcf2f1fc0156d46369fac0eff4d",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000023540999713208125,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.649262917198,
+              -7.285357306285
+            ]
+          },
+          {
+            "cycle": 9,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.644118799827,
+              3.727583705092
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005560120691923202,
+            "CMolB": 0.0005560120691923202,
+            "FeIIMolB": 0.0000039728748590456806,
+            "sulfateMolB": 0.0006631946103238134,
+            "alkalinityEqB": -0.0002064193325448947,
+            "cellBHash": "a56ffbc0d94ad845052f753bc9769bf4d3472accda0a392104332fe355d687d1",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000017655992916758357,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.577877768271,
+              -7.39184016382
+            ]
+          },
+          {
+            "cycle": 10,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.659987702551,
+              3.703874483304
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005530118553953754,
+            "CMolB": 0.0005530118553953754,
+            "FeIIMolB": 0.0000029796977356599572,
+            "sulfateMolB": 0.0006650852508604897,
+            "alkalinityEqB": -0.00021818739545890857,
+            "cellBHash": "7be10bebdf84d1a1080c3e515e4180d9d44087f65bb41aedccf38dc8e19dd388",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000013242177857959215,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.541297122265,
+              -7.443982120959
+            ]
+          },
+          {
+            "cycle": 11,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.667843999159,
+              3.691532480772
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005515117232723373,
+            "CMolB": 0.0005515117232723373,
+            "FeIIMolB": 0.0000022348045290333015,
+            "sulfateMolB": 0.0006660305983591008,
+            "alkalinityEqB": -0.00022456814111546024,
+            "cellBHash": "1b0a37ab3dda00ade1a38a022f9c1cfdd77a43844ab647492c80e911df9365e3",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 9.931771233857233e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.523172094023,
+              -7.471034370983
+            ]
+          },
+          {
+            "cycle": 12,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.671598834407,
+              3.684786903394
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005507616461150238,
+            "CMolB": 0.0005507616461150238,
+            "FeIIMolB": 0.0000016761268363121573,
+            "sulfateMolB": 0.0006665032876017727,
+            "alkalinityEqB": -0.0002281310293008734,
+            "cellBHash": "411ecb13c8232533dcfacecee1ff45eeab1df1e990dd933f9d2f2e7a5437cae9",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 7.448932066266556e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.514457551839,
+              -7.485708690435
+            ]
+          },
+          {
+            "cycle": 13,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.673317502094,
+              3.680930475392
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005503866031337971,
+            "CMolB": 0.0005503866031337971,
+            "FeIIMolB": 0.000001257112717676455,
+            "sulfateMolB": 0.0006667396413734772,
+            "alkalinityEqB": -0.00023019185104400727,
+            "cellBHash": "c32b2caa8ac854e7c3bcd378bcf7573230580476f3e73d70dc89e1d47ee0bd2b",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 5.586776927211443e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.510417451021,
+              -7.494010949788
+            ]
+          },
+          {
+            "cycle": 14,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.674050956515,
+              3.678625382769
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005501990803038962,
+            "CMolB": 0.0005501990803038962,
+            "FeIIMolB": 9.428477372046455e-7,
+            "sulfateMolB": 0.0006668578238854084,
+            "alkalinityEqB": -0.0002314317916886152,
+            "cellBHash": "c01d337c5aeb39e8a029ef368500f84bce7674dd20991e0aec8bd6def2addc11",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 4.190141186357023e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.508648581641,
+              -7.498913831147
+            ]
+          },
+          {
+            "cycle": 15,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.674321764081,
+              3.677186206943
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005501053188669354,
+            "CMolB": 0.0005501053188669354,
+            "FeIIMolB": 7.071457055887936e-7,
+            "sulfateMolB": 0.0006669169187418858,
+            "alkalinityEqB": -0.00023220890833872295,
+            "cellBHash": "8ccf296df0ba0637f5e313b6eec9345d95d0db6a85413edb5d7bac64c2b701c1",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 3.1426498047180944e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.507955472024,
+              -7.501936931031
+            ]
+          },
+          {
+            "cycle": 16,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.674384931131,
+              3.676250499576
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.000550058438623607,
+            "CMolB": 0.000550058438623607,
+            "FeIIMolB": 5.303667081862779e-7,
+            "sulfateMolB": 0.000666946468560725,
+            "alkalinityEqB": -0.00023271532645786322,
+            "cellBHash": "84f34a67938aecf045ae50c66c88dc31241f5f0b4fcf638981a4252e0beca9b5",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 2.3570203161585194e-7,
+            "carbonFromGasMol": [
+              0,
+              0
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -7.507752985593,
+              -7.503879494974
+            ]
+          }
+        ]
+      },
+      {
+        "config": {
+          "id": "open-hydroxide-transport",
+          "boundary": "fixed-pCO2",
+          "iron": "ferric-hydroxide",
+          "exchange": 0.25
+        },
+        "baseline": {
+          "Fe": 0.002,
+          "S": 0.004,
+          "Ca": 0.0011,
+          "C": 0.0011,
+          "Na": 0.002,
+          "Cl": 0.002,
+          "O2": 0.003,
+          "waterKg": 2,
+          "alkalinity": 0.0002
+        },
+        "conservationCheckpoints": 81,
+        "initial": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0,
+                "C": 0.00001302237313518,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0.003,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0
+              },
+              "solid": {
+                "pyrite": 0.002,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0.00001302237313518
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.000503205239214003,
+                "C": 0.0009992641970111,
+                "FeII": 0,
+                "sulfate": 0,
+                "O2": 0,
+                "Na": 0.001,
+                "Cl": 0.001,
+                "alkalinity": 0.001006410478428006
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0.000596794760785997,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.00040320523921400306,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": 0.000496058957797097
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 5.659197037774,
+              "waterKg": 1,
+              "Ca": 0,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.00001302237313518,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 0.006,
+              "alkalinity": 2.21347907091e-18,
+              "calciteSI": -99.99,
+              "logPCO2": -3.500000760314,
+              "charge": -2.366523200664e-18
+            },
+            {
+              "simulation": 1,
+              "pH": 8.283593680193,
+              "waterKg": 1,
+              "Ca": 0.000503205239214,
+              "Na": 0.001,
+              "Cl": 0.001,
+              "C": 0.0009992641970111,
+              "FeII": 0,
+              "FeIII": 0,
+              "sulfate": 0,
+              "oxygenAtoms": 2.265182186896e-37,
+              "alkalinity": 0.001006410478428,
+              "calciteSI": -3.497699907484e-10,
+              "logPCO2": -3.500000760314,
+              "charge": 3.707463210132e-18
+            }
+          ]
+        },
+        "final": {
+          "cells": [
+            {
+              "id": "A-pyrite",
+              "waterKg": 0.9999579775730859,
+              "aqueous": {
+                "Ca": 0.0005499642599127771,
+                "C": 0.00001077878227493,
+                "FeII": 1.7677899740251573e-7,
+                "sulfate": 0.0006669775427309277,
+                "O2": 0.0002494526932262731,
+                "Na": 0.0009999789972388537,
+                "Cl": 0.0009999789972388537,
+                "alkalinity": -0.0002336730076414961
+              },
+              "solid": {
+                "pyrite": 0.0013330379943541735,
+                "calcite": 0,
+                "ferricHydroxide": 0.0006662548599402376
+              },
+              "ledger": {
+                "pyriteOxidized": 0.0006669620056458264,
+                "ferrousOxidized": 0.0006662548599402376,
+                "calciteDissolved": 0,
+                "acidProduced": 0.0026664337311721287,
+                "O2Consumed": 0.0025009307347454504,
+                "waterConsumed": 0.0023325991554964203,
+                "carbonFromGas": -0.0009092878533228757
+              }
+            },
+            {
+              "id": "B-calcite",
+              "waterKg": 1,
+              "aqueous": {
+                "Ca": 0.0005500357400872231,
+                "C": 0.00001077933153676,
+                "FeII": 5.303667081862779e-7,
+                "sulfate": 0.000666946468560725,
+                "O2": 0.0002496165720282751,
+                "Na": 0.0010000210027611464,
+                "Cl": 0.0010000210027611464,
+                "alkalinity": -0.0002327607235306312
+              },
+              "solid": {
+                "pyrite": 0,
+                "calcite": 0,
+                "ferricHydroxide": 0
+              },
+              "ledger": {
+                "pyriteOxidized": 0,
+                "ferrousOxidized": 0,
+                "calciteDissolved": 0.001,
+                "acidProduced": 0,
+                "O2Consumed": 0,
+                "waterConsumed": 0,
+                "carbonFromGas": -0.00016915403286543428
+              }
+            }
+          ],
+          "observations": [
+            {
+              "simulation": 1,
+              "pH": 3.676702696621,
+              "waterKg": 0.9999579775731,
+              "Ca": 0.0005499642599128,
+              "Na": 0.0009999789972389,
+              "Cl": 0.0009999789972389,
+              "C": 0.00001077878227493,
+              "FeII": 1.767789974025e-7,
+              "FeIII": 0,
+              "sulfate": 0.0006669775427309,
+              "oxygenAtoms": 0.0004989053864525,
+              "alkalinity": -0.0002336730076415,
+              "calciteSI": -9.210825671165,
+              "logPCO2": -3.500000760314,
+              "charge": -1.301042606983e-18
+            },
+            {
+              "simulation": 1,
+              "pH": 3.678418828404,
+              "waterKg": 1,
+              "Ca": 0.0005500357400872,
+              "Na": 0.001000021002761,
+              "Cl": 0.001000021002761,
+              "C": 0.00001077933153676,
+              "FeII": 5.303667081863e-7,
+              "FeIII": 0,
+              "sulfate": 0.0006669464685607,
+              "oxygenAtoms": 0.0004992331440566,
+              "alkalinity": -0.0002327607235306,
+              "calciteSI": -9.207356109496,
+              "logPCO2": -3.500000760314,
+              "charge": 1.084202172486e-18
+            }
+          ]
+        },
+        "maxResidual": {
+          "Fe": 4.336808689942018e-19,
+          "S": 8.673617379884035e-19,
+          "Ca": 2.168404344971009e-19,
+          "C": 2.168404344971009e-19,
+          "Na": 0,
+          "Cl": 0,
+          "O2": 1.734723475976807e-18,
+          "waterKg": 0,
+          "alkalinity": 1.3823577699190182e-18
+        },
+        "trace": [
+          {
+            "cycle": 0,
+            "stage": "initialized-and-buffered",
+            "pH": [
+              5.659197037774,
+              8.283593680193
+            ],
+            "calciteMolB": 0.000596794760785997,
+            "CaMolB": 0.000503205239214003,
+            "CMolB": 0.0009992641970111,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0,
+            "alkalinityEqB": 0.001006410478428006,
+            "cellBHash": "36257feb2f850c3c5a243b38db47e14c5242cae5e608cb5618a363488277397e",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              0.00001302237313518,
+              0.000496058957797097
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -99.99,
+              -3.497699907484e-10
+            ]
+          },
+          {
+            "cycle": 1,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.487917588053,
+              8.258519546192
+            ],
+            "calciteMolB": 0.00039798552915526215,
+            "CaMolB": 0.0005762147474833115,
+            "CMolB": 0.000946410167142,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0001,
+            "alkalinityEqB": 0.000952429494966623,
+            "cellBHash": "98eae03ada0a409d93f5c3b2ea3a045fb4fa11bc6ad0c56341acb0a5668cea30",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              -0.00023634937706362195,
+              0.000491517675762624
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -10.19246755844,
+              -9.513492216229e-10
+            ]
+          },
+          {
+            "cycle": 2,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.245555471807,
+              8.224827182493
+            ],
+            "calciteMolB": 0.00016919971202852992,
+            "CaMolB": 0.0006924004418140781,
+            "CMolB": 0.0008801202556417,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0002500006305348,
+            "alkalinityEqB": 0.0008847996225585562,
+            "cellBHash": "091721f41a3cf58a6eeaefc99dd2e8db72c8d9cc0d3f6014bc96ab2818fd6bca",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              -0.00047026388566384235,
+              0.00043034848742621234
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-equilibrium"
+            ],
+            "calciteSI": [
+              -10.42323477683,
+              2.391260522927e-10
+            ]
+          },
+          {
+            "cycle": 3,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.120749541297,
+              8.090566267977
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0007481065536670481,
+            "CMolB": 0.0006480757039309,
+            "FeIIMolB": 0,
+            "sulfateMolB": 0.0004250026797788637,
+            "alkalinityEqB": 0.0006462077477763687,
+            "cellBHash": "dafff5f93d36f14fc0ed4e147f130517a76b6b32f09b65b4e7b8cb739597864a",
+            "acceptedPyriteMol": 0.0002,
+            "acceptedFerrousMol": 0.0002,
+            "carbonFromGasMol": [
+              -0.0006875996088635568,
+              0.0002464364817102969
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "calcite-exhausted"
+            ],
+            "calciteSI": [
+              -10.52168439046,
+              -0.2441301475938
+            ]
+          },
+          {
+            "cycle": 4,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.290565250014,
+              7.665651315186
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0006490605780593475,
+            "CMolB": 0.000248575842936,
+            "FeIIMolB": 0.000016740501411456567,
+            "sulfateMolB": 0.0005459864905713972,
+            "alkalinityEqB": 0.0002396291777988138,
+            "cellBHash": "8d15ddfe789edfb6f223c21d5753ce95208a1731b842a6fc44d9b0d3f5bd37e2",
+            "acceptedPyriteMol": 0.00006696200564582627,
+            "acceptedFerrousMol": 0,
+            "carbonFromGasMol": [
+              -0.0008469193061979442,
+              0.000006259302494104305
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -10.07701359481,
+              -1.156839415284
+            ]
+          },
+          {
+            "cycle": 5,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.398255947752,
+              6.359170846027
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005995369906310015,
+            "CMolB": 0.000022429340344,
+            "FeIIMolB": 0.000012555548905581255,
+            "sulfateMolB": 0.0006064798854619096,
+            "alkalinityEqB": 0.000011225308149346658,
+            "cellBHash": "0c74f8d3b95831bd787aeb7d8bfdefe58bedbfe4bea3e6aa143e2be99d195ad4",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.000050221504234369705,
+            "carbonFromGasMol": [
+              -0.000906367042270183,
+              -0.00016043647461570697
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.81233263212,
+              -3.805008772181
+            ]
+          },
+          {
+            "cycle": 6,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.517782456284,
+              4.022759487679
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005747747138324996,
+            "CMolB": 0.00001080886804937,
+            "FeIIMolB": 0.00000941679190783825,
+            "sulfateMolB": 0.0006367272360839538,
+            "alkalinityEqB": -0.00010507146068723188,
+            "cellBHash": "fec601143913fd502279e41949a9245fb556d1dc003ce23b53d4a7977a5941ee",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.000004184952505875312,
+            "carbonFromGasMol": [
+              -0.000909278286037903,
+              -0.00016914157117544688
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.550505580832,
+              -8.49784072667
+            ]
+          },
+          {
+            "cycle": 7,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.592135938646,
+              3.827907134202
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005623933389070933,
+            "CMolB": 0.00001078937802662,
+            "FeIIMolB": 0.000007062691936517438,
+            "sulfateMolB": 0.0006518512476290888,
+            "alkalinityEqB": -0.00016479043357095632,
+            "cellBHash": "f8f9a46b210e3883cc81a6076feeaa6b6bfa6511346814ca633891c379ff5581",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000031387569977430055,
+            "carbonFromGasMol": [
+              -0.0009092844675473161,
+              -0.0001691516982822638
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.390765801261,
+              -8.897897122493
+            ]
+          },
+          {
+            "cycle": 8,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.634113459234,
+              3.7532197797
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005562025374915925,
+            "CMolB": 0.00001078392966714,
+            "FeIIMolB": 0.000005297092644841602,
+            "sulfateMolB": 0.0006594134280834505,
+            "alkalinityEqB": -0.00019582759589403267,
+            "cellBHash": "e32fa315e7ecf7b549d4e886490d004a4b0064538db4ed2d1848452554986459",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000023540999713208125,
+            "carbonFromGasMol": [
+              -0.0009092861223598304,
+              -0.00016915344704216943
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.301376199016,
+              -9.052516226234
+            ]
+          },
+          {
+            "cycle": 9,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.656225212021,
+              3.718410086176
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005531070832459594,
+            "CMolB": 0.00001078169120192,
+            "FeIIMolB": 0.0000039728748590456806,
+            "sulfateMolB": 0.0006631946103238134,
+            "alkalinityEqB": -0.00021222930443761631,
+            "cellBHash": "2c31b8e065f220890dfd754cd57aed7f4d5e419a590216b80ed0ea8136d27067",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000017655992916758357,
+            "carbonFromGasMol": [
+              -0.0009092867840459152,
+              -0.00016915386645655457
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.254454017457,
+              -9.124771778356
+            ]
+          },
+          {
+            "cycle": 10,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.667321112842,
+              3.70070073938
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005515593320103733,
+            "CMolB": 0.00001078061909792,
+            "FeIIMolB": 0.0000029796977356599572,
+            "sulfateMolB": 0.0006650852508604897,
+            "alkalinityEqB": -0.00022109244222891274,
+            "cellBHash": "39e5b3f994b5cae9fe5fa45f983051010500bd129f66e8e0ea2964303da0d92f",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 0.0000013242177857959215,
+            "carbonFromGasMol": [
+              -0.0009092871387096373,
+              -0.00016915398106581253
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.230916511546,
+              -9.161509340134
+            ]
+          },
+          {
+            "cycle": 11,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.67267336716,
+              3.691155187875
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005507854463573639,
+            "CMolB": 0.00001078005914773,
+            "FeIIMolB": 0.0000022348045290333015,
+            "sulfateMolB": 0.0006660305983591008,
+            "alkalinityEqB": -0.0002260206949454071,
+            "cellBHash": "6691a05a2a477ee134016962ecbf6c25c0241f42fec4873738d9f262766d166e",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 9.931771233857233e-7,
+            "carbonFromGasMol": [
+              -0.0009092873682409988,
+              -0.00016915401532940102
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.21953934456,
+              -9.181257996879
+            ]
+          },
+          {
+            "cycle": 12,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.675144645248,
+              3.685752421678
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.00055039850004005,
+            "CMolB": 0.00001077974772723,
+            "FeIIMolB": 0.0000016761268363121573,
+            "sulfateMolB": 0.0006665032876017727,
+            "alkalinityEqB": -0.00022885732145082105,
+            "cellBHash": "8e40d11f0a1a53f4258a593071c46f25ec1ce1d9a2df16c9cfc2de2bde05d65e",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 7.448932066266556e-7,
+            "carbonFromGasMol": [
+              -0.0009092875306276071,
+              -0.00016915402647024283
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.214259979119,
+              -9.192390270543
+            ]
+          },
+          {
+            "cycle": 13,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.676212660307,
+              3.682549214979
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005502050262852023,
+            "CMolB": 0.00001077956499308,
+            "FeIIMolB": 0.000001257112717676455,
+            "sulfateMolB": 0.0006667396413734772,
+            "alkalinityEqB": -0.00023055500474119668,
+            "cellBHash": "b7dd7c8e0a0860243592ecc3eef77cf911ce4332f8af4bf21860fca71c0fe7f1",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 5.586776927211443e-7,
+            "carbonFromGasMol": [
+              -0.000909287649635372,
+              -0.0001691540304168879
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.21195502959,
+              -9.198958369638
+            ]
+          },
+          {
+            "cycle": 14,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.676617806994,
+              3.680563126339
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005501082899731482,
+            "CMolB": 0.0000107794524219,
+            "FeIIMolB": 9.428477372046455e-7,
+            "sulfateMolB": 0.0006668578238854084,
+            "alkalinityEqB": -0.00023161337235011098,
+            "cellBHash": "2286f7382398e2fc8fe857a0b111cc743f1f20d5c3f58c9ef07cb00c47fcac57",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 4.190141186357023e-7,
+            "carbonFromGasMol": [
+              -0.0009092877380137252,
+              -0.00016915403194042475
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.211059852306,
+              -9.203010085834
+            ]
+          },
+          {
+            "cycle": 15,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.676723102957,
+              3.679279390972
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.000550059922747995,
+            "CMolB": 0.00001077937996744,
+            "FeIIMolB": 7.071457055887936e-7,
+            "sulfateMolB": 0.0006669169187418858,
+            "alkalinityEqB": -0.0002322997005766039,
+            "cellBHash": "2a8e9196f72b25184bfbf4f08c7daec1244e863b501445f4032ac87b3be93da8",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 3.1426498047180944e-7,
+            "carbonFromGasMol": [
+              -0.0009092878039803074,
+              -0.00016915403257838256
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.210806490983,
+              -9.20561633773
+            ]
+          },
+          {
+            "cycle": 16,
+            "stage": "post-transport-buffered",
+            "pH": [
+              3.676702696621,
+              3.678418828404
+            ],
+            "calciteMolB": 0,
+            "CaMolB": 0.0005500357400872231,
+            "CMolB": 0.00001077933153676,
+            "FeIIMolB": 5.303667081862779e-7,
+            "sulfateMolB": 0.000666946468560725,
+            "alkalinityEqB": -0.0002327607235306312,
+            "cellBHash": "fe8f1f9453e2f84168a35e7447d8ae60c4d9d53fa2341c95c1175ed18c8bd7d5",
+            "acceptedPyriteMol": 0,
+            "acceptedFerrousMol": 2.3570203161585194e-7,
+            "carbonFromGasMol": [
+              -0.0009092878533228757,
+              -0.00016915403286543428
+            ],
+            "bufferEndpoints": [
+              "no-calcite",
+              "no-calcite"
+            ],
+            "calciteSI": [
+              -9.210825671165,
+              -9.207356109496
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -335,6 +335,7 @@ Object.assign(VugSimulator.prototype, {
     crystal.void_reach = Number(variant.void_reach ?? 0.5);
     crystal.vector = variant.vector || 'equant';
   }
+  recordCelestineNucleation(crystal, this.conditions, _localBirthEvaluation);
 
   // v24 water-level: stamp growth_environment from the ring's
   // water state. Submerged or meniscus = wet = 'fluid'; vadose

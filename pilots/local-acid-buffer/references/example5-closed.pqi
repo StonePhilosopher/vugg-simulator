@@ -1,0 +1,24 @@
+# Controlled Example 5 variant: remove only the fixed CO2(g) phase.
+# Carbon is closed (initially pure water plus the finite 10 mol calcite stock).
+# This remains an equilibrium batch reference, not a transient closed pore.
+TITLE Example 5 -- closed carbon variant
+SOLUTION 1 PURE WATER
+ pH 7.0
+ temp 25.0
+EQUILIBRIUM_PHASES 1
+ Pyrite 0.0
+ Goethite 0.0
+ Calcite 0.0
+ Gypsum 0.0 0.0
+REACTION 1
+ O2 1.0
+ NaCl 0.5
+ 0.0 0.001 0.005 0.01 0.03 0.05
+SELECTED_OUTPUT
+ -file selected.tsv
+ -reset false
+ -high_precision true
+USER_PUNCH
+ -headings reactionO2 pH waterKg carbon calcite pyrite goethite gypsum gasCarbon gypsumSI
+ 10 PUNCH RXN, -LA("H+"), TOT("water"), TOTMOLE("C"), EQUI("Calcite"), EQUI("Pyrite"), EQUI("Goethite"), EQUI("Gypsum"), EQUI("CO2(g)"), SI("Gypsum")
+END

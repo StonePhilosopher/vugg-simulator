@@ -524,6 +524,7 @@ class VugSimulator {
   }
 
   run_step() {
+    assertLegacyStepHasNoLocalStateFoundation(this);
     this.log = [];
     this.step++;
     this.conditions._sim_step = this.step;
@@ -1390,6 +1391,11 @@ class VugSimulator {
     // Pure tagging; gated on wall.wulff_fluorite (only sunnyside opts in) → byte-identical fleet,
     // token unchanged so the size scale is untouched (no SIM bump, no rebake). See js/45.
     classifyWulffForm(this);
+
+    // Observe finalized existing classifiers; never feed testimony into growth.
+    recordQuartzFormObservations(this);
+
+    recordCelestineGrowthStep(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

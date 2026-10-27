@@ -18,6 +18,19 @@
 // The two callers that want live state (post-render cleanup, Collect
 // button update) just omit the second arg.
 function _inventoryHistoricalView(crystal, replayStep) {
+  if (crystal?.mineral === 'celestine') {
+    const step = replayStep ?? Infinity;
+    if (crystal.nucleation_step > step) return null;
+    const view = celestinePresentation(crystal, step);
+    const history = celestineGrowthHistoryAtStep(crystal, step);
+    if (history) Object.assign(view, {
+      c_length_mm: history.end_of_step.c_length_mm,
+      a_width_mm: history.end_of_step.a_width_mm,
+      total_growth_um: history.end_of_step.total_growth_um,
+    });
+    view.zones = (crystal.zones || []).filter((z: any) => z.step <= step);
+    return view;
+  }
   if (replayStep == null) return crystal;
   if (!crystal) return crystal;
   if (crystal.nucleation_step != null && crystal.nucleation_step > replayStep) return null;
@@ -119,7 +132,7 @@ function crystalThumbHTML(crystal, size) {
 // (this function won't render anything for those — _inventoryHistoricalView
 // returns null and we bail early).
 function renderCrystalRow(crystal, idx, onCollect, replayStep?: number) {
-  const view = (replayStep != null) ? _inventoryHistoricalView(crystal, replayStep) : crystal;
+  const view = _inventoryHistoricalView(crystal, replayStep);
   if (!view) return null;
 
   const el = document.createElement('div');
@@ -140,9 +153,10 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep?: number) {
   html += `<div style="flex:1;min-width:0">`;
   html += `<div class="inv-mineral" style="color:${cColor}">${displayName} #${crystal.crystal_id}</div>`;
   html += `<div class="inv-size">${view.c_length_mm.toFixed(1)} × ${view.a_width_mm.toFixed(1)} mm</div>`;
-  html += `<div class="inv-habit">${crystal.habit}`;
-  if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
+  html += `<div class="inv-habit">${collectionPlayerTextHTML(view.habit)}`;
+  if (view.dominant_forms.length) html += ` [${collectionPlayerTextHTML(view.dominant_forms[0])}]`;
   html += `</div>`;
+  if (view.celestine_disclosure) html += `<div class="inv-habit">Approximate model dimensions. ${collectionPlayerTextHTML(view.celestine_disclosure)}</div>`;
   if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
   if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
   html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${view.zones.length} zones · tap for history</div>`;

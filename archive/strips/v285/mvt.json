@@ -73606,6 +73606,116 @@
         "surface_film": null,
         "zone_count": 5
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 14,
+        "captured_step": 120,
+        "sample_index": 119,
+        "nucleation_step": 28,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 28
+          },
+          {
+            "zone_index": 1,
+            "step": 29
+          },
+          {
+            "zone_index": 2,
+            "step": 30
+          },
+          {
+            "zone_index": 3,
+            "step": 31
+          },
+          {
+            "zone_index": 4,
+            "step": 32
+          },
+          {
+            "zone_index": 5,
+            "step": 33
+          },
+          {
+            "zone_index": 6,
+            "step": 34
+          },
+          {
+            "zone_index": 7,
+            "step": 35
+          },
+          {
+            "zone_index": 8,
+            "step": 36
+          },
+          {
+            "zone_index": 9,
+            "step": 37
+          },
+          {
+            "zone_index": 10,
+            "step": 38
+          },
+          {
+            "zone_index": 11,
+            "step": 39
+          },
+          {
+            "zone_index": 12,
+            "step": 40
+          },
+          {
+            "zone_index": 13,
+            "step": 48
+          },
+          {
+            "zone_index": 14,
+            "step": 49
+          },
+          {
+            "zone_index": 15,
+            "step": 50
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 14,
+          "initial": {
+            "step": 28,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.05929385038782745,
+                "azim": 5.186849908386782
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "gwindel",
+              "twin_law": "",
+              "_polymorph": "alpha-quartz",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "m{100}",
+                "r{101}",
+                "z{011} dominant"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 120,
+          "observed_zone_count": 16
+        }
+      }
     ]
   }
 }

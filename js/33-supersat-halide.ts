@@ -31,6 +31,7 @@ const MINERAL_GATES_halite: MineralGates = {
 };
 
 const MINERAL_GATES_atacamite: MineralGates = {
+  soft: ['pH_min', 'pH_max'],
   sigma_crit: 1.2,
   T_min: 5,
   T_max: 200,
@@ -45,6 +46,7 @@ const MINERAL_GATES_atacamite: MineralGates = {
 };
 
 const MINERAL_GATES_sylvite: MineralGates = {
+  soft: ['T_max'],
   sigma_crit: 1.0,
   T_optimal: 25,
   T_max: 200,                   // σ attenuates above 100; effectively gated by 200
@@ -60,9 +62,11 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.F < g.fluid_min!.F) return 0;
   let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
   // 5-tier T window per Richardson & Holland 1979 + MVT deposit
-  // studies showing 50-152°C formation range. Solubility increases
-  // with T below 100°C (kinetically slow precipitation), passes
-  // through max around 100-250°C, declines above 350°C.
+  // studies showing 50-152°C formation range. The factor encodes how
+  // favourable each band is for PRECIPITATION: kinetically slow below
+  // 100°C, best at 100-250°C, declining above 350°C. (It is not a
+  // solubility curve — a solubility maximum would make 100-250°C the
+  // least favourable band, the opposite of what the factor does.)
   let T_factor = 1.0;
   if (this.temperature < 50) T_factor = this.temperature / 50.0;
   else if (this.temperature < 100) T_factor = 0.8;

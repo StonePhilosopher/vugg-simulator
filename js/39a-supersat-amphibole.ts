@@ -98,7 +98,7 @@ const MINERAL_GATES_amosite: MineralGates = {
   pH_min: 6.0, pH_max: 10.0,
   surface_energy: 'medium',
   _sources: ['amphibole engine v116', 'Frank et al. 2002'],
-  _notes: '"Brown asbestos" cummingtonite-grunerite asbestiform. Ca > 80 + low Mg required. Fe must dominate Mg (Fe ≥ 1.2 × Mg).',
+  _notes: '"Brown asbestos" cummingtonite-grunerite asbestiform. Ca ≤ 80 (higher Ca routes to actinolite) and Fe must dominate Mg (Fe ≥ 1.2 × Mg).',
 };
 
 const MINERAL_GATES_crocidolite: MineralGates = {
@@ -125,7 +125,7 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Mg < g.fluid_min!.Mg || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
     if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-    // Fe > 50 routes toward actinolite end-member
+    // Fe > 60 routes toward actinolite end-member
     if (this.fluid.Fe > 60) return 0;
     const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
     const mg_f = Math.min(this.fluid.Mg / 150.0, 2.0);
@@ -216,7 +216,7 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Mg too high routes to anthophyllite; Ca too high routes to actinolite
     if (this.fluid.Ca > 80) return 0;
-    // Fe must dominate over Mg (Fe/Mg > 1.5)
+    // Fe must dominate over Mg (Fe/Mg ≥ 1.2)
     if (this.fluid.Mg > 0 && this.fluid.Fe < this.fluid.Mg * 1.2) return 0;
     const fe_f = Math.min(this.fluid.Fe / 150.0, 2.5);
     const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5);

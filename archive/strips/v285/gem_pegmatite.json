@@ -28391,6 +28391,212 @@
         "surface_film": null,
         "zone_count": 0
       }
+    ],
+    "quartz_form": [
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 1,
+        "captured_step": 230,
+        "sample_index": 229,
+        "nucleation_step": 1,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 1
+          },
+          {
+            "zone_index": 1,
+            "step": 2
+          },
+          {
+            "zone_index": 2,
+            "step": 3
+          },
+          {
+            "zone_index": 3,
+            "step": 4
+          },
+          {
+            "zone_index": 4,
+            "step": 5
+          },
+          {
+            "zone_index": 5,
+            "step": 6
+          },
+          {
+            "zone_index": 6,
+            "step": 7
+          },
+          {
+            "zone_index": 7,
+            "step": 8
+          },
+          {
+            "zone_index": 8,
+            "step": 9
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 1,
+          "initial": {
+            "step": 1,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.17452530348942485,
+                "azim": 4.721801664483621
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "β-quartz bipyramidal (paramorphic)",
+              "twin_law": "",
+              "_polymorph": "beta-quartz",
+              "mineral_display": "quartz (β→α)",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "hexagonal bipyramid {10̄11}",
+                "no prism faces"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 230,
+          "observed_zone_count": 9
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 10,
+        "captured_step": 230,
+        "sample_index": 229,
+        "nucleation_step": 4,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 4
+          },
+          {
+            "zone_index": 1,
+            "step": 5
+          },
+          {
+            "zone_index": 2,
+            "step": 6
+          },
+          {
+            "zone_index": 3,
+            "step": 7
+          },
+          {
+            "zone_index": 4,
+            "step": 8
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 10,
+          "initial": {
+            "step": 4,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.3209274889623817,
+                "azim": 3.634513626961158
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "β-quartz bipyramidal (paramorphic)",
+              "twin_law": "",
+              "_polymorph": "beta-quartz",
+              "mineral_display": "quartz (β→α)",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "hexagonal bipyramid {10̄11}",
+                "no prism faces"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 230,
+          "observed_zone_count": 5
+        }
+      },
+      {
+        "schema": "strip-quartz-form-observations-v1",
+        "crystal_id": 11,
+        "captured_step": 230,
+        "sample_index": 229,
+        "nucleation_step": 5,
+        "zones": [
+          {
+            "zone_index": 0,
+            "step": 5
+          },
+          {
+            "zone_index": 1,
+            "step": 6
+          },
+          {
+            "zone_index": 2,
+            "step": 7
+          },
+          {
+            "zone_index": 3,
+            "step": 8
+          }
+        ],
+        "history": {
+          "schema": "quartz-form-observations-v2",
+          "observation_basis": "simulator-state-at-finalized-step",
+          "source_crystal_id": 11,
+          "initial": {
+            "step": 5,
+            "zone_count": 1,
+            "snapshot": {
+              "mineral": "quartz",
+              "_nucTilt": {
+                "theta": 0.49503452065538167,
+                "azim": 0.4720963564567681
+              },
+              "enclosed_by": null,
+              "cdr_replaces_crystal_id": null,
+              "dissolved": false,
+              "perimorph_eligible": false,
+              "habit": "β-quartz bipyramidal (paramorphic)",
+              "twin_law": "",
+              "_polymorph": "beta-quartz",
+              "mineral_display": "quartz (β→α)",
+              "growth_environment": "fluid",
+              "twinned": false,
+              "dominant_forms": [
+                "hexagonal bipyramid {10̄11}",
+                "no prism faces"
+              ],
+              "split_presence": "absent",
+              "surface_growth_presence": "absent"
+            }
+          },
+          "changes": [],
+          "observed_through_step": 230,
+          "observed_zone_count": 4
+        }
+      }
     ]
   }
 }

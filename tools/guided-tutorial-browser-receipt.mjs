@@ -77,7 +77,7 @@ function _flatTopologyLayoutCloses(layout) {
 const EXPECTED_GEOLOGY = Object.freeze({
   save_load: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 1,
-    fingerprint: '90dff7024c93d11fa90285ff9ea026c8bf722b1cbfc584bdae68538658652c23',
+    fingerprint: '6bcf29745bd395224c376443d0f414d3f66279208a943071272991607d3642ac',
     // Save ids are positions in the QA-pinned Math.random stream that three.js also draws
     // UUIDs from. Re-pinned 2026-09-05 for the R1 lighting rig (review §5 R1): the PMREM room,
     // its panels and the key's target are allocated at renderer init, before any save id is
@@ -86,12 +86,12 @@ const EXPECTED_GEOLOGY = Object.freeze({
   }),
   creative_completion: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_travertine', step: 50,
-    fingerprint: '8c2eb2f17bf6355e14bfb98acaaaab16d451c26c89980cb3092edfb2af9e238e',
+    fingerprint: 'd80458bd7961420bed562e9332097f52bca126e5b7339ed509dfde6f21d9dd2e',
     run_id: 'save-16-33h',   // re-pinned 2026-09-05 (R1) and 2026-09-07 (R5 grain texture; see save_load)
   }),
   skip: Object.freeze({
     runtime: 'fortress', scenario: 'tutorial_mn_calcite', step: 0,
-    fingerprint: '143c9a8881f813dc12baf49708c978b0fdb9e943b5c396149faaaa3ba99015a5',
+    fingerprint: '4cf1565bc377654f02a2dee0a5c1e096c1163978a44e02287fb0a62563915289',
     // Save ids draw from the QA-pinned Math.random stream shared with three.js UUIDs; the
     // fingerprint (the geology) is unchanged. Re-pinned 2026-09-05 (review F13), and again
     // the same day for the R1 lighting rig allocations (see save_load).
@@ -99,13 +99,13 @@ const EXPECTED_GEOLOGY = Object.freeze({
   }),
   simulation_completion: Object.freeze({
     runtime: 'simulation', scenario: 'shigar_pegmatite', step: 70,
-    fingerprint: '1285a3ec239fc66f883ccf4fd780bffb5134ca194786edde6a433c4675d7f0f6',
+    fingerprint: 'abc30f8feb9d70dc1a8f65f353a6db69ce2747db94736831ba688bcfa3e3c175',
     // run_id is the durable strip DATASET digest, which records each crystal's surface-growth
     // testimony (js/85g `surface_growth: c._surfaceGrowth`). Re-pinned 2026-09-05 by the
     // visual-realism review (proposals/PROPOSAL-HOSTILE-REVIEW-VISUAL-REALISM-2026-09-04.md,
     // F1): euhedral crystals are no longer classified as crusts and coverage is mass-floored,
     // so the recorded testimony changed while the simulation fingerprint above did not.
-    run_id: 'c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2',
+    run_id: 'f93d958d2c1712a8bb0edadb380eae12ad2e8aea5fa86d0e48545c1ad3f5e91c',
   }),
 });
 // The collection id draws from the QA-pinned Math.random stream, which three.js also consumes
@@ -113,14 +113,19 @@ const EXPECTED_GEOLOGY = Object.freeze({
 // geometries/materials before the "Collect topaz" click shifts this suffix. Re-pinned
 // 2026-09-05 (review F13 records the coupling as canonical debt), and again the same day for
 // the R1 lighting rig (PMREM room + key target allocated at renderer init).
-const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-wr2';   // re-pinned 2026-09-08: R4a quartz allocations; exact journey diff is this ID only (F13)
+const EXPECTED_COLLECTION_RECORD_ID = 'cry-16-vqk';   // 2026-10-23 selective quartz replay allocation stream; geology unchanged (F13).
 const EXPECTED_COLLECTION_NAME = '<img data-vugg-player-name-probe src=x onerror="globalThis.__vuggPlayerNameInjection=1">';
-// Replaced with the exact SIM 285 values after the owned-browser source freeze.
+// SIM286 pins are actual controlled Chrome products. The commissioning command
+// --recipe-identity-proof must recover the exact SIM285 fingerprints and raw /
+// compressed download hashes by changing only identity fields on comparison
+// copies. See proposals/evidence/recipe-identity-browser-validation.json.
 // Re-pinned 2026-09-05: the strip dataset records each crystal's surface-growth testimony
 // (js/85g), which the visual-realism review corrected (F1) — the dataset and its download
 // digests move with that testimony while the simulation fingerprint does not.
-const EXPECTED_GAME04_DATASET_SHA256 = 'c4a46da1eb30f98c6bdc36ad7c5c848747fdfb1fcf21602104714d89fce768b2';
-const EXPECTED_GAME04_DOWNLOAD_SHA256 = '2b0e98195b3f4a9d0a8cced5c633c363414f6afeb7242fad98c280df86a4230b';
+// Actual Chrome bytes with only quartz_form_testimony removed recover both old
+// hashes exactly; see proposals/evidence/quartz-browser-payload-validation.json.
+const EXPECTED_GAME04_DATASET_SHA256 = 'f93d958d2c1712a8bb0edadb380eae12ad2e8aea5fa86d0e48545c1ad3f5e91c';
+const EXPECTED_GAME04_DOWNLOAD_SHA256 = '08383b2dec0d77d414c9e6d060f9236fe25d1ddecdda88230e18ace3ac27490f';
 // Replaced with the exact controlled Shigar product after the renderer source
 // freezes. These values are independently pinned so a self-rehashed receipt
 // cannot merely invent a plausible flat view while the public control is dead.

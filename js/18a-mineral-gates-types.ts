@@ -13,11 +13,16 @@
 //
 // Fields are optional EXCEPT sigma_crit + surface_energy:
 //   - sigma_crit:        nucleation threshold (σ ≤ this → no nucleation)
-//   - T_min/T_max:       hard cutoffs (σ → 0 outside this range)
+//   - T_min/T_max:       hard cutoffs (σ → 0 outside this range), unless listed
+//                        in `soft`
 //   - T_optimal:         used by initiative temperature modifier
 //   - fluid_min:         per-species composition floor (σ → 0 below)
-//   - pH_min/pH_max:     hard pH cutoffs
+//   - pH_min/pH_max:     hard pH cutoffs, unless listed in `soft`
 //   - O2_min/O2_max:     redox windows (for oxidizing- or reducing-only minerals)
+//   - soft:              bounds the σ body only ATTENUATES (σ decays, never cut
+//                        to zero). The σ panel shows them as soft; the
+//                        initiative module still reads T_min/T_max unchanged
+//   - redox_bypass:      a redox route the O2 fields cannot show (display only)
 //   - surface_energy:    γ_sl category (per 01-geochemical-grounding.md)
 //   - _sources:          literature / engine references
 //   - _notes:            free-form notes
@@ -25,8 +30,9 @@
 // Conventions:
 //   - "Hard cutoff" means σ → 0 (mineral cannot fire). "Attenuation"
 //     (exponential decay above some threshold) is engine-specific and
-//     stays inline in the supersat function — gates carry only the
-//     hard cutoffs.
+//     stays inline in the supersat function. Gates carry the hard cutoffs;
+//     a bound kept for display or for the initiative module although the
+//     σ only attenuates there must be listed in `soft`.
 //   - σ_crit is the LOWEST σ-threshold in the nucleation file. If
 //     a mineral has secondary nucleation gates (e.g., lepidocrocite
 //     σ > 1.7 for additional crystals), that's not in MINERAL_GATES.
@@ -41,6 +47,14 @@ interface MineralGates {
   pH_max?: number;
   O2_min?: number;
   O2_max?: number;
+  // Bounds above the σ body treats softly. Declared only where the σ body,
+  // its delegated helpers and its nucleation path were checked to have no
+  // hard cut for that bound (recipe review M9; T from the T-envelope census).
+  soft?: ReadonlyArray<'T_min' | 'T_max' | 'pH_min' | 'pH_max'>;
+  // 'explicit_sulfate_pool': the σ calls sulfateRedoxAvailable, which admits
+  // ANY Eh when the fluid carries an explicit sulfate pool (js/20c); O2_min
+  // then applies only to fluids without explicit pools (recipe review R7).
+  redox_bypass?: 'explicit_sulfate_pool';
   // Executable precursor/host required even above the fluid-only sigma gate.
   required_substrate?: string;
   surface_energy: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';

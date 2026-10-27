@@ -1658,7 +1658,7 @@ function grow_clausthalite(crystal, conditions, step) {
   });
 }
 
-// CdS hexagonal — high-T polymorph (>200C kinetic favorability).
+// CdS hexagonal — the stable CdS polymorph (hawleyite is the metastable cubic form).
 function grow_greenockite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_greenockite();
   if (sigma < 1.0) {
