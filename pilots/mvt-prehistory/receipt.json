@@ -1,0 +1,2043 @@
+{
+  "schema": "vugg-mvt-prehistory-control-receipt-v1",
+  "base": "576a6ceeb81f590618d4974a30612bf9c5177d1d",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "productionExecutionDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "registeredProducerContractsUnchanged": true,
+  "productionSourceHashes": {
+    "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
+    "js/19-mineral-stoichiometry.ts": "2d3e5414d486dc9759005cfb439f8eaebe865b65b0dd9bf21a8e149c74ca4c64",
+    "js/20-chemistry-fluid.ts": "ef9c8ec76c98a9d7322273e4573de5b1408cfa44339b2a50adcf5f11e2a69da6",
+    "js/20b-chemistry-carbonate-system.ts": "075fcdf19e03893df19997e1bee05eed220cea03d43f88e0ad0162e87d095012",
+    "js/22-geometry-wall.ts": "162f3c91181689141d1b4ee1690c13ba47185a72b005cf380fce7170b9b707a9",
+    "js/22a-geometry-cavity-evolution.ts": "27090b3fdcddf58cb101f724606b312a2f1a28d3ba52e592bf7915b9eec5549b",
+    "js/24-geometry-voxel-grid.ts": "f17314ef72446175aa3c8da183a1e53d3e0e8942bcf866e43bf01ec745c04a72",
+    "js/24e-local-conserved-state.ts": "3ea7549f4cf71536fa4a5161e5a19a0664a37467badcc46f9808373a956663f6",
+    "js/27-geometry-crystal.ts": "f82d36decad0613b5238dd40168c44ce0eb3533c7664240a45b3f99e23e2b729",
+    "js/85c-simulator-state.ts": "050557ebf44fbfa6724a7d9e006d6885e9894cb60c863a36dd091d1426ce6a37",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
+    "pilots/finite-reservoir-authority/contract.mjs": "392195155899ea4d8dff859dfba9058beffa46063e8ca53dae33260a616c19f1",
+    "pilots/finite-reservoir-authority/audit.mjs": "cbb9f881ec43b7c3fa05b8e7bdbc1b94fcbec69a6839830e38cd2f8d018c7e4b"
+  },
+  "sourceHashes": {
+    "pilots/mvt-prehistory/history.mjs": "32c09880eb6b78321c8c80027ac4615289d96bdc6208e7a6ee8b7d8b74368b2a",
+    "pilots/mvt-prehistory/transfer.mjs": "d056c6ef756e1d05e51d6d5aa8f679a765429105a908f48d0225fe833cf70038",
+    "pilots/mvt-prehistory/control-fixture.mjs": "f79a05d82b76fa884f4223df09a07d0ff715d0233589c33ebdc60d2467441c88",
+    "pilots/mvt-prehistory/source-audit.mjs": "9eaecff63377cd759a48846a1c7cd8da1ef8f5d1e9a3b93f8938d19a0c578dc0",
+    "pilots/mvt-prehistory/receipt.mjs": "9308cbd43791f9d7a8bdf0768c65eff7e5cd5daf375da88486d50e42d5229f9d",
+    "pilots/mvt-prehistory/reference.py": "57c2a3da29d2e786b8788d0b7415ea539ddb619c418032d38f04b7a586ee84f7",
+    "tests-js/mvt-prehistory.test.ts": "44d099ea6d942afb32e8dd827d6e379120af4ac56146f83481670063c89bc235",
+    ".github/workflows/ci.yml": "158d98b9260570c33dda17359d284906868b53fe8f0da0d6d99ee07457436164"
+  },
+  "scope": "authored mixed-host causal conservation control plus actual-MVT source-gap audit; no growth fleet, EOS, speciation or geological calibration",
+  "causes": {
+    "input": {
+      "schema": "vugg-host-fluid-prehistory-v1",
+      "host": {
+        "id": "mixed-host-control",
+        "lithology": "authored carbonate/chert material-parcel control",
+        "axesMm": {
+          "x": [
+            0,
+            1,
+            1.0001,
+            2.0001,
+            3.0001
+          ],
+          "y": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "z": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "phases": [
+          "calcite",
+          "quartz",
+          "calcite",
+          "quartz",
+          "calcite",
+          "calcite",
+          "dolomite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "quartz",
+          "calcite",
+          "quartz",
+          "calcite",
+          "quartz",
+          "calcite",
+          "calcite",
+          "calcite",
+          "dolomite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "quartz",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite",
+          "calcite"
+        ],
+        "priorAlteration": "source-declared initial phase map; earlier alteration history unresolved, not fabricated",
+        "provenance": {
+          "kind": "authored-experiment",
+          "reference": "explicit nonuniform cuboid parcel map; not sampled Tri-State limestone/dolostone or an inferred phase fraction"
+        }
+      },
+      "reservoirs": [
+        {
+          "id": "metal-brine-control",
+          "role": "metal-bearing basinal-brine analogue",
+          "volume": {
+            "value": 100,
+            "unit": "mm3_solution"
+          },
+          "solventMassPerVolume": {
+            "value": 8.5e-7,
+            "unit": "kg_solvent_per_mm3_solution"
+          },
+          "molality": {
+            "calciumMol": {
+              "value": 0.001,
+              "unit": "mol_Ca_per_kg_solvent"
+            },
+            "dicMolC": {
+              "value": 0.0001,
+              "unit": "mol_C_per_kg_solvent"
+            },
+            "ironMol": {
+              "value": 0.0002,
+              "unit": "mol_Fe_per_kg_solvent"
+            },
+            "zincMol": {
+              "value": 0.001,
+              "unit": "mol_Zn_per_kg_solvent"
+            },
+            "leadMol": {
+              "value": 0.0001,
+              "unit": "mol_Pb_per_kg_solvent"
+            },
+            "sulfateMol": {
+              "value": 0,
+              "unit": "mol_S_VI_per_kg_solvent"
+            },
+            "reducedSulfurMol": {
+              "value": 0,
+              "unit": "mol_S_minusII_per_kg_solvent"
+            },
+            "oxygenMol": {
+              "value": 0,
+              "unit": "mol_O2_per_kg_solvent"
+            },
+            "sodiumMol": {
+              "value": 0.1,
+              "unit": "mol_Na_per_kg_solvent"
+            },
+            "chlorideMol": {
+              "value": 0.1,
+              "unit": "mol_Cl_per_kg_solvent"
+            },
+            "alkalinityEq": {
+              "value": -0.02,
+              "unit": "eq_per_kg_solvent"
+            }
+          },
+          "provenance": {
+            "kind": "authored-experiment",
+            "reference": "arithmetic-control fluid parcel definition; all omitted fixture component values explicitly zero; solvent/solution-volume coefficient is not a commissioned natural-brine EOS"
+          }
+        },
+        {
+          "id": "sulfur-water-control",
+          "role": "sulfur-bearing groundwater analogue",
+          "volume": {
+            "value": 100,
+            "unit": "mm3_solution"
+          },
+          "solventMassPerVolume": {
+            "value": 9.8e-7,
+            "unit": "kg_solvent_per_mm3_solution"
+          },
+          "molality": {
+            "calciumMol": {
+              "value": 0,
+              "unit": "mol_Ca_per_kg_solvent"
+            },
+            "dicMolC": {
+              "value": 0.001,
+              "unit": "mol_C_per_kg_solvent"
+            },
+            "ironMol": {
+              "value": 0,
+              "unit": "mol_Fe_per_kg_solvent"
+            },
+            "zincMol": {
+              "value": 0,
+              "unit": "mol_Zn_per_kg_solvent"
+            },
+            "leadMol": {
+              "value": 0,
+              "unit": "mol_Pb_per_kg_solvent"
+            },
+            "sulfateMol": {
+              "value": 0.001,
+              "unit": "mol_S_VI_per_kg_solvent"
+            },
+            "reducedSulfurMol": {
+              "value": 0.0005,
+              "unit": "mol_S_minusII_per_kg_solvent"
+            },
+            "oxygenMol": {
+              "value": 0.00001,
+              "unit": "mol_O2_per_kg_solvent"
+            },
+            "sodiumMol": {
+              "value": 0.01,
+              "unit": "mol_Na_per_kg_solvent"
+            },
+            "chlorideMol": {
+              "value": 0.01,
+              "unit": "mol_Cl_per_kg_solvent"
+            },
+            "alkalinityEq": {
+              "value": 0.002,
+              "unit": "eq_per_kg_solvent"
+            }
+          },
+          "provenance": {
+            "kind": "authored-experiment",
+            "reference": "arithmetic-control fluid parcel definition; all omitted fixture component values explicitly zero; solvent/solution-volume coefficient is not a commissioned natural-brine EOS"
+          }
+        }
+      ],
+      "mixingVolumeModel": "declared-additive-parcel-volume-control",
+      "feederBoundaryModel": "imposed-external-port-isolation-control",
+      "provenance": {
+        "kind": "authored-experiment",
+        "reference": "shared causal conservation fixture; volume additivity and imposed isolation are explicit control assumptions, not production MVT physics"
+      }
+    },
+    "sharedEvents": [
+      {
+        "id": "create-void",
+        "type": "export_breccia",
+        "parcelIds": [
+          22
+        ],
+        "provenance": {
+          "kind": "authored-experiment",
+          "reference": "prescribed shared-prehistory control event create-void; no kinetic or locality prediction"
+        }
+      },
+      {
+        "id": "connect-feeder",
+        "type": "connect_feeder",
+        "feederId": "fracture-control",
+        "poreParcelId": 22,
+        "reservoirIds": [
+          "metal-brine-control",
+          "sulfur-water-control"
+        ],
+        "provenance": {
+          "kind": "authored-experiment",
+          "reference": "prescribed shared-prehistory control event connect-feeder; no kinetic or locality prediction"
+        }
+      },
+      {
+        "id": "brine-entry",
+        "type": "admit_fluid",
+        "feederId": "fracture-control",
+        "reservoirId": "metal-brine-control",
+        "volume": {
+          "value": 0.5,
+          "unit": "mm3_solution"
+        },
+        "provenance": {
+          "kind": "authored-experiment",
+          "reference": "prescribed shared-prehistory control event brine-entry; no kinetic or locality prediction"
+        }
+      },
+      {
+        "id": "groundwater-entry",
+        "type": "admit_fluid",
+        "feederId": "fracture-control",
+        "reservoirId": "sulfur-water-control",
+        "volume": {
+          "value": 0.25,
+          "unit": "mm3_solution"
+        },
+        "provenance": {
+          "kind": "authored-experiment",
+          "reference": "prescribed shared-prehistory control event groundwater-entry; no kinetic or locality prediction"
+        }
+      }
+    ],
+    "seal": {
+      "id": "seal-feeder",
+      "type": "seal_feeder",
+      "feederId": "fracture-control",
+      "mechanism": "imposed-outside-pore-isolation",
+      "provenance": {
+        "kind": "authored-experiment",
+        "reference": "prescribed shared-prehistory control event seal-feeder; no kinetic or locality prediction"
+      }
+    },
+    "pulse": {
+      "id": "later-brine-pulse",
+      "type": "admit_fluid",
+      "feederId": "fracture-control",
+      "reservoirId": "metal-brine-control",
+      "volume": {
+        "value": 0.125,
+        "unit": "mm3_solution"
+      },
+      "provenance": {
+        "kind": "authored-experiment",
+        "reference": "prescribed shared-prehistory control event later-brine-pulse; no kinetic or locality prediction"
+      }
+    },
+    "prescribedTransfer": {
+      "id": "prescribed-host-calcite-transfer",
+      "type": "remove_calcite_parcel",
+      "parcelId": 13,
+      "prescribedWholeParcel": true,
+      "contactModel": "prescribed-whole-parcel-contact-control",
+      "provenance": {
+        "kind": "authored-experiment",
+        "reference": "prescribed shared-prehistory control event prescribed-host-calcite-transfer; no kinetic or locality prediction"
+      }
+    },
+    "reopen": {
+      "id": "reopen-feeder",
+      "type": "reopen_feeder",
+      "feederId": "fracture-control",
+      "mechanism": "imposed-outside-pore-isolation",
+      "provenance": {
+        "kind": "authored-experiment",
+        "reference": "prescribed shared-prehistory control event reopen-feeder; no kinetic or locality prediction"
+      }
+    }
+  },
+  "cases": {
+    "connected": {
+      "recordDigest": "d0e975f6d836ea2ea39fda263fb8a20967423f97e53d22473c942c6d3efae30c",
+      "modelDigest": "8d138debde4a93ec79e79ebedd612e372cd56da0fe7e792941c1a2dc3f0cb2a1",
+      "eventIds": [
+        "create-void",
+        "connect-feeder",
+        "brine-entry",
+        "groundwater-entry"
+      ],
+      "host": {
+        "initialPhaseVolumesMm3": {
+          "calcite": 20.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "remainingPhaseVolumesMm3": {
+          "calcite": 19.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "exportedPhaseVolumesMm3": {
+          "calcite": 1.0000000000000002,
+          "dolomite": 0,
+          "quartz": 0
+        },
+        "dissolvedCalciteMol": 0,
+        "exposedSurfaces": [
+          {
+            "parcelId": 13,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 19,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 21,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 23,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0.00002707532355011643
+          },
+          {
+            "parcelId": 25,
+            "phase": "dolomite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 31,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          }
+        ]
+      },
+      "pore": {
+        "geometricVoidVolumeMm3": 1.0000000000000002,
+        "wetVolumeMm3": 0.75,
+        "waterKg": 6.699999999999999e-7,
+        "components": {
+          "calciumMol": 4.2500000000000003e-10,
+          "dicMolC": 2.875e-10,
+          "ironMol": 8.5e-11,
+          "zincMol": 4.2500000000000003e-10,
+          "leadMol": 4.25e-11,
+          "sulfateMol": 2.45e-10,
+          "reducedSulfurMol": 1.225e-10,
+          "oxygenMol": 2.45e-12,
+          "sodiumMol": 4.495e-8,
+          "chlorideMol": 4.495e-8,
+          "alkalinityEq": -8.01e-9
+        },
+        "pH": null,
+        "pressureBar": null,
+        "connectivity": "connected",
+        "residentFluidProvenance": [
+          {
+            "eventId": "brine-entry",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.5,
+            "enteredWaterKg": 4.25e-7,
+            "enteredComponents": {
+              "calciumMol": 4.2500000000000003e-10,
+              "dicMolC": 4.25e-11,
+              "ironMol": 8.5e-11,
+              "zincMol": 4.2500000000000003e-10,
+              "leadMol": 4.25e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 4.2500000000000003e-8,
+              "chlorideMol": 4.2500000000000003e-8,
+              "alkalinityEq": -8.5e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "groundwater-entry",
+            "reservoirId": "sulfur-water-control",
+            "enteredVolumeMm3": 0.25,
+            "enteredWaterKg": 2.45e-7,
+            "enteredComponents": {
+              "calciumMol": 0,
+              "dicMolC": 2.45e-10,
+              "ironMol": 0,
+              "zincMol": 0,
+              "leadMol": 0,
+              "sulfateMol": 2.45e-10,
+              "reducedSulfurMol": 1.225e-10,
+              "oxygenMol": 2.45e-12,
+              "sodiumMol": 2.45e-9,
+              "chlorideMol": 2.45e-9,
+              "alkalinityEq": 4.9e-10
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          }
+        ],
+        "waterMeaning": "derived only from the admitted fluid parcels and their explicit solvent/solution-volume relation"
+      },
+      "externalReservoirs": {
+        "metal-brine-control": {
+          "remainingVolumeMm3": 99.5,
+          "remainingWaterKg": 0.00008457500000000001,
+          "components": {
+            "calciumMol": 8.4575e-8,
+            "dicMolC": 8.457500000000001e-9,
+            "ironMol": 1.6915000000000003e-8,
+            "zincMol": 8.4575e-8,
+            "leadMol": 8.457500000000001e-9,
+            "sulfateMol": 0,
+            "reducedSulfurMol": 0,
+            "oxygenMol": 0,
+            "sodiumMol": 0.000008457500000000002,
+            "chlorideMol": 0.000008457500000000002,
+            "alkalinityEq": -0.0000016915000000000002
+          }
+        },
+        "sulfur-water-control": {
+          "remainingVolumeMm3": 99.75,
+          "remainingWaterKg": 0.000097755,
+          "components": {
+            "calciumMol": 0,
+            "dicMolC": 9.7755e-8,
+            "ironMol": 0,
+            "zincMol": 0,
+            "leadMol": 0,
+            "sulfateMol": 9.7755e-8,
+            "reducedSulfurMol": 4.88775e-8,
+            "oxygenMol": 9.775500000000002e-10,
+            "sodiumMol": 9.775499999999999e-7,
+            "chlorideMol": 9.775499999999999e-7,
+            "alkalinityEq": 1.9551e-7
+          }
+        }
+      },
+      "closure": {
+        "hostGeometry": {
+          "expected": 27.0009,
+          "actual": 27.0009,
+          "residual": 0,
+          "tolerance": 1.5348234683187912e-12
+        },
+        "phaseVolumes": {
+          "calcite": {
+            "expected": 20.0008,
+            "actual": 20.0008,
+            "residual": 0,
+            "tolerance": 1.136913851951249e-12
+          },
+          "dolomite": {
+            "expected": 2,
+            "actual": 2,
+            "residual": 0,
+            "tolerance": 1.1368683772161603e-13
+          },
+          "quartz": {
+            "expected": 5.000100000000001,
+            "actual": 5.000100000000001,
+            "residual": 0,
+            "tolerance": 2.842227786459262e-13
+          }
+        },
+        "water": {
+          "expected": 0.000183,
+          "actual": 0.00018300000000000003,
+          "residual": 2.710505431213761e-20,
+          "tolerance": 1.0402345651527867e-17
+        },
+        "components": {
+          "calciumMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "dicMolC": {
+            "expected": 1.0650000000000001e-7,
+            "actual": 1.0650000000000001e-7,
+            "residual": 0,
+            "tolerance": 6.053824108676054e-21
+          },
+          "ironMol": {
+            "expected": 1.7000000000000003e-8,
+            "actual": 1.7000000000000003e-8,
+            "residual": 0,
+            "tolerance": 9.663381206337364e-22
+          },
+          "zincMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "leadMol": {
+            "expected": 8.500000000000002e-9,
+            "actual": 8.500000000000002e-9,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-22
+          },
+          "sulfateMol": {
+            "expected": 9.8e-8,
+            "actual": 9.8e-8,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-21
+          },
+          "reducedSulfurMol": {
+            "expected": 4.9e-8,
+            "actual": 4.9e-8,
+            "residual": 0,
+            "tolerance": 2.785327524179593e-21
+          },
+          "oxygenMol": {
+            "expected": 9.800000000000001e-10,
+            "actual": 9.800000000000001e-10,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-23
+          },
+          "sodiumMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "chlorideMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "alkalinityEq": {
+            "expected": -0.0000015040000000000003,
+            "actual": -0.0000015040000000000003,
+            "residual": 0,
+            "tolerance": 9.660595878813184e-20
+          }
+        },
+        "calciteSegment_calciumMol": {
+          "expected": 0.0005416131312611686,
+          "actual": 0.0005416131312611686,
+          "residual": 0,
+          "tolerance": 3.07871420807924e-17
+        },
+        "calciteSegment_dicMolC": {
+          "expected": 0.0005416346312611686,
+          "actual": 0.0005416346312611686,
+          "residual": 0,
+          "tolerance": 3.0788364214297905e-17
+        }
+      }
+    },
+    "sealed": {
+      "recordDigest": "f8d795e085a0aa5ef6ddb0c9cd27f77bc03b3c89eac09cc32222fccce7199bec",
+      "modelDigest": "8d138debde4a93ec79e79ebedd612e372cd56da0fe7e792941c1a2dc3f0cb2a1",
+      "eventIds": [
+        "create-void",
+        "connect-feeder",
+        "brine-entry",
+        "groundwater-entry",
+        "seal-feeder"
+      ],
+      "host": {
+        "initialPhaseVolumesMm3": {
+          "calcite": 20.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "remainingPhaseVolumesMm3": {
+          "calcite": 19.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "exportedPhaseVolumesMm3": {
+          "calcite": 1.0000000000000002,
+          "dolomite": 0,
+          "quartz": 0
+        },
+        "dissolvedCalciteMol": 0,
+        "exposedSurfaces": [
+          {
+            "parcelId": 13,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 19,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 21,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 23,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0.00002707532355011643
+          },
+          {
+            "parcelId": 25,
+            "phase": "dolomite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 31,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          }
+        ]
+      },
+      "pore": {
+        "geometricVoidVolumeMm3": 1.0000000000000002,
+        "wetVolumeMm3": 0.75,
+        "waterKg": 6.699999999999999e-7,
+        "components": {
+          "calciumMol": 4.2500000000000003e-10,
+          "dicMolC": 2.875e-10,
+          "ironMol": 8.5e-11,
+          "zincMol": 4.2500000000000003e-10,
+          "leadMol": 4.25e-11,
+          "sulfateMol": 2.45e-10,
+          "reducedSulfurMol": 1.225e-10,
+          "oxygenMol": 2.45e-12,
+          "sodiumMol": 4.495e-8,
+          "chlorideMol": 4.495e-8,
+          "alkalinityEq": -8.01e-9
+        },
+        "pH": null,
+        "pressureBar": null,
+        "connectivity": "sealed",
+        "residentFluidProvenance": [
+          {
+            "eventId": "brine-entry",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.5,
+            "enteredWaterKg": 4.25e-7,
+            "enteredComponents": {
+              "calciumMol": 4.2500000000000003e-10,
+              "dicMolC": 4.25e-11,
+              "ironMol": 8.5e-11,
+              "zincMol": 4.2500000000000003e-10,
+              "leadMol": 4.25e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 4.2500000000000003e-8,
+              "chlorideMol": 4.2500000000000003e-8,
+              "alkalinityEq": -8.5e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "groundwater-entry",
+            "reservoirId": "sulfur-water-control",
+            "enteredVolumeMm3": 0.25,
+            "enteredWaterKg": 2.45e-7,
+            "enteredComponents": {
+              "calciumMol": 0,
+              "dicMolC": 2.45e-10,
+              "ironMol": 0,
+              "zincMol": 0,
+              "leadMol": 0,
+              "sulfateMol": 2.45e-10,
+              "reducedSulfurMol": 1.225e-10,
+              "oxygenMol": 2.45e-12,
+              "sodiumMol": 2.45e-9,
+              "chlorideMol": 2.45e-9,
+              "alkalinityEq": 4.9e-10
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          }
+        ],
+        "waterMeaning": "derived only from the admitted fluid parcels and their explicit solvent/solution-volume relation"
+      },
+      "externalReservoirs": {
+        "metal-brine-control": {
+          "remainingVolumeMm3": 99.5,
+          "remainingWaterKg": 0.00008457500000000001,
+          "components": {
+            "calciumMol": 8.4575e-8,
+            "dicMolC": 8.457500000000001e-9,
+            "ironMol": 1.6915000000000003e-8,
+            "zincMol": 8.4575e-8,
+            "leadMol": 8.457500000000001e-9,
+            "sulfateMol": 0,
+            "reducedSulfurMol": 0,
+            "oxygenMol": 0,
+            "sodiumMol": 0.000008457500000000002,
+            "chlorideMol": 0.000008457500000000002,
+            "alkalinityEq": -0.0000016915000000000002
+          }
+        },
+        "sulfur-water-control": {
+          "remainingVolumeMm3": 99.75,
+          "remainingWaterKg": 0.000097755,
+          "components": {
+            "calciumMol": 0,
+            "dicMolC": 9.7755e-8,
+            "ironMol": 0,
+            "zincMol": 0,
+            "leadMol": 0,
+            "sulfateMol": 9.7755e-8,
+            "reducedSulfurMol": 4.88775e-8,
+            "oxygenMol": 9.775500000000002e-10,
+            "sodiumMol": 9.775499999999999e-7,
+            "chlorideMol": 9.775499999999999e-7,
+            "alkalinityEq": 1.9551e-7
+          }
+        }
+      },
+      "closure": {
+        "hostGeometry": {
+          "expected": 27.0009,
+          "actual": 27.0009,
+          "residual": 0,
+          "tolerance": 1.5348234683187912e-12
+        },
+        "phaseVolumes": {
+          "calcite": {
+            "expected": 20.0008,
+            "actual": 20.0008,
+            "residual": 0,
+            "tolerance": 1.136913851951249e-12
+          },
+          "dolomite": {
+            "expected": 2,
+            "actual": 2,
+            "residual": 0,
+            "tolerance": 1.1368683772161603e-13
+          },
+          "quartz": {
+            "expected": 5.000100000000001,
+            "actual": 5.000100000000001,
+            "residual": 0,
+            "tolerance": 2.842227786459262e-13
+          }
+        },
+        "water": {
+          "expected": 0.000183,
+          "actual": 0.00018300000000000003,
+          "residual": 2.710505431213761e-20,
+          "tolerance": 1.0402345651527867e-17
+        },
+        "components": {
+          "calciumMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "dicMolC": {
+            "expected": 1.0650000000000001e-7,
+            "actual": 1.0650000000000001e-7,
+            "residual": 0,
+            "tolerance": 6.053824108676054e-21
+          },
+          "ironMol": {
+            "expected": 1.7000000000000003e-8,
+            "actual": 1.7000000000000003e-8,
+            "residual": 0,
+            "tolerance": 9.663381206337364e-22
+          },
+          "zincMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "leadMol": {
+            "expected": 8.500000000000002e-9,
+            "actual": 8.500000000000002e-9,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-22
+          },
+          "sulfateMol": {
+            "expected": 9.8e-8,
+            "actual": 9.8e-8,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-21
+          },
+          "reducedSulfurMol": {
+            "expected": 4.9e-8,
+            "actual": 4.9e-8,
+            "residual": 0,
+            "tolerance": 2.785327524179593e-21
+          },
+          "oxygenMol": {
+            "expected": 9.800000000000001e-10,
+            "actual": 9.800000000000001e-10,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-23
+          },
+          "sodiumMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "chlorideMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "alkalinityEq": {
+            "expected": -0.0000015040000000000003,
+            "actual": -0.0000015040000000000003,
+            "residual": 0,
+            "tolerance": 9.660595878813184e-20
+          }
+        },
+        "calciteSegment_calciumMol": {
+          "expected": 0.0005416131312611686,
+          "actual": 0.0005416131312611686,
+          "residual": 0,
+          "tolerance": 3.07871420807924e-17
+        },
+        "calciteSegment_dicMolC": {
+          "expected": 0.0005416346312611686,
+          "actual": 0.0005416346312611686,
+          "residual": 0,
+          "tolerance": 3.0788364214297905e-17
+        }
+      }
+    },
+    "sealedTransfer": {
+      "recordDigest": "32f5881ee98a46772ed225da95c797bd77d7c78a914422550463a0f6f2d69d31",
+      "modelDigest": "8d138debde4a93ec79e79ebedd612e372cd56da0fe7e792941c1a2dc3f0cb2a1",
+      "eventIds": [
+        "create-void",
+        "connect-feeder",
+        "brine-entry",
+        "groundwater-entry",
+        "seal-feeder",
+        "prescribed-host-calcite-transfer"
+      ],
+      "host": {
+        "initialPhaseVolumesMm3": {
+          "calcite": 20.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "remainingPhaseVolumesMm3": {
+          "calcite": 19.000700000000002,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "exportedPhaseVolumesMm3": {
+          "calcite": 1.0000000000000002,
+          "dolomite": 0,
+          "quartz": 0
+        },
+        "dissolvedCalciteMol": 2.7075323550113443e-9,
+        "exposedSurfaces": [
+          {
+            "parcelId": 4,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          },
+          {
+            "parcelId": 10,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 0.00009999999999998899,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 12,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 0.00009999999999998899,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 14,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 0.00009999999999998899,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 16,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 0.00009999999999998899,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 19,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 21,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 23,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0.00002707532355011643
+          },
+          {
+            "parcelId": 25,
+            "phase": "dolomite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 31,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          }
+        ]
+      },
+      "pore": {
+        "geometricVoidVolumeMm3": 1.0001000000000002,
+        "wetVolumeMm3": null,
+        "waterKg": 6.699999999999999e-7,
+        "components": {
+          "calciumMol": 3.1325323550113444e-9,
+          "dicMolC": 2.9950323550113444e-9,
+          "ironMol": 8.5e-11,
+          "zincMol": 4.2500000000000003e-10,
+          "leadMol": 4.25e-11,
+          "sulfateMol": 2.45e-10,
+          "reducedSulfurMol": 1.225e-10,
+          "oxygenMol": 2.45e-12,
+          "sodiumMol": 4.495e-8,
+          "chlorideMol": 4.495e-8,
+          "alkalinityEq": -2.5949352899773117e-9
+        },
+        "pH": null,
+        "pressureBar": null,
+        "connectivity": "sealed",
+        "residentFluidProvenance": [
+          {
+            "eventId": "brine-entry",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.5,
+            "enteredWaterKg": 4.25e-7,
+            "enteredComponents": {
+              "calciumMol": 4.2500000000000003e-10,
+              "dicMolC": 4.25e-11,
+              "ironMol": 8.5e-11,
+              "zincMol": 4.2500000000000003e-10,
+              "leadMol": 4.25e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 4.2500000000000003e-8,
+              "chlorideMol": 4.2500000000000003e-8,
+              "alkalinityEq": -8.5e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "groundwater-entry",
+            "reservoirId": "sulfur-water-control",
+            "enteredVolumeMm3": 0.25,
+            "enteredWaterKg": 2.45e-7,
+            "enteredComponents": {
+              "calciumMol": 0,
+              "dicMolC": 2.45e-10,
+              "ironMol": 0,
+              "zincMol": 0,
+              "leadMol": 0,
+              "sulfateMol": 2.45e-10,
+              "reducedSulfurMol": 1.225e-10,
+              "oxygenMol": 2.45e-12,
+              "sodiumMol": 2.45e-9,
+              "chlorideMol": 2.45e-9,
+              "alkalinityEq": 4.9e-10
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          }
+        ],
+        "waterMeaning": "derived only from the admitted fluid parcels and their explicit solvent/solution-volume relation"
+      },
+      "externalReservoirs": {
+        "metal-brine-control": {
+          "remainingVolumeMm3": 99.5,
+          "remainingWaterKg": 0.00008457500000000001,
+          "components": {
+            "calciumMol": 8.4575e-8,
+            "dicMolC": 8.457500000000001e-9,
+            "ironMol": 1.6915000000000003e-8,
+            "zincMol": 8.4575e-8,
+            "leadMol": 8.457500000000001e-9,
+            "sulfateMol": 0,
+            "reducedSulfurMol": 0,
+            "oxygenMol": 0,
+            "sodiumMol": 0.000008457500000000002,
+            "chlorideMol": 0.000008457500000000002,
+            "alkalinityEq": -0.0000016915000000000002
+          }
+        },
+        "sulfur-water-control": {
+          "remainingVolumeMm3": 99.75,
+          "remainingWaterKg": 0.000097755,
+          "components": {
+            "calciumMol": 0,
+            "dicMolC": 9.7755e-8,
+            "ironMol": 0,
+            "zincMol": 0,
+            "leadMol": 0,
+            "sulfateMol": 9.7755e-8,
+            "reducedSulfurMol": 4.88775e-8,
+            "oxygenMol": 9.775500000000002e-10,
+            "sodiumMol": 9.775499999999999e-7,
+            "chlorideMol": 9.775499999999999e-7,
+            "alkalinityEq": 1.9551e-7
+          }
+        }
+      },
+      "closure": {
+        "hostGeometry": {
+          "expected": 27.0009,
+          "actual": 27.0009,
+          "residual": 0,
+          "tolerance": 1.5348234683187912e-12
+        },
+        "phaseVolumes": {
+          "calcite": {
+            "expected": 20.0008,
+            "actual": 20.0008,
+            "residual": 0,
+            "tolerance": 1.136913851951249e-12
+          },
+          "dolomite": {
+            "expected": 2,
+            "actual": 2,
+            "residual": 0,
+            "tolerance": 1.1368683772161603e-13
+          },
+          "quartz": {
+            "expected": 5.000100000000001,
+            "actual": 5.000100000000001,
+            "residual": 0,
+            "tolerance": 2.842227786459262e-13
+          }
+        },
+        "water": {
+          "expected": 0.000183,
+          "actual": 0.00018300000000000003,
+          "residual": 2.710505431213761e-20,
+          "tolerance": 1.0402345651527867e-17
+        },
+        "components": {
+          "calciumMol": {
+            "expected": 8.770753235501135e-8,
+            "actual": 8.770753235501135e-8,
+            "residual": 0,
+            "tolerance": 4.9855959989037814e-21
+          },
+          "dicMolC": {
+            "expected": 1.0920753235501135e-7,
+            "actual": 1.0920753235501135e-7,
+            "residual": 0,
+            "tolerance": 6.207729504411154e-21
+          },
+          "ironMol": {
+            "expected": 1.7000000000000003e-8,
+            "actual": 1.7000000000000003e-8,
+            "residual": 0,
+            "tolerance": 9.663381206337364e-22
+          },
+          "zincMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "leadMol": {
+            "expected": 8.500000000000002e-9,
+            "actual": 8.500000000000002e-9,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-22
+          },
+          "sulfateMol": {
+            "expected": 9.8e-8,
+            "actual": 9.8e-8,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-21
+          },
+          "reducedSulfurMol": {
+            "expected": 4.9e-8,
+            "actual": 4.9e-8,
+            "residual": 0,
+            "tolerance": 2.785327524179593e-21
+          },
+          "oxygenMol": {
+            "expected": 9.800000000000001e-10,
+            "actual": 9.800000000000001e-10,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-23
+          },
+          "sodiumMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "chlorideMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "alkalinityEq": {
+            "expected": -0.0000014985849352899777,
+            "actual": -0.0000014985849352899775,
+            "residual": 2.117582368135751e-22,
+            "tolerance": 9.660595878813184e-20
+          }
+        },
+        "calciteSegment_calciumMol": {
+          "expected": 0.0005416131312611686,
+          "actual": 0.0005416131312611686,
+          "residual": 0,
+          "tolerance": 3.07871420807924e-17
+        },
+        "calciteSegment_dicMolC": {
+          "expected": 0.0005416346312611686,
+          "actual": 0.0005416346312611686,
+          "residual": 0,
+          "tolerance": 3.0788364214297905e-17
+        }
+      }
+    },
+    "connectedPulse": {
+      "recordDigest": "970aa57f012f6bf4545db6b851bcabe741a5a37a0709bdce7e3c8f84fafb4033",
+      "modelDigest": "8d138debde4a93ec79e79ebedd612e372cd56da0fe7e792941c1a2dc3f0cb2a1",
+      "eventIds": [
+        "create-void",
+        "connect-feeder",
+        "brine-entry",
+        "groundwater-entry",
+        "later-brine-pulse"
+      ],
+      "host": {
+        "initialPhaseVolumesMm3": {
+          "calcite": 20.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "remainingPhaseVolumesMm3": {
+          "calcite": 19.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "exportedPhaseVolumesMm3": {
+          "calcite": 1.0000000000000002,
+          "dolomite": 0,
+          "quartz": 0
+        },
+        "dissolvedCalciteMol": 0,
+        "exposedSurfaces": [
+          {
+            "parcelId": 13,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 19,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 21,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 23,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0.00002707532355011643
+          },
+          {
+            "parcelId": 25,
+            "phase": "dolomite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 31,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          }
+        ]
+      },
+      "pore": {
+        "geometricVoidVolumeMm3": 1.0000000000000002,
+        "wetVolumeMm3": 0.875,
+        "waterKg": 7.7625e-7,
+        "components": {
+          "calciumMol": 5.3125e-10,
+          "dicMolC": 2.98125e-10,
+          "ironMol": 1.0625000000000001e-10,
+          "zincMol": 5.3125e-10,
+          "leadMol": 5.3125000000000004e-11,
+          "sulfateMol": 2.45e-10,
+          "reducedSulfurMol": 1.225e-10,
+          "oxygenMol": 2.45e-12,
+          "sodiumMol": 5.5575000000000006e-8,
+          "chlorideMol": 5.5575000000000006e-8,
+          "alkalinityEq": -1.0135000000000001e-8
+        },
+        "pH": null,
+        "pressureBar": null,
+        "connectivity": "connected",
+        "residentFluidProvenance": [
+          {
+            "eventId": "brine-entry",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.5,
+            "enteredWaterKg": 4.25e-7,
+            "enteredComponents": {
+              "calciumMol": 4.2500000000000003e-10,
+              "dicMolC": 4.25e-11,
+              "ironMol": 8.5e-11,
+              "zincMol": 4.2500000000000003e-10,
+              "leadMol": 4.25e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 4.2500000000000003e-8,
+              "chlorideMol": 4.2500000000000003e-8,
+              "alkalinityEq": -8.5e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "groundwater-entry",
+            "reservoirId": "sulfur-water-control",
+            "enteredVolumeMm3": 0.25,
+            "enteredWaterKg": 2.45e-7,
+            "enteredComponents": {
+              "calciumMol": 0,
+              "dicMolC": 2.45e-10,
+              "ironMol": 0,
+              "zincMol": 0,
+              "leadMol": 0,
+              "sulfateMol": 2.45e-10,
+              "reducedSulfurMol": 1.225e-10,
+              "oxygenMol": 2.45e-12,
+              "sodiumMol": 2.45e-9,
+              "chlorideMol": 2.45e-9,
+              "alkalinityEq": 4.9e-10
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "later-brine-pulse",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.125,
+            "enteredWaterKg": 1.0625e-7,
+            "enteredComponents": {
+              "calciumMol": 1.0625000000000001e-10,
+              "dicMolC": 1.0625e-11,
+              "ironMol": 2.125e-11,
+              "zincMol": 1.0625000000000001e-10,
+              "leadMol": 1.0625e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 1.0625000000000001e-8,
+              "chlorideMol": 1.0625000000000001e-8,
+              "alkalinityEq": -2.125e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          }
+        ],
+        "waterMeaning": "derived only from the admitted fluid parcels and their explicit solvent/solution-volume relation"
+      },
+      "externalReservoirs": {
+        "metal-brine-control": {
+          "remainingVolumeMm3": 99.375,
+          "remainingWaterKg": 0.00008446875,
+          "components": {
+            "calciumMol": 8.446875e-8,
+            "dicMolC": 8.446875000000001e-9,
+            "ironMol": 1.6893750000000002e-8,
+            "zincMol": 8.446875e-8,
+            "leadMol": 8.446875000000001e-9,
+            "sulfateMol": 0,
+            "reducedSulfurMol": 0,
+            "oxygenMol": 0,
+            "sodiumMol": 0.000008446875000000002,
+            "chlorideMol": 0.000008446875000000002,
+            "alkalinityEq": -0.0000016893750000000002
+          }
+        },
+        "sulfur-water-control": {
+          "remainingVolumeMm3": 99.75,
+          "remainingWaterKg": 0.000097755,
+          "components": {
+            "calciumMol": 0,
+            "dicMolC": 9.7755e-8,
+            "ironMol": 0,
+            "zincMol": 0,
+            "leadMol": 0,
+            "sulfateMol": 9.7755e-8,
+            "reducedSulfurMol": 4.88775e-8,
+            "oxygenMol": 9.775500000000002e-10,
+            "sodiumMol": 9.775499999999999e-7,
+            "chlorideMol": 9.775499999999999e-7,
+            "alkalinityEq": 1.9551e-7
+          }
+        }
+      },
+      "closure": {
+        "hostGeometry": {
+          "expected": 27.0009,
+          "actual": 27.0009,
+          "residual": 0,
+          "tolerance": 1.5348234683187912e-12
+        },
+        "phaseVolumes": {
+          "calcite": {
+            "expected": 20.0008,
+            "actual": 20.0008,
+            "residual": 0,
+            "tolerance": 1.136913851951249e-12
+          },
+          "dolomite": {
+            "expected": 2,
+            "actual": 2,
+            "residual": 0,
+            "tolerance": 1.1368683772161603e-13
+          },
+          "quartz": {
+            "expected": 5.000100000000001,
+            "actual": 5.000100000000001,
+            "residual": 0,
+            "tolerance": 2.842227786459262e-13
+          }
+        },
+        "water": {
+          "expected": 0.000183,
+          "actual": 0.000183,
+          "residual": 0,
+          "tolerance": 1.0402345651527867e-17
+        },
+        "components": {
+          "calciumMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "dicMolC": {
+            "expected": 1.0650000000000001e-7,
+            "actual": 1.0650000000000001e-7,
+            "residual": 0,
+            "tolerance": 6.053824108676054e-21
+          },
+          "ironMol": {
+            "expected": 1.7000000000000003e-8,
+            "actual": 1.7000000000000003e-8,
+            "residual": 0,
+            "tolerance": 9.663381206337364e-22
+          },
+          "zincMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "leadMol": {
+            "expected": 8.500000000000002e-9,
+            "actual": 8.500000000000002e-9,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-22
+          },
+          "sulfateMol": {
+            "expected": 9.8e-8,
+            "actual": 9.8e-8,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-21
+          },
+          "reducedSulfurMol": {
+            "expected": 4.9e-8,
+            "actual": 4.9e-8,
+            "residual": 0,
+            "tolerance": 2.785327524179593e-21
+          },
+          "oxygenMol": {
+            "expected": 9.800000000000001e-10,
+            "actual": 9.800000000000001e-10,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-23
+          },
+          "sodiumMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "chlorideMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "alkalinityEq": {
+            "expected": -0.0000015040000000000003,
+            "actual": -0.0000015040000000000003,
+            "residual": 0,
+            "tolerance": 9.660595878813184e-20
+          }
+        },
+        "calciteSegment_calciumMol": {
+          "expected": 0.0005416131312611686,
+          "actual": 0.0005416131312611686,
+          "residual": 0,
+          "tolerance": 3.07871420807924e-17
+        },
+        "calciteSegment_dicMolC": {
+          "expected": 0.0005416346312611686,
+          "actual": 0.0005416346312611686,
+          "residual": 0,
+          "tolerance": 3.0788364214297905e-17
+        }
+      }
+    },
+    "reopenedPulse": {
+      "recordDigest": "43eefdf174cbdb517ec22bb077b40a0eaf696a404dbd569f354eaaf86d8ef77d",
+      "modelDigest": "8d138debde4a93ec79e79ebedd612e372cd56da0fe7e792941c1a2dc3f0cb2a1",
+      "eventIds": [
+        "create-void",
+        "connect-feeder",
+        "brine-entry",
+        "groundwater-entry",
+        "seal-feeder",
+        "reopen-feeder",
+        "later-brine-pulse"
+      ],
+      "host": {
+        "initialPhaseVolumesMm3": {
+          "calcite": 20.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "remainingPhaseVolumesMm3": {
+          "calcite": 19.0008,
+          "dolomite": 2,
+          "quartz": 5.000100000000001
+        },
+        "exportedPhaseVolumesMm3": {
+          "calcite": 1.0000000000000002,
+          "dolomite": 0,
+          "quartz": 0
+        },
+        "dissolvedCalciteMol": 0,
+        "exposedSurfaces": [
+          {
+            "parcelId": 13,
+            "phase": "calcite",
+            "remainingVolumeMm3": 0.00009999999999998899,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 2.7075323550113443e-9
+          },
+          {
+            "parcelId": 19,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 21,
+            "phase": "quartz",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 23,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0.00002707532355011643
+          },
+          {
+            "parcelId": 25,
+            "phase": "dolomite",
+            "remainingVolumeMm3": 1.0000000000000002,
+            "exposedFaceAreaMm2": 1.0000000000000002,
+            "potentialCalciteMol": 0
+          },
+          {
+            "parcelId": 31,
+            "phase": "calcite",
+            "remainingVolumeMm3": 1,
+            "exposedFaceAreaMm2": 1,
+            "potentialCalciteMol": 0.000027075323550116425
+          }
+        ]
+      },
+      "pore": {
+        "geometricVoidVolumeMm3": 1.0000000000000002,
+        "wetVolumeMm3": 0.875,
+        "waterKg": 7.7625e-7,
+        "components": {
+          "calciumMol": 5.3125e-10,
+          "dicMolC": 2.98125e-10,
+          "ironMol": 1.0625000000000001e-10,
+          "zincMol": 5.3125e-10,
+          "leadMol": 5.3125000000000004e-11,
+          "sulfateMol": 2.45e-10,
+          "reducedSulfurMol": 1.225e-10,
+          "oxygenMol": 2.45e-12,
+          "sodiumMol": 5.5575000000000006e-8,
+          "chlorideMol": 5.5575000000000006e-8,
+          "alkalinityEq": -1.0135000000000001e-8
+        },
+        "pH": null,
+        "pressureBar": null,
+        "connectivity": "connected",
+        "residentFluidProvenance": [
+          {
+            "eventId": "brine-entry",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.5,
+            "enteredWaterKg": 4.25e-7,
+            "enteredComponents": {
+              "calciumMol": 4.2500000000000003e-10,
+              "dicMolC": 4.25e-11,
+              "ironMol": 8.5e-11,
+              "zincMol": 4.2500000000000003e-10,
+              "leadMol": 4.25e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 4.2500000000000003e-8,
+              "chlorideMol": 4.2500000000000003e-8,
+              "alkalinityEq": -8.5e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "groundwater-entry",
+            "reservoirId": "sulfur-water-control",
+            "enteredVolumeMm3": 0.25,
+            "enteredWaterKg": 2.45e-7,
+            "enteredComponents": {
+              "calciumMol": 0,
+              "dicMolC": 2.45e-10,
+              "ironMol": 0,
+              "zincMol": 0,
+              "leadMol": 0,
+              "sulfateMol": 2.45e-10,
+              "reducedSulfurMol": 1.225e-10,
+              "oxygenMol": 2.45e-12,
+              "sodiumMol": 2.45e-9,
+              "chlorideMol": 2.45e-9,
+              "alkalinityEq": 4.9e-10
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          },
+          {
+            "eventId": "later-brine-pulse",
+            "reservoirId": "metal-brine-control",
+            "enteredVolumeMm3": 0.125,
+            "enteredWaterKg": 1.0625e-7,
+            "enteredComponents": {
+              "calciumMol": 1.0625000000000001e-10,
+              "dicMolC": 1.0625e-11,
+              "ironMol": 2.125e-11,
+              "zincMol": 1.0625000000000001e-10,
+              "leadMol": 1.0625e-11,
+              "sulfateMol": 0,
+              "reducedSulfurMol": 0,
+              "oxygenMol": 0,
+              "sodiumMol": 1.0625000000000001e-8,
+              "chlorideMol": 1.0625000000000001e-8,
+              "alkalinityEq": -2.125e-9
+            },
+            "volumeMeaning": "declared additive parcel-volume approximation, not a commissioned mixed-brine equation of state"
+          }
+        ],
+        "waterMeaning": "derived only from the admitted fluid parcels and their explicit solvent/solution-volume relation"
+      },
+      "externalReservoirs": {
+        "metal-brine-control": {
+          "remainingVolumeMm3": 99.375,
+          "remainingWaterKg": 0.00008446875,
+          "components": {
+            "calciumMol": 8.446875e-8,
+            "dicMolC": 8.446875000000001e-9,
+            "ironMol": 1.6893750000000002e-8,
+            "zincMol": 8.446875e-8,
+            "leadMol": 8.446875000000001e-9,
+            "sulfateMol": 0,
+            "reducedSulfurMol": 0,
+            "oxygenMol": 0,
+            "sodiumMol": 0.000008446875000000002,
+            "chlorideMol": 0.000008446875000000002,
+            "alkalinityEq": -0.0000016893750000000002
+          }
+        },
+        "sulfur-water-control": {
+          "remainingVolumeMm3": 99.75,
+          "remainingWaterKg": 0.000097755,
+          "components": {
+            "calciumMol": 0,
+            "dicMolC": 9.7755e-8,
+            "ironMol": 0,
+            "zincMol": 0,
+            "leadMol": 0,
+            "sulfateMol": 9.7755e-8,
+            "reducedSulfurMol": 4.88775e-8,
+            "oxygenMol": 9.775500000000002e-10,
+            "sodiumMol": 9.775499999999999e-7,
+            "chlorideMol": 9.775499999999999e-7,
+            "alkalinityEq": 1.9551e-7
+          }
+        }
+      },
+      "closure": {
+        "hostGeometry": {
+          "expected": 27.0009,
+          "actual": 27.0009,
+          "residual": 0,
+          "tolerance": 1.5348234683187912e-12
+        },
+        "phaseVolumes": {
+          "calcite": {
+            "expected": 20.0008,
+            "actual": 20.0008,
+            "residual": 0,
+            "tolerance": 1.136913851951249e-12
+          },
+          "dolomite": {
+            "expected": 2,
+            "actual": 2,
+            "residual": 0,
+            "tolerance": 1.1368683772161603e-13
+          },
+          "quartz": {
+            "expected": 5.000100000000001,
+            "actual": 5.000100000000001,
+            "residual": 0,
+            "tolerance": 2.842227786459262e-13
+          }
+        },
+        "water": {
+          "expected": 0.000183,
+          "actual": 0.000183,
+          "residual": 0,
+          "tolerance": 1.0402345651527867e-17
+        },
+        "components": {
+          "calciumMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "dicMolC": {
+            "expected": 1.0650000000000001e-7,
+            "actual": 1.0650000000000001e-7,
+            "residual": 0,
+            "tolerance": 6.053824108676054e-21
+          },
+          "ironMol": {
+            "expected": 1.7000000000000003e-8,
+            "actual": 1.7000000000000003e-8,
+            "residual": 0,
+            "tolerance": 9.663381206337364e-22
+          },
+          "zincMol": {
+            "expected": 8.500000000000001e-8,
+            "actual": 8.500000000000001e-8,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-21
+          },
+          "leadMol": {
+            "expected": 8.500000000000002e-9,
+            "actual": 8.500000000000002e-9,
+            "residual": 0,
+            "tolerance": 4.831690603168682e-22
+          },
+          "sulfateMol": {
+            "expected": 9.8e-8,
+            "actual": 9.8e-8,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-21
+          },
+          "reducedSulfurMol": {
+            "expected": 4.9e-8,
+            "actual": 4.9e-8,
+            "residual": 0,
+            "tolerance": 2.785327524179593e-21
+          },
+          "oxygenMol": {
+            "expected": 9.800000000000001e-10,
+            "actual": 9.800000000000001e-10,
+            "residual": 0,
+            "tolerance": 5.570655048359186e-23
+          },
+          "sodiumMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "chlorideMol": {
+            "expected": 0.00000948,
+            "actual": 0.000009480000000000002,
+            "residual": 1.6940658945086007e-21,
+            "tolerance": 5.3887561080046e-19
+          },
+          "alkalinityEq": {
+            "expected": -0.0000015040000000000003,
+            "actual": -0.0000015040000000000003,
+            "residual": 0,
+            "tolerance": 9.660595878813184e-20
+          }
+        },
+        "calciteSegment_calciumMol": {
+          "expected": 0.0005416131312611686,
+          "actual": 0.0005416131312611686,
+          "residual": 0,
+          "tolerance": 3.07871420807924e-17
+        },
+        "calciteSegment_dicMolC": {
+          "expected": 0.0005416346312611686,
+          "actual": 0.0005416346312611686,
+          "residual": 0,
+          "tolerance": 3.0788364214297905e-17
+        }
+      }
+    }
+  },
+  "boundaryProofs": {
+    "sharedPrefixDigest": "d0e975f6d836ea2ea39fda263fb8a20967423f97e53d22473c942c6d3efae30c",
+    "connectedMaterialDigest": "0523c122d88ce87651dc7fd9ac1db6b1eeff1b374f9856cef65d1ff7a24d2e7d",
+    "sealedMaterialDigest": "0523c122d88ce87651dc7fd9ac1db6b1eeff1b374f9856cef65d1ff7a24d2e7d",
+    "allCheckpointsReconstruct": true,
+    "connectedPulseConsumesNamedDonor": true,
+    "sealedTransferCreatesNoWater": true,
+    "reopenedPulseHasSameMaterialWithDifferentHistory": true
+  },
+  "actualMvt": {
+    "schema": "vugg-mvt-prehistory-source-audit-v1",
+    "scenario": "mvt",
+    "base": "576a6ceeb81f590618d4974a30612bf9c5177d1d",
+    "sourceHashes": {
+      "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
+      "js/20a-chemistry-activity.ts": "86ba4008b3c1ffd289d5db5c39dbea0b5cd22000e6f8a7805b4a353be7b24a96",
+      "js/22-geometry-wall.ts": "162f3c91181689141d1b4ee1690c13ba47185a72b005cf380fce7170b9b707a9",
+      "js/85k-fluid-spots.ts": "327d429f24dca57c5524193a0814d32e14edf6a4f46e0f9963d2bb1491c28eac",
+      "pilots/reservoir-reference-preflight/receipt.json": "3f818ddee9f9f9d538163419bf2dedef70b1c8aaccb682b8c537645c9f6af63d"
+    },
+    "known": {
+      "authoredHostProxy": "limestone",
+      "authoredShapeSeed": 3,
+      "publishedScientificVoidVolumeMm3": 68226.21551819511,
+      "geometryProvenance": "previously verified procedural scientific cavity; no prior material-removal history is fabricated",
+      "initialTemperatureC": 180,
+      "initialPressureKbar": 0.3,
+      "authoredFluid": {
+        "SiO2": 100,
+        "Ca": 300,
+        "CO3": 250,
+        "Fe": 15,
+        "Mn": 25,
+        "Zn": 0,
+        "S": 0,
+        "F": 5,
+        "Mg": 65,
+        "Pb": 40,
+        "Na": 80,
+        "K": 15,
+        "Cl": 200,
+        "Ag": 0,
+        "Ba": 20,
+        "Sr": 15,
+        "Cu": 3,
+        "Cd": 2,
+        "O2": 0.25,
+        "pH": 7.2,
+        "salinity": 15
+      },
+      "events": [
+        {
+          "step": 20,
+          "type": "mvt_fluid_mixing",
+          "name": "Tri-State Ore-Fluid Mixing"
+        },
+        {
+          "step": 60,
+          "type": "fluid_pulse",
+          "name": "Second Pulse"
+        },
+        {
+          "step": 80,
+          "type": "tectonic_shock",
+          "name": "Tectonic"
+        }
+      ],
+      "mixingBoundary": {
+        "step": 20,
+        "type": "mvt_fluid_mixing",
+        "name": "Tri-State Ore-Fluid Mixing",
+        "description": "A reducing Zn-Pb basinal brine mixes with a smaller sulfate-bearing groundwater component; the distinct sulfide and sulfate inventories permit the documented ore sulfides and early barite without treating total sulfur as one interchangeable reagent",
+        "fluid_transform": {
+          "add": {
+            "Zn": 150,
+            "Ca": 100,
+            "F": 40,
+            "Pb": 25,
+            "Fe": 30
+          },
+          "flow_rate": 4
+        },
+        "sulfur_boundary": {
+          "kind": "addition",
+          "pools": {
+            "sulfide": 90,
+            "sulfate": 30
+          }
+        },
+        "temperature_delta_C": -20,
+        "material_authority": "Roedder 1976; Anderson & Macqueen 1982; Stoffell et al. 2008 — Tri-State reducing Pb-Zn basinal brine with a subordinate sulfate-bearing gangue stage; sulfur split is an explicit SIM-scale paragenetic endmember, not a measured fluid-inclusion ratio"
+      },
+      "salinityMeaning": "NaCl-equivalent per-mille proxy used by water activity; not complete brine composition or density"
+    },
+    "differentScenarioPrecedents": {
+      "reactiveWall": {
+        "scenario": "reactive_wall",
+        "hostProxy": "dolomite",
+        "events": [
+          {
+            "step": 15,
+            "type": "reactive_wall_acid_pulse_1",
+            "name": "First Acid Pulse"
+          },
+          {
+            "step": 40,
+            "type": "reactive_wall_acid_pulse_2",
+            "name": "Second Acid Pulse"
+          },
+          {
+            "step": 70,
+            "type": "reactive_wall_acid_pulse_3",
+            "name": "Third Acid Pulse"
+          },
+          {
+            "step": 90,
+            "type": "reactive_wall_seal",
+            "name": "Fracture Seal"
+          }
+        ],
+        "meaning": "contains an authored seal; its physical quantities/history are not transferred to Tri-State"
+      },
+      "reactivatedVein": {
+        "scenario": "reactivated_fluorite_vein",
+        "events": [
+          {
+            "step": 20,
+            "type": "reactivated_vein_fluid_mixing",
+            "name": "North Pennine Stage-1 Brine"
+          },
+          {
+            "step": 60,
+            "type": "fluid_pulse",
+            "name": "Second Pulse"
+          },
+          {
+            "step": 78,
+            "type": "reactivated_vein_seal",
+            "name": "Feeder Sealed"
+          },
+          {
+            "step": 118,
+            "type": "reactivated_vein_breach",
+            "name": "Acidic Reopening Wash"
+          },
+          {
+            "step": 119,
+            "type": "reactivated_vein_recharge",
+            "name": "Mineralizing Recharge"
+          }
+        ],
+        "meaning": "separate North Pennine-style demonstrator; its seal/reopen chronology is not a Tri-State event history"
+      }
+    },
+    "primaryQualitativeSupport": [
+      {
+        "url": "https://www.kgs.ku.edu/Publications/pic17/pic17_2.html",
+        "scope": "Tri-State cherty limestone and resistant residual chert; no quantitative phase map or pore-scale fluid inventory"
+      },
+      {
+        "url": "https://pubs.usgs.gov/publication/sir20105070A",
+        "scope": "general MVT deposit framework; not this specimen prehistory or a numerical fluid recipe"
+      }
+    ],
+    "missingAuthority": [
+      "physical host phase/material geometry and alteration provenance",
+      "void-formation material-removal history; procedural shape is not that history",
+      "named fluid parcel volumes and commissioned solvent/solution-volume relation",
+      "complete source analytical inventories and a mixed-fluid volume model",
+      "physical feeder connection and isolation event provenance",
+      "physical wet-cell allocation and accessible phase stock from that history"
+    ],
+    "connectedPhysicalSnapshot": null,
+    "sealedPhysicalSnapshot": null,
+    "physicalPrehistoryCommissioned": false,
+    "productionMappingAllowed": false
+  },
+  "limitations": [
+    "material parcels are not the legacy fluid voxels",
+    "authored component vectors are bookkeeping stimuli, not electroneutral commissioned brine/groundwater recipes",
+    "source solvent/volume coefficients and additive parcel volumes are declared approximations, not a mixed-brine EOS",
+    "external isolation/reopening has no cement or fracture-volume prediction",
+    "reaction contact and whole-parcel extent are prescribed, not a wetting or rate law",
+    "post-reaction solution volume, pressure, speciation and pH remain unresolved",
+    "calcite molar volume retains the existing 26 C reference; no MVT temperature/pressure correction",
+    "no legacy mass, erosion, grown-crystal or completed-surface mapping is supplied"
+  ],
+  "productionMappingAllowed": false,
+  "productionReactions": false,
+  "transport": false
+}
