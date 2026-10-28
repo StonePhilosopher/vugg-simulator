@@ -56,8 +56,8 @@ jobs:
       - name: Transport-off local inventories and pinned legacy-save replay
         run: npm test -- --file tests-js/local-state-foundation.test.ts
 
-      - name: Finite reservoir initialization and source ownership
-        run: npm test -- --file tests-js/finite-reservoir-authority.test.ts
+      - name: Finite reservoir declarations and physical mapping control
+        run: npm test -- --file tests-js/finite-reservoir-authority.test.ts --file tests-js/physical-reservoir-mapping.test.ts
 
       - name: Cation commissioning identity guards
         run: npm test -- --file tests-js/cation-sink-audit.test.ts

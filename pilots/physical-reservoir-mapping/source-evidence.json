@@ -1,0 +1,34 @@
+{
+  "schema": "vugg-physical-reservoir-sources-v1",
+  "water": {
+    "model": "iapws-sr6-08-2011-equation-2",
+    "attribution": "International Association for the Properties of Water and Steam, Revised Supplementary Release on Properties of Liquid Water at 0.1 MPa (2011)",
+    "url": "https://iapws.org/technical-guidance/release/LiquidWater.download",
+    "pdfSha256": "fda79dde9f441a90da755477c6533e23065e4f90c7f59a505f64c394d775bd45",
+    "pages": "3-4, equation 2 and table 1; section 2.3; page 11 table 8",
+    "R": "461.51805",
+    "TR": "10",
+    "p0Pa": "100000",
+    "TaK": "593",
+    "TbK": "232",
+    "a5": "1.93763157e-2",
+    "a": [[4,"6.74458446e3"],[5,"-2.22521604e5"],[7,"1.00231247e8"],[8,"-1.63552118e9"],[9,"8.32299658e9"]],
+    "b": [[1,"5.78545292e-3"],[2,"-1.53195665e-2"],[3,"3.11337859e-2"],[4,"-4.23546241e-2"],[5,"3.38713507e-2"],[6,"-1.19946761e-2"]],
+    "verification": [[260,997.068360],[298.15,997.047013],[375,957.009710]],
+    "verificationRoundingToleranceKgM3": 0.0000005,
+    "stableLiquidRelativeUncertainty": 0.000001,
+    "uncertaintyCoverage": "IAPWS section 2.3 states k=2; not a hard bound; no metastable-region estimate"
+  },
+  "calcite": {
+    "model": "existing-usgs-b1248-calcite-reference",
+    "url": "https://pubs.usgs.gov/bul/1248/report.pdf",
+    "pdfSha256": "0f44f69eec1ed1428211a8c3a7ee1e3233478739d38c5ba756ea4f13de133037",
+    "pages": "printed page 58, PDF page 64; uncertainty discussion printed pages 2-3",
+    "molarVolumeCm3Mol": "36.934",
+    "reportedErrorCm3Mol": "0.015",
+    "temperatureC": 26,
+    "uncertaintyCoverage": "USGS reported standard-error estimate; no claim of a k=2 interval or full physical uncertainty",
+    "pressureLimit": "Table does not specify pressure; retain the existing ambient/standard-state approximation without a pressure correction",
+    "constantsLimit": "Retains the existing historical molar-volume value, not a modernized atomic-weight/Avogadro recalculation"
+  }
+}

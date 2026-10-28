@@ -1,0 +1,213 @@
+{
+  "schema": "vugg-physical-reservoir-mapping-receipt-v1",
+  "base": "ba0204ddba27067146d28ba5d53dbb6c15943788",
+  "runtime": {
+    "schema": "vugg-evidence-node-runtime-v1",
+    "node": "24.15.0",
+    "v8": "13.6.233.17-node.48",
+    "platform": "win32",
+    "arch": "x64",
+    "icu": "78.2",
+    "locale": "en-US"
+  },
+  "productionExecutionDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "registeredProducerContractsUnchanged": true,
+  "productionSourceHashes": {
+    "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
+    "js/19-mineral-stoichiometry.ts": "2d3e5414d486dc9759005cfb439f8eaebe865b65b0dd9bf21a8e149c74ca4c64",
+    "js/20-chemistry-fluid.ts": "ef9c8ec76c98a9d7322273e4573de5b1408cfa44339b2a50adcf5f11e2a69da6",
+    "js/20b-chemistry-carbonate-system.ts": "075fcdf19e03893df19997e1bee05eed220cea03d43f88e0ad0162e87d095012",
+    "js/22-geometry-wall.ts": "162f3c91181689141d1b4ee1690c13ba47185a72b005cf380fce7170b9b707a9",
+    "js/22a-geometry-cavity-evolution.ts": "27090b3fdcddf58cb101f724606b312a2f1a28d3ba52e592bf7915b9eec5549b",
+    "js/24-geometry-voxel-grid.ts": "f17314ef72446175aa3c8da183a1e53d3e0e8942bcf866e43bf01ec745c04a72",
+    "js/24e-local-conserved-state.ts": "3ea7549f4cf71536fa4a5161e5a19a0664a37467badcc46f9808373a956663f6",
+    "js/27-geometry-crystal.ts": "f82d36decad0613b5238dd40168c44ce0eb3533c7664240a45b3f99e23e2b729",
+    "js/85c-simulator-state.ts": "050557ebf44fbfa6724a7d9e006d6885e9894cb60c863a36dd091d1426ce6a37",
+    "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
+    "pilots/finite-reservoir-authority/contract.mjs": "392195155899ea4d8dff859dfba9058beffa46063e8ca53dae33260a616c19f1",
+    "pilots/finite-reservoir-authority/audit.mjs": "cbb9f881ec43b7c3fa05b8e7bdbc1b94fcbec69a6839830e38cd2f8d018c7e4b"
+  },
+  "sourceHashes": {
+    "pilots/physical-reservoir-mapping/mapping.mjs": "35f10c4328e2eb0b0d34cc994192865077cec0410eb556c2490b4a18cce00cd8",
+    "pilots/physical-reservoir-mapping/source-evidence.json": "1cc60693c5ebc984fc9f67b44ef823ebbc52804b2fbce6918051ded94ebb498a",
+    "pilots/physical-reservoir-mapping/control.json": "72dbd35de0b0b887f0c296b3c522b29a333632b3b27a6bd87bf828e6a9e1b782",
+    "pilots/physical-reservoir-mapping/reference.py": "ed90ae414da6200833445fb745b74f3288a642b4ebcc070e49a9208e498353f9",
+    "pilots/physical-reservoir-mapping/reference.json": "3ef0ce3f08888ea0ad60adf24ab75e8192cfd0562e5b2033162279ebd5361e19",
+    "pilots/physical-reservoir-mapping/receipt.mjs": "00c0cee3f0d9f742a679fcdbf8acb6fc275f32b843436adc36cbe9aa1ac63eb9"
+  },
+  "scope": "one analytical initialization control; no legacy or fleet growth replay, physical scenario migration, reactions, or transport",
+  "densityVerification": [
+    {
+      "temperatureK": 260,
+      "publishedKgM3": 997.06836,
+      "computedKgM3": 997.068360271049,
+      "residualKgM3": 2.7104897526442073e-7,
+      "toleranceKgM3": 5e-7,
+      "scope": "computer-program verification; 260 K and 375 K are metastable liquid, not control conditions"
+    },
+    {
+      "temperatureK": 298.15,
+      "publishedKgM3": 997.047013,
+      "computedKgM3": 997.0470133997646,
+      "residualKgM3": 3.997646444986458e-7,
+      "toleranceKgM3": 5e-7,
+      "scope": "computer-program verification; 260 K and 375 K are metastable liquid, not control conditions"
+    },
+    {
+      "temperatureK": 375,
+      "publishedKgM3": 957.00971,
+      "computedKgM3": 957.0097103406432,
+      "residualKgM3": 3.4064316878357204e-7,
+      "toleranceKgM3": 5e-7,
+      "scope": "computer-program verification; 260 K and 375 K are metastable liquid, not control conditions"
+    }
+  ],
+  "decimalComparison": {
+    "densityKgM3": {
+      "expected": 996.7857456115443,
+      "actual": 996.785745611544,
+      "residual": -2.2737367544323206e-13,
+      "tolerance": 1.4165177413069959e-11
+    },
+    "waterVolumeMm3": {
+      "expected": 4188.790204786391,
+      "actual": 4188.790204786391,
+      "residual": 0,
+      "tolerance": 5.952628903268065e-11
+    },
+    "wallVolumeMm3": {
+      "expected": 1386.4895577842954,
+      "actual": 1386.4895577842954,
+      "residual": 0,
+      "tolerance": 1.9703201669817295e-11
+    },
+    "waterKg": {
+      "expected": 0.004175326367488336,
+      "actual": 0.004175326367488335,
+      "residual": -8.673617379884035e-19,
+      "tolerance": 5.933495639692887e-17
+    },
+    "calciteMol": {
+      "expected": 0.03753965337586764,
+      "actual": 0.03753965337586764,
+      "residual": 0,
+      "tolerance": 5.334705601834975e-16
+    }
+  },
+  "recordDigest": "fd944ca4f88fee6f2a0e5c833d490fbce35083e31ddba60e58460e5e43b24cd6",
+  "uncertainty": {
+    "geometry": "exact by definition for this analytical control; not a measurement with zero error",
+    "waterKgFromDensityK2": 4.175326367488334e-9,
+    "calciteMolAtVmPlusReportedError": 0.03752441359128245,
+    "calciteMolAtVmMinusReportedError": 0.037554905544145166,
+    "calciteIntervalMeaning": "reported-error sensitivity, not a guaranteed bound or k=2 interval",
+    "excluded": "natural geometry, wall phase fraction/porosity/access, mineral pressure correction; no combined full uncertainty"
+  },
+  "partitions": [
+    {
+      "rings": 1,
+      "cellsPerRing": 1,
+      "depths": 1,
+      "cells": 1,
+      "waterKg": 0.004175326367488335,
+      "calciteMol": 0.03753965337586764,
+      "closure": {
+        "waterVolumeMm3": {
+          "expected": 4188.790204786391,
+          "actual": 4188.790204786391,
+          "residual": 0,
+          "tolerance": 1.190525780653613e-10
+        },
+        "wallVolumeMm3": {
+          "expected": 1386.4895577842954,
+          "actual": 1386.4895577842954,
+          "residual": 0,
+          "tolerance": 3.940640333963459e-11
+        }
+      },
+      "recordDigest": "64f4a8356f6f381d472e5fc5ddb6fb8706e04ce9f370c02705775fcb0cef0ae2"
+    },
+    {
+      "rings": 4,
+      "cellsPerRing": 8,
+      "depths": 2,
+      "cells": 64,
+      "waterKg": 0.004175326367488335,
+      "calciteMol": 0.03753965337586764,
+      "closure": {
+        "waterVolumeMm3": {
+          "expected": 4188.790204786391,
+          "actual": 4188.790204786391,
+          "residual": 0,
+          "tolerance": 1.190525780653613e-10
+        },
+        "wallVolumeMm3": {
+          "expected": 1386.4895577842954,
+          "actual": 1386.4895577842954,
+          "residual": 0,
+          "tolerance": 3.940640333963459e-11
+        }
+      },
+      "recordDigest": "fd944ca4f88fee6f2a0e5c833d490fbce35083e31ddba60e58460e5e43b24cd6"
+    },
+    {
+      "rings": 8,
+      "cellsPerRing": 16,
+      "depths": 4,
+      "cells": 512,
+      "waterKg": 0.004175326367488335,
+      "calciteMol": 0.037539653375867635,
+      "closure": {
+        "waterVolumeMm3": {
+          "expected": 4188.790204786391,
+          "actual": 4188.790204786391,
+          "residual": 0,
+          "tolerance": 1.190525780653613e-10
+        },
+        "wallVolumeMm3": {
+          "expected": 1386.4895577842954,
+          "actual": 1386.4895577842954,
+          "residual": 0,
+          "tolerance": 3.940640333963459e-11
+        }
+      },
+      "recordDigest": "bbcf7d0d908a38f08478c4f7f9ca2eff493ced6832fe9977f93ee1f4a16b85f0"
+    }
+  ],
+  "legacyReference": {
+    "owner": "conditions.wall (one global model ledger)",
+    "modeledHost": "limestone",
+    "modeledFormula": "CaCO3",
+    "units": "mmol_formula_per_kg_solvent_reference",
+    "initial": 0.3742701731623334,
+    "released": 0,
+    "remaining": 0.3742701731623334,
+    "referenceResidual": 0,
+    "legacyTolerance": 1e-9,
+    "calibration": "existing 15 mg Ca per kg reference per mm; Ca formula mass 40.078 g/mol",
+    "physicalWaterKg": null,
+    "physicalCalciteMol": null,
+    "productionBufferEligible": false,
+    "reason": "global reference stock has no commissioned physical-mass or cell-allocation mapping",
+    "nominalCavityRadiusMm": 10,
+    "remainingThicknessMm": 1
+  },
+  "legacyInspectionDidNotMutate": true,
+  "discrepancy": {
+    "schema": "vugg-wall-reference-physical-discrepancy-v1",
+    "legacyMolPerKgReference": 0.0003742701731623334,
+    "comparisonBasis": "same nominal radius/thickness only; legacy irregular shape is not equated to the analytical sphere",
+    "physicalWaterKg": 0.004175326367488335,
+    "physicalCalciteMol": 0.03753965337586764,
+    "hypotheticalCalciteMolIfReferenceKgEqualsWaterKg": 0.0000015627001225691156,
+    "impliedReferenceKgToRepresentShell": 100.30094853320158,
+    "physicalToHypotheticalStockRatio": 24022.301421562297,
+    "authority": "dimensional diagnostic only; implied reference kg are not physical solvent kg",
+    "productionMappingAllowed": false,
+    "referenceRescaled": false
+  },
+  "productionAllowed": false,
+  "legacyPhysicalMapping": false,
+  "reactions": false,
+  "transport": false
+}

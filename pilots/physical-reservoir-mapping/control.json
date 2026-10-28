@@ -1,0 +1,12 @@
+{
+  "schema": "vugg-physical-reservoir-control-v1",
+  "geometry": "analytic-concentric-sphere-shell-v1",
+  "water": "fully-flooded-degassed-pure-H2O-no-displaced-solids",
+  "wall": "nonporous-pure-calcite-entire-shell-inventory",
+  "temperature": {"value":26,"unit":"deg_C","provenance":{"kind":"authored-experiment","reference":"isothermal analytical control, not a legacy scenario"}},
+  "pressure": {"value":1,"unit":"bar_abs","provenance":{"kind":"authored-experiment","reference":"uniform 100000 Pa; no hydrostatic gradient"}},
+  "cavityRadius": {"value":10,"unit":"mm","provenance":{"kind":"authored-experiment","reference":"exact analytical sphere, not a measured natural vug"}},
+  "wallThickness": {"value":1,"unit":"mm","provenance":{"kind":"authored-experiment","reference":"declared finite pure-calcite shell, not legacy reactive thickness"}},
+  "partition": {"rings":4,"cellsPerRing":8,"radialEdgesMm":[10,5,0]},
+  "provenance": {"kind":"authored-experiment","reference":"one closed initialization control; no reactions, transport, growth, gas equilibration, or production migration"}
+}
