@@ -10,7 +10,7 @@
     "icu": "78.2",
     "locale": "en-US"
   },
-  "productionExecutionDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "productionExecutionDigest": "64cdfb541681cdf15aeee4cbf96496a78e0ef6230639252f7065523db9c64c85",
   "registeredProducerContractsUnchanged": true,
   "productionSourceHashes": {
     "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
@@ -25,7 +25,7 @@
     "js/85c-simulator-state.ts": "050557ebf44fbfa6724a7d9e006d6885e9894cb60c863a36dd091d1426ce6a37",
     "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
     "pilots/finite-reservoir-authority/contract.mjs": "392195155899ea4d8dff859dfba9058beffa46063e8ca53dae33260a616c19f1",
-    "pilots/finite-reservoir-authority/audit.mjs": "cbb9f881ec43b7c3fa05b8e7bdbc1b94fcbec69a6839830e38cd2f8d018c7e4b"
+    "pilots/finite-reservoir-authority/audit.mjs": "d3561821a4aa2fc90299b454261e78592bc69f2b012edac1d81644289fddefa6"
   },
   "sourceHashes": {
     "pilots/physical-reservoir-mapping/mapping.mjs": "35f10c4328e2eb0b0d34cc994192865077cec0410eb556c2490b4a18cce00cd8",

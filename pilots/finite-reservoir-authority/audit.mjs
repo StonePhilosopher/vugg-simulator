@@ -12,7 +12,8 @@ import {assertCommissionedEvidenceRuntime,nodeRuntimeIdentity,runtimeExecutionDi
 const OUTPUT='pilots/finite-reservoir-authority/source-audit.json';
 const WALL_OUTPUT='pilots/finite-reservoir-authority/wall-reference-census.json';
 const BASE='c2651d4f2c2526b4944ef853ea6676bd9b4afd97';
-const EXECUTION='d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e';
+// Re-pinned by the raw surface-read perf change: its runtime bytes moved, no simulated result did.
+const EXECUTION='64cdfb541681cdf15aeee4cbf96496a78e0ef6230639252f7065523db9c64c85';
 const SOURCES=['data/scenarios.json5','js/19-mineral-stoichiometry.ts',
   'js/20-chemistry-fluid.ts','js/20b-chemistry-carbonate-system.ts',
   'js/22-geometry-wall.ts','js/22a-geometry-cavity-evolution.ts',
