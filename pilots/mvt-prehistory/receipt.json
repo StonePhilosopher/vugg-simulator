@@ -10,7 +10,7 @@
     "icu": "78.2",
     "locale": "en-US"
   },
-  "productionExecutionDigest": "d2171e7e44e1e0b53aa70761511684b68c03a88020bce45f75625ef71b03c93e",
+  "productionExecutionDigest": "64cdfb541681cdf15aeee4cbf96496a78e0ef6230639252f7065523db9c64c85",
   "registeredProducerContractsUnchanged": true,
   "productionSourceHashes": {
     "data/scenarios.json5": "4b7bc4d31446196af9c1e454c21b54d5db713f558b7a382db4a6fcb3c5c18b59",
@@ -25,7 +25,7 @@
     "js/85c-simulator-state.ts": "050557ebf44fbfa6724a7d9e006d6885e9894cb60c863a36dd091d1426ce6a37",
     "pilots/calcite/volume-contract.js": "0aa9f8f83533d09c8d273034ab667674025f291dfafd1b99eba982e81f6159bb",
     "pilots/finite-reservoir-authority/contract.mjs": "392195155899ea4d8dff859dfba9058beffa46063e8ca53dae33260a616c19f1",
-    "pilots/finite-reservoir-authority/audit.mjs": "cbb9f881ec43b7c3fa05b8e7bdbc1b94fcbec69a6839830e38cd2f8d018c7e4b"
+    "pilots/finite-reservoir-authority/audit.mjs": "d3561821a4aa2fc90299b454261e78592bc69f2b012edac1d81644289fddefa6"
   },
   "sourceHashes": {
     "pilots/mvt-prehistory/history.mjs": "32c09880eb6b78321c8c80027ac4615289d96bdc6208e7a6ee8b7d8b74368b2a",
@@ -1868,7 +1868,7 @@
       "js/20a-chemistry-activity.ts": "86ba4008b3c1ffd289d5db5c39dbea0b5cd22000e6f8a7805b4a353be7b24a96",
       "js/22-geometry-wall.ts": "162f3c91181689141d1b4ee1690c13ba47185a72b005cf380fce7170b9b707a9",
       "js/85k-fluid-spots.ts": "327d429f24dca57c5524193a0814d32e14edf6a4f46e0f9963d2bb1491c28eac",
-      "pilots/reservoir-reference-preflight/receipt.json": "3f818ddee9f9f9d538163419bf2dedef70b1c8aaccb682b8c537645c9f6af63d"
+      "pilots/reservoir-reference-preflight/receipt.json": "e0156da8e0dbbe65af61d7f37fe855ef9ccb5957f77effe1409e8b8ebc50bc98"
     },
     "known": {
       "authoredHostProxy": "limestone",
