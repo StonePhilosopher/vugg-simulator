@@ -56,11 +56,12 @@ jobs:
       - name: Transport-off local inventories and pinned legacy-save replay
         run: npm test -- --file tests-js/local-state-foundation.test.ts
 
-      - name: Finite reservoir declarations, physical control, and MVT reference preflight
+      - name: Finite reservoirs, MVT reference preflight, and shared prehistory control
         run: |
-          npm test -- --file tests-js/finite-reservoir-authority.test.ts --file tests-js/physical-reservoir-mapping.test.ts --file tests-js/reservoir-reference-preflight.test.ts
+          npm test -- --file tests-js/finite-reservoir-authority.test.ts --file tests-js/physical-reservoir-mapping.test.ts --file tests-js/reservoir-reference-preflight.test.ts --file tests-js/mvt-prehistory.test.ts
           python --version
           python pilots/reservoir-reference-preflight/reference.py
+          python pilots/mvt-prehistory/reference.py
 
       - name: Cation commissioning identity guards
         run: npm test -- --file tests-js/cation-sink-audit.test.ts
