@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 declare const CavityScalarField: any;
 declare const MarchingCubesExtractor: any;
+declare const CavitySurfaceAnchors: any;
 declare const WallState: any;
 
 function fixtureField(size: number, sampler: (x: number, y: number, z: number) => number) {
@@ -131,6 +132,40 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
     for (let i = 0; i < surface.indices.length; i++) {
       expect(surface.indices[i]).toBeLessThan(surface.positions.length / 3);
     }
+  });
+
+  it('reads authenticated buffers directly in its own per-triangle loops', () => {
+    // Callers get read-only proxies whose `get` trap tests every element key
+    // against a canonical-index regex. At SIM 286 these passes read through it
+    // every erosion step; closedVolumeMm3 + surfaceAreaMm2 alone took 59% of
+    // tn457_barite_pulses' run_step. Count the regex tests: a proxied element
+    // read must register (control); the O(triangles) loops must not trap per
+    // element.
+    const field = CavityScalarField.fromBubbles([[0, 0, 0, 8], [6, 1, -2, 4]], { resolution: 24, sig: 'raw-reads' });
+    const surface = field.extract();
+    const triangles = surface.indices.length / 3;
+    expect(triangles).toBeGreaterThan(100);
+    const originalTest = RegExp.prototype.test;
+    let regexTests = 0;
+    const counted = (run: () => unknown) => {
+      regexTests = 0;
+      RegExp.prototype.test = function (this: RegExp, ...args: any[]) {
+        regexTests++;
+        return Reflect.apply(originalTest, this, args);
+      };
+      try {
+        run();
+      } finally {
+        RegExp.prototype.test = originalTest;
+      }
+      return regexTests;
+    };
+    expect(counted(() => surface.positions[0] + surface.indices[0])).toBeGreaterThanOrEqual(2);
+    expect(counted(() => MarchingCubesExtractor.closedVolumeMm3(surface))).toBeLessThan(triangles);
+    expect(counted(() => MarchingCubesExtractor.surfaceAreaMm2(surface))).toBeLessThan(triangles);
+    expect(counted(() => MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2)))
+      .toBeLessThan(triangles);
+    expect(counted(() => CavitySurfaceAnchors._surfaceTopology(surface))).toBeLessThan(triangles);
   });
 
   it('produces byte-identical position/index buffers for the same field', () => {

@@ -55,6 +55,12 @@ class MarchingCubesExtractor {
       .map(name => [name, MarchingCubesExtractor.#typedArrayPrototype[name]]),
   );
 
+  // The owned target behind a read-only proxy, or the value itself. Only the
+  // class's own loops read through this, after verifyBuffers() has
+  // authenticated the surface, and nothing it returns reaches a caller. Every
+  // proxied element read is a `get` trap plus a key regex and Number() parse:
+  // on a 33k-triangle 48^3 surface that made closedVolumeMm3 ~450x and
+  // surfaceAreaMm2 ~140x slower, most of a wall-dissolving step at SIM 286.
   static #rawBuffer(values: any): any {
     return MarchingCubesExtractor.#readonlyTargets.get(values) || values;
   }
@@ -188,8 +194,8 @@ class MarchingCubesExtractor {
   // different shell than the one shown to the player.
   static closedVolumeMm3(surface: CavitySurfaceBuffers): number {
     MarchingCubesExtractor.verifyBuffers(surface);
-    const positions = surface.positions;
-    const indices = surface.indices;
+    const positions = MarchingCubesExtractor.#rawBuffer(surface.positions);
+    const indices = MarchingCubesExtractor.#rawBuffer(surface.indices);
     let signedSixVolume = 0;
     for (let offset = 0; offset + 2 < indices.length; offset += 3) {
       const ia = indices[offset] * 3;
@@ -211,8 +217,8 @@ class MarchingCubesExtractor {
 
   static surfaceAreaMm2(surface: CavitySurfaceBuffers): number {
     MarchingCubesExtractor.verifyBuffers(surface);
-    const positions = surface.positions;
-    const indices = surface.indices;
+    const positions = MarchingCubesExtractor.#rawBuffer(surface.positions);
+    const indices = MarchingCubesExtractor.#rawBuffer(surface.indices);
     let area = 0;
     for (let offset = 0; offset + 2 < indices.length; offset += 3) {
       const ia = indices[offset] * 3;
@@ -339,8 +345,8 @@ class MarchingCubesExtractor {
     }
     const isovalue = Number(surface.isovalue);
     if (!Number.isFinite(isovalue)) throw new TypeError('surface agreement isovalue must be finite');
-    const positions = surface.positions;
-    const indices = surface.indices;
+    const positions = MarchingCubesExtractor.#rawBuffer(surface.positions);
+    const indices = MarchingCubesExtractor.#rawBuffer(surface.indices);
     // Positions are intentionally Float32 because these exact bytes feed the
     // renderer, replay, and receipts. Re-sampling rounded world coordinates can
     // leave a few scalar micrometres of residual even when the unrounded
@@ -1233,6 +1239,7 @@ class MarchingCubesExtractor {
         neighbor_counts: authenticatedNeighborCounts,
         positions: MarchingCubesExtractor.#rawBuffer(result.positions),
         indices: MarchingCubesExtractor.#rawBuffer(result.indices),
+        normals: MarchingCubesExtractor.#rawBuffer(result.normals),
       });
     }
     return Object.freeze(result);

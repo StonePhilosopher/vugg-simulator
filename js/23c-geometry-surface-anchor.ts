@@ -673,6 +673,8 @@ class CavitySurfaceAnchors {
       : null;
     const positionBuffer = extractorTopology?.positions || surface.positions;
     const indexBuffer = extractorTopology?.indices || surface.indices;
+    const normalBuffer = extractorTopology?.normals || surface.normals;
+    const orientByRockNormals = !!normalBuffer && normalBuffer.length >= positionBuffer.length;
     const triangles: any[] = [];
     const edgeOwners = extractorTopology ? null : new Map<string, number[]>();
     let totalArea = 0;
@@ -688,8 +690,8 @@ class CavitySurfaceAnchors {
       const cross = [aby * acz - abz * acy, abz * acx - abx * acz, abx * acy - aby * acx];
       const length = Math.hypot(cross[0], cross[1], cross[2]);
       if (!(length > 0) || !Number.isFinite(length)) continue;
-      const normals = surface.normals;
-      if (normals && normals.length >= surface.positions.length) {
+      if (orientByRockNormals) {
+        const normals = normalBuffer;
         const rockNormal = [
           normals[t.ia * 3] + normals[t.ib * 3] + normals[t.ic * 3],
           normals[t.ia * 3 + 1] + normals[t.ib * 3 + 1] + normals[t.ic * 3 + 1],
