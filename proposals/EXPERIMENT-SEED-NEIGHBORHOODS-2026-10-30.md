@@ -1,9 +1,13 @@
 # Experiment brief — do Vugg seeds behave like geological neighbors?
 
-**Status:** proposed — diagnostic only; no simulator changes authorized  
-**Date:** 2026-10-30  
-**Requested builder:** Flint  
-**Starting head:** `e86ba58a` (`Syntaxswine/main`)  
+**Status:** proposed — diagnostic only; no simulator changes authorized
+
+**Date:** 2026-10-30
+
+**Requested builder:** Flint
+
+**Starting head:** `e86ba58a` (`Syntaxswine/main`)
+
 **Primary scenario:** `deccan_zeolite`
 
 ## 1. The observation that produced the question
